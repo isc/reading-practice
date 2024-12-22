@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jeu de lecture avancé</title>
+    <link href="style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Jeu de lecture avancé</h1>
+      <div id="game-info">
+        <div id="score">Score: 0</div>
+        <div id="timer">Temps: 0s</div>
+        <div id="level">Niveau: Facile</div>
+      </div>
+      <p class="instructions">
+        Lisez la phrase à voix haute. Les mots correctement prononcés seront
+        surlignés en vert.
+      </p>
+      <div id="sentence"></div>
+      <div class="button-container">
+        <button id="start">Commencer</button>
+        <button id="next" style="display: none">Phrase suivante</button>
+      </div>
+    </div>
+    <canvas id="confetti"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="main.js"></script>
+    <script src="confetti.js"></script>
+  </body>
+</html>
