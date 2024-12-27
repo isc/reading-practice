@@ -91,3 +91,25 @@ button:hover {
   pointer-events: none;
   z-index: 9999;
 }
+
+.large-emoji {
+  font-size: 8rem;
+  display: block;
+  text-align: center;
+  margin: 1.5rem 0;
+  animation: popIn 0.5s ease-out;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
