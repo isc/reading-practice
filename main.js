@@ -20,12 +20,29 @@ let currentLevel = 'easy'
 let currentSentenceIndex = 0
 let recognition
 let remainingWords = []
-let score = 0
 let timer = 0
 let timerInterval
 let bestTime = localStorage.getItem('bestTime') ? parseInt(localStorage.getItem('bestTime')) : Infinity
+let phoneticDict = {}
 
-// const successSound = new Howl({ src: ['success.wav'], volume: 0.5 })
+// Load phonetic dictionary
+fetch('fr_FR.txt')
+  .then(response => response.text())
+  .then(data => {
+    const lines = data.split('\n')
+    lines.forEach(line => {
+      const [word, phonetic] = line.split('\t')
+      if (word && phonetic) {
+        phoneticDict[word.toLowerCase()] = phonetic.trim()
+      }
+    })
+  })
+  .catch(error => console.error('Error loading phonetic dictionary:', error))
+
+function getPhonetic(word) {
+  word = word.toLowerCase().replace(/[.,!?]/g, '')
+  return phoneticDict[word] || word
+}
 
 function displaySentence() {
   const sentence = sentences[currentLevel][currentSentenceIndex]
@@ -37,9 +54,10 @@ function displaySentence() {
 
   remainingWords = sentence.text
     .split(' ')
-    .map(word => word.toLowerCase().replace(/[.,!?]/g, ''))
-  score = 0
-  updateScore(remainingWords.length)
+    .map((word, index) => ({
+      word: word.toLowerCase().replace(/[.,!?]/g, ''),
+      index: index
+    }))
 
   sentence.text.split(' ').forEach((word, index) => {
     const span = document.createElement('span')
@@ -53,34 +71,33 @@ function displaySentence() {
   })
 }
 
-function updateScore(totalWords) {
-  const correctWords = document.querySelectorAll('.word.correct').length
-  score = Math.round((correctWords / totalWords) * 100)
-  document.getElementById('score').textContent = `Score: ${score}%`
-}
-
 function handleTranscript(transcript) {
-  while (
-    remainingWords.length > 0 &&
-    transcript.includes(remainingWords[0])
-  ) {
-    const wordElement = document.querySelector(
-      `.word:not(.correct)[data-index="${document.querySelectorAll('.word.correct').length
-      }"]`
-    )
-    if (wordElement) {
-      wordElement.classList.add('correct')
-      remainingWords.shift()
-      updateScore(remainingWords.length + document.querySelectorAll('.word.correct').length)
+  const transcriptWords = transcript.toLowerCase().split(' ')
+
+  for (const transcriptWord of transcriptWords) {
+    const transcriptPhonetic = getPhonetic(transcriptWord)
+
+    if (remainingWords.length > 0) {
+      const targetPhonetic = getPhonetic(remainingWords[0].word)
+
+      if (transcriptPhonetic === targetPhonetic) {
+        const wordElement = document.querySelector(`.word[data-index="${remainingWords[0].index}"]`)
+        if (wordElement) {
+          wordElement.classList.add('correct')
+        }
+        remainingWords.shift()
+
+        if (remainingWords.length === 0) {
+          const sentence = sentences[currentLevel][currentSentenceIndex]
+          const emojiDiv = document.getElementById('emoji')
+          emojiDiv.innerHTML = `<span class="large-emoji">${sentence.emoji}</span>`
+          recognition.stop()
+          document.getElementById('next').style.display = 'inline-block'
+          clearInterval(timerInterval)
+          showConfetti()
+        }
+      }
     }
-  }
-  if (remainingWords.length === 0) {
-    const sentence = sentences[currentLevel][currentSentenceIndex]
-    const emojiDiv = document.getElementById('emoji')
-    emojiDiv.innerHTML = `<span class="large-emoji">${sentence.emoji}</span>`
-    recognition.stop()
-    document.getElementById('next').style.display = 'inline-block'
-    showConfetti()
   }
 }
 
@@ -112,19 +129,17 @@ function updateTimer() {
   document.getElementById('timer').textContent = `Temps: ${timer}s`
 }
 
+function updateLevelDisplay() {
+  document.getElementById('level').textContent = `Niveau: ${currentLevel.charAt(0).toUpperCase() + currentLevel.slice(1)}`
+}
+
 function updateLevel() {
-  const levelScore = score  // Score within current level (0-100)
-  if (levelScore >= 90) {  // Need 90% accuracy to advance
-    if (currentLevel === 'easy') {
-      currentLevel = 'medium'
-      score = 0
-    } else if (currentLevel === 'medium') {
-      currentLevel = 'hard'
-      score = 0
-    }
+  if (currentLevel === 'easy') {
+    currentLevel = 'medium'
+  } else if (currentLevel === 'medium') {
+    currentLevel = 'hard'
   }
-  document.getElementById('level').textContent = `Niveau: ${currentLevel.charAt(0).toUpperCase() + currentLevel.slice(1)
-    }`
+  updateLevelDisplay()
 }
 
 function checkBestTime() {
@@ -152,8 +167,7 @@ clickOn('next', () => {
   currentSentenceIndex++
   if (currentSentenceIndex >= sentences[currentLevel].length) {
     currentSentenceIndex = 0
-    updateLevel()
-    if (currentLevel === 'hard' && score >= 90) {  // Completed hard level with 90%+ accuracy
+    if (currentLevel === 'hard') {  // Completed hard level
       recognition.stop()
       clearInterval(timerInterval)
       showGameEndMessage()
@@ -161,20 +175,21 @@ clickOn('next', () => {
       document.getElementById('next').style.display = 'none'
       return
     }
+    updateLevel()
   }
   displaySentence()
   startRecognition()
+  timerInterval = setInterval(updateTimer, 1000)
 })
 
 clickOn('start', () => {
-  displaySentence()
-  startRecognition()
   document.getElementById('start').style.display = 'none'
   document.getElementById('next').style.display = 'none'
   timer = 0
-  score = 0
   currentLevel = 'easy'
   currentSentenceIndex = 0
-  updateLevel()
+  updateLevelDisplay()
+  displaySentence()
+  startRecognition()
   timerInterval = setInterval(updateTimer, 1000)
 })
