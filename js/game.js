@@ -1,36 +1,70 @@
-import { sentences } from './data.js'
+import { getSentences, getPhonetic } from './data.js'
+
+// Add storage wrapper for better testability
+const storage = {
+  getItem: (key) => {
+    try {
+      return localStorage.getItem(key)
+    } catch {
+      return null
+    }
+  },
+  setItem: (key, value) => {
+    try {
+      localStorage.setItem(key, value)
+    } catch {
+      // Fail silently in test environment
+    }
+  }
+}
 
 export class GameState {
   constructor() {
-    this.currentLevel = "easy"
+    this.currentLevel = 'easy'
     this.currentSentenceIndex = 0
     this.timer = 0
     this.timerInterval = null
-    this.bestTime = localStorage.getItem("bestTime")
-      ? parseInt(localStorage.getItem("bestTime"))
-      : Infinity
     this.remainingWords = []
-  }
-
-  getCurrentSentence() {
-    return sentences[this.currentLevel][this.currentSentenceIndex]
+    this.bestTime = parseFloat(storage.getItem('bestTime')) || Infinity
   }
 
   updateTimer() {
     this.timer++
-    return this.timer
+  }
+
+  startTimer() {
+    if (!this.timerInterval) {
+      this.timerInterval = setInterval(() => this.updateTimer(), 1000)
+    }
+  }
+
+  stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval)
+      this.timerInterval = null
+    }
+  }
+
+  getCurrentSentence() {
+    const sentences = getSentences(this.currentLevel)
+    return sentences[this.currentSentenceIndex]
   }
 
   updateLevel() {
-    if (this.currentLevel === "easy") this.currentLevel = "medium"
-    else if (this.currentLevel === "medium") this.currentLevel = "hard"
-    return this.currentLevel
+    switch (this.currentLevel) {
+      case 'easy':
+        this.currentLevel = 'medium'
+        break
+      case 'medium':
+        this.currentLevel = 'hard'
+        break
+    }
   }
 
   checkBestTime() {
     if (this.timer < this.bestTime) {
       this.bestTime = this.timer
-      localStorage.setItem("bestTime", this.timer.toString())
+      storage.setItem('bestTime', this.timer.toString())
       return true
     }
     return false
@@ -38,9 +72,10 @@ export class GameState {
 
   nextSentence() {
     this.currentSentenceIndex++
-    if (this.currentSentenceIndex >= sentences[this.currentLevel].length) {
+    const sentences = getSentences(this.currentLevel)
+    if (this.currentSentenceIndex >= sentences.length) {
       this.currentSentenceIndex = 0
-      if (this.currentLevel === "hard") {
+      if (this.currentLevel === 'hard') {
         return false
       }
       this.updateLevel()
@@ -50,17 +85,20 @@ export class GameState {
 
   prepareNewSentence() {
     const sentence = this.getCurrentSentence()
-    this.remainingWords = sentence.text.split(" ").map((word, index) => ({
-      word: word.toLowerCase().replace(/[.,!?]/g, ""),
-      index: index,
-    }))
+    this.remainingWords = sentence.text
+      .split(' ')
+      .map((word, index) => ({
+        word: word.toLowerCase().replace(/[.,!?]/g, ""),
+        index
+      }))
     return sentence
   }
 
   resetGame() {
-    this.currentLevel = "easy"
+    this.currentLevel = 'easy'
     this.currentSentenceIndex = 0
     this.timer = 0
     this.remainingWords = []
+    this.stopTimer()
   }
 }
