@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .title {
+        color: #e76f51;
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 30px;
+      }
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      .rule-selector {
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .instructions {
+        background-color: #ffd6ba;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+      }
+      .word-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      .word {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+      .word input {
+        width: 24px;
+        text-align: center;
+        padding: 0;
+        font-size: 18px;
+        font-family: inherit;
+        border: none;
+        border-bottom: 2px solid #ddd;
+        background: transparent;
+        transition: border-color 0.3s;
+        position: relative;
+        top: 1px;
+      }
+      .word input:focus {
+        outline: none;
+        border-bottom-color: #2a9d8f;
+      }
+      .check-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #2a9d8f;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .check-btn:hover {
+        background-color: #264653;
+      }
+      .feedback {
+        text-align: center;
+        margin-top: 20px;
+        font-weight: bold;
+      }
+      .correct {
+        color: #2a9d8f;
+      }
+      .incorrect {
+        color: #e76f51;
+      }
+      .word.correct-answer input {
+        border-bottom-color: #2a9d8f;
+        background-color: #d8f3dc30;
+      }
+      .word.incorrect-answer input {
+        border-bottom-color: #e76f51;
+        background-color: #ffd6ba30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="title">Orthographe - Les nasales</div>
+
+    <div class="controls">
+      <select class="rule-selector" id="ruleSelector" onchange="changeRule()">
+        <option value="an">an/am</option>
+        <option value="en">en/em</option>
+        <option value="on">on/om</option>
+        <option value="in">in/im</option>
+        <option value="mix">Mode mélangé</option>
+      </select>
+    </div>
+
+    <div class="instructions" id="instructions">
+      Complète les mots avec <strong>an</strong> ou <strong>am</strong>.
+    </div>
+
+    <div class="word-container" id="wordContainer"></div>
+
+    <button class="check-btn" onclick="checkAnswers()">
+      Vérifier mes réponses
+    </button>
+    <div class="feedback" id="feedback"></div>
+
+    <script>
+      const wordSets = {
+        an: [
+          { start: "une ch", end: "son", answer: "an" },
+          { start: "le t", end: "bour", answer: "am" },
+          { start: "une l", end: "pe", answer: "am" },
+          { start: "je ch", end: "te", answer: "an" },
+          { start: "gr", end: "de", answer: "an" },
+          { start: "un ch", end: "pion", answer: "am" },
+          { start: "une pl", end: "te", answer: "an" },
+          { start: "il m", end: "ge", answer: "an" },
+          { start: "or", end: "ge", answer: "an" },
+          { start: "un vol", end: "t", answer: "an" },
+          { start: "une j", end: "be", answer: "am" },
+          { start: "d", end: "ser", answer: "an" },
+          { start: "une b", end: "de", answer: "an" },
+          { start: "un p", end: "da", answer: "an" },
+          { start: "le c", end: "ping", answer: "am" },
+        ],
+        en: [
+          { start: "le t", end: "ps", answer: "em" },
+          { start: "prud", end: "t", answer: "en" },
+          { start: "une", end: "veloppe", answer: "en" },
+          { start: "nov", end: "bre", answer: "em" },
+          { start: "diff", end: "t", answer: "en" },
+          { start: "l'", end: "pire", answer: "em" },
+          { start: "une", end: "tente", answer: "en" },
+          { start: "sept", end: "bre", answer: "em" },
+          { start: "un ex", end: "ple", answer: "em" },
+          { start: "le v", end: "t", answer: "en" },
+          { start: "déc", end: "bre", answer: "em" },
+          { start: "pr", end: "dre", answer: "en" },
+          { start: "une", end: "trée", answer: "en" },
+          { start: "ress", end: "tir", answer: "en" },
+          { start: "att", end: "tion", answer: "en" },
+        ],
+        on: [
+          { start: "m", end: "de", answer: "on" },
+          { start: "un c", end: "te", answer: "om" },
+          { start: "t", end: "ber", answer: "om" },
+          { start: "un b", end: "bon", answer: "on" },
+          { start: "une c", end: "pagne", answer: "am" },
+          { start: "un p", end: "pier", answer: "om" },
+          { start: "une s", end: "bre", answer: "om" },
+          { start: "un c", end: "cert", answer: "on" },
+          { start: "un tr", end: "bone", answer: "om" },
+          { start: "un p", end: "t", answer: "on" },
+          { start: "un n", end: "bre", answer: "om" },
+          { start: "une c", end: "binaison", answer: "om" },
+          { start: "un bal", end: "", answer: "on" },
+          { start: "une c", end: "pétition", answer: "om" },
+          { start: "ab", end: "dant", answer: "on" },
+        ],
+        in: [
+          { start: "un s", end: "ge", answer: "in" },
+          { start: "", end: "possible", answer: "im" },
+          { start: "un v", end: "", answer: "in" },
+          { start: "", end: "portant", answer: "im" },
+          { start: "le pr", end: "temps", answer: "in" },
+          { start: "", end: "patient", answer: "im" },
+          { start: "un dess", end: "", answer: "in" },
+          { start: "", end: "mobile", answer: "im" },
+          { start: "un jard", end: "", answer: "in" },
+          { start: "", end: "primer", answer: "im" },
+          { start: "un cous", end: "", answer: "in" },
+          { start: "", end: "visible", answer: "in" },
+          { start: "un tra", end: "", answer: "in" },
+          { start: "", end: "parfait", answer: "im" },
+          { start: "f", end: "", answer: "in" },
+        ],
+      }
+
+      let currentRule = "an"
+      let currentWords = []
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[array[i], array[j]] = [array[j], array[i]]
+        }
+        return array
+      }
+
+      function updateInstructions() {
+        if (currentRule === "mix") {
+          document.getElementById(
+            "instructions"
+          ).innerHTML = `Complète les mots avec <strong>an/am</strong>, <strong>en/em</strong>, <strong>on/om</strong> ou <strong>in/im</strong>.`
+        } else {
+          const options = currentRule.split("")
+          document.getElementById(
+            "instructions"
+          ).innerHTML = `Complète les mots avec <strong>${options[0]}${
+            options[1]
+          }</strong> ou <strong>${options[0]}${options[1].replace(
+            "n",
+            "m"
+          )}</strong>.`
+        }
+      }
+
+      function createWordElements() {
+        const container = document.getElementById("wordContainer")
+        container.innerHTML = ""
+
+        if (currentRule === "mix") {
+          let allWords = []
+          Object.keys(wordSets).forEach((rule) => {
+            allWords = allWords.concat(wordSets[rule].slice(0, 4))
+          })
+          currentWords = shuffleArray(allWords)
+        } else {
+          currentWords = wordSets[currentRule]
+        }
+
+        currentWords.forEach((word, index) => {
+          const div = document.createElement("div")
+          div.className = "word"
+          div.innerHTML = `
+                    ${word.start}
+                    <input type="text" maxlength="2" id="answer${index}">
+                    ${word.end}
+                `
+          container.appendChild(div)
+        })
+      }
+
+      function checkAnswers() {
+        let correct = 0
+        const feedback = document.getElementById("feedback")
+
+        currentWords.forEach((word, index) => {
+          const input = document.getElementById(`answer${index}`)
+          const userAnswer = input.value.toLowerCase()
+          const wordElement = input.parentElement
+
+          if (userAnswer === word.answer) {
+            wordElement.className = "word correct-answer"
+            correct++
+          } else {
+            wordElement.className = "word incorrect-answer"
+          }
+        })
+
+        const percentage = Math.round((correct / currentWords.length) * 100)
+        feedback.innerHTML = `
+                <div class="${percentage === 100 ? "correct" : "incorrect"}">
+                    Tu as ${correct} réponse${correct > 1 ? "s" : ""} correcte${
+          correct > 1 ? "s" : ""
+        } sur ${currentWords.length} (${percentage}%)
+                </div>
+            `
+      }
+
+      function changeRule() {
+        currentRule = document.getElementById("ruleSelector").value
+        updateInstructions()
+        createWordElements()
+        document.getElementById("feedback").innerHTML = ""
+      }
+
+      // Initialize the game
+      changeRule()
+    </script>
+  </body>
+</html>
