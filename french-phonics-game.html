@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lecture et Orthographe - Son /ɑ̃/</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap");
+
+      body {
+        font-family: "Nunito", sans-serif;
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f0f2f5;
+      }
+
+      .container {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #2563eb;
+        margin-bottom: 30px;
+        font-size: 2.2em;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .instruction {
+        font-size: 1.2em;
+        margin-bottom: 30px;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border-left: 4px solid #2563eb;
+      }
+
+      .color-selector {
+        margin-bottom: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .color-btn {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .color-btn.red {
+        background-color: #fee2e2;
+        color: #dc2626;
+      }
+
+      .color-btn.green {
+        background-color: #dcfce7;
+        color: #16a34a;
+      }
+
+      .color-btn.selected {
+        transform: scale(1.05);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        outline: 3px solid #2563eb;
+        outline-offset: 2px;
+      }
+
+      .word-list,
+      .sentence {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 30px;
+        justify-content: center;
+      }
+
+      .word {
+        padding: 8px 16px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        font-size: 1.1em;
+      }
+
+      .word:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .word.highlighted-red {
+        background-color: #fee2e2;
+        color: #dc2626;
+        border-color: #dc2626;
+      }
+
+      .word.highlighted-green {
+        background-color: #dcfce7;
+        color: #16a34a;
+        border-color: #16a34a;
+      }
+
+      .controls {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+      }
+
+      .control-btn {
+        padding: 12px 25px;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+      }
+
+      .control-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+      }
+
+      .control-btn.reset {
+        background-color: #64748b;
+      }
+
+      .feedback {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        display: none;
+        text-align: center;
+        font-weight: 600;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .feedback.success {
+        background-color: #dcfce7;
+        color: #16a34a;
+        border: 2px solid #16a34a;
+      }
+
+      .feedback.error {
+        background-color: #fee2e2;
+        color: #dc2626;
+        border: 2px solid #dc2626;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .section {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #f8fafc;
+        border-radius: 12px;
+      }
+
+      .section-title {
+        color: #64748b;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+      }
+
+      .divider {
+        height: 2px;
+        background: #e2e8f0;
+        margin: 30px 0;
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Lecture et Orthographe</h1>
+
+      <div class="instruction">
+        Colorie <strong>an</strong> en
+        <span style="color: #dc2626">rouge</span> et <strong>am</strong> en
+        <span style="color: #16a34a">vert</span> si tu entends le son "an".
+      </div>
+
+      <div class="color-selector">
+        <button class="color-btn red" onclick="selectColor('red')">
+          Rouge (an)
+        </button>
+        <button class="color-btn green" onclick="selectColor('green')">
+          Vert (am)
+        </button>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Liste de mots</div>
+        <div class="word-list">
+          <span class="word">dimanche</span>
+          <span class="word">rampe</span>
+          <span class="word">manie</span>
+          <span class="word">banc</span>
+          <span class="word">cane</span>
+          <span class="word">branche</span>
+          <span class="word">nature</span>
+          <span class="word">manger</span>
+          <span class="word">camper</span>
+          <span class="word">plante</span>
+          <span class="word">mine</span>
+          <span class="word">rame</span>
+          <span class="word">orange</span>
+          <span class="word">sable</span>
+          <span class="word">tambour</span>
+          <span class="word">pantalon</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Phrase d'exemple</div>
+        <div class="sentence">
+          <span class="word">Le</span>
+          <span class="word">toucan</span>
+          <span class="word">est</span>
+          <span class="word">un</span>
+          <span class="word">oiseau</span>
+          <span class="word">vraiment</span>
+          <span class="word">fascinant</span>
+          <span class="word">C'est</span>
+          <span class="word">un</span>
+          <span class="word">champion</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="control-btn" onclick="verifyAnswers()">Vérifier</button>
+        <button class="control-btn reset" onclick="resetGame()">
+          Recommencer
+        </button>
+      </div>
+
+      <div class="feedback"></div>
+    </div>
+
+    <script>
+      let selectedColor = null
+
+      const wordsWithAnSound = [
+        "dimanche",
+        "banc",
+        "branche",
+        "manger",
+        "plante",
+        "pantalon",
+        "toucan",
+        "fascinant",
+        "orange",
+      ]
+      const wordsWithAmSound = ["rampe", "camper", "tambour", "champion"]
+
+      function selectColor(color) {
+        selectedColor = color
+        document.querySelectorAll(".color-btn").forEach((btn) => {
+          btn.classList.remove("selected")
+        })
+        document.querySelector(`.color-btn.${color}`).classList.add("selected")
+      }
+
+      const words = document.querySelectorAll(".word")
+
+      words.forEach((word) => {
+        word.addEventListener("click", () => {
+          if (!selectedColor) {
+            alert("Sélectionne d'abord une couleur (rouge ou vert)")
+            return
+          }
+
+          if (word.classList.contains(`highlighted-${selectedColor}`)) {
+            word.classList.remove(`highlighted-${selectedColor}`)
+          } else {
+            word.classList.remove("highlighted-red")
+            word.classList.remove("highlighted-green")
+            word.classList.add(`highlighted-${selectedColor}`)
+          }
+        })
+      })
+
+      function verifyAnswers() {
+        let correct = true
+        const feedback = document.querySelector(".feedback")
+
+        words.forEach((word) => {
+          const isAnSound = wordsWithAnSound.includes(word.textContent)
+          const isAmSound = wordsWithAmSound.includes(word.textContent)
+
+          if (isAnSound && !word.classList.contains("highlighted-red")) {
+            correct = false
+          }
+          if (isAmSound && !word.classList.contains("highlighted-green")) {
+            correct = false
+          }
+          if (
+            !isAnSound &&
+            !isAmSound &&
+            (word.classList.contains("highlighted-red") ||
+              word.classList.contains("highlighted-green"))
+          ) {
+            correct = false
+          }
+        })
+
+        feedback.style.display = "block"
+        if (correct) {
+          feedback.textContent =
+            "Bravo ! Toutes tes réponses sont correctes ! 🌟"
+          feedback.classList.add("success")
+          feedback.classList.remove("error")
+        } else {
+          feedback.textContent =
+            "Il y a encore des erreurs. Continue d'essayer ! 💪"
+          feedback.classList.add("error")
+          feedback.classList.remove("success")
+        }
+      }
+
+      function resetGame() {
+        words.forEach((word) => {
+          word.classList.remove("highlighted-red")
+          word.classList.remove("highlighted-green")
+        })
+        const feedback = document.querySelector(".feedback")
+        feedback.style.display = "none"
+        selectedColor = null
+        document.querySelectorAll(".color-btn").forEach((btn) => {
+          btn.classList.remove("selected")
+        })
+      }
+    </script>
+  </body>
+</html>
