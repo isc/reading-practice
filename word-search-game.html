@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mots Mêlés Éducatif</title>
+    <style>
+      /* [Styles précédents identiques jusqu'à .cell.selected] */
+      :root {
+        --primary-color: #4a90e2;
+        --selection-color: #ffd700;
+        --background-color: #f8f9fa;
+        --grid-border: #dee2e6;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+
+      body {
+        background-color: var(--background-color);
+        min-height: 100vh;
+        padding: 1rem;
+        overflow-x: hidden;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: var(--primary-color);
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+
+      .instructions {
+        color: #666;
+        margin-bottom: 1.5rem;
+      }
+
+      .game-container {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .grid-wrapper {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: auto;
+        max-width: 100%;
+      }
+
+      table.grid {
+        border-collapse: collapse;
+        touch-action: none;
+      }
+
+      table.grid td {
+        width: 2.5rem;
+        height: 2.5rem;
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid var(--grid-border);
+        font-weight: bold;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        padding: 0;
+      }
+
+      table.grid td.selected {
+        background-color: var(--selection-color) !important;
+        color: black;
+      }
+
+      .word-list {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        min-width: 150px;
+      }
+
+      .word-item {
+        padding: 0.5rem 1rem;
+        margin: 0.25rem 0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .success-message {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #7ed321;
+        color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        text-align: center;
+        animation: fadeIn 0.5s ease;
+        z-index: 1000;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 0;
+        }
+
+        table.grid td {
+          width: 2rem;
+          height: 2rem;
+          font-size: 0.9rem;
+        }
+
+        .grid-wrapper {
+          padding: 0.5rem;
+        }
+
+        .word-list {
+          width: 100%;
+        }
+
+        .game-container {
+          gap: 1rem;
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🎯 Mots Mêlés</h1>
+        <p class="instructions">Retrouve les mots de la liste.</p>
+      </header>
+
+      <div class="game-container">
+        <div class="grid-wrapper">
+          <table class="grid" id="grid"></table>
+        </div>
+        <div class="word-list" id="wordList"></div>
+      </div>
+
+      <div class="success-message" id="successMessage">
+        <h2>🎉 Bravo !</h2>
+        <p>Tu as trouvé tous les mots !</p>
+      </div>
+    </div>
+
+    <script>
+      const grid = [
+        "OLOSCLICHANTE",
+        "RADITAMBOURME",
+        "AMCIMMNCHESAE",
+        "NAALUPLANTENE",
+        "GRANDEISSORGT",
+        "ERACHANSONSEA",
+      ]
+
+      const words = [
+        "CHANSON",
+        "CHANTE",
+        "GRANDE",
+        "LAMPE",
+        "MANGE",
+        "ORANGE",
+        "PLANTE",
+        "TAMBOUR",
+      ]
+
+      let selectedCells = []
+      let foundWords = new Set()
+      let isSelecting = false
+      let startTouchCell = null
+
+      // Couleurs distinctes pour chaque mot
+      const colors = {
+        CHANSON: "#4A90E2",
+        CHANTE: "#F5A623",
+        GRANDE: "#7ED321",
+        LAMPE: "#D0021B",
+        MANGE: "#9013FE",
+        ORANGE: "#50E3C2",
+        PLANTE: "#4A4A4A",
+        TAMBOUR: "#B8E986",
+      }
+
+      function createGrid() {
+        const table = document.getElementById("grid")
+        for (let i = 0; i < grid.length; i++) {
+          const row = table.insertRow()
+          for (let j = 0; j < grid[i].length; j++) {
+            const cell = row.insertCell()
+            cell.textContent = grid[i][j]
+            cell.dataset.row = i
+            cell.dataset.col = j
+
+            cell.addEventListener("touchstart", handleTouchStart, {
+              passive: false,
+            })
+            cell.addEventListener("touchmove", handleTouchMove, {
+              passive: false,
+            })
+            cell.addEventListener("touchend", handleTouchEnd, {
+              passive: false,
+            })
+
+            cell.addEventListener("mousedown", startSelection)
+            cell.addEventListener("mouseover", continueSelection)
+          }
+        }
+        document.addEventListener("mouseup", endSelection)
+      }
+
+      function createWordList() {
+        const wordListElement = document.getElementById("wordList")
+        words.forEach((word) => {
+          const wordItem = document.createElement("div")
+          wordItem.className = "word-item"
+          wordItem.textContent = word
+          wordListElement.appendChild(wordItem)
+        })
+      }
+
+      function handleTouchStart(e) {
+        e.preventDefault()
+        isSelecting = true
+        startTouchCell = e.target
+        selectedCells = [startTouchCell]
+        startTouchCell.classList.add("selected")
+      }
+
+      function handleTouchMove(e) {
+        e.preventDefault()
+        if (!isSelecting) return
+
+        const touch = e.touches[0]
+        const element = document.elementFromPoint(touch.clientX, touch.clientY)
+
+        if (element && element.tagName === "TD") {
+          if (isAdjacent(selectedCells[selectedCells.length - 1], element)) {
+            if (!selectedCells.includes(element)) {
+              selectedCells.push(element)
+              element.classList.add("selected")
+            }
+          }
+        }
+      }
+
+      function handleTouchEnd(e) {
+        e.preventDefault()
+        isSelecting = false
+        endSelection()
+      }
+
+      function startSelection(e) {
+        selectedCells = [e.target]
+        e.target.classList.add("selected")
+      }
+
+      function continueSelection(e) {
+        if (e.buttons === 1 && selectedCells.length > 0) {
+          const lastCell = selectedCells[selectedCells.length - 1]
+          const currentCell = e.target
+
+          if (isAdjacent(lastCell, currentCell)) {
+            if (!selectedCells.includes(currentCell)) {
+              selectedCells.push(currentCell)
+              currentCell.classList.add("selected")
+            }
+          }
+        }
+      }
+
+      function endSelection() {
+        const selectedWord = getSelectedWord()
+        if (words.includes(selectedWord) && !foundWords.has(selectedWord)) {
+          const color = colors[selectedWord]
+          selectedCells.forEach((cell) => {
+            cell.style.backgroundColor = color
+            cell.style.color = "white"
+          })
+          foundWords.add(selectedWord)
+          updateWordList()
+          checkGameCompletion()
+        }
+
+        selectedCells.forEach((cell) => cell.classList.remove("selected"))
+        selectedCells = []
+      }
+
+      function isAdjacent(cell1, cell2) {
+        const row1 = parseInt(cell1.dataset.row)
+        const col1 = parseInt(cell1.dataset.col)
+        const row2 = parseInt(cell2.dataset.row)
+        const col2 = parseInt(cell2.dataset.col)
+
+        return Math.abs(row1 - row2) <= 1 && Math.abs(col1 - col2) <= 1
+      }
+
+      function getSelectedWord() {
+        return selectedCells.map((cell) => cell.textContent).join("")
+      }
+
+      function updateWordList() {
+        const wordItems = document.querySelectorAll(".word-item")
+        wordItems.forEach((item) => {
+          if (foundWords.has(item.textContent)) {
+            item.style.backgroundColor = colors[item.textContent]
+            item.style.color = "white"
+          }
+        })
+      }
+
+      function checkGameCompletion() {
+        if (foundWords.size === words.length) {
+          const successMessage = document.getElementById("successMessage")
+          successMessage.style.display = "block"
+        }
+      }
+
+      // Initialisation du jeu
+      createGrid()
+      createWordList()
+    </script>
+  </body>
+</html>
