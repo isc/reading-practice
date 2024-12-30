@@ -2,60 +2,87 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lecture et Orthographe - Son /ɑ̃/</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap");
 
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
       body {
         font-family: "Nunito", sans-serif;
-        max-width: 900px;
-        margin: 20px auto;
-        padding: 20px;
         background-color: #f0f2f5;
+        padding: 10px;
+        min-height: 100vh;
       }
 
       .container {
         background: white;
         border-radius: 16px;
-        padding: 30px;
+        padding: 20px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 15px;
+          border-radius: 12px;
+        }
       }
 
       h1 {
         color: #2563eb;
-        margin-bottom: 30px;
-        font-size: 2.2em;
+        margin-bottom: 20px;
+        font-size: clamp(1.5rem, 5vw, 2.2rem);
         text-align: center;
         text-transform: uppercase;
         letter-spacing: 1px;
+        word-wrap: break-word;
       }
 
       .instruction {
-        font-size: 1.2em;
-        margin-bottom: 30px;
-        padding: 15px;
+        font-size: clamp(1rem, 4vw, 1.2rem);
+        margin-bottom: 20px;
+        padding: 12px;
         background: #f8fafc;
         border-radius: 8px;
         border-left: 4px solid #2563eb;
       }
 
       .color-selector {
-        margin-bottom: 30px;
+        margin-bottom: 20px;
         display: flex;
-        gap: 15px;
+        gap: 10px;
         justify-content: center;
         align-items: center;
+        flex-wrap: wrap;
       }
 
       .color-btn {
-        padding: 12px 25px;
+        padding: clamp(8px, 2vw, 12px) clamp(15px, 4vw, 25px);
         border: none;
         border-radius: 8px;
         cursor: pointer;
-        font-size: 1em;
+        font-size: clamp(0.9rem, 3vw, 1rem);
         font-weight: 600;
         transition: all 0.3s ease;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: calc(50% - 5px);
+        max-width: 200px;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 380px) {
+        .color-btn {
+          width: 100%;
+          max-width: none;
+        }
       }
 
       .color-btn.red {
@@ -69,7 +96,7 @@
       }
 
       .color-btn.selected {
-        transform: scale(1.05);
+        transform: scale(1.02);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         outline: 3px solid #2563eb;
         outline-offset: 2px;
@@ -79,25 +106,28 @@
       .sentence {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 30px;
+        gap: 8px;
+        margin-bottom: 20px;
         justify-content: center;
       }
 
       .word {
-        padding: 8px 16px;
+        padding: 8px 12px;
         background: #f8fafc;
         border: 2px solid #e2e8f0;
         border-radius: 8px;
         cursor: pointer;
         user-select: none;
         transition: all 0.2s ease;
-        font-size: 1.1em;
+        font-size: clamp(0.9rem, 3vw, 1.1rem);
+        text-align: center;
       }
 
-      .word:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      @media (hover: hover) {
+        .word:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
       }
 
       .word.highlighted-red {
@@ -113,28 +143,37 @@
       }
 
       .controls {
-        margin-top: 30px;
+        margin-top: 20px;
         display: flex;
-        gap: 15px;
+        gap: 10px;
         justify-content: center;
+        flex-wrap: wrap;
       }
 
       .control-btn {
-        padding: 12px 25px;
+        padding: clamp(8px, 2vw, 12px) clamp(15px, 4vw, 25px);
         background-color: #2563eb;
         color: white;
         border: none;
         border-radius: 8px;
         cursor: pointer;
-        font-size: 1em;
+        font-size: clamp(0.9rem, 3vw, 1rem);
         font-weight: 600;
         transition: all 0.3s ease;
         box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        width: calc(50% - 5px);
+        max-width: 200px;
       }
 
-      .control-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+      @media (max-width: 380px) {
+        .control-btn {
+          width: 100%;
+          max-width: none;
+        }
+      }
+
+      .control-btn:active {
+        transform: scale(0.98);
       }
 
       .control-btn.reset {
@@ -149,6 +188,7 @@
         text-align: center;
         font-weight: 600;
         animation: fadeIn 0.5s ease;
+        font-size: clamp(0.9rem, 3vw, 1rem);
       }
 
       .feedback.success {
@@ -175,17 +215,38 @@
       }
 
       .section {
-        margin-bottom: 30px;
-        padding: 20px;
+        margin-bottom: 20px;
+        padding: 15px;
         background: #f8fafc;
         border-radius: 12px;
+      }
+
+      @media (max-width: 600px) {
+        .section {
+          padding: 12px;
+        }
       }
 
       .divider {
         height: 2px;
         background: #e2e8f0;
-        margin: 30px 0;
+        margin: 20px 0;
         border-radius: 2px;
+      }
+
+      /* Ajustements pour écrans très petits */
+      @media (max-width: 320px) {
+        .container {
+          padding: 10px;
+        }
+
+        .word {
+          padding: 6px 10px;
+        }
+
+        .instruction {
+          padding: 10px;
+        }
       }
     </style>
   </head>
@@ -226,8 +287,6 @@
           <span class="word">sable</span>
           <span class="word">tambour</span>
           <span class="word">pantalon</span>
-          <span class="word">chanter</span>
-          <span class="word">champignon</span>
         </div>
       </div>
 
@@ -246,14 +305,14 @@
         </div>
       </div>
 
+      <div class="feedback"></div>
+
       <div class="controls">
         <button class="control-btn" onclick="verifyAnswers()">Vérifier</button>
         <button class="control-btn reset" onclick="resetGame()">
           Recommencer
         </button>
       </div>
-
-      <div class="feedback"></div>
     </div>
 
     <script>
@@ -269,15 +328,8 @@
         "toucan",
         "fascinant",
         "orange",
-        "chanter",
       ]
-      const wordsWithAmSound = [
-        "rampe",
-        "camper",
-        "tambour",
-        "champion",
-        "champignon",
-      ]
+      const wordsWithAmSound = ["rampe", "camper", "tambour", "champion"]
 
       function selectColor(color) {
         selectedColor = color
