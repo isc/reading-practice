@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu d'Orthographe - Sons an/am</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f0f4f8;
+        }
+
+        .header {
+            text-align: center;
+            color: #2c5282;
+            margin-bottom: 2rem;
+        }
+
+        .game-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .words-container {
+            border: 2px solid #4299e1;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            background: #f8fafc;
+        }
+
+        .words-container-header {
+            color: #2c5282;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #4299e1;
+        }
+
+        /* Zone des mots avec flexbox */
+        .words-list, .drop-zone {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 60px;
+            padding: 0.5rem;
+            align-items: flex-start;
+        }
+
+        /* Style uniforme pour les mots */
+        .word {
+            background: #4299e1;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            font-size: 14px;
+            line-height: 1.2;
+            height: fit-content;
+            margin: 0;
+        }
+
+        .word:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: #3182ce;
+        }
+
+        .word.selected {
+            background: #2c5282;
+            outline: 2px solid #2d3748;
+        }
+
+        .columns-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .column {
+            border: 2px solid #4299e1;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+
+        .column-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 2px solid #4299e1;
+            color: #2c5282;
+            font-weight: bold;
+        }
+
+        .phonetic {
+            color: #718096;
+            font-style: italic;
+        }
+
+        .drop-zone {
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .drop-zone:hover {
+            background-color: #ebf8ff;
+        }
+
+        .verify-btn {
+            display: block;
+            margin: 0 auto;
+            padding: 12px 24px;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+
+        .verify-btn:hover {
+            background: #38a169;
+        }
+
+        .word.correct {
+            background: #48bb78;
+        }
+
+        .word.incorrect {
+            background: #f56565;
+        }
+
+        .feedback {
+            text-align: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .feedback.success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .feedback.error {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #edf2f7;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Jeu d'Orthographe</h1>
+        <p>Place chaque mot dans la bonne colonne selon son orthographe</p>
+    </div>
+    
+    <div class="game-container">
+        <p class="instructions">
+            Cliquez sur un mot pour le sélectionner, puis cliquez sur une colonne pour le déplacer.<br>
+            Vous pouvez déplacer les mots entre les colonnes ou les remettre dans la liste du haut.
+        </p>
+        
+        <div class="words-container">
+            <div class="words-container-header">Mots à placer :</div>
+            <div class="words-list" id="wordsList">
+                <div class="word">orange</div>
+                <div class="word">lampe</div>
+                <div class="word">grande</div>
+                <div class="word">chante</div>
+                <div class="word">tambour</div>
+                <div class="word">plante</div>
+            </div>
+        </div>
+
+        <div class="columns-container">
+            <div class="column">
+                <div class="column-header">
+                    <span>an</span>
+                    <span class="phonetic">[ɑ̃]</span>
+                </div>
+                <div class="drop-zone" data-type="an"></div>
+            </div>
+            <div class="column">
+                <div class="column-header">
+                    <span>am</span>
+                    <span class="phonetic">[ɑ̃]</span>
+                </div>
+                <div class="drop-zone" data-type="am"></div>
+            </div>
+        </div>
+
+        <button class="verify-btn">Vérifier mes réponses</button>
+        <div class="feedback"></div>
+    </div>
+
+    <script>
+        const words = {
+            'orange': 'an',
+            'lampe': 'am',
+            'grande': 'an',
+            'chante': 'an',
+            'tambour': 'am',
+            'plante': 'an'
+        };
+
+        let selectedWord = null;
+
+        // Gestion de la sélection des mots
+        document.addEventListener('click', (e) => {
+            const word = e.target.closest('.word');
+            if (word) {
+                if (selectedWord === word) {
+                    word.classList.remove('selected');
+                    selectedWord = null;
+                } else {
+                    document.querySelectorAll('.word').forEach(w => w.classList.remove('selected'));
+                    word.classList.add('selected');
+                    selectedWord = word;
+                }
+            }
+        });
+
+        // Gestion des zones cliquables (liste et colonnes)
+        const handleZoneClick = (zone) => {
+            if (selectedWord) {
+                zone.appendChild(selectedWord);
+                selectedWord.classList.remove('selected');
+                selectedWord = null;
+            }
+        };
+
+        // Gestion des zones de dépôt
+        document.querySelectorAll('.drop-zone').forEach(dropZone => {
+            dropZone.addEventListener('click', (e) => {
+                if (e.target === dropZone) {
+                    handleZoneClick(dropZone);
+                }
+            });
+        });
+
+        // Permettre de remettre les mots dans la liste initiale
+        document.querySelector('.words-list').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget && selectedWord) {
+                handleZoneClick(e.target);
+            }
+        });
+
+        // Vérification des réponses
+        document.querySelector('.verify-btn').addEventListener('click', () => {
+            let allCorrect = true;
+            const feedback = document.querySelector('.feedback');
+            const totalWords = Object.keys(words).length;
+            let placedWords = 0;
+
+            document.querySelectorAll('.drop-zone').forEach(dropZone => {
+                placedWords += dropZone.querySelectorAll('.word').length;
+            });
+
+            if (placedWords < totalWords) {
+                allCorrect = false;
+            } else {
+                document.querySelectorAll('.drop-zone').forEach(dropZone => {
+                    const columnType = dropZone.dataset.type;
+                    dropZone.querySelectorAll('.word').forEach(word => {
+                        if (words[word.textContent] === columnType) {
+                            word.classList.add('correct');
+                            word.classList.remove('incorrect');
+                        } else {
+                            word.classList.add('incorrect');
+                            word.classList.remove('correct');
+                            allCorrect = false;
+                        }
+                    });
+                });
+            }
+
+            feedback.style.display = 'block';
+            if (allCorrect) {
+                feedback.textContent = 'Bravo ! Toutes les réponses sont correctes ! 🎉';
+                feedback.className = 'feedback success';
+            } else {
+                if (placedWords < totalWords) {
+                    feedback.textContent = 'Place tous les mots avant de vérifier ! 🤔';
+                } else {
+                    feedback.textContent = 'Il y a encore des erreurs. Essaie encore ! 💪';
+                }
+                feedback.className = 'feedback error';
+            }
+        });
+    </script>
+</body>
+</html>
