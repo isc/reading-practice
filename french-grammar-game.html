@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jeu de Grammaire - Singulier et Pluriel</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f0f4f8;
+      }
+
+      .header {
+        text-align: center;
+        color: #2c5282;
+        margin-bottom: 2rem;
+      }
+
+      .game-container {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      @media (min-width: 640px) {
+        .game-container {
+          padding: 2rem;
+        }
+      }
+
+      .exercise {
+        border: 2px solid #4299e1;
+        border-radius: 8px;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+      }
+
+      @media (min-width: 640px) {
+        .exercise {
+          padding: 1rem;
+        }
+      }
+
+      .exercise-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.5rem 0;
+        padding: 0.5rem;
+      }
+
+      @media (min-width: 640px) {
+        .exercise-row {
+          flex-wrap: nowrap;
+          gap: 1rem;
+          margin: 1rem 0;
+        }
+      }
+
+      .exercise-row:hover {
+        background-color: #ebf8ff;
+        border-radius: 4px;
+      }
+
+      .article {
+        color: #2c5282;
+        font-weight: bold;
+        min-width: 40px;
+      }
+
+      .options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        padding: 0.25rem;
+        border-radius: 4px;
+        flex: 1;
+      }
+
+      @media (min-width: 640px) {
+        .options {
+          flex-wrap: nowrap;
+          padding: 0.5rem;
+          gap: 1rem;
+        }
+      }
+
+      .option {
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+        border: 1px solid #4299e1;
+        font-size: 0.9rem;
+        text-align: center;
+        flex: 1;
+      }
+
+      @media (min-width: 640px) {
+        .option {
+          padding: 0.5rem 1rem;
+          font-size: 1rem;
+          flex: none;
+        }
+      }
+
+      .option:hover {
+        background-color: #ebf8ff;
+      }
+
+      .option.selected {
+        background-color: #4299e1;
+        color: white;
+      }
+
+      .separator {
+        color: #4299e1;
+        font-weight: bold;
+      }
+
+      .verify-btn {
+        display: block;
+        width: 100%;
+        max-width: 300px;
+        margin: 1.5rem auto 1rem;
+        padding: 12px 24px;
+        background: #48bb78;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: all 0.2s;
+      }
+
+      .verify-btn:hover {
+        background: #38a169;
+      }
+
+      .feedback {
+        text-align: center;
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 6px;
+        display: none;
+      }
+
+      .feedback.success {
+        background: #c6f6d5;
+        color: #276749;
+      }
+
+      .feedback.error {
+        background: #fed7d7;
+        color: #9b2c2c;
+      }
+
+      .instructions {
+        text-align: center;
+        color: #4a5568;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        background: #edf2f7;
+        border-radius: 6px;
+        font-size: 0.9rem;
+      }
+
+      @media (min-width: 640px) {
+        .instructions {
+          font-size: 1rem;
+        }
+      }
+
+      .option.correct {
+        background-color: #48bb78;
+        color: white;
+        border-color: #48bb78;
+      }
+
+      .option.incorrect {
+        background-color: #f56565;
+        color: white;
+        border-color: #f56565;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Grammaire</h1>
+      <p>Choisis la bonne forme du nom pour chaque article</p>
+    </div>
+
+    <div class="game-container">
+      <p class="instructions">
+        Clique sur la forme correcte du nom pour chaque ligne.
+      </p>
+
+      <div class="exercise">
+        <div class="exercise-row">
+          <span class="article">des</span>
+          <div class="options">
+            <span class="option" data-correct="false">toucan</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="true">toucans</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">les</span>
+          <div class="options">
+            <span class="option" data-correct="false">chanson</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="true">chansons</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">les</span>
+          <div class="options">
+            <span class="option" data-correct="false">lampe</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="true">lampes</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">l'</span>
+          <div class="options">
+            <span class="option" data-correct="true">ambulance</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="false">ambulances</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">une</span>
+          <div class="options">
+            <span class="option" data-correct="true">plante</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="false">plantes</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">le</span>
+          <div class="options">
+            <span class="option" data-correct="true">marchand</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="false">marchands</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">les</span>
+          <div class="options">
+            <span class="option" data-correct="false">enfant</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="true">enfants</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">un</span>
+          <div class="options">
+            <span class="option" data-correct="true">champ</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="false">champs</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">la</span>
+          <div class="options">
+            <span class="option" data-correct="true">chambre</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="false">chambres</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">les</span>
+          <div class="options">
+            <span class="option" data-correct="false">ampoule</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="true">ampoules</span>
+          </div>
+        </div>
+
+        <div class="exercise-row">
+          <span class="article">une</span>
+          <div class="options">
+            <span class="option" data-correct="true">branche</span>
+            <span class="separator">/</span>
+            <span class="option" data-correct="false">branches</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="verify-btn">Vérifier mes réponses</button>
+      <div class="feedback"></div>
+    </div>
+
+    <script>
+      // Gestion de la sélection des options
+      document.querySelectorAll(".option").forEach((option) => {
+        option.addEventListener("click", () => {
+          // Désélectionner les autres options dans le même groupe
+          const optionsGroup = option.closest(".options")
+          optionsGroup.querySelectorAll(".option").forEach((opt) => {
+            opt.classList.remove("selected")
+          })
+
+          // Sélectionner l'option cliquée
+          option.classList.add("selected")
+        })
+      })
+
+      // Vérification des réponses
+      document.querySelector(".verify-btn").addEventListener("click", () => {
+        const exerciseRows = document.querySelectorAll(".exercise-row")
+        let allCorrect = true
+        let allAnswered = true
+
+        exerciseRows.forEach((row) => {
+          const selectedOption = row.querySelector(".option.selected")
+          if (!selectedOption) {
+            allAnswered = false
+            return
+          }
+
+          // Retirer les classes de feedback précédentes
+          row.querySelectorAll(".option").forEach((opt) => {
+            opt.classList.remove("correct", "incorrect")
+          })
+
+          // Ajouter la classe appropriée à l'option sélectionnée
+          if (selectedOption.dataset.correct === "true") {
+            selectedOption.classList.add("correct")
+          } else {
+            selectedOption.classList.add("incorrect")
+            allCorrect = false
+          }
+        })
+
+        const feedback = document.querySelector(".feedback")
+        feedback.style.display = "block"
+
+        if (!allAnswered) {
+          feedback.textContent = "Choisis une réponse pour chaque ligne ! 🤔"
+          feedback.className = "feedback error"
+        } else if (allCorrect) {
+          feedback.textContent =
+            "Bravo ! Toutes les réponses sont correctes ! 🎉"
+          feedback.className = "feedback success"
+        } else {
+          feedback.textContent = "Il y a encore des erreurs. Essaie encore ! 💪"
+          feedback.className = "feedback error"
+        }
+      })
+    </script>
+  </body>
+</html>
