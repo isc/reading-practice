@@ -30,11 +30,17 @@
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       }
 
-      .score {
-        text-align: center;
-        font-size: 1.5rem;
+      .stats-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 20px;
         color: #333;
+      }
+
+      .score,
+      .timer {
+        font-size: 1.5rem;
       }
 
       .emoji-section {
@@ -71,11 +77,18 @@
         background-color: #357abd;
       }
 
+      .interaction-container {
+        height: 120px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+      }
+
       .buttons-container {
         display: flex;
         justify-content: center;
         gap: 20px;
-        margin-top: 20px;
       }
 
       .choice-btn {
@@ -96,10 +109,8 @@
       }
 
       .feedback {
+        font-size: 2rem;
         text-align: center;
-        margin-top: 20px;
-        font-size: 1.5rem;
-        height: 40px;
       }
 
       .correct {
@@ -108,6 +119,38 @@
 
       .incorrect {
         color: #dc3545;
+      }
+
+      .game-end {
+        text-align: center;
+      }
+
+      .game-end h2 {
+        color: #4a90e2;
+        margin-bottom: 20px;
+        font-size: 2rem;
+      }
+
+      .game-end p {
+        margin: 10px 0;
+        font-size: 1.25rem;
+        color: #333;
+      }
+
+      .restart-btn {
+        margin-top: 20px;
+        padding: 15px 30px;
+        font-size: 1.2rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .restart-btn:hover {
+        background-color: #357abd;
       }
 
       @media (max-width: 480px) {
@@ -130,7 +173,10 @@
   <body>
     <div class="container">
       <div class="game-container">
-        <div class="score">Score: <span id="scoreValue">0</span></div>
+        <div class="stats-container">
+          <div class="score">Score: <span id="scoreValue">0</span></div>
+          <div class="timer">Temps: <span id="timerValue">00:00</span></div>
+        </div>
         <div class="emoji-section">
           <div id="emojiDisplay"></div>
           <button
@@ -141,11 +187,12 @@
             🔊
           </button>
         </div>
-        <div class="buttons-container">
-          <button class="choice-btn" onclick="checkAnswer('d')">d</button>
-          <button class="choice-btn" onclick="checkAnswer('b')">b</button>
+        <div class="interaction-container">
+          <div id="buttonsOrFeedback" class="buttons-container">
+            <button class="choice-btn" onclick="checkAnswer('d')">d</button>
+            <button class="choice-btn" onclick="checkAnswer('b')">b</button>
+          </div>
         </div>
-        <div id="feedback" class="feedback"></div>
       </div>
     </div>
 
@@ -157,7 +204,7 @@
         { word: "dinde", emoji: "🦃", answer: "d" },
         { word: "douche", emoji: "🚿", answer: "d" },
         { word: "dé", emoji: "🎲", answer: "d" },
-        { word: "doughnut", emoji: "🍩", answer: "d" },
+        { word: "donut", emoji: "🍩", answer: "d" },
         { word: "dame", emoji: "👸", answer: "d" },
         { word: "doigt", emoji: "👆", answer: "d" },
         { word: "dent", emoji: "🦷", answer: "d" },
@@ -189,18 +236,107 @@
         { word: "bouquet", emoji: "💐", answer: "b" },
         { word: "basketball", emoji: "🏀", answer: "b" },
         { word: "baseball", emoji: "⚾", answer: "b" },
-        { word: "batiment", emoji: "🏢", answer: "b" },
+        { word: "bureau", emoji: "🏢", answer: "b" },
         { word: "batterie", emoji: "🔋", answer: "b" },
       ]
 
       let score = 0
       let currentIndex = 0
+      let startTime
+      let timerInterval
 
-      function speakWord() {
-        const currentWord = words[currentIndex].word
+      function formatTime(ms) {
+        const minutes = Math.floor(ms / 60000)
+        const seconds = Math.floor((ms % 60000) / 1000)
+        return `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`
+      }
+
+      function startTimer() {
+        startTime = Date.now()
+        timerInterval = setInterval(() => {
+          const elapsed = Date.now() - startTime
+          document.getElementById("timerValue").textContent =
+            formatTime(elapsed)
+        }, 1000)
+      }
+
+      function showGameEnd() {
+        const container = document.querySelector(".game-container")
+        const finalTime = document.getElementById("timerValue").textContent
+        clearInterval(timerInterval)
+
+        container.innerHTML = `
+                <div class="game-end">
+                    <h2>Félicitations ! 🎉</h2>
+                    <p>Vous avez terminé le jeu avec :</p>
+                    <p>Score : ${score} / ${words.length}</p>
+                    <p>Temps : ${finalTime}</p>
+                    <button class="restart-btn" onclick="restartGame()">Rejouer</button>
+                </div>
+            `
+      }
+
+      function restartGame() {
+        score = 0
+        currentIndex = 0
+        document.querySelector(".game-container").innerHTML = `
+                <div class="stats-container">
+                    <div class="score">Score: <span id="scoreValue">0</span></div>
+                    <div class="timer">Temps: <span id="timerValue">00:00</span></div>
+                </div>
+                <div class="emoji-section">
+                    <div id="emojiDisplay"></div>
+                    <button class="audio-btn" onclick="speakWord()" title="Écouter le mot">
+                        🔊
+                    </button>
+                </div>
+                <div class="interaction-container">
+                    <div id="buttonsOrFeedback" class="buttons-container">
+                        <button class="choice-btn" onclick="checkAnswer('d')">d</button>
+                        <button class="choice-btn" onclick="checkAnswer('b')">b</button>
+                    </div>
+                </div>
+            `
+        shuffleWords()
+        displayWord()
+        startTimer()
+      }
+
+      function configureFrenchVoice(utterance) {
+        const voices = window.speechSynthesis.getVoices()
+        // Chercher une voix française, d'abord native puis Google si nécessaire
+        const frenchVoice =
+          voices.find(
+            (voice) =>
+              voice.lang.startsWith("fr") && !voice.name.includes("Google")
+          ) || voices.find((voice) => voice.lang.startsWith("fr"))
+
+        if (frenchVoice) {
+          utterance.voice = frenchVoice
+        }
+
+        // Ajuster les paramètres pour une meilleure prononciation
+        // utterance.rate = 0.9
+        // utterance.pitch = 1
+
+        return utterance
+      }
+
+      function speakWord(w) {
+        const currentWord = w || words[currentIndex].word
         const utterance = new SpeechSynthesisUtterance(currentWord)
         utterance.lang = "fr-FR"
-        speechSynthesis.speak(utterance)
+
+        if (window.speechSynthesis.getVoices().length > 0) {
+          window.speechSynthesis.speak(configureFrenchVoice(utterance))
+        } else {
+          // Sinon, attendre que les voix soient chargées
+          window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.speak(configureFrenchVoice(utterance))
+          }
+        }
       }
 
       function shuffleWords() {
@@ -210,47 +346,59 @@
         }
       }
 
+      function createButtons() {
+        const container = document.getElementById("buttonsOrFeedback")
+        container.className = "buttons-container"
+
+        const isReversed = Math.random() < 0.5
+        const firstButton = isReversed ? "b" : "d"
+        const secondButton = isReversed ? "d" : "b"
+
+        container.innerHTML = `
+                <button class="choice-btn" onclick="checkAnswer('${firstButton}')">${firstButton}</button>
+                <button class="choice-btn" onclick="checkAnswer('${secondButton}')">${secondButton}</button>
+            `
+      }
+
+      function showFeedback(isCorrect) {
+        const container = document.getElementById("buttonsOrFeedback")
+        container.className = "feedback"
+        container.innerHTML = isCorrect
+          ? '<div class="correct">Bravo ! 🎉</div>'
+          : '<div class="incorrect">Essaie encore ! 😊</div>'
+      }
+
       function displayWord() {
         const currentWord = words[currentIndex]
         document.getElementById("emojiDisplay").textContent = currentWord.emoji
+        createButtons()
       }
 
       function checkAnswer(choice) {
         const currentWord = words[currentIndex]
         const isCorrect = choice === currentWord.answer
-        const feedback = document.getElementById("feedback")
 
         if (isCorrect) {
           score++
           document.getElementById("scoreValue").textContent = score
-          feedback.textContent = "Bravo ! 🎉"
-          feedback.className = "feedback correct"
-        } else {
-          feedback.textContent = "Essaie encore ! 😊"
-          feedback.className = "feedback incorrect"
         }
 
-        const buttons = document.querySelectorAll(".choice-btn")
-        buttons.forEach((btn) => (btn.disabled = true))
+        showFeedback(isCorrect)
 
         setTimeout(() => {
-          feedback.textContent = ""
-          buttons.forEach((btn) => (btn.disabled = false))
-
           currentIndex++
           if (currentIndex >= words.length) {
-            currentIndex = 0
-            score = 0
-            document.getElementById("scoreValue").textContent = score
-            shuffleWords()
+            showGameEnd()
+          } else {
+            displayWord()
           }
-          displayWord()
         }, 1500)
       }
 
       // Initialize game
       shuffleWords()
       displayWord()
+      startTimer()
     </script>
   </body>
 </html>
