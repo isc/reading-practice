@@ -168,6 +168,33 @@
           font-size: 2rem;
         }
       }
+
+      .scoreboard {
+        margin-top: 20px;
+        padding: 20px;
+      }
+
+      .scoreboard h3 {
+        color: #4a90e2;
+        margin-bottom: 10px;
+      }
+
+      .scoreboard-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .scoreboard-table th,
+      .scoreboard-table td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .scoreboard-table th {
+        color: #666;
+        font-weight: bold;
+      }
     </style>
   </head>
   <body>
@@ -192,6 +219,19 @@
             <button class="choice-btn" onclick="checkAnswer('d')">d</button>
             <button class="choice-btn" onclick="checkAnswer('b')">b</button>
           </div>
+        </div>
+        <div class="scoreboard">
+          <h3>Meilleurs scores</h3>
+          <table class="scoreboard-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Score</th>
+                <th>Temps</th>
+              </tr>
+            </thead>
+            <tbody id="scoreboardBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -262,20 +302,51 @@
         }, 1000)
       }
 
+      function saveScore(score, time) {
+        const scores = JSON.parse(localStorage.getItem("scores") || "[]")
+        scores.push({
+          date: new Date().toLocaleDateString(),
+          score: score,
+          time: time,
+        })
+        scores.sort((a, b) => b.score - a.score)
+        scores.splice(10) // Keep only top 10 scores
+        localStorage.setItem("scores", JSON.stringify(scores))
+        updateScoreboard()
+      }
+
+      function updateScoreboard() {
+        const scores = JSON.parse(localStorage.getItem("scores") || "[]")
+        const tbody = document.getElementById("scoreboardBody")
+        tbody.innerHTML = scores
+          .map(
+            (score) => `
+          <tr>
+            <td>${score.date}</td>
+            <td>${score.score} / ${words.length}</td>
+            <td>${score.time}</td>
+          </tr>
+        `
+          )
+          .join("")
+      }
+
       function showGameEnd() {
         const container = document.querySelector(".game-container")
         const finalTime = document.getElementById("timerValue").textContent
         clearInterval(timerInterval)
 
+        saveScore(score, finalTime)
+
         container.innerHTML = `
-                <div class="game-end">
-                    <h2>Félicitations ! 🎉</h2>
-                    <p>Vous avez terminé le jeu avec :</p>
-                    <p>Score : ${score} / ${words.length}</p>
-                    <p>Temps : ${finalTime}</p>
-                    <button class="restart-btn" onclick="restartGame()">Rejouer</button>
-                </div>
-            `
+          <div class="game-end">
+            <h2>Félicitations ! 🎉</h2>
+            <p>Vous avez terminé le jeu avec :</p>
+            <p>Score : ${score} / ${words.length}</p>
+            <p>Temps : ${finalTime}</p>
+            <button class="restart-btn" onclick="restartGame()">Rejouer</button>
+          </div>
+        `
       }
 
       function restartGame() {
@@ -399,6 +470,7 @@
       shuffleWords()
       displayWord()
       startTimer()
+      updateScoreboard()
     </script>
   </body>
 </html>
