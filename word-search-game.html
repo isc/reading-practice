@@ -173,42 +173,51 @@
     </div>
 
     <script>
-      const grid = [
-        "OLOSCLICHANTE",
-        "RADITAMBOURME",
-        "AMCIMMNCHESAE",
-        "NAALUPLANTENE",
-        "GRANDEISSORGT",
-        "ERACHANSONSEA",
-      ]
+      // https://twolimeprints.com/word-search-generator
+      const grid =
+        "RNLOINNAIIPL DNIARTEIIIHE EEOBEDNAIVAO NINIRECNIOCO IHVERUTNIEPO NCENHARETCIN".split(
+          " "
+        )
 
-      const words = [
-        "CHANSON",
-        "CHANTE",
-        "GRANDE",
-        "LAMPE",
-        "MANGE",
-        "ORANGE",
-        "PLANTE",
-        "TAMBOUR",
-      ]
+      const words = "LION LOIN PEINTURE COINCER TRAIN VIANDE CHIEN BIEN".split(
+        " "
+      )
+
+      // const grid = [
+      //   "OLOSCLICHANTE",
+      //   "RADITAMBOURME",
+      //   "AMCIMMNCHESAE",
+      //   "NAALUPLANTENE",
+      //   "GRANDEISSORGT",
+      //   "ERACHANSONSEA",
+      // ]
+
+      // const words = [
+      //   "CHANSON",
+      //   "CHANTE",
+      //   "GRANDE",
+      //   "LAMPE",
+      //   "MANGE",
+      //   "ORANGE",
+      //   "PLANTE",
+      //   "TAMBOUR",
+      // ]
 
       let selectedCells = []
       let foundWords = new Set()
       let isSelecting = false
       let startTouchCell = null
 
-      // Couleurs distinctes pour chaque mot
-      const colors = {
-        CHANSON: "#4A90E2",
-        CHANTE: "#F5A623",
-        GRANDE: "#7ED321",
-        LAMPE: "#D0021B",
-        MANGE: "#9013FE",
-        ORANGE: "#50E3C2",
-        PLANTE: "#4A4A4A",
-        TAMBOUR: "#B8E986",
-      }
+      const colors = [
+        "#4A90E2",
+        "#F5A623",
+        "#7ED321",
+        "#D0021B",
+        "#9013FE",
+        "#50E3C2",
+        "#4A4A4A",
+        "#B8E986",
+      ]
 
       function createGrid() {
         const table = document.getElementById("grid")
@@ -300,7 +309,7 @@
       function endSelection() {
         const selectedWord = getSelectedWord()
         if (words.includes(selectedWord) && !foundWords.has(selectedWord)) {
-          const color = colors[selectedWord]
+          const color = colors[words.findIndex((e) => e == selectedWord)]
           selectedCells.forEach((cell) => {
             cell.style.backgroundColor = color
             cell.style.color = "white"
@@ -331,7 +340,8 @@
         const wordItems = document.querySelectorAll(".word-item")
         wordItems.forEach((item) => {
           if (foundWords.has(item.textContent)) {
-            item.style.backgroundColor = colors[item.textContent]
+            item.style.backgroundColor =
+              colors[words.findIndex((e) => e == item.textContent)]
             item.style.color = "white"
           }
         })
@@ -344,7 +354,6 @@
         }
       }
 
-      // Initialisation du jeu
       createGrid()
       createWordList()
     </script>
