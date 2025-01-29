@@ -243,7 +243,10 @@
         </div>
         <div class="game-screen hidden">
           <div class="stats-container">
-            <div class="score">Score: <span id="scoreValue">0</span></div>
+            <div class="score">
+              Score: <span id="scoreValue">0</span> /
+              <span id="numberOfWords"></span>
+            </div>
             <div class="timer">Temps: <span id="timerValue">00:00</span></div>
           </div>
           <div class="emoji-section">
@@ -393,8 +396,7 @@
 
         saveScore(score, finalTime)
 
-        const container = document.querySelector(".game-end")
-        container.innerHTML = `
+        document.querySelector(".game-end").innerHTML = `
             <h2>Félicitations ! 🎉</h2>
             <p>Vous avez terminé le jeu avec :</p>
             <p>Score : ${score} / ${NUMBER_OF_WORDS}</p>
@@ -410,6 +412,7 @@
         currentIndex = 0
         hide(".welcome-screen, .scoreboard, .game-end")
         show(".game-screen")
+        document.getElementById("numberOfWords").textContent = NUMBER_OF_WORDS
         shuffleWords()
         displayWord()
         startTimer()
