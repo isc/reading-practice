@@ -325,6 +325,7 @@
       let currentIndex = 0
       let startTime
       let timerInterval
+      const NUMBER_OF_WORDS = 20
 
       function show(selector) {
         document
@@ -364,7 +365,7 @@
           score: score,
           time: time,
         })
-        scores.sort((a, b) => b.score - a.score)
+        scores.sort((a, b) => b.score - a.score || a.time.localeCompare(b.time))
         scores.splice(10) // Keep only top 10 scores
         localStorage.setItem("scores", JSON.stringify(scores))
         updateScoreboard()
@@ -378,7 +379,7 @@
             (score) => `
           <tr>
             <td>${score.date}</td>
-            <td>${score.score} / ${words.length}</td>
+            <td>${score.score} / ${NUMBER_OF_WORDS}</td>
             <td>${score.time}</td>
           </tr>
         `
@@ -396,7 +397,7 @@
         container.innerHTML = `
             <h2>Félicitations ! 🎉</h2>
             <p>Vous avez terminé le jeu avec :</p>
-            <p>Score : ${score} / ${words.length}</p>
+            <p>Score : ${score} / ${NUMBER_OF_WORDS}</p>
             <p>Temps : ${finalTime}</p>
             <button class="restart-btn" onclick="startGame()">Rejouer</button>
         `
@@ -472,11 +473,8 @@
 
         setTimeout(() => {
           currentIndex++
-          if (currentIndex >= words.length) {
-            showGameEnd()
-          } else {
-            displayWord()
-          }
+          if (currentIndex >= NUMBER_OF_WORDS) showGameEnd()
+          else displayWord()
         }, 1500)
       }
 
