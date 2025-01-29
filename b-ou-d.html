@@ -414,32 +414,14 @@
         startTimer()
       }
 
-      function configureFrenchVoice(utterance) {
-        const voices = window.speechSynthesis.getVoices()
-        // Chercher une voix française, d'abord native puis Google si nécessaire
-        const frenchVoice =
-          voices.find(
-            (voice) =>
-              voice.lang.startsWith("fr") && !voice.name.includes("Google")
-          ) || voices.find((voice) => voice.lang.startsWith("fr"))
-
-        if (frenchVoice) utterance.voice = frenchVoice
-
-        return utterance
-      }
-
       function speakWord(w) {
         const currentWord = w || words[currentIndex].word
         const utterance = new SpeechSynthesisUtterance(currentWord)
         utterance.lang = "fr-FR"
-
-        if (window.speechSynthesis.getVoices().length > 0) {
-          window.speechSynthesis.speak(configureFrenchVoice(utterance))
-        } else {
-          window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.speak(configureFrenchVoice(utterance))
-          }
-        }
+        utterance.voice = window.speechSynthesis
+          .getVoices()
+          .find((voice) => voice.lang == "fr-FR" && voice.name == "Thomas")
+        window.speechSynthesis.speak(utterance)
       }
 
       function shuffleWords() {
