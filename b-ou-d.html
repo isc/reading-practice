@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>D/B Recognition Game</title>
+    <title>b ou d ?</title>
     <style>
       * {
         margin: 0;
@@ -28,6 +28,38 @@
         border-radius: 15px;
         padding: 20px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .welcome-screen {
+        text-align: center;
+        padding: 40px 20px;
+      }
+
+      .welcome-screen h1 {
+        color: #4a90e2;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+      }
+
+      .welcome-screen p {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.2rem;
+      }
+
+      .start-btn {
+        padding: 15px 40px;
+        font-size: 1.3rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .start-btn:hover {
+        background-color: #357abd;
       }
 
       .stats-container {
@@ -195,31 +227,40 @@
         color: #666;
         font-weight: bold;
       }
+
+      .hidden {
+        display: none;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="game-container">
-        <div class="stats-container">
-          <div class="score">Score: <span id="scoreValue">0</span></div>
-          <div class="timer">Temps: <span id="timerValue">00:00</span></div>
+        <div class="welcome-screen">
+          <h1>b ou d ?</h1>
+          <p>Choisis la bonne lettre pour chaque mot !</p>
+          <button class="start-btn" onclick="startGame()">Commencer</button>
         </div>
-        <div class="emoji-section">
-          <div id="emojiDisplay"></div>
-          <button
-            class="audio-btn"
-            onclick="speakWord()"
-            title="Écouter le mot"
-          >
-            🔊
-          </button>
-        </div>
-        <div class="interaction-container">
-          <div id="buttonsOrFeedback" class="buttons-container">
-            <button class="choice-btn" onclick="checkAnswer('d')">d</button>
-            <button class="choice-btn" onclick="checkAnswer('b')">b</button>
+        <div class="game-screen hidden">
+          <div class="stats-container">
+            <div class="score">Score: <span id="scoreValue">0</span></div>
+            <div class="timer">Temps: <span id="timerValue">00:00</span></div>
+          </div>
+          <div class="emoji-section">
+            <div id="emojiDisplay"></div>
+            <button
+              class="audio-btn"
+              onclick="speakWord()"
+              title="Écouter le mot"
+            >
+              🔊
+            </button>
+          </div>
+          <div class="interaction-container">
+            <div id="buttonsOrFeedback" class="buttons-container"></div>
           </div>
         </div>
+        <div class="game-end hidden"></div>
         <div class="scoreboard">
           <h3>Meilleurs scores</h3>
           <table class="scoreboard-table">
@@ -285,6 +326,18 @@
       let startTime
       let timerInterval
 
+      function show(selector) {
+        document
+          .querySelectorAll(selector)
+          .forEach((e) => e.classList.remove("hidden"))
+      }
+
+      function hide(selector) {
+        document
+          .querySelectorAll(selector)
+          .forEach((e) => e.classList.add("hidden"))
+      }
+
       function formatTime(ms) {
         const minutes = Math.floor(ms / 60000)
         const seconds = Math.floor((ms % 60000) / 1000)
@@ -293,13 +346,15 @@
           .padStart(2, "0")}`
       }
 
+      function updateTime() {
+        const elapsed = Date.now() - startTime
+        document.getElementById("timerValue").textContent = formatTime(elapsed)
+      }
+
       function startTimer() {
         startTime = Date.now()
-        timerInterval = setInterval(() => {
-          const elapsed = Date.now() - startTime
-          document.getElementById("timerValue").textContent =
-            formatTime(elapsed)
-        }, 1000)
+        timerInterval = setInterval(updateTime, 1000)
+        updateTime()
       }
 
       function saveScore(score, time) {
@@ -332,44 +387,28 @@
       }
 
       function showGameEnd() {
-        const container = document.querySelector(".game-container")
         const finalTime = document.getElementById("timerValue").textContent
         clearInterval(timerInterval)
 
         saveScore(score, finalTime)
 
+        const container = document.querySelector(".game-end")
         container.innerHTML = `
-          <div class="game-end">
             <h2>Félicitations ! 🎉</h2>
             <p>Vous avez terminé le jeu avec :</p>
             <p>Score : ${score} / ${words.length}</p>
             <p>Temps : ${finalTime}</p>
-            <button class="restart-btn" onclick="restartGame()">Rejouer</button>
-          </div>
+            <button class="restart-btn" onclick="startGame()">Rejouer</button>
         `
+        hide(".game-screen")
+        show(".game-end, .scoreboard")
       }
 
-      function restartGame() {
+      function startGame() {
         score = 0
         currentIndex = 0
-        document.querySelector(".game-container").innerHTML = `
-                <div class="stats-container">
-                    <div class="score">Score: <span id="scoreValue">0</span></div>
-                    <div class="timer">Temps: <span id="timerValue">00:00</span></div>
-                </div>
-                <div class="emoji-section">
-                    <div id="emojiDisplay"></div>
-                    <button class="audio-btn" onclick="speakWord()" title="Écouter le mot">
-                        🔊
-                    </button>
-                </div>
-                <div class="interaction-container">
-                    <div id="buttonsOrFeedback" class="buttons-container">
-                        <button class="choice-btn" onclick="checkAnswer('d')">d</button>
-                        <button class="choice-btn" onclick="checkAnswer('b')">b</button>
-                    </div>
-                </div>
-            `
+        hide(".welcome-screen, .scoreboard, .game-end")
+        show(".game-screen")
         shuffleWords()
         displayWord()
         startTimer()
@@ -384,13 +423,7 @@
               voice.lang.startsWith("fr") && !voice.name.includes("Google")
           ) || voices.find((voice) => voice.lang.startsWith("fr"))
 
-        if (frenchVoice) {
-          utterance.voice = frenchVoice
-        }
-
-        // Ajuster les paramètres pour une meilleure prononciation
-        // utterance.rate = 0.9
-        // utterance.pitch = 1
+        if (frenchVoice) utterance.voice = frenchVoice
 
         return utterance
       }
@@ -403,7 +436,6 @@
         if (window.speechSynthesis.getVoices().length > 0) {
           window.speechSynthesis.speak(configureFrenchVoice(utterance))
         } else {
-          // Sinon, attendre que les voix soient chargées
           window.speechSynthesis.onvoiceschanged = () => {
             window.speechSynthesis.speak(configureFrenchVoice(utterance))
           }
@@ -466,10 +498,6 @@
         }, 1500)
       }
 
-      // Initialize game
-      shuffleWords()
-      displayWord()
-      startTimer()
       updateScoreboard()
     </script>
   </body>
