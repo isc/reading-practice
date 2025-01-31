@@ -135,6 +135,7 @@
         position: fixed;
         top: 50%;
         left: 50%;
+        width: 80%;
         transform: translate(-50%, -50%);
         background: #7ed321;
         color: white;
@@ -155,7 +156,6 @@
         border: none;
         border-radius: 4px;
         cursor: pointer;
-        display: none;
       }
 
       @media (max-width: 600px) {
@@ -258,7 +258,6 @@
 
       function createGridSelection() {
         const container = document.getElementById("gridSelection")
-
         gameGrids.forEach((game, index) => {
           const option = document.createElement("div")
           option.className = "grid-option"
@@ -275,11 +274,8 @@
         document.getElementById("backButton").style.display = "block"
         document.querySelector(".instructions").textContent =
           "Retrouve les mots de la liste."
-
-        // Réinitialiser le jeu
         foundWords = new Set()
         selectedCells = []
-
         createGrid()
         createWordList()
       }
@@ -433,14 +429,16 @@
         }
       }
 
+      function backButton() {
+        if (currentGame) returnToSelection()
+        else window.location.assign("./index.html")
+      }
+
       function returnToSelection() {
         document.getElementById("gridSelection").style.display = "grid"
         document.getElementById("gameContainer").style.display = "none"
-        document.getElementById("backButton").style.display = "none"
         document.querySelector(".instructions").textContent =
           "Choisis une grille pour commencer à jouer."
-
-        // Nettoyer le jeu
         const grid = document.getElementById("grid")
         const wordList = document.getElementById("wordList")
         grid.innerHTML = ""
@@ -449,10 +447,9 @@
         foundWords = new Set()
       }
 
-      // Initialisation
       document
         .getElementById("backButton")
-        .addEventListener("click", returnToSelection)
+        .addEventListener("click", backButton)
       createGridSelection()
     </script>
   </body>
