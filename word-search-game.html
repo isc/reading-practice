@@ -101,6 +101,7 @@
         font-weight: bold;
         cursor: pointer;
         user-select: none;
+        -webkit-user-select: none;
         transition: all 0.2s ease;
         padding: 0;
       }
@@ -116,6 +117,9 @@
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         min-width: 150px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 5px;
       }
 
       .word-item {
