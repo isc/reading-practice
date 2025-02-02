@@ -1,7 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap");
+@font-face {
+  font-family: "OpenDyslexicRegular";
+  src: url("./OpenDyslexic-Regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
 
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: "OpenDyslexicRegular", sans-serif;
   background: linear-gradient(135deg, #6e8efb, #a777e3);
   min-height: 100vh;
   margin: 0;
@@ -70,7 +75,7 @@ button:hover {
 #score,
 #timer,
 #level {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
 }
 #confetti {
