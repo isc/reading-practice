@@ -26,12 +26,12 @@ export function showEmoji(emoji) {
 }
 
 export function updateTimerDisplay(time) {
-  document.getElementById("timer").textContent = `Temps: ${time}s`
+  document.getElementById("timer").textContent = `Temps : ${time}s`
 }
 
 export function updateLevelDisplay(level) {
-  document.getElementById("level").textContent = `Niveau: ${
-    level.charAt(0).toUpperCase() + level.slice(1)
+  document.getElementById("level").textContent = `Niveau : ${
+    { easy: "Facile", medium: "Moyen", hard: "Difficile" }[level]
   }`
 }
 
@@ -55,7 +55,7 @@ export function setupKeyboardControls(onNext, onStart) {
     if (event.code !== "Space" && event.code !== "Enter") return
     const nextButton = document.getElementById("next")
     const startButton = document.getElementById("start")
-    
+
     if (nextButton.style.display !== "none") {
       event.preventDefault()
       onNext()

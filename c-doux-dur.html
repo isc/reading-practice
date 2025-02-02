@@ -1,399 +1,378 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>C doux ou C dur ?</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: "Arial", sans-serif;
-            background-color: #f0f2f5;
-            min-height: 100vh;
-        }
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f0f2f5;
+        min-height: 100vh;
+      }
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
 
-        .game-container {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+      .game-container {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
 
-        .welcome-screen {
-            text-align: center;
-            padding: 40px 20px;
-        }
+      .welcome-screen {
+        text-align: center;
+        padding: 40px 20px;
+      }
 
-        .welcome-screen h1 {
-            color: #4a90e2;
-            margin-bottom: 20px;
-            font-size: 2.5rem;
-        }
+      .welcome-screen h1 {
+        color: #4a90e2;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+      }
 
-        .welcome-screen p {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.2rem;
-        }
+      .welcome-screen p {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.2rem;
+      }
 
-        .start-btn {
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            background-color: #4a90e2;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+      .start-btn {
+        padding: 15px 40px;
+        font-size: 1.3rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
 
-        .start-btn:hover {
-            background-color: #357abd;
-        }
+      .start-btn:hover {
+        background-color: #357abd;
+      }
 
-        .stats-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            color: #333;
-        }
+      .stats-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        color: #333;
+      }
 
-        .score, .timer {
-            font-size: 1.5rem;
-        }
+      .score,
+      .timer {
+        font-size: 1.5rem;
+      }
 
-        .word-section {
-            width: 100%;
-            aspect-ratio: 1;
-            margin-bottom: 20px;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-color: #f8f9fa;
-            position: relative;
-        }
+      .word-section {
+        width: 100%;
+        aspect-ratio: 1;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f9fa;
+        position: relative;
+      }
 
-        .current-word {
-            font-size: 3.5rem;
-            margin-bottom: 20px;
-        }
+      .current-word {
+        font-size: 3.5rem;
+        margin-bottom: 20px;
+      }
 
-        .word-emoji {
-            font-size: 4rem;
-        }
+      .word-emoji {
+        font-size: 4rem;
+      }
 
-        .audio-btn {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 50px;
-            height: 50px;
-            border: none;
-            border-radius: 50%;
-            background-color: #4a90e2;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.2s;
-        }
+      .objective {
+        text-align: center;
+        font-size: 1.5rem;
+        color: #4a90e2;
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #e9ecef;
+        border-radius: 8px;
+      }
 
-        .audio-btn:hover {
-            background-color: #357abd;
-        }
+      .buttons-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+      }
 
-        .objective {
-            text-align: center;
-            font-size: 1.5rem;
-            color: #4a90e2;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #e9ecef;
-            border-radius: 8px;
-        }
+      .choice-btn {
+        padding: 15px 30px;
+        font-size: 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        background-color: #e9ecef;
+        color: #333;
+        transition: transform 0.2s, background-color 0.2s;
+      }
 
-        .buttons-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-        }
+      .choice-btn:hover {
+        transform: scale(1.05);
+        background-color: #dee2e6;
+      }
 
-        .choice-btn {
-            padding: 15px 30px;
-            font-size: 1.5rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            background-color: #e9ecef;
-            color: #333;
-            transition: transform 0.2s, background-color 0.2s;
-        }
+      .feedback {
+        font-size: 2rem;
+        text-align: center;
+        margin: 20px 0;
+      }
 
-        .choice-btn:hover {
-            transform: scale(1.05);
-            background-color: #dee2e6;
-        }
+      .correct {
+        color: #28a745;
+      }
 
-        .feedback {
-            font-size: 2rem;
-            text-align: center;
-            margin: 20px 0;
-        }
+      .incorrect {
+        color: #dc3545;
+      }
 
-        .correct {
-            color: #28a745;
-        }
+      .game-end {
+        text-align: center;
+      }
 
-        .incorrect {
-            color: #dc3545;
-        }
+      .game-end h2 {
+        color: #4a90e2;
+        margin-bottom: 20px;
+        font-size: 2rem;
+      }
 
-        .game-end {
-            text-align: center;
-        }
+      .game-end p {
+        margin: 10px 0;
+        font-size: 1.25rem;
+        color: #333;
+      }
 
-        .game-end h2 {
-            color: #4a90e2;
-            margin-bottom: 20px;
-            font-size: 2rem;
-        }
+      .restart-btn {
+        margin-top: 20px;
+        padding: 15px 30px;
+        font-size: 1.2rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
 
-        .game-end p {
-            margin: 10px 0;
-            font-size: 1.25rem;
-            color: #333;
-        }
+      .restart-btn:hover {
+        background-color: #357abd;
+      }
 
-        .restart-btn {
-            margin-top: 20px;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            background-color: #4a90e2;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .restart-btn:hover {
-            background-color: #357abd;
-        }
-
-        .hidden {
-            display: none;
-        }
+      .hidden {
+        display: none;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="game-container">
-            <div class="welcome-screen">
-                <h1>C doux ou C dur ?</h1>
-                <p>Trouve les mots où le C fait le bon son !</p>
-                <button class="start-btn" onclick="startGame()">Commencer</button>
-            </div>
-            <div class="game-screen hidden">
-                <div class="stats-container">
-                    <div class="score">Score: <span id="scoreValue">0</span> / 8</div>
-                    <div class="timer">Temps: <span id="timerValue">00:00</span></div>
-                </div>
-                <div class="objective" id="objective"></div>
-                <div class="word-section">
-                    <div class="current-word" id="currentWord"></div>
-                    <div class="word-emoji" id="wordEmoji"></div>
-                    <button class="audio-btn" onclick="speakWord()" title="Écouter le mot">🔊</button>
-                </div>
-                <div class="interaction-container">
-                    <div id="buttonsOrFeedback" class="buttons-container">
-                        <button class="choice-btn" onclick="checkAnswer(true)">Oui</button>
-                        <button class="choice-btn" onclick="checkAnswer(false)">Non</button>
-                    </div>
-                </div>
-            </div>
-            <div class="game-end hidden"></div>
+      <div class="game-container">
+        <div class="welcome-screen">
+          <h1>C doux ou C dur ?</h1>
+          <p>Trouve les mots où le C fait le bon son !</p>
+          <button class="start-btn" onclick="startGame()">Commencer</button>
         </div>
+        <div class="game-screen hidden">
+          <div class="stats-container">
+            <div class="score">Score: <span id="scoreValue">0</span> / 10</div>
+            <div class="timer">Temps: <span id="timerValue">00:00</span></div>
+          </div>
+          <div class="objective" id="objective"></div>
+          <div class="word-section">
+            <div class="current-word" id="currentWord"></div>
+            <div class="word-emoji" id="wordEmoji"></div>
+          </div>
+          <div class="interaction-container">
+            <div id="buttonsOrFeedback" class="buttons-container">
+              <button class="choice-btn" onclick="checkAnswer(true)">
+                Oui
+              </button>
+              <button class="choice-btn" onclick="checkAnswer(false)">
+                Non
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="game-end hidden"></div>
+      </div>
     </div>
 
     <script>
-        const words = [
-            // C dur (son K)
-            { word: "caméra", emoji: "📷", isDur: true },
-            { word: "couronne", emoji: "👑", isDur: true },
-            { word: "cube", emoji: "🎲", isDur: true },
-            { word: "écran", emoji: "🖥️", isDur: true },
-            { word: "café", emoji: "☕", isDur: true },
-            { word: "cadeau", emoji: "🎁", isDur: true },
-            { word: "cœur", emoji: "❤️", isDur: true },
-            { word: "carte", emoji: "🗺️", isDur: true },
-            { word: "carotte", emoji: "🥕", isDur: true },
-            { word: "école", emoji: "🏫", isDur: true },
+      const words = [
+        // C dur (son K)
+        { word: "caméra", emoji: "📷", isDur: true },
+        { word: "couronne", emoji: "👑", isDur: true },
+        { word: "cube", emoji: "🎲", isDur: true },
+        { word: "écran", emoji: "🖥️", isDur: true },
+        { word: "café", emoji: "☕", isDur: true },
+        { word: "cadeau", emoji: "🎁", isDur: true },
+        { word: "cœur", emoji: "❤️", isDur: true },
+        { word: "carte", emoji: "🗺️", isDur: true },
+        { word: "carotte", emoji: "🥕", isDur: true },
+        { word: "école", emoji: "🏫", isDur: true },
 
-            // C doux (son S)
-            { word: "citron", emoji: "🍋", isDur: false },
-            { word: "cygne", emoji: "🦢", isDur: false },
-            { word: "cerise", emoji: "🍒", isDur: false },
-            { word: "cinéma", emoji: "🎬", isDur: false },
-            { word: "ciel", emoji: "☁️", isDur: false },
-            { word: "cerceau", emoji: "⭕", isDur: false },
-            { word: "cigogne", emoji: "🦩", isDur: false },
-            { word: "ceinture", emoji: "👔", isDur: false },
-            { word: "cycle", emoji: "🔄", isDur: false },
-            { word: "cyprès", emoji: "🌲", isDur: false }
-        ];
+        // C doux (son S)
+        { word: "citron", emoji: "🍋", isDur: false },
+        { word: "cygne", emoji: "🦢", isDur: false },
+        { word: "cerise", emoji: "🍒", isDur: false },
+        { word: "cinéma", emoji: "🎬", isDur: false },
+        { word: "ciel", emoji: "☁️", isDur: false },
+        { word: "cerceau", emoji: "⭕", isDur: false },
+        { word: "cigogne", emoji: "🦩", isDur: false },
+        { word: "ceinture", emoji: "👔", isDur: false },
+        { word: "cycle", emoji: "🔄", isDur: false },
+        { word: "cyprès", emoji: "🌲", isDur: false },
+      ]
 
-        let score = 0;
-        let currentIndex = 0;
-        let startTime;
-        let timerInterval;
-        let currentObjectiveIsDur;
-        const NUMBER_OF_WORDS = 8;
-        let gameWords = [];
+      let score = 0
+      let currentIndex = 0
+      let startTime
+      let timerInterval
+      let currentObjectiveIsDur
+      const NUMBER_OF_WORDS = 10
+      let gameWords = []
 
-        function shuffleAndSelectWords() {
-            // Séparer les mots en deux catégories
-            const durWords = words.filter(w => w.isDur);
-            const douxWords = words.filter(w => w.isDur === false);
+      function shuffleAndSelectWords() {
+        // Séparer les mots en deux catégories
+        const durWords = words.filter((w) => w.isDur)
+        const douxWords = words.filter((w) => w.isDur === false)
 
-            // Mélanger chaque catégorie
-            for (let array of [durWords, douxWords]) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-            }
-
-            // Sélectionner 4 mots de chaque catégorie
-            gameWords = [...durWords.slice(0, 4), ...douxWords.slice(0, 4)];
-
-            // Mélanger les 8 mots sélectionnés
-            for (let i = gameWords.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [gameWords[i], gameWords[j]] = [gameWords[j], gameWords[i]];
-            }
+        // Mélanger chaque catégorie
+        for (let array of [durWords, douxWords]) {
+          for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+            ;[array[i], array[j]] = [array[j], array[i]]
+          }
         }
 
-        function setObjective() {
-            currentObjectiveIsDur = Math.random() < 0.5;
-            const objectiveText = currentObjectiveIsDur ? 
-                "Trouve les mots où le C fait le son [k] comme dans 'café'" :
-                "Trouve les mots où le C fait le son [s] comme dans 'citron'";
-            document.getElementById("objective").textContent = objectiveText;
+        gameWords = [...durWords.slice(0, 5), ...douxWords.slice(0, 5)]
+        for (let i = gameWords.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[gameWords[i], gameWords[j]] = [gameWords[j], gameWords[i]]
+        }
+      }
+
+      function setObjective() {
+        currentObjectiveIsDur =
+          currentObjectiveIsDur === undefined
+            ? Math.random() < 0.5
+            : !currentObjectiveIsDur
+        const objectiveText = currentObjectiveIsDur
+          ? "Trouve les mots où le C fait le son [k] comme dans 'café'"
+          : "Trouve les mots où le C fait le son [s] comme dans 'citron'"
+        document.getElementById("objective").textContent = objectiveText
+      }
+
+      function checkAnswer(playerChoice) {
+        const currentWord = gameWords[currentIndex]
+        const isCorrect =
+          (currentWord.isDur === currentObjectiveIsDur) === playerChoice
+
+        if (isCorrect) {
+          score++
+          document.getElementById("scoreValue").textContent = score
         }
 
-        function checkAnswer(playerChoice) {
-            const currentWord = gameWords[currentIndex];
-            const isCorrect = (currentWord.isDur === currentObjectiveIsDur) === playerChoice;
+        showFeedback(isCorrect)
 
-            if (isCorrect) {
-                score++;
-                document.getElementById("scoreValue").textContent = score;
-            }
+        setTimeout(() => {
+          currentIndex++
+          if (currentIndex >= NUMBER_OF_WORDS) {
+            showGameEnd()
+          } else {
+            displayWord()
+          }
+        }, 1500)
+      }
 
-            showFeedback(isCorrect);
+      function showFeedback(isCorrect) {
+        const container = document.getElementById("buttonsOrFeedback")
+        container.className = "feedback"
+        container.innerHTML = isCorrect
+          ? '<div class="correct">Bravo ! 🎉</div>'
+          : '<div class="incorrect">Essaie encore ! 😊</div>'
+      }
 
-            setTimeout(() => {
-                currentIndex++;
-                if (currentIndex >= NUMBER_OF_WORDS) {
-                    showGameEnd();
-                } else {
-                    displayWord();
-                }
-            }, 1500);
-        }
+      function displayWord() {
+        const currentWord = gameWords[currentIndex]
+        document.getElementById("currentWord").textContent = currentWord.word
+        document.getElementById("wordEmoji").textContent = currentWord.emoji
+        resetButtons()
+      }
 
-        function showFeedback(isCorrect) {
-            const container = document.getElementById("buttonsOrFeedback");
-            container.className = "feedback";
-            container.innerHTML = isCorrect ?
-                '<div class="correct">Bravo ! 🎉</div>' :
-                '<div class="incorrect">Essaie encore ! 😊</div>';
-        }
-
-        function displayWord() {
-            const currentWord = gameWords[currentIndex];
-            document.getElementById("currentWord").textContent = currentWord.word;
-            document.getElementById("wordEmoji").textContent = currentWord.emoji;
-            resetButtons();
-        }
-
-        function resetButtons() {
-            const container = document.getElementById("buttonsOrFeedback");
-            container.className = "buttons-container";
-            container.innerHTML = `
+      function resetButtons() {
+        const container = document.getElementById("buttonsOrFeedback")
+        container.className = "buttons-container"
+        container.innerHTML = `
                 <button class="choice-btn" onclick="checkAnswer(true)">Oui</button>
                 <button class="choice-btn" onclick="checkAnswer(false)">Non</button>
-            `;
-        }
+            `
+      }
 
-        function speakWord() {
-            const currentWord = gameWords[currentIndex].word;
-            const utterance = new SpeechSynthesisUtterance(currentWord);
-            utterance.lang = "fr-FR";
-            window.speechSynthesis.speak(utterance);
-        }
+      function startTimer() {
+        startTime = Date.now()
+        timerInterval = setInterval(updateTime, 1000)
+        updateTime()
+      }
 
-        function startTimer() {
-            startTime = Date.now();
-            timerInterval = setInterval(updateTime, 1000);
-            updateTime();
-        }
+      function updateTime() {
+        const elapsed = Date.now() - startTime
+        document.getElementById("timerValue").textContent = formatTime(elapsed)
+      }
 
-        function updateTime() {
-            const elapsed = Date.now() - startTime;
-            document.getElementById("timerValue").textContent = formatTime(elapsed);
-        }
+      function formatTime(ms) {
+        const minutes = Math.floor(ms / 60000)
+        const seconds = Math.floor((ms % 60000) / 1000)
+        return `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`
+      }
 
-        function formatTime(ms) {
-            const minutes = Math.floor(ms / 60000);
-            const seconds = Math.floor((ms % 60000) / 1000);
-            return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-        }
+      function showGameEnd() {
+        const finalTime = document.getElementById("timerValue").textContent
+        clearInterval(timerInterval)
 
-        function showGameEnd() {
-            const finalTime = document.getElementById("timerValue").textContent;
-            clearInterval(timerInterval);
-
-            document.querySelector(".game-end").innerHTML = `
+        document.querySelector(".game-end").innerHTML = `
                 <h2>Félicitations ! 🎉</h2>
                 <p>Tu as terminé le jeu avec :</p>
                 <p>Score : ${score} / ${NUMBER_OF_WORDS}</p>
                 <p>Temps : ${finalTime}</p>
                 <button class="restart-btn" onclick="startGame()">Rejouer</button>
-            `;
+            `
 
-            document.querySelector(".game-screen").classList.add("hidden");
-            document.querySelector(".game-end").classList.remove("hidden");
-        }
+        document.querySelector(".game-screen").classList.add("hidden")
+        document.querySelector(".game-end").classList.remove("hidden")
+      }
 
-        function startGame() {
-            score = 0;
-            currentIndex = 0;
-            document.querySelector(".welcome-screen").classList.add("hidden");
-            document.querySelector(".game-end").classList.add("hidden");
-            document.querySelector(".game-screen").classList.remove("hidden");
-            
-            shuffleAndSelectWords();
-            setObjective();
-            displayWord();
-            startTimer();
-        }
+      function startGame() {
+        score = 0
+        currentIndex = 0
+        document.querySelector(".welcome-screen").classList.add("hidden")
+        document.querySelector(".game-end").classList.add("hidden")
+        document.querySelector(".game-screen").classList.remove("hidden")
+
+        shuffleAndSelectWords()
+        setObjective()
+        displayWord()
+        startTimer()
+      }
     </script>
-</body>
+  </body>
 </html>
