@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Suivi Kiné</title>
+    <style>
+      :root {
+        --primary-color: #4a90e2;
+        --secondary-color: #f5f5f5;
+        --success-color: #2ecc71;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+
+      body {
+        background: var(--secondary-color);
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+      }
+
+      .card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      h1,
+      h2 {
+        color: var(--primary-color);
+        margin-bottom: 20px;
+      }
+
+      .exercise-list {
+        list-style: none;
+      }
+
+      .exercise-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        gap: 10px;
+      }
+
+      .exercise-item:last-child {
+        border-bottom: none;
+      }
+
+      .exercise-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .timer-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .timer-btn:hover {
+        opacity: 0.9;
+      }
+
+      .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+      }
+
+      .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9em;
+      }
+
+      .calendar-day.completed {
+        background: var(--success-color);
+        color: white;
+      }
+
+      .calendar-day:hover {
+        background: #eee;
+      }
+
+      .timer-display {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-left: 10px;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      #prevMonth,
+      #nextMonth {
+        width: 20px;
+        height: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <h1>Mes Exercices de Kiné</h1>
+        <ul class="exercise-list" id="exerciseList">
+          <!-- Les exercices seront ajoutés ici dynamiquement -->
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Calendrier de Suivi</h2>
+        <div class="calendar-header">
+          <button id="prevMonth">&lt;</button>
+          <span id="currentMonth"></span>
+          <button id="nextMonth">&gt;</button>
+        </div>
+        <div class="calendar" id="calendar">
+          <!-- Le calendrier sera généré ici -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const exercises = [
+        { id: 1, name: "Balle plante des pieds", timer: true },
+        {
+          id: 2,
+          name: "Étirement assis jambes tendues pointes de pied vers l’avant et l’arrière x10",
+          timer: false,
+        },
+        { id: 3, name: "Étirement assis sur les talons", timer: true },
+        {
+          id: 4,
+          name: "3x10 dos au mur, remonter et descendre les pointes de pieds",
+          timer: false,
+        },
+        { id: 5, name: "Squats classiques x10", timer: false },
+        { id: 6, name: "2x5 fentes gauche droite x3", timer: false },
+        { id: 7, name: "Squats fin sur la pointe des pieds x10", timer: false },
+        {
+          id: 8,
+          name: "Assis avec l'élastique, écartement gauche et droite x20",
+          timer: false,
+        },
+        { id: 9, name: "Chaise sur les talons 45s", timer: true },
+        {
+          id: 10,
+          name: "2x5 tours de balles gauche/droite dans un sens, puis dans l’autre",
+          timer: false,
+        },
+        {
+          id: 11,
+          name: "Face au mur, montées sur une pointe de pieds x10 gauche puis x10 droite",
+          timer: false,
+        },
+        { id: 12, name: "Squats avec saut x10", timer: false },
+      ]
+
+      // État de l'application
+      let currentTimer = null
+      let exerciseHistory =
+        JSON.parse(localStorage.getItem("exerciseHistory")) || {}
+
+      // Vérification de la réinitialisation quotidienne
+      const today = new Date().toLocaleDateString()
+      let completedExercises = exerciseHistory[today] || []
+
+      // Génération de la liste d'exercices
+      function generateExerciseList() {
+        const list = document.getElementById("exerciseList")
+        list.innerHTML = ""
+
+        exercises.forEach((exercise) => {
+          const li = document.createElement("li")
+          li.className = "exercise-item"
+
+          const checkbox = document.createElement("input")
+          checkbox.type = "checkbox"
+          checkbox.id = exercise.id
+          checkbox.className = "exercise-checkbox"
+          checkbox.checked = completedExercises.includes(exercise.id)
+          checkbox.addEventListener("change", () => toggleExercise(exercise.id))
+
+          const label = document.createElement("label")
+          label.textContent = exercise.name
+          label.htmlFor = exercise.id
+
+          li.appendChild(checkbox)
+          li.appendChild(label)
+
+          if (exercise.timer) {
+            const timerBtn = document.createElement("button")
+            timerBtn.className = "timer-btn"
+            timerBtn.textContent = "Timer 1min"
+            timerBtn.addEventListener("click", () => startTimer(li))
+
+            const timerDisplay = document.createElement("span")
+            timerDisplay.className = "timer-display"
+
+            li.appendChild(timerBtn)
+            li.appendChild(timerDisplay)
+          }
+
+          list.appendChild(li)
+        })
+      }
+
+      // Gestion du timer
+      function startTimer(exerciseElement) {
+        if (currentTimer) return
+
+        const display = exerciseElement.querySelector(".timer-display")
+        const timerBtn = exerciseElement.querySelector(".timer-btn")
+        timerBtn.classList.add("hidden")
+        let timeLeft = 60
+
+        display.textContent = "1:00"
+
+        currentTimer = setInterval(() => {
+          timeLeft--
+          const minutes = Math.floor(timeLeft / 60)
+          const seconds = timeLeft % 60
+          display.textContent = `${minutes}:${seconds
+            .toString()
+            .padStart(2, "0")}`
+
+          if (timeLeft <= 0) {
+            clearInterval(currentTimer)
+            currentTimer = null
+            display.textContent = "Terminé!"
+            setTimeout(() => (display.textContent = ""), 2000)
+            beep(300, 530, 100)
+          }
+        }, 1000)
+      }
+
+      // Gestion des exercices complétés
+      function toggleExercise(id) {
+        if (completedExercises.includes(id)) {
+          completedExercises = completedExercises.filter((e) => e !== id)
+        } else {
+          completedExercises.push(id)
+        }
+
+        // Mise à jour de l'historique
+        exerciseHistory[today] = completedExercises
+        localStorage.setItem("exerciseHistory", JSON.stringify(exerciseHistory))
+
+        updateCalendar()
+      }
+
+      // Gestion du calendrier
+      let currentDate = new Date()
+
+      function updateCalendar() {
+        const calendar = document.getElementById("calendar")
+        const currentMonthDisplay = document.getElementById("currentMonth")
+
+        const year = currentDate.getFullYear()
+        const month = currentDate.getMonth()
+
+        currentMonthDisplay.textContent = new Date(
+          year,
+          month,
+          1
+        ).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+
+        calendar.innerHTML = ""
+
+        // Ajout des en-têtes des jours
+        ;["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].forEach((day) => {
+          const dayHeader = document.createElement("div")
+          dayHeader.className = "calendar-day"
+          dayHeader.textContent = day
+          calendar.appendChild(dayHeader)
+        })
+
+        const firstDay = new Date(year, month, 1)
+        const lastDay = new Date(year, month + 1, 0)
+
+        // Ajout des jours vides au début
+        let firstDayIndex = firstDay.getDay() || 7
+        for (let i = 1; i < firstDayIndex; i++) {
+          calendar.appendChild(document.createElement("div"))
+        }
+
+        // Ajout des jours du mois
+        for (let day = 1; day <= lastDay.getDate(); day++) {
+          const dateDiv = document.createElement("div")
+          dateDiv.className = "calendar-day"
+          dateDiv.textContent = day
+
+          const dateStr = new Date(year, month, day).toLocaleDateString()
+          if (exerciseHistory[dateStr]?.length > 0) {
+            dateDiv.classList.add("completed")
+            dateDiv.style.opacity =
+              exerciseHistory[dateStr].length / exercises.length
+          }
+
+          calendar.appendChild(dateDiv)
+        }
+      }
+
+      // Navigation dans le calendrier
+      document.getElementById("prevMonth").addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() - 1)
+        updateCalendar()
+      })
+
+      document.getElementById("nextMonth").addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() + 1)
+        updateCalendar()
+      })
+
+      const myAudioContext = new AudioContext()
+
+      function beep(duration, frequency, volume) {
+        return new Promise((resolve, reject) => {
+          duration = duration || 200 // Default duration in milliseconds
+          frequency = frequency || 440 // Default frequency in hertz
+          volume = volume || 100 // Default volume as a percentage
+
+          try {
+            let oscillatorNode = myAudioContext.createOscillator()
+            let gainNode = myAudioContext.createGain()
+            oscillatorNode.connect(gainNode)
+
+            oscillatorNode.frequency.value = frequency
+            oscillatorNode.type = "square"
+            gainNode.connect(myAudioContext.destination)
+
+            gainNode.gain.value = volume * 0.01
+            oscillatorNode.start(myAudioContext.currentTime)
+            oscillatorNode.stop(myAudioContext.currentTime + duration * 0.001)
+
+            oscillatorNode.onended = () => {
+              resolve()
+            }
+          } catch (error) {
+            reject(error)
+          }
+        })
+      }
+
+      // Initialisation
+      generateExerciseList()
+      updateCalendar()
+    </script>
+  </body>
+</html>
