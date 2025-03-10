@@ -383,6 +383,12 @@
       // Initialisation
       generateExerciseList()
       updateCalendar()
+
+      function enableWakeLock() {
+        document.removeEventListener("click", enableWakeLock, false)
+        navigator.wakeLock.request("screen")
+      }
+      document.addEventListener("click", enableWakeLock, false)
     </script>
   </body>
 </html>
