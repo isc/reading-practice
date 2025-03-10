@@ -140,7 +140,7 @@
   <body>
     <div class="container">
       <div class="card">
-        <h1>Mes Exercices de Kiné</h1>
+        <h1>Exercices de Kiné</h1>
         <ul class="exercise-list" id="exerciseList">
           <!-- Les exercices seront ajoutés ici dynamiquement -->
         </ul>
@@ -203,7 +203,6 @@
       const today = new Date().toLocaleDateString()
       let completedExercises = exerciseHistory[today] || []
 
-      // Génération de la liste d'exercices
       function generateExerciseList() {
         const list = document.getElementById("exerciseList")
         list.innerHTML = ""
@@ -243,7 +242,6 @@
         })
       }
 
-      // Gestion du timer
       function startTimer(exerciseElement) {
         if (currentTimer) return
 
@@ -272,22 +270,15 @@
         }, 1000)
       }
 
-      // Gestion des exercices complétés
       function toggleExercise(id) {
-        if (completedExercises.includes(id)) {
+        if (completedExercises.includes(id))
           completedExercises = completedExercises.filter((e) => e !== id)
-        } else {
-          completedExercises.push(id)
-        }
-
-        // Mise à jour de l'historique
+        else completedExercises.push(id)
         exerciseHistory[today] = completedExercises
         localStorage.setItem("exerciseHistory", JSON.stringify(exerciseHistory))
-
         updateCalendar()
       }
 
-      // Gestion du calendrier
       let currentDate = new Date()
 
       function updateCalendar() {
@@ -339,7 +330,6 @@
         }
       }
 
-      // Navigation dans le calendrier
       document.getElementById("prevMonth").addEventListener("click", () => {
         currentDate.setMonth(currentDate.getMonth() - 1)
         updateCalendar()
