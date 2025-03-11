@@ -68,16 +68,11 @@
       }
 
       .timer-btn {
-        background: var(--primary-color);
-        color: white;
-        border: none;
+        border: 1px solid var(--primary-color);
         padding: 5px 10px;
         border-radius: 5px;
         cursor: pointer;
-      }
-
-      .timer-btn:hover {
-        opacity: 0.9;
+        background-color: transparent;
       }
 
       .calendar {
@@ -113,13 +108,6 @@
         background: #eee;
       }
 
-      .timer-display {
-        font-size: 1.5em;
-        font-weight: bold;
-        color: var(--primary-color);
-        margin-left: 10px;
-      }
-
       @media (max-width: 768px) {
         .container {
           grid-template-columns: 1fr;
@@ -135,9 +123,42 @@
         width: 20px;
         height: 20px;
       }
+
+      .timer-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+
+      .timer-overlay.active {
+        display: flex;
+      }
+
+      .timer-overlay .timer-display {
+        font-size: 8em;
+        color: white;
+      }
+
+      .timer-overlay .exercise-name {
+        color: white;
+        font-size: 1.5em;
+        margin-top: 20px;
+      }
     </style>
   </head>
   <body>
+    <div class="timer-overlay" id="timerOverlay">
+      <div class="timer-display"></div>
+      <div class="exercise-name"></div>
+    </div>
     <div class="container">
       <div class="card">
         <h1>Exercices de Kiné</h1>
@@ -163,7 +184,7 @@
         { id: 1, name: "Balle plante des pieds", timer: true },
         {
           id: 2,
-          name: "Étirement assis jambes tendues pointes de pied vers l’avant et l’arrière x10",
+          name: "Étirement assis jambes tendues pointes de pied vers l'avant et l'arrière x10",
           timer: false,
         },
         { id: 3, name: "Étirement assis sur les talons", timer: true },
@@ -183,7 +204,7 @@
         { id: 9, name: "Chaise sur les talons 45s", timer: true },
         {
           id: 10,
-          name: "2x5 tours de balles gauche/droite dans un sens, puis dans l’autre",
+          name: "2x5 tours de balles gauche/droite dans un sens, puis dans l'autre",
           timer: false,
         },
         {
@@ -195,7 +216,6 @@
       ]
 
       // État de l'application
-      let currentTimer = null
       let exerciseHistory =
         JSON.parse(localStorage.getItem("exerciseHistory")) || {}
 
@@ -228,43 +248,37 @@
           if (exercise.timer) {
             const timerBtn = document.createElement("button")
             timerBtn.className = "timer-btn"
-            timerBtn.textContent = "Timer 1min"
-            timerBtn.addEventListener("click", () => startTimer(li))
-
-            const timerDisplay = document.createElement("span")
-            timerDisplay.className = "timer-display"
-
+            timerBtn.textContent = "⏱️"
+            timerBtn.addEventListener("click", () => startTimer(exercise.name))
             li.appendChild(timerBtn)
-            li.appendChild(timerDisplay)
           }
 
           list.appendChild(li)
         })
       }
 
-      function startTimer(exerciseElement) {
-        if (currentTimer) return
+      function startTimer(exerciseName) {
+        const overlay = document.getElementById("timerOverlay")
+        const overlayDisplay = overlay.querySelector(".timer-display")
+        const overlayExerciseName = overlay.querySelector(".exercise-name")
 
-        const display = exerciseElement.querySelector(".timer-display")
-        const timerBtn = exerciseElement.querySelector(".timer-btn")
-        timerBtn.classList.add("hidden")
+        overlay.classList.add("active")
+        overlayDisplay.textContent = "1:00"
+        overlayExerciseName.textContent = exerciseName
+
         let timeLeft = 60
 
-        display.textContent = "1:00"
-
-        currentTimer = setInterval(() => {
+        let currentTimer = setInterval(() => {
           timeLeft--
           const minutes = Math.floor(timeLeft / 60)
           const seconds = timeLeft % 60
-          display.textContent = `${minutes}:${seconds
-            .toString()
-            .padStart(2, "0")}`
+          const timeString = `${minutes}:${seconds.toString().padStart(2, "0")}`
+          overlayDisplay.textContent = timeString
 
           if (timeLeft <= 0) {
             clearInterval(currentTimer)
             currentTimer = null
-            display.textContent = "Terminé!"
-            setTimeout(() => (display.textContent = ""), 2000)
+            overlay.classList.remove("active")
             beep(300, 530, 100)
           }
         }, 1000)
