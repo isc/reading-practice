@@ -6,9 +6,13 @@
     <title>Suivi Kiné</title>
     <style>
       :root {
-        --primary-color: #4a90e2;
-        --secondary-color: #f5f5f5;
-        --success-color: #2ecc71;
+        --primary-color: #34d399;
+        --secondary-color: #1a1a1a;
+        --success-color: #34d399;
+        --text-color: #e5e7eb;
+        --card-bg: #2d2d2d;
+        --border-color: #404040;
+        --hover-color: #404040;
       }
 
       * {
@@ -21,6 +25,7 @@
       body {
         background: var(--secondary-color);
         padding: 20px;
+        color: var(--text-color);
       }
 
       .container {
@@ -32,10 +37,10 @@
       }
 
       .card {
-        background: white;
+        background: var(--card-bg);
         border-radius: 10px;
         padding: 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
       }
 
       h1,
@@ -51,9 +56,9 @@
       .exercise-item {
         display: flex;
         align-items: center;
-        padding: 10px;
-        border-bottom: 1px solid #eee;
-        gap: 10px;
+        padding: 15px 10px;
+        border-bottom: 1px solid var(--border-color);
+        gap: 15px;
       }
 
       .exercise-item:last-child {
@@ -61,18 +66,21 @@
       }
 
       .exercise-checkbox {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         cursor: pointer;
         flex-shrink: 0;
+        accent-color: var(--success-color);
       }
 
       .timer-btn {
         border: 1px solid var(--primary-color);
-        padding: 5px 10px;
+        padding: 12px 16px;
         border-radius: 5px;
         cursor: pointer;
-        background-color: transparent;
+        background-color: var(--hover-color);
+        color: var(--text-color);
+        min-width: 44px;
       }
 
       .calendar {
@@ -85,7 +93,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        padding: 10px 0;
       }
 
       .calendar-day {
@@ -93,25 +102,17 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: white;
+        background: var(--card-bg);
         border-radius: 5px;
         cursor: pointer;
         font-size: 0.9em;
+        border: 1px solid var(--border-color);
+        position: relative;
       }
 
-      .calendar-day.completed {
-        background: var(--success-color);
-        color: white;
-      }
-
-      .calendar-day:hover {
-        background: #eee;
-      }
-
-      @media (max-width: 768px) {
-        .container {
-          grid-template-columns: 1fr;
-        }
+      #currentMonth {
+        font-size: 1.1em;
+        font-weight: 500;
       }
 
       .hidden {
@@ -120,8 +121,16 @@
 
       #prevMonth,
       #nextMonth {
-        width: 20px;
-        height: 20px;
+        width: 32px;
+        height: 32px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .timer-overlay {
@@ -143,14 +152,47 @@
       }
 
       .timer-overlay .timer-display {
-        font-size: 8em;
+        font-size: 5em;
         color: white;
+        margin-bottom: 20px;
       }
 
       .timer-overlay .exercise-name {
         color: white;
-        font-size: 1.5em;
+        font-size: 1.2em;
         margin-top: 20px;
+        text-align: center;
+        padding: 0 20px;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          grid-template-columns: 1fr;
+          padding: 10px;
+          gap: 10px;
+        }
+
+        body {
+          padding: 10px;
+        }
+
+        .card {
+          padding: 15px;
+        }
+
+        .calendar-day {
+          min-height: 40px;
+          font-size: 1em;
+        }
+
+        h1 {
+          font-size: 1.5em;
+        }
+
+        h2 {
+          font-size: 1.3em;
+        }
       }
     </style>
   </head>
@@ -335,9 +377,9 @@
 
           const dateStr = new Date(year, month, day).toLocaleDateString()
           if (exerciseHistory[dateStr]?.length > 0) {
-            dateDiv.classList.add("completed")
-            dateDiv.style.opacity =
+            const completionRatio =
               exerciseHistory[dateStr].length / exercises.length
+            dateDiv.style.background = `rgba(52, 211, 153, ${completionRatio})`
           }
 
           calendar.appendChild(dateDiv)
