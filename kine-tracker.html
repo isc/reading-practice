@@ -152,9 +152,8 @@
       }
 
       .timer-overlay .timer-display {
-        font-size: 5em;
+        font-size: 8em;
         color: white;
-        margin-bottom: 20px;
       }
 
       .timer-overlay .exercise-name {
@@ -243,6 +242,7 @@
           name: "Assis avec l'élastique, écartement gauche et droite x20",
           timer: false,
         },
+        { id: 13, name: "Pompes x10", timer: false },
         { id: 9, name: "Chaise sur les talons 45s", timer: true },
         {
           id: 10,
@@ -255,6 +255,7 @@
           timer: false,
         },
         { id: 12, name: "Squats avec saut x10", timer: false },
+        { id: 14, name: "Planche", timer: true },
       ]
 
       // État de l'application
@@ -300,6 +301,7 @@
       }
 
       function startTimer(exerciseName) {
+        beep(100, 400, 80)
         const overlay = document.getElementById("timerOverlay")
         const overlayDisplay = overlay.querySelector(".timer-display")
         const overlayExerciseName = overlay.querySelector(".exercise-name")
@@ -317,11 +319,12 @@
           const timeString = `${minutes}:${seconds.toString().padStart(2, "0")}`
           overlayDisplay.textContent = timeString
 
+          if ([45, 30, 15].includes(timeLeft)) beep(200, 630, 80)
           if (timeLeft <= 0) {
             clearInterval(currentTimer)
             currentTimer = null
             overlay.classList.remove("active")
-            beep(300, 530, 100)
+            beep(500, 530, 100)
           }
         }, 1000)
       }
