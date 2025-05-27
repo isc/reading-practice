@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mölkky - Suivi de Score</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <button class="rules-btn" onclick="showRules()">📋 Règles</button>
+        <h1>🎯 Mölkky</h1>
+        <p>Suivi de Score</p>
+      </div>
+
+      <div class="game-info">
+        <div class="target-score">Objectif: 50 points</div>
+        <div class="game-status" id="gameStatus">En attente</div>
+      </div>
+
+      <div class="players-list" id="playersList">
+        <!-- Les joueurs seront ajoutés ici dynamiquement -->
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-reset" onclick="resetScores()">Reset</button>
+        <button class="btn btn-new-game" onclick="newGame()">
+          Nouvelle Partie
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal de victoire -->
+    <div id="winnerModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>🏆 Victoire !</h2>
+        <p id="winnerText"></p>
+        <button onclick="newGame()">Nouvelle Partie</button>
+      </div>
+    </div>
+
+    <!-- Modal des règles -->
+    <div id="rulesModal" class="modal rules-modal hidden">
+      <div class="modal-content">
+        <h2>📋 Règles du Mölkky</h2>
+        <ul class="rules-list">
+          <li><strong>Objectif :</strong> Atteindre exactement 50 points</li>
+          <li>
+            <strong>Score :</strong> Renverser 1 quille = son numéro, plusieurs
+            quilles = nombre de quilles tombées
+          </li>
+          <li>
+            <strong>Dépassement :</strong> Si vous dépassez 50 points, votre
+            score retombe à 25
+          </li>
+          <li>
+            <strong>Élimination :</strong> 3 lancers ratés consécutifs =
+            élimination
+          </li>
+          <li>
+            <strong>Victoire :</strong> Premier à atteindre exactement 50 points
+          </li>
+          <li>
+            <strong>Distance :</strong> Lancer depuis la ligne de lancement (3-4
+            mètres des quilles)
+          </li>
+          <li>
+            <strong>Quilles :</strong> Les quilles sont remises en place sur le
+            terrain depuis leur base
+          </li>
+        </ul>
+        <button class="close-btn" onclick="hideRules()">Fermer</button>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
