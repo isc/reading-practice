@@ -213,16 +213,7 @@ body {
   color: #a0a0a0;
 }
 
-.action-buttons {
-  padding: 20px;
-  display: flex;
-  gap: 8px;
-  background: #1a1a1a;
-  border-top: 1px solid #2a2a2a;
-}
-
 .btn {
-  flex: 1;
   padding: 10px;
   border: none;
   border-radius: 6px;
@@ -230,24 +221,6 @@ body {
   cursor: pointer;
   transition: background-color 0.2s ease;
   font-size: 14px;
-}
-
-.btn-reset {
-  background: #444;
-  color: #e0e0e0;
-}
-
-.btn-reset:hover {
-  background: #555;
-}
-
-.btn-new-game {
-  background: #4ade80;
-  color: #000;
-}
-
-.btn-new-game:hover {
-  background: #22c55e;
 }
 
 .hidden {
@@ -357,4 +330,268 @@ body {
   font-size: 11px;
   color: #a0a0a0;
   margin-bottom: 4px;
+}
+
+/* Styles pour les équipes */
+.team-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+/* Noms des joueurs dans les cartes d'équipe */
+.team-header-card .players-names {
+  color: #e0e0e0;
+  font-weight: 500;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: 4px;
+}
+
+.player-name-container {
+  display: flex;
+  align-items: center;
+}
+
+.player-input-container {
+  width: 100%;
+  display: flex;
+}
+
+.player-name-input {
+  width: 100%;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 16px;
+  color: #e0e0e0;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.player-name-input:focus {
+  border-color: #666;
+}
+
+.team-select {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #e0e0e0;
+  outline: none;
+  cursor: pointer;
+}
+
+.team-select:focus {
+  border-color: #666;
+}
+
+.add-player-btn {
+  background: #4ade80;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.add-player-btn:hover {
+  background: #22c55e;
+}
+
+.start-game-section {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.start-game-info p {
+  margin: 0 0 8px 0;
+  color: #e0e0e0;
+  font-size: 14px;
+}
+
+.start-game-info .error {
+  color: #ef4444;
+  font-size: 13px;
+}
+
+.btn-start-game {
+  background: #4ade80;
+  color: #000;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 24px;
+  margin-top: 12px;
+}
+
+.btn-start-game:hover:not(:disabled) {
+  background: #22c55e;
+}
+
+.btn-start-game:disabled {
+  background: #444;
+  color: #888;
+  cursor: not-allowed;
+}
+
+
+/* Styles pour les cartes d'équipe */
+.team-card {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.team-card.active {
+  border-color: #666;
+  background: #252525;
+}
+
+.team-card.winner {
+  border-color: #4ade80;
+  background: #1a2e1a;
+}
+
+.team-card.eliminated {
+  opacity: 0.5;
+  border-color: #ef4444;
+  background: #2a1a1a;
+}
+
+.team-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.team-name-container {
+  display: flex;
+  align-items: center;
+}
+
+.team-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.team-score {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e0e0e0;
+  background: #2a2a2a;
+  padding: 6px 12px;
+  border-radius: 6px;
+  min-width: 50px;
+  text-align: center;
+}
+
+
+.players-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.team-player {
+  background: #2a2a2a;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 16px;
+  color: #e0e0e0;
+  border: 1px solid transparent;
+}
+
+.team-player.current-player {
+  border-color: #4ade80;
+  background: #1a2a1a;
+  font-weight: 500;
+}
+
+.current-player-indicator {
+  margin-top: 6px;
+  color: #4ade80;
+  font-size: 12px;
+}
+
+.team-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.team-stats {
+  font-size: 12px;
+  color: #a0a0a0;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid #333;
+}
+
+/* Style simple pour les joueurs avant le jeu */
+.simple-player-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  color: #e0e0e0;
+}
+
+.simple-player-card .player-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.simple-player-card .team-name {
+  font-size: 12px;
+  color: #a0a0a0;
+  margin-left: auto;
+}
+
+.delete-player-btn {
+  background: transparent;
+  color: #a0a0a0;
+  border: none;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: auto;
+  transition: color 0.2s ease;
+}
+
+.delete-player-btn:hover {
+  color: #ef4444;
 }
