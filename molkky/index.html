@@ -19,19 +19,18 @@
         <div class="game-status" id="gameStatus">En attente</div>
       </div>
 
-      <div class="players-list" id="playersList">
-        <!-- Les joueurs seront ajoutés ici dynamiquement -->
-      </div>
+      <div class="players-list" id="playersList"></div>
 
       <div class="action-buttons">
-        <button class="btn btn-reset" onclick="resetScores()">Reset</button>
+        <button class="btn btn-reset" onclick="resetScores()">
+          Réinitialiser
+        </button>
         <button class="btn btn-new-game" onclick="newGame()">
           Nouvelle Partie
         </button>
       </div>
     </div>
 
-    <!-- Modal de victoire -->
     <div id="winnerModal" class="modal hidden">
       <div class="modal-content">
         <h2>🏆 Victoire !</h2>
@@ -40,7 +39,6 @@
       </div>
     </div>
 
-    <!-- Modal des règles -->
     <div id="rulesModal" class="modal rules-modal hidden">
       <div class="modal-content">
         <h2>📋 Règles du Mölkky</h2>
