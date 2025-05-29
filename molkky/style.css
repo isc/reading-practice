@@ -7,14 +7,12 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: #0a0a0a;
-  min-height: 100vh;
   padding: 0;
   margin: 0;
   color: #e0e0e0;
 }
 
 .container {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -289,7 +287,9 @@ body {
 
 .rules-modal .modal-content {
   max-width: 450px;
+  max-height: 95vh;
   text-align: left;
+  overflow-y: auto;
 }
 
 .rules-modal h2 {
@@ -450,7 +450,6 @@ body {
   cursor: not-allowed;
 }
 
-
 /* Styles pour les cartes d'équipe */
 .team-card {
   background: #222;
@@ -506,7 +505,6 @@ body {
   min-width: 50px;
   text-align: center;
 }
-
 
 .players-names {
   display: flex;
@@ -594,4 +592,12 @@ body {
 
 .delete-player-btn:hover {
   color: #ef4444;
+}
+
+.pins-image {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  margin: 16px auto;
+  display: block;
 }
