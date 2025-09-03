@@ -4,8 +4,22 @@
   box-sizing: border-box;
 }
 
+.force-new-game-link {
+  color: #888;
+  font-size: 0.95em;
+  text-decoration: underline;
+  cursor: pointer;
+  display: inline-block;
+  margin-top: 2em;
+  transition: color 0.2s;
+}
+.force-new-game-link:hover {
+  color: #fff;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: #0a0a0a;
   padding: 0;
   margin: 0;

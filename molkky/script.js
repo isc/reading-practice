@@ -6,6 +6,33 @@ let teamMissCount = {} // Pour tracker les ratés consécutifs par équipe
 let gameStarted = false
 let gameEnded = false
 
+function saveState() {
+  localStorage.setItem(
+    "molkkyState",
+    JSON.stringify({
+      players,
+      currentTeamId,
+      teamPlayerIndexes,
+      teamMissCount,
+      gameStarted,
+      gameEnded,
+    }),
+  )
+}
+
+function loadState() {
+  const saved = localStorage.getItem("molkkyState")
+  if (saved) {
+    const state = JSON.parse(saved)
+    players = state.players || []
+    currentTeamId = state.currentTeamId
+    teamPlayerIndexes = state.teamPlayerIndexes || {}
+    teamMissCount = state.teamMissCount || {}
+    gameStarted = state.gameStarted || false
+    gameEnded = state.gameEnded || false
+  }
+}
+
 // Couleurs prédéfinies pour les équipes
 const teamColors = [
   { name: "Rouge", color: "#ef4444", bg: "#2a1a1a" },
@@ -18,11 +45,20 @@ const teamColors = [
   { name: "Cyan", color: "#06b6d4", bg: "#1a252a" },
 ]
 
-// Initialisation
 document.addEventListener("DOMContentLoaded", function () {
-  // S'assurer que la modal est bien cachée au démarrage
-  document.getElementById("winnerModal").classList.add("hidden")
+  loadState()
   updateDisplay()
+  var forceLink = document.getElementById("forceNewGameLink")
+  forceLink.addEventListener("click", function (e) {
+    e.preventDefault()
+    if (
+      confirm(
+        "Voulez-vous vraiment commencer une nouvelle partie ?\nL’état de la partie en cours sera perdu.",
+      )
+    ) {
+      newGame()
+    }
+  })
 })
 
 function addNewPlayerInput() {
@@ -129,8 +165,8 @@ function addStartGameButton() {
   startGameDiv.innerHTML = `
     <div class="start-game-info">
       <p>${players.length} joueur${players.length > 1 ? "s" : ""} dans ${
-    uniqueTeams.length
-  } équipe${uniqueTeams.length > 1 ? "s" : ""}</p>
+        uniqueTeams.length
+      } équipe${uniqueTeams.length > 1 ? "s" : ""}</p>
       ${
         !canStart
           ? '<p class="error">Il faut au moins 2 joueurs dans 2 équipes différentes</p>'
@@ -164,19 +200,21 @@ function addPlayer(name, teamId = null) {
     teamId: teamId,
   })
   updatePlayersList()
+  saveState()
 }
 
 function removePlayer(index) {
   if (gameStarted) return
-  
+
   players.splice(index, 1)
   updatePlayersList()
+  saveState()
 }
 
 function updatePlayersList() {
   // Mettre à jour seulement la liste des joueurs, pas le formulaire
   const existingPlayers = document.querySelectorAll(
-    ".player-card, .simple-player-card"
+    ".player-card, .simple-player-card",
   )
   existingPlayers.forEach((card) => card.remove())
 
@@ -244,6 +282,7 @@ function startGame() {
 
   document.getElementById("gameStatus").textContent = "En cours"
   updateDisplay()
+  saveState()
 }
 
 function addScore(teamId, points) {
@@ -257,7 +296,7 @@ function addScore(teamId, points) {
 
   // Obtenir l'équipe et le joueur actuel
   const teamPlayers = players.filter(
-    (p) => p.teamId === teamId && !p.eliminated
+    (p) => p.teamId === teamId && !p.eliminated,
   )
   if (teamPlayers.length === 0) return
 
@@ -295,17 +334,19 @@ function addScore(teamId, points) {
     const teamColor = teamColors[teamId]
     showWinner(`Équipe ${teamColor.name}`)
     gameEnded = true
+    saveState()
     return
   }
 
   nextTeam()
   updateDisplay()
+  saveState()
 }
 
 function nextTeam() {
   // Incrémenter l'index du joueur pour l'équipe actuelle
   const currentTeamPlayers = players.filter(
-    (p) => p.teamId === currentTeamId && !p.eliminated
+    (p) => p.teamId === currentTeamId && !p.eliminated,
   )
   if (currentTeamPlayers.length > 0) {
     teamPlayerIndexes[currentTeamId] =
@@ -325,11 +366,13 @@ function nextTeam() {
 
   // Vérifier que la nouvelle équipe n'est pas éliminée
   const newTeamPlayers = players.filter(
-    (p) => p.teamId === currentTeamId && !p.eliminated
+    (p) => p.teamId === currentTeamId && !p.eliminated,
   )
   if (newTeamPlayers.length === 0) {
     nextTeam() // Passer à l'équipe suivante si celle-ci est éliminée
   }
+  saveState()
+  saveState()
 }
 
 function getActiveTeams() {
@@ -359,6 +402,7 @@ function checkGameEnd() {
   } else if (activeTeams.length === 0) {
     showWinner("Personne (toutes les équipes éliminées!)")
     gameEnded = true
+    saveState()
   }
 }
 
@@ -392,7 +436,7 @@ function updateDisplay() {
   if (gameStarted && !gameEnded && currentTeamId !== null) {
     setTimeout(() => {
       const activeInput = document.getElementById(
-        `teamScoreInput${currentTeamId}`
+        `teamScoreInput${currentTeamId}`,
       )
       if (activeInput) {
         activeInput.focus()
@@ -423,7 +467,7 @@ function displayPlayersByTeam(playersList) {
     const teamColor = teamColors[teamId] || teamColors[0]
     const teamPlayers = teamGroups[teamId]
     const currentTeamPlayers = teamPlayers.filter(
-      ({ player }) => !player.eliminated
+      ({ player }) => !player.eliminated,
     )
 
     if (currentTeamPlayers.length === 0) return // Équipe éliminée
@@ -577,20 +621,20 @@ function submitTeamScore(teamId) {
   input.value = ""
 }
 
-
 function newGame() {
-  // Garder les joueurs mais remettre à zéro leurs stats
+  // Remet à zéro les scores, éliminations, historiques, et compteurs
   players.forEach((player) => {
     player.score = 0
     player.eliminated = false
     player.history = []
+    player.missCount = 0
   })
-  
   currentTeamId = null
   teamPlayerIndexes = {}
   teamMissCount = {}
   gameStarted = false
   gameEnded = false
+  saveState()
   document.getElementById("gameStatus").textContent = "En attente"
   document.getElementById("winnerModal").classList.add("hidden")
   updateDisplay()
