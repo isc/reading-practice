@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>b ou d ?</title>
+    <title>p ou q ?</title>
     <style>
       * {
         margin: 0;
@@ -236,7 +236,7 @@
     <div class="container">
       <div class="game-container">
         <div class="welcome-screen">
-          <h1>b ou d ?</h1>
+          <h1>p ou q ?</h1>
           <p>Choisis la bonne lettre pour chaque mot !</p>
           <button class="start-btn" onclick="startGame()">Commencer</button>
         </div>
@@ -281,46 +281,45 @@
 
     <script>
       const words = [
-        // D words
-        { word: "dauphin", emoji: "🐬", answer: "d" },
-        { word: "dragon", emoji: "🐉", answer: "d" },
-        { word: "dinde", emoji: "🦃", answer: "d" },
-        { word: "douche", emoji: "🚿", answer: "d" },
-        { word: "dé", emoji: "🎲", answer: "d" },
-        { word: "donut", emoji: "🍩", answer: "d" },
-        { word: "dame", emoji: "👸", answer: "d" },
-        { word: "doigt", emoji: "👆", answer: "d" },
-        { word: "dent", emoji: "🦷", answer: "d" },
-        { word: "diamant", emoji: "💎", answer: "d" },
-        { word: "dollar", emoji: "💵", answer: "d" },
-        { word: "dossier", emoji: "📁", answer: "d" },
-        { word: "document", emoji: "📄", answer: "d" },
-        { word: "dynamite", emoji: "🧨", answer: "d" },
-        { word: "disque", emoji: "💿", answer: "d" },
-        { word: "drapeau", emoji: "🏁", answer: "d" },
+        // P words
+        { word: "papillon", emoji: "🦋", answer: "p" },
+        { word: "pomme", emoji: "🍎", answer: "p" },
+        { word: "poisson", emoji: "🐟", answer: "p" },
+        { word: "pizza", emoji: "🍕", answer: "p" },
+        { word: "panda", emoji: "🐼", answer: "p" },
+        { word: "parapluie", emoji: "☂️", answer: "p" },
+        { word: "pingouin", emoji: "🐧", answer: "p" },
+        { word: "poire", emoji: "🍐", answer: "p" },
+        { word: "prince", emoji: "🤴", answer: "p" },
+        { word: "peinture", emoji: "🎨", answer: "p" },
+        { word: "piano", emoji: "🎹", answer: "p" },
+        { word: "pirate", emoji: "🏴‍☠️", answer: "p" },
+        { word: "poule", emoji: "🐔", answer: "p" },
+        { word: "piment", emoji: "🌶️", answer: "p" },
+        { word: "pastèque", emoji: "🍉", answer: "p" },
+        { word: "pêche", emoji: "🍑", answer: "p" },
+        { word: "popcorn", emoji: "🍿", answer: "p" },
+        { word: "puzzle", emoji: "🧩", answer: "p" },
+        { word: "parachute", emoji: "🪂", answer: "p" },
+        { word: "patte", emoji: "🐾", answer: "p" },
 
-        // B words
-        { word: "banane", emoji: "🍌", answer: "b" },
-        { word: "ballon", emoji: "🎈", answer: "b" },
-        { word: "bateau", emoji: "⛵", answer: "b" },
-        { word: "bus", emoji: "🚌", answer: "b" },
-        { word: "bougie", emoji: "🕯️", answer: "b" },
-        { word: "bague", emoji: "💍", answer: "b" },
-        { word: "baleine", emoji: "🐋", answer: "b" },
-        { word: "bonhomme de neige", emoji: "⛄", answer: "b" },
-        { word: "bébé", emoji: "👶", answer: "b" },
-        { word: "bicyclette", emoji: "🚲", answer: "b" },
-        { word: "burger", emoji: "🍔", answer: "b" },
-        { word: "bowling", emoji: "🎳", answer: "b" },
-        { word: "bombe", emoji: "💣", answer: "b" },
-        { word: "buffle", emoji: "🦬", answer: "b" },
-        { word: "boussole", emoji: "🧭", answer: "b" },
-        { word: "boîte", emoji: "📦", answer: "b" },
-        { word: "bouquet", emoji: "💐", answer: "b" },
-        { word: "basketball", emoji: "🏀", answer: "b" },
-        { word: "baseball", emoji: "⚾", answer: "b" },
-        { word: "bureau", emoji: "🏢", answer: "b" },
-        { word: "batterie", emoji: "🔋", answer: "b" },
+        // Q words
+        { word: "quatre", emoji: "4️⃣", answer: "q" },
+        { word: "question", emoji: "❓", answer: "q" },
+        { word: "quille", emoji: "🎳", answer: "q" },
+        { word: "queue", emoji: "🦊", answer: "q" },
+        { word: "quiche", emoji: "🥧", answer: "q" },
+        { word: "quinze", emoji: "1️⃣5️⃣", answer: "q" },
+        { word: "quotidien", emoji: "📰", answer: "q" },
+        { word: "quartier", emoji: "🏘️", answer: "q" },
+        { word: "quartz", emoji: "💎", answer: "q" },
+        { word: "qualité", emoji: "⭐", answer: "q" },
+        { word: "quantité", emoji: "📊", answer: "q" },
+        { word: "quatorze", emoji: "1️⃣4️⃣", answer: "q" },
+        { word: "querelle", emoji: "😤", answer: "q" },
+        { word: "quête", emoji: "🗺️", answer: "q" },
+        { word: "quenelle", emoji: "🥄", answer: "q" },
+        { word: "quadrillage", emoji: "📐", answer: "q" },
       ]
 
       let score = 0
@@ -361,7 +360,7 @@
       }
 
       function saveScore(score, time) {
-        const scores = JSON.parse(localStorage.getItem("scores") || "[]")
+        const scores = JSON.parse(localStorage.getItem("scores-pq") || "[]")
         scores.push({
           date: new Date().toLocaleDateString(),
           score: score,
@@ -369,12 +368,12 @@
         })
         scores.sort((a, b) => b.score - a.score || a.time.localeCompare(b.time))
         scores.splice(10) // Keep only top 10 scores
-        localStorage.setItem("scores", JSON.stringify(scores))
+        localStorage.setItem("scores-pq", JSON.stringify(scores))
         updateScoreboard()
       }
 
       function updateScoreboard() {
-        const scores = JSON.parse(localStorage.getItem("scores") || "[]")
+        const scores = JSON.parse(localStorage.getItem("scores-pq") || "[]")
         const tbody = document.getElementById("scoreboardBody")
         tbody.innerHTML = scores
           .map(
@@ -439,8 +438,8 @@
         container.className = "buttons-container"
 
         const isReversed = Math.random() < 0.5
-        const firstButton = isReversed ? "b" : "d"
-        const secondButton = isReversed ? "d" : "b"
+        const firstButton = isReversed ? "p" : "q"
+        const secondButton = isReversed ? "q" : "p"
 
         container.innerHTML = `
                 <button class="choice-btn" onclick="checkAnswer('${firstButton}')">${firstButton}</button>
