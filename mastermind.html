@@ -263,11 +263,11 @@
 <body>
     <div class="container">
         <h1>🧠 Mastermind</h1>
-        <p class="subtitle">Devinez la combinaison secrète de 4 couleurs</p>
+        <p class="subtitle"></p>
 
         <div id="message"></div>
 
-        <div class="current-guess" id="currentGuessSection">
+        <div id="currentGuessSection">
             <div class="guess-label">Tentative #<span id="attemptNumber">1</span></div>
             <div class="guess-row" id="currentGuess"></div>
 
@@ -277,7 +277,6 @@
         </div>
 
         <div class="history">
-            <div class="history-label">Historique des tentatives</div>
             <div id="historyContainer"></div>
         </div>
 
@@ -288,7 +287,7 @@
             <ul>
                 <li><strong>🔴 Pion rouge :</strong> bonne couleur, bonne position</li>
                 <li><strong>⚪ Pion blanc :</strong> bonne couleur, mauvaise position</li>
-                <li>Vous avez <strong>10 tentatives</strong> pour deviner</li>
+                <li>Vous avez <strong>10 tentatives</strong> pour deviner la combinaison secrète de 4 couleurs</li>
             </ul>
         </div>
     </div>
@@ -431,10 +430,6 @@
 
             renderHistory();
 
-            // Auto-scroll to latest attempt
-            setTimeout(() => {
-                document.getElementById('historyContainer').lastChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 0);
 
             // Check win condition
             if (feedback.filter(f => f === 'red').length === 4) {
@@ -467,7 +462,8 @@
             const container = document.getElementById('historyContainer');
             container.innerHTML = '';
             
-            attempts.forEach((attempt, index) => {
+            [...attempts].reverse().forEach((attempt, i) => {
+                const index = attempts.length - 1 - i;
                 const attemptDiv = document.createElement('div');
                 attemptDiv.className = 'attempt';
                 
