@@ -12,29 +12,30 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             padding: 20px;
         }
 
         .container {
             background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            max-width: 480px;
             width: 100%;
         }
 
         h1 {
             text-align: center;
-            color: #667eea;
+            color: #1a1a1a;
             margin-bottom: 5px;
-            font-size: 2em;
+            font-size: 1.6em;
+            font-weight: 700;
         }
 
         .subtitle {
@@ -52,23 +53,22 @@
             min-height: 50px;
             flex-shrink: 0;
             border-radius: 50%;
-            border: 3px solid #fff;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border: 2px solid #e0e0e0;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .peg:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            transform: scale(1.08);
+            border-color: #999;
         }
 
         .feedback-peg {
             width: 20px;
             height: 20px;
-            min-width: 20px;
-            min-height: 20px;
-            border-radius: 50%;
+            font-size: 16px;
+            line-height: 20px;
+            text-align: center;
         }
 
         .current-guess {
@@ -113,11 +113,11 @@
 
         .color-option:hover {
             transform: scale(1.15);
-            border-color: #667eea;
+            border-color: #333;
         }
 
         .color-option.selected {
-            border-color: #667eea;
+            border-color: #333;
             border-width: 4px;
         }
 
@@ -134,13 +134,12 @@
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #1a1a1a;
             color: white;
         }
 
         .btn-submit:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            background: #333;
         }
 
         .btn-submit:disabled {
@@ -149,13 +148,12 @@
         }
 
         .btn-new {
-            background: #48bb78;
+            background: #1a1a1a;
             color: white;
         }
 
         .btn-new:hover {
-            background: #38a169;
-            transform: translateY(-2px);
+            background: #333;
         }
 
         .history {
@@ -182,7 +180,7 @@
 
         .attempt-number {
             font-weight: 600;
-            color: #667eea;
+            color: #999;
             font-size: 0.85em;
             white-space: nowrap;
         }
@@ -199,8 +197,7 @@
             min-width: 30px;
             min-height: 30px;
             border-radius: 50%;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border: 1px solid #e0e0e0;
         }
 
         .feedback {
@@ -243,17 +240,18 @@
         }
 
         .rules {
-            background: #e6f2ff;
-            border-radius: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
             padding: 15px;
             margin-bottom: 20px;
-            font-size: 0.9em;
-            color: #555;
+            font-size: 0.85em;
+            color: #666;
         }
 
         .rules h3 {
-            color: #667eea;
+            color: #1a1a1a;
             margin-bottom: 10px;
+            font-size: 0.95em;
         }
 
         .rules ul {
@@ -493,13 +491,7 @@
                 attempt.feedback.forEach(type => {
                     const peg = document.createElement('div');
                     peg.className = 'feedback-peg';
-                    if (type === 'red') {
-                        peg.style.backgroundColor = '#e53e3e';
-                        peg.style.border = '2px solid #fff';
-                    } else {
-                        peg.style.backgroundColor = '#ffffff';
-                        peg.style.border = '2px solid #2d3748';
-                    }
+                    peg.textContent = type === 'red' ? '🔴' : '⚪';
                     feedbackDiv.appendChild(peg);
                 });
                 
