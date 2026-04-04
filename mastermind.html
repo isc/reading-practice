@@ -377,12 +377,12 @@
 
         function placePeg(position) {
             if (gameOver) return;
-            if (currentGuess[position] !== '') {
+            if (selectedColorIndex === null) return;
+            const selectedColor = colors[selectedColorIndex];
+            if (currentGuess[position] === selectedColor) {
                 currentGuess[position] = '';
-            } else if (selectedColorIndex !== null) {
-                currentGuess[position] = colors[selectedColorIndex];
             } else {
-                return;
+                currentGuess[position] = selectedColor;
             }
             renderCurrentGuess();
             updateSubmitButton();
