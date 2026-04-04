@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -131,7 +131,9 @@
         cursor: pointer;
         background-color: #e9ecef;
         color: #333;
-        transition: transform 0.2s, background-color 0.2s;
+        transition:
+          transform 0.2s,
+          background-color 0.2s;
       }
 
       .choice-btn:hover {
@@ -301,25 +303,20 @@
         { word: "popcorn", emoji: "🍿", answer: "p" },
         { word: "puzzle", emoji: "🧩", answer: "p" },
         { word: "parachute", emoji: "🪂", answer: "p" },
-        { word: "patte", emoji: "🐾", answer: "p" },
 
         // Q words
         { word: "quatre", emoji: "4️⃣", answer: "q" },
         { word: "question", emoji: "❓", answer: "q" },
         { word: "quille", emoji: "🎳", answer: "q" },
-        { word: "queue", emoji: "🦊", answer: "q" },
         { word: "quiche", emoji: "🥧", answer: "q" },
         { word: "quinze", emoji: "1️⃣5️⃣", answer: "q" },
         { word: "quotidien", emoji: "📰", answer: "q" },
         { word: "quartier", emoji: "🏘️", answer: "q" },
-        { word: "quartz", emoji: "💎", answer: "q" },
-        { word: "qualité", emoji: "⭐", answer: "q" },
         { word: "quantité", emoji: "📊", answer: "q" },
         { word: "quatorze", emoji: "1️⃣4️⃣", answer: "q" },
         { word: "querelle", emoji: "😤", answer: "q" },
-        { word: "quête", emoji: "🗺️", answer: "q" },
-        { word: "quenelle", emoji: "🥄", answer: "q" },
-        { word: "quadrillage", emoji: "📐", answer: "q" },
+        { word: "quarante", emoji: "4️⃣0️⃣", answer: "q" },
+        { word: "quatre-vingts", emoji: "8️⃣0️⃣", answer: "q" },
       ]
 
       let score = 0
@@ -383,7 +380,7 @@
             <td>${score.score} / ${NUMBER_OF_WORDS}</td>
             <td>${score.time}</td>
           </tr>
-        `
+        `,
           )
           .join("")
       }
