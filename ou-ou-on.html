@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ou ou on ?</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f0f2f5;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .game-container {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .welcome-screen {
+        text-align: center;
+        padding: 40px 20px;
+      }
+
+      .welcome-screen h1 {
+        color: #4a90e2;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+      }
+
+      .welcome-screen p {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.2rem;
+      }
+
+      .start-btn {
+        padding: 15px 40px;
+        font-size: 1.3rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .start-btn:hover {
+        background-color: #357abd;
+      }
+
+      .stats-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .score,
+      .timer {
+        font-size: 1.5rem;
+      }
+
+      .emoji-section {
+        width: 100%;
+        aspect-ratio: 1;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 16rem;
+        background-color: #f8f9fa;
+        position: relative;
+      }
+
+      .audio-btn {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 50px;
+        height: 50px;
+        border: none;
+        border-radius: 50%;
+        background-color: #4a90e2;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: background-color 0.2s;
+      }
+
+      .audio-btn:hover {
+        background-color: #357abd;
+      }
+
+      .interaction-container {
+        height: 120px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .buttons-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+      }
+
+      .choice-btn {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        background-color: #e9ecef;
+        color: #333;
+        transition:
+          transform 0.2s,
+          background-color 0.2s;
+      }
+
+      .choice-btn:hover {
+        transform: scale(1.05);
+        background-color: #dee2e6;
+      }
+
+      .feedback {
+        font-size: 2rem;
+        text-align: center;
+      }
+
+      .correct {
+        color: #28a745;
+      }
+
+      .incorrect {
+        color: #dc3545;
+      }
+
+      .game-end {
+        text-align: center;
+      }
+
+      .game-end h2 {
+        color: #4a90e2;
+        margin-bottom: 20px;
+        font-size: 2rem;
+      }
+
+      .game-end p {
+        margin: 10px 0;
+        font-size: 1.25rem;
+        color: #333;
+      }
+
+      .restart-btn {
+        margin-top: 20px;
+        padding: 15px 30px;
+        font-size: 1.2rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .restart-btn:hover {
+        background-color: #357abd;
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 10px;
+        }
+
+        .emoji-section {
+          font-size: 12rem;
+        }
+
+        .choice-btn {
+          width: 80px;
+          height: 80px;
+          font-size: 2rem;
+        }
+      }
+
+      .scoreboard {
+        margin-top: 20px;
+        padding: 20px;
+      }
+
+      .scoreboard h3 {
+        color: #4a90e2;
+        margin-bottom: 10px;
+      }
+
+      .scoreboard-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .scoreboard-table th,
+      .scoreboard-table td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .scoreboard-table th {
+        color: #666;
+        font-weight: bold;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="game-container">
+        <div class="welcome-screen">
+          <h1>ou ou on ?</h1>
+          <p>Trouve le bon son dans chaque mot !</p>
+          <button class="start-btn" onclick="startGame()">Commencer</button>
+        </div>
+        <div class="game-screen hidden">
+          <div class="stats-container">
+            <div class="score">
+              Score: <span id="scoreValue">0</span> /
+              <span id="numberOfWords"></span>
+            </div>
+            <div class="timer">Temps: <span id="timerValue">00:00</span></div>
+          </div>
+          <div class="emoji-section">
+            <div id="emojiDisplay"></div>
+            <button
+              class="audio-btn"
+              onclick="speakWord()"
+              title="Écouter le mot"
+            >
+              🔊
+            </button>
+          </div>
+          <div class="interaction-container">
+            <div id="buttonsOrFeedback" class="buttons-container"></div>
+          </div>
+        </div>
+        <div class="game-end hidden"></div>
+        <div class="scoreboard">
+          <h3>Meilleurs scores</h3>
+          <table class="scoreboard-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Score</th>
+                <th>Temps</th>
+              </tr>
+            </thead>
+            <tbody id="scoreboardBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const words = [
+        // OU words
+        { word: "ours", emoji: "🐻", answer: "ou" },
+        { word: "poule", emoji: "🐔", answer: "ou" },
+        { word: "loup", emoji: "🐺", answer: "ou" },
+        { word: "souris", emoji: "🐭", answer: "ou" },
+        { word: "chou", emoji: "🥬", answer: "ou" },
+        { word: "hibou", emoji: "🦉", answer: "ou" },
+        { word: "fourmi", emoji: "🐜", answer: "ou" },
+        { word: "bouche", emoji: "👄", answer: "ou" },
+        { word: "poubelle", emoji: "🗑️", answer: "ou" },
+        { word: "couteau", emoji: "🔪", answer: "ou" },
+        { word: "bougie", emoji: "🕯️", answer: "ou" },
+        { word: "boussole", emoji: "🧭", answer: "ou" },
+        { word: "couronne", emoji: "👑", answer: "ou" },
+        { word: "rouge", emoji: "🔴", answer: "ou" },
+        { word: "mouche", emoji: "🪰", answer: "ou" },
+        { word: "poussin", emoji: "🐥", answer: "ou" },
+
+        // ON words
+        { word: "bonbon", emoji: "🍬", answer: "on" },
+        { word: "lion", emoji: "🦁", answer: "on" },
+        { word: "maison", emoji: "🏠", answer: "on" },
+        { word: "avion", emoji: "✈️", answer: "on" },
+        { word: "ballon", emoji: "🎈", answer: "on" },
+        { word: "cochon", emoji: "🐷", answer: "on" },
+        { word: "poisson", emoji: "🐟", answer: "on" },
+        { word: "citron", emoji: "🍋", answer: "on" },
+        { word: "dragon", emoji: "🐉", answer: "on" },
+        { word: "champignon", emoji: "🍄", answer: "on" },
+        { word: "montre", emoji: "⌚", answer: "on" },
+        { word: "pont", emoji: "🌉", answer: "on" },
+        { word: "rond", emoji: "⭕", answer: "on" },
+        { word: "papillon", emoji: "🦋", answer: "on" },
+        { word: "hérisson", emoji: "🦔", answer: "on" },
+        { word: "crayon", emoji: "✏️", answer: "on" },
+      ]
+
+      let score = 0
+      let currentIndex = 0
+      let startTime
+      let timerInterval
+      const NUMBER_OF_WORDS = 20
+
+      function show(selector) {
+        document
+          .querySelectorAll(selector)
+          .forEach((e) => e.classList.remove("hidden"))
+      }
+
+      function hide(selector) {
+        document
+          .querySelectorAll(selector)
+          .forEach((e) => e.classList.add("hidden"))
+      }
+
+      function formatTime(ms) {
+        const minutes = Math.floor(ms / 60000)
+        const seconds = Math.floor((ms % 60000) / 1000)
+        return `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`
+      }
+
+      function updateTime() {
+        const elapsed = Date.now() - startTime
+        document.getElementById("timerValue").textContent = formatTime(elapsed)
+      }
+
+      function startTimer() {
+        startTime = Date.now()
+        timerInterval = setInterval(updateTime, 1000)
+        updateTime()
+      }
+
+      function saveScore(score, time) {
+        const scores = JSON.parse(localStorage.getItem("scores-ou-on") || "[]")
+        scores.push({
+          date: new Date().toLocaleDateString(),
+          score: score,
+          time: time,
+        })
+        scores.sort((a, b) => b.score - a.score || a.time.localeCompare(b.time))
+        scores.splice(10)
+        localStorage.setItem("scores-ou-on", JSON.stringify(scores))
+        updateScoreboard()
+      }
+
+      function updateScoreboard() {
+        const scores = JSON.parse(localStorage.getItem("scores-ou-on") || "[]")
+        const tbody = document.getElementById("scoreboardBody")
+        tbody.innerHTML = scores
+          .map(
+            (score) => `
+          <tr>
+            <td>${score.date}</td>
+            <td>${score.score} / ${NUMBER_OF_WORDS}</td>
+            <td>${score.time}</td>
+          </tr>
+        `,
+          )
+          .join("")
+      }
+
+      function showGameEnd() {
+        const finalTime = document.getElementById("timerValue").textContent
+        clearInterval(timerInterval)
+
+        saveScore(score, finalTime)
+
+        document.querySelector(".game-end").innerHTML = `
+            <h2>Félicitations ! 🎉</h2>
+            <p>Vous avez terminé le jeu avec :</p>
+            <p>Score : ${score} / ${NUMBER_OF_WORDS}</p>
+            <p>Temps : ${finalTime}</p>
+            <button class="restart-btn" onclick="startGame()">Rejouer</button>
+        `
+        hide(".game-screen")
+        show(".game-end, .scoreboard")
+      }
+
+      function startGame() {
+        score = 0
+        currentIndex = 0
+        hide(".welcome-screen, .scoreboard, .game-end")
+        show(".game-screen")
+        document.getElementById("numberOfWords").textContent = NUMBER_OF_WORDS
+        shuffleWords()
+        displayWord()
+        startTimer()
+      }
+
+      function speakWord(w) {
+        const currentWord = w || words[currentIndex].word
+        const utterance = new SpeechSynthesisUtterance(currentWord)
+        utterance.lang = "fr-FR"
+        utterance.voice = window.speechSynthesis
+          .getVoices()
+          .find((voice) => voice.lang == "fr-FR" && voice.name == "Thomas")
+        window.speechSynthesis.speak(utterance)
+      }
+
+      function shuffleWords() {
+        for (let i = words.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[words[i], words[j]] = [words[j], words[i]]
+        }
+      }
+
+      function createButtons() {
+        const container = document.getElementById("buttonsOrFeedback")
+        container.className = "buttons-container"
+
+        const isReversed = Math.random() < 0.5
+        const firstButton = isReversed ? "ou" : "on"
+        const secondButton = isReversed ? "on" : "ou"
+
+        container.innerHTML = `
+                <button class="choice-btn" onclick="checkAnswer('${firstButton}')">${firstButton}</button>
+                <button class="choice-btn" onclick="checkAnswer('${secondButton}')">${secondButton}</button>
+            `
+      }
+
+      function showFeedback(isCorrect) {
+        const container = document.getElementById("buttonsOrFeedback")
+        container.className = "feedback"
+        container.innerHTML = isCorrect
+          ? '<div class="correct">Bravo ! 🎉</div>'
+          : '<div class="incorrect">Essaie encore ! 😊</div>'
+      }
+
+      function displayWord() {
+        const currentWord = words[currentIndex]
+        document.getElementById("emojiDisplay").textContent = currentWord.emoji
+        createButtons()
+      }
+
+      function checkAnswer(choice) {
+        const currentWord = words[currentIndex]
+        const isCorrect = choice === currentWord.answer
+
+        if (isCorrect) {
+          score++
+          document.getElementById("scoreValue").textContent = score
+        }
+
+        showFeedback(isCorrect)
+
+        setTimeout(() => {
+          currentIndex++
+          if (currentIndex >= NUMBER_OF_WORDS) showGameEnd()
+          else displayWord()
+        }, 1500)
+      }
+
+      updateScoreboard()
+    </script>
+  </body>
+</html>
