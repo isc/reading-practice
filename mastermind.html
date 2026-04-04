@@ -239,6 +239,34 @@
             }
         }
 
+        .scoreboard {
+            margin-top: 20px;
+        }
+
+        .scoreboard h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .scoreboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .scoreboard-table th,
+        .scoreboard-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .scoreboard-table th {
+            color: #999;
+            font-weight: 600;
+        }
+
         .rules {
             background: #f8f9fa;
             border-radius: 8px;
@@ -293,6 +321,21 @@
                 <li>Vous avez <strong>10 tentatives</strong> pour deviner la combinaison secrète de 4 couleurs</li>
             </ul>
         </div>
+
+        <div class="scoreboard">
+            <h3>Historique</h3>
+            <table class="scoreboard-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Résultat</th>
+                        <th>Essais</th>
+                        <th>Temps</th>
+                    </tr>
+                </thead>
+                <tbody id="scoreboardBody"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -311,6 +354,8 @@
         let attempts = [];
         let gameOver = false;
         let maxAttempts = 10;
+        let startTime;
+        let timerInterval;
 
         function initGame() {
             secretCode = [];
@@ -331,6 +376,8 @@
             document.getElementById('attemptNumber').textContent = '1';
             document.getElementById('currentGuessSection').style.display = 'block';
             document.getElementById('newGameBtn').style.display = 'none';
+            startTime = Date.now();
+            clearInterval(timerInterval);
         }
 
         function renderColorPalette() {
@@ -437,6 +484,7 @@
             // Check win condition
             if (feedback.filter(f => f === 'red').length === 4) {
                 gameOver = true;
+                saveGame(true);
                 showMessage(`🎉 Bravo ! Vous avez trouvé le code en ${attempts.length} tentative${attempts.length > 1 ? 's' : ''} !`, 'win');
                 document.getElementById('currentGuessSection').style.display = 'none';
                 document.getElementById('newGameBtn').style.display = 'block';
@@ -446,6 +494,7 @@
             // Check lose condition
             if (attempts.length >= maxAttempts) {
                 gameOver = true;
+                saveGame(false);
                 showMessage(`😔 Perdu ! Vous avez utilisé vos 10 tentatives.`, 'lose');
                 document.getElementById('currentGuessSection').style.display = 'none';
                 document.getElementById('newGameBtn').style.display = 'block';
@@ -502,6 +551,39 @@
             });
         }
 
+        function formatTime(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function saveGame(won) {
+            const elapsed = formatTime(Date.now() - startTime);
+            const games = JSON.parse(localStorage.getItem('mastermind-scores') || '[]');
+            games.unshift({
+                date: new Date().toLocaleDateString(),
+                won: won,
+                attempts: attempts.length,
+                time: elapsed,
+            });
+            games.splice(20);
+            localStorage.setItem('mastermind-scores', JSON.stringify(games));
+            updateScoreboard();
+        }
+
+        function updateScoreboard() {
+            const games = JSON.parse(localStorage.getItem('mastermind-scores') || '[]');
+            const tbody = document.getElementById('scoreboardBody');
+            tbody.innerHTML = games.map(g => `
+                <tr>
+                    <td>${g.date}</td>
+                    <td>${g.won ? '✅' : '❌'}</td>
+                    <td>${g.attempts} / ${maxAttempts}</td>
+                    <td>${g.time}</td>
+                </tr>
+            `).join('');
+        }
+
         function showMessage(text, type) {
             const messageDiv = document.getElementById('message');
             messageDiv.className = `message ${type}`;
@@ -511,6 +593,7 @@
         document.getElementById('submitBtn').onclick = submitGuess;
         document.getElementById('newGameBtn').onclick = initGame;
 
+        updateScoreboard();
         initGame();
     </script>
 </body>
