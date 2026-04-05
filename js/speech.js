@@ -21,6 +21,15 @@ export function handleTranscript(transcript, remainingWords, onWordCorrect, onSe
 }
 
 export function startRecognition(onTranscript, onError, onEnd) {
+  // Handle test environment
+  if (typeof window === 'undefined' || !window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    console.warn('Speech recognition not available')
+    return {
+      start: () => {},
+      stop: () => {},
+    }
+  }
+
   const recognition = new (window.SpeechRecognition ||
     window.webkitSpeechRecognition)()
   recognition.lang = "fr-FR"
