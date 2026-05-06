@@ -105,7 +105,6 @@
             border-radius: 50%;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
             position: relative;
-            overflow: hidden;
         }
 
         .token {
@@ -447,7 +446,9 @@
             const cellEl = colEl.children[row];
             const token = cellEl.querySelector('.token');
             if (!token) return;
-            token.style.setProperty('--drop-from', `${-(row + 1) * 110}%`);
+            const distance = row + 1;
+            token.style.setProperty('--drop-from', `${-distance * 110}%`);
+            token.style.animationDuration = `${0.18 * Math.sqrt(distance)}s`;
             token.classList.add('drop');
         }
 
