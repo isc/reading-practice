@@ -348,6 +348,10 @@
     <script>
         const ROWS = 6;
         const COLS = 7;
+        const LABELS = { red: 'Rouge', yellow: 'Jaune' };
+        const SCORES_KEY = 'puissance4-scores';
+        const DEFAULT_SCORES = { red: 0, yellow: 0, draws: 0 };
+        const SCORE_FIELD = { red: 'red', yellow: 'yellow', draw: 'draws' };
 
         let board = [];
         let currentPlayer = 'red';
@@ -393,7 +397,7 @@
             const token = document.getElementById('turnToken');
             const label = document.getElementById('turnLabel');
             token.className = `turn-token ${currentPlayer}`;
-            label.textContent = currentPlayer === 'red' ? 'Rouge' : 'Jaune';
+            label.textContent = LABELS[currentPlayer];
         }
 
         function isColumnFull(col) {
@@ -420,8 +424,7 @@
             if (winningCells) {
                 gameOver = true;
                 highlightWinning(winningCells);
-                const winner = currentPlayer === 'red' ? 'Rouge' : 'Jaune';
-                showMessage(`🎉 ${winner} a gagné !`, `win-${currentPlayer}`);
+                showMessage(`🎉 ${LABELS[currentPlayer]} a gagné !`, `win-${currentPlayer}`);
                 saveScore(currentPlayer);
                 showConfetti();
                 return;
@@ -453,28 +456,18 @@
         }
 
         function checkWin(row, col, player) {
-            const directions = [
-                [0, 1],   // horizontal
-                [1, 0],   // vertical
-                [1, 1],   // diagonal \
-                [1, -1],  // diagonal /
-            ];
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
 
             for (const [dr, dc] of directions) {
                 const cells = [[row, col]];
-                for (let step = 1; step < 4; step++) {
-                    const r = row + dr * step;
-                    const c = col + dc * step;
-                    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) break;
-                    if (board[r][c] !== player) break;
-                    cells.push([r, c]);
-                }
-                for (let step = 1; step < 4; step++) {
-                    const r = row - dr * step;
-                    const c = col - dc * step;
-                    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) break;
-                    if (board[r][c] !== player) break;
-                    cells.push([r, c]);
+                for (const sign of [1, -1]) {
+                    for (let step = 1; step < 4; step++) {
+                        const r = row + dr * step * sign;
+                        const c = col + dc * step * sign;
+                        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) break;
+                        if (board[r][c] !== player) break;
+                        cells.push([r, c]);
+                    }
                 }
                 if (cells.length >= 4) return cells;
             }
@@ -497,17 +490,19 @@
             messageDiv.textContent = text;
         }
 
-        function saveScore(result) {
-            const scores = JSON.parse(localStorage.getItem('puissance4-scores') || '{"red":0,"yellow":0,"draws":0}');
-            if (result === 'red') scores.red++;
-            else if (result === 'yellow') scores.yellow++;
-            else scores.draws++;
-            localStorage.setItem('puissance4-scores', JSON.stringify(scores));
-            updateScoreboard();
+        function getScores() {
+            const stored = localStorage.getItem(SCORES_KEY);
+            return stored ? JSON.parse(stored) : { ...DEFAULT_SCORES };
         }
 
-        function updateScoreboard() {
-            const scores = JSON.parse(localStorage.getItem('puissance4-scores') || '{"red":0,"yellow":0,"draws":0}');
+        function saveScore(result) {
+            const scores = getScores();
+            scores[SCORE_FIELD[result]]++;
+            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            updateScoreboard(scores);
+        }
+
+        function updateScoreboard(scores = getScores()) {
             document.getElementById('scoreRed').textContent = scores.red;
             document.getElementById('scoreYellow').textContent = scores.yellow;
             document.getElementById('scoreDraws').textContent = scores.draws;
