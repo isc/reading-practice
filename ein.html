@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exercice de français</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"
+    />
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js"
+    ></script>
+    <style>
+      select {
+        display: inline-block;
+        width: 100px;
+        padding: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container" x-data="frenchExercise()">
+      <hgroup>
+        <h1>Ne pas confondre "ein" et "ien"</h1>
+        <p>Complétez les phrases avec les mots manquants</p>
+      </hgroup>
+
+      <form @submit.prevent="checkAnswers">
+        <template x-for="(q, idx) in questions">
+          <span>
+            <span x-text="q.before"></span>
+            <select
+              x-model="answers[idx]"
+              required
+              x-bind:aria-invalid="showResults ? (isCorrect(idx) ? 'false' : 'true') : null"
+            >
+              <option value="">..</option>
+              <option value="ein">ein</option>
+              <option value="ien">ien</option>
+            </select>
+            <span x-text="q.after" style="white-space: pre-line"></span>
+          </span>
+        </template>
+        <button type="submit">Vérifier les réponses</button>
+        <hgroup x-show="showResults" x-transition>
+          <h3>
+            Score : <span x-text="score"></span> /
+            <span x-text="totalQuestions"></span>
+          </h3>
+          <div x-show="score === totalQuestions">
+            <p style="color: green">
+              🎉 Félicitations ! Toutes vos réponses sont correctes !
+            </p>
+          </div>
+          <div x-show="score < totalQuestions">
+            <p style="color: orange">
+              💪 Continuez vos efforts ! Vous pouvez recommencer.
+            </p>
+            <button class="outline" @click="reset()">Recommencer</button>
+          </div>
+        </hgroup>
+      </form>
+    </main>
+
+    <script>
+      function frenchExercise() {
+        return {
+          questions: [
+            {
+              before: 'Le grand chef ind',
+              after: 'fume le calumet de la paix.'
+            },
+            {
+              before: "Pour ralentir l'auto, papa appuie sur le fr",
+              after: '.\n\n'
+            },
+            {
+              before: 'Les pompiers viennent pour ét',
+              after: "dre l'incendie du magasin.\n\n"
+            },
+            {
+              before: 'Le magic',
+              after: 'fait sortir un lapin de son chapeau.\n\n'
+            },
+            {
+              before: 'Jul',
+              after: 'a perdu la c'
+            },
+            { before: '', after: 'ture de son pantalon.\n\n' },
+            {
+              before: 'Avant de repartir, les bohém',
+              after: 's ont ét'
+            },
+            { before: '', after: 't leur feu de camp.\n\n' },
+            {
+              before: 'Le malade g',
+              after: 't, car il a mal aux r'
+            },
+            { before: '', after: 's.\n\n' },
+            { before: 'Le ch', after: 'du berger est le gard' },
+            { before: '', after: 'du troupeau de moutons.\n\n' },
+            {
+              before: 'Ton verre de limonade est b',
+              after: 'trop pl'
+            },
+            { before: '', after: '!\n\n' },
+            { before: 'Le p', after: 'tre a choisi une t' },
+            {
+              before: '',
+              after: 'te vive pour la devanture du pharmac'
+            },
+            { before: '', after: '.\n\n' }
+          ],
+          answers: [],
+          correctAnswers: [
+            'ien',
+            'ein',
+            'ein',
+            'ien',
+            'ien',
+            'ein',
+            'ien',
+            'ein',
+            'ein',
+            'ein',
+            'ien',
+            'ien',
+            'ien',
+            'ein',
+            'ein',
+            'ein',
+            'ien'
+          ],
+          showResults: false,
+          score: 0,
+          totalQuestions: 17,
+
+          isCorrect(index) {
+            return this.answers[index] === this.correctAnswers[index]
+          },
+
+          allAnswersFilled() {
+            return (
+              this.answers.length == this.totalQuestions &&
+              this.answers.every(answer => (answer || '').trim() !== '')
+            )
+          },
+
+          checkAnswers() {
+            this.score = 0
+            for (let index = 0; index < this.correctAnswers.length; index++) {
+              if (this.correctAnswers[index] === this.answers[index])
+                this.score++
+            }
+            this.showResults = true
+          },
+
+          reset() {
+            this.showResults = false
+            this.answers = {}
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
