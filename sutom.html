@@ -615,7 +615,11 @@
 
             // Prepare next row with the revealed first letter
             currentGuess = [secretWord[0]];
-            renderGrid();
+            const nextCells = document.querySelectorAll(`.cell[data-row="${currentRow}"]`);
+            if (nextCells[0]) {
+                nextCells[0].classList.add('revealed');
+                nextCells[0].textContent = secretWord[0];
+            }
         }
 
         function evaluateGuess(guess, secret) {
