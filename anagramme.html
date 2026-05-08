@@ -359,8 +359,9 @@
         let words = null;
         let secretWord = '';
         let normalizedWord = '';
-        // tiles[i] = { id, letter (display), norm, used, slotIndex }
+        // tiles is always indexed by id; displayOrder controls source rendering order.
         let tiles = [];
+        let displayOrder = [];
         // slots[i] = tileId or null
         let slots = [];
         let hintedSlots = new Set();
@@ -421,6 +422,7 @@
             secretWord = pickWord();
             normalizedWord = normalize(secretWord);
             tiles = buildTiles(secretWord);
+            displayOrder = tiles.map(t => t.id);
             slots = Array(secretWord.length).fill(null);
             hintedSlots = new Set();
             usedHintThisRound = false;
@@ -464,11 +466,11 @@
 
         function renderSource() {
             const container = document.getElementById('sourceArea');
-            // Use a flexible grid that fits a row of tiles
             const cols = Math.min(tiles.length, 9);
             container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, auto))`;
             container.innerHTML = '';
-            tiles.forEach(tile => {
+            displayOrder.forEach(id => {
+                const tile = tiles[id];
                 const el = document.createElement('div');
                 el.className = 'tile source';
                 if (tile.used) el.classList.add('used');
@@ -588,28 +590,15 @@
 
         function shuffleSource() {
             if (gameOver) return;
-            // Shuffle only the unused tiles' visual order; keep ids.
-            const unused = tiles.filter(t => !t.used);
-            const used = tiles.filter(t => t.used);
-            let shuffled;
-            if (unused.length > 1) {
-                do {
-                    shuffled = shuffleArray(unused);
-                } while (shuffled.every((t, i) => t.id === unused[i].id));
-            } else {
-                shuffled = unused;
-            }
-            // Rebuild tiles array preserving used positions where used, rest from shuffled
-            const newTiles = [];
+            // Reshuffle the visual order of unused tiles only; keep tiles[] indexed by id.
+            const unusedIds = displayOrder.filter(id => !tiles[id].used);
+            if (unusedIds.length <= 1) return;
+            let shuffledIds;
+            do {
+                shuffledIds = shuffleArray(unusedIds);
+            } while (shuffledIds.every((id, i) => id === unusedIds[i]));
             let si = 0;
-            for (const t of tiles) {
-                if (t.used) {
-                    newTiles.push(t);
-                } else {
-                    newTiles.push(shuffled[si++]);
-                }
-            }
-            tiles = newTiles;
+            displayOrder = displayOrder.map(id => tiles[id].used ? id : shuffledIds[si++]);
             renderSource();
         }
 
