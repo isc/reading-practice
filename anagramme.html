@@ -428,6 +428,7 @@
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
             document.getElementById('hintBtn').disabled = false;
+            document.getElementById('shuffleBtn').disabled = false;
             render();
         }
 
@@ -516,6 +517,7 @@
                 if (typeof showConfetti === 'function') showConfetti();
                 registerWin();
                 document.getElementById('hintBtn').disabled = true;
+                document.getElementById('shuffleBtn').disabled = true;
             } else {
                 const answerArea = document.getElementById('answerArea');
                 answerArea.classList.remove('wrong');
