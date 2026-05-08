@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anagramme</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            max-width: 480px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+            font-size: 1.6em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+        }
+
+        .answer-area {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 18px 12px;
+            margin-bottom: 15px;
+            display: grid;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .answer-area.correct {
+            background: #c6f6d5;
+            animation: flashGreen 0.6s ease;
+        }
+
+        .answer-area.wrong {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes flashGreen {
+            0%, 100% { background: #c6f6d5; }
+            50% { background: #86efac; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); background: #fed7d7; }
+            20%, 60% { transform: translateX(-8px); background: #fed7d7; }
+            40%, 80% { transform: translateX(8px); background: #fed7d7; }
+        }
+
+        .source-area {
+            display: grid;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 20px;
+            min-height: 56px;
+        }
+
+        .tile {
+            width: 44px;
+            height: 52px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            transition: transform 0.2s ease, opacity 0.2s ease, background 0.15s ease;
+            user-select: none;
+        }
+
+        .tile.source {
+            background: white;
+            border: 2px solid #1a1a1a;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #1a1a1a;
+        }
+
+        .tile.source:hover {
+            background: #f0f2f5;
+            transform: translateY(-2px);
+        }
+
+        .tile.source:active {
+            transform: translateY(0);
+            box-shadow: 0 0 0 #1a1a1a;
+        }
+
+        .tile.source.used {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .tile.slot {
+            background: white;
+            border: 2px dashed #cbd5e0;
+            color: #1a1a1a;
+        }
+
+        .tile.slot.filled {
+            border: 2px solid #1a1a1a;
+            background: #fef3c7;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #1a1a1a;
+        }
+
+        .tile.slot.filled:hover {
+            background: #fde68a;
+        }
+
+        .tile.slot.hinted {
+            background: #bfdbfe;
+            border-color: #1e40af;
+            cursor: not-allowed;
+        }
+
+        .tile.slot.placed {
+            animation: pop 0.25s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.5); }
+            60% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-new {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .btn-new:hover {
+            background: #333;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #1a1a1a;
+            border: 2px solid #1a1a1a;
+        }
+
+        .btn-secondary:hover {
+            background: #f0f2f5;
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-row .btn {
+            margin-bottom: 0;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            animation: slideIn 0.5s ease;
+        }
+
+        .message.win {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .message.info {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .scoreboard {
+            margin-top: 20px;
+        }
+
+        .scoreboard h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .score-cell {
+            text-align: center;
+        }
+
+        .score-cell .label {
+            font-size: 0.8em;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .score-cell .value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .rules {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .rules h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .rules ul {
+            margin-left: 20px;
+        }
+
+        .rules li {
+            margin-bottom: 5px;
+        }
+
+        canvas#confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="confetti"></canvas>
+    <div class="container">
+        <h1>🔤 Anagramme</h1>
+        <p class="subtitle">Remets les lettres dans l'ordre</p>
+
+        <div id="message"></div>
+
+        <div class="answer-area" id="answerArea"></div>
+
+        <div class="source-area" id="sourceArea"></div>
+
+        <div class="btn-row">
+            <button class="btn btn-secondary" id="hintBtn">💡 Indice</button>
+            <button class="btn btn-secondary" id="shuffleBtn">🔀 Mélanger</button>
+        </div>
+
+        <button class="btn btn-new" id="newGameBtn">Nouvelle partie</button>
+
+        <div class="rules">
+            <h3>Règles du jeu</h3>
+            <ul>
+                <li>Un mot français est mélangé : ses lettres apparaissent dans le désordre</li>
+                <li>Clique sur une lettre pour la placer dans la prochaine case libre</li>
+                <li>Clique sur une lettre déjà placée pour la remettre en bas</li>
+                <li>Le bouton <strong>💡 Indice</strong> place une lettre correcte (mais ça casse ta série !)</li>
+                <li>Trouve le mot pour gagner et faire grimper ta série</li>
+            </ul>
+        </div>
+
+        <div class="scoreboard">
+            <h3>Scores</h3>
+            <div class="score-row">
+                <div class="score-cell">
+                    <div class="label">Victoires</div>
+                    <div class="value" id="scoreWins">0</div>
+                </div>
+                <div class="score-cell">
+                    <div class="label">Série</div>
+                    <div class="value" id="scoreStreak">0</div>
+                </div>
+                <div class="score-cell">
+                    <div class="label">Meilleure</div>
+                    <div class="value" id="scoreBest">0</div>
+                </div>
+                <div class="score-cell">
+                    <div class="label">Indices</div>
+                    <div class="value" id="scoreHints">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="confetti.js"></script>
+    <script>
+        const SCORES_KEY = 'anagramme-scores';
+        const DEFAULT_SCORES = { wins: 0, hintsUsed: 0, bestStreak: 0, currentStreak: 0 };
+
+        let words = null;
+        let secretWord = '';
+        let normalizedWord = '';
+        // tiles[i] = { id, letter (display), norm, used, slotIndex }
+        let tiles = [];
+        // slots[i] = tileId or null
+        let slots = [];
+        let hintedSlots = new Set();
+        let usedHintThisRound = false;
+        let gameOver = false;
+
+        function normalize(str) {
+            return str.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+        }
+
+        async function loadWords() {
+            if (words) return words;
+            try {
+                const res = await fetch('mots-enfants.txt');
+                const text = await res.text();
+                words = text.split('\n')
+                    .map(w => w.trim().toLowerCase())
+                    .filter(w => w.length >= 4 && w.length <= 9);
+            } catch (err) {
+                words = ['maison', 'voiture', 'soleil', 'chocolat', 'bateau', 'musique', 'jardin', 'orange'];
+            }
+            return words;
+        }
+
+        function pickWord() {
+            return words[Math.floor(Math.random() * words.length)];
+        }
+
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function buildTiles(word) {
+            const letters = [...word];
+            const indices = letters.map((_, i) => i);
+            let order;
+            // Ensure shuffle differs from original (when length > 1 and not all same letter)
+            const distinct = new Set(letters.map(l => normalize(l))).size > 1;
+            do {
+                order = shuffleArray(indices);
+            } while (distinct && order.every((v, i) => v === i));
+            return order.map((origIdx, newIdx) => ({
+                id: newIdx,
+                origIndex: origIdx,
+                letter: letters[origIdx],
+                norm: normalize(letters[origIdx]),
+                used: false
+            }));
+        }
+
+        async function initGame() {
+            await loadWords();
+            secretWord = pickWord();
+            normalizedWord = normalize(secretWord);
+            tiles = buildTiles(secretWord);
+            slots = Array(secretWord.length).fill(null);
+            hintedSlots = new Set();
+            usedHintThisRound = false;
+            gameOver = false;
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('message').className = '';
+            document.getElementById('hintBtn').disabled = false;
+            render();
+        }
+
+        function render() {
+            renderAnswer();
+            renderSource();
+        }
+
+        function renderAnswer() {
+            const container = document.getElementById('answerArea');
+            container.style.gridTemplateColumns = `repeat(${secretWord.length}, minmax(0, auto))`;
+            container.innerHTML = '';
+            const recentSlot = container.dataset.recent ? parseInt(container.dataset.recent) : -1;
+            for (let i = 0; i < slots.length; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'tile slot';
+                const tileId = slots[i];
+                if (tileId !== null) {
+                    slot.classList.add('filled');
+                    if (hintedSlots.has(i)) slot.classList.add('hinted');
+                    slot.textContent = tiles[tileId].letter;
+                    if (i === recentSlot) slot.classList.add('placed');
+                    if (!hintedSlots.has(i) && !gameOver) {
+                        slot.onclick = () => removeFromSlot(i);
+                    }
+                } else {
+                    slot.innerHTML = '&nbsp;';
+                }
+                container.appendChild(slot);
+            }
+            container.dataset.recent = '';
+        }
+
+        function renderSource() {
+            const container = document.getElementById('sourceArea');
+            // Use a flexible grid that fits a row of tiles
+            const cols = Math.min(tiles.length, 9);
+            container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, auto))`;
+            container.innerHTML = '';
+            tiles.forEach(tile => {
+                const el = document.createElement('div');
+                el.className = 'tile source';
+                if (tile.used) el.classList.add('used');
+                el.textContent = tile.letter;
+                el.onclick = () => placeTile(tile.id);
+                container.appendChild(el);
+            });
+        }
+
+        function placeTile(tileId) {
+            if (gameOver) return;
+            const tile = tiles[tileId];
+            if (tile.used) return;
+            const nextSlot = slots.indexOf(null);
+            if (nextSlot === -1) return;
+            slots[nextSlot] = tileId;
+            tile.used = true;
+            document.getElementById('answerArea').dataset.recent = String(nextSlot);
+            render();
+            if (slots.every(s => s !== null)) {
+                checkAnswer();
+            }
+        }
+
+        function removeFromSlot(slotIndex) {
+            if (gameOver) return;
+            if (hintedSlots.has(slotIndex)) return;
+            const tileId = slots[slotIndex];
+            if (tileId === null) return;
+            slots[slotIndex] = null;
+            tiles[tileId].used = false;
+            render();
+        }
+
+        function currentWordFromSlots() {
+            return slots.map(id => id === null ? '' : tiles[id].norm).join('');
+        }
+
+        function checkAnswer() {
+            const guess = currentWordFromSlots();
+            if (guess === normalizedWord) {
+                gameOver = true;
+                const answerArea = document.getElementById('answerArea');
+                answerArea.classList.add('correct');
+                showMessage(`🎉 Bravo ! Le mot était « ${secretWord} »`, 'win');
+                if (typeof showConfetti === 'function') showConfetti();
+                registerWin();
+                document.getElementById('hintBtn').disabled = true;
+            } else {
+                const answerArea = document.getElementById('answerArea');
+                answerArea.classList.remove('wrong');
+                // force reflow to restart animation
+                void answerArea.offsetWidth;
+                answerArea.classList.add('wrong');
+                setTimeout(() => answerArea.classList.remove('wrong'), 500);
+            }
+        }
+
+        function useHint() {
+            if (gameOver) return;
+            // Find first slot whose current content does not match the expected letter
+            let targetSlot = -1;
+            for (let i = 0; i < slots.length; i++) {
+                const tileId = slots[i];
+                const expected = normalizedWord[i];
+                if (tileId === null || tiles[tileId].norm !== expected) {
+                    targetSlot = i;
+                    break;
+                }
+            }
+            if (targetSlot === -1) return;
+
+            // If a wrong tile is currently in this slot, send it back first
+            if (slots[targetSlot] !== null) {
+                tiles[slots[targetSlot]].used = false;
+                slots[targetSlot] = null;
+            }
+
+            // Find an unused tile that matches the expected letter
+            const expected = normalizedWord[targetSlot];
+            const tile = tiles.find(t => !t.used && t.norm === expected);
+            if (!tile) return;
+
+            // If that tile happens to occupy a different slot already (rare due to above),
+            // it's marked used; we already handled the target slot. Place it now.
+            slots[targetSlot] = tile.id;
+            tile.used = true;
+            hintedSlots.add(targetSlot);
+            usedHintThisRound = true;
+            // Increment hintsUsed and reset current streak
+            const scores = getScores();
+            scores.hintsUsed++;
+            scores.currentStreak = 0;
+            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            updateScoreboard(scores);
+
+            document.getElementById('answerArea').dataset.recent = String(targetSlot);
+            render();
+
+            if (slots.every(s => s !== null)) {
+                checkAnswer();
+            }
+        }
+
+        function shuffleSource() {
+            if (gameOver) return;
+            // Shuffle only the unused tiles' visual order; keep ids.
+            const unused = tiles.filter(t => !t.used);
+            const used = tiles.filter(t => t.used);
+            let shuffled;
+            if (unused.length > 1) {
+                do {
+                    shuffled = shuffleArray(unused);
+                } while (shuffled.every((t, i) => t.id === unused[i].id));
+            } else {
+                shuffled = unused;
+            }
+            // Rebuild tiles array preserving used positions where used, rest from shuffled
+            const newTiles = [];
+            let si = 0;
+            for (const t of tiles) {
+                if (t.used) {
+                    newTiles.push(t);
+                } else {
+                    newTiles.push(shuffled[si++]);
+                }
+            }
+            tiles = newTiles;
+            renderSource();
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+        }
+
+        function getScores() {
+            const stored = localStorage.getItem(SCORES_KEY);
+            if (!stored) return { ...DEFAULT_SCORES };
+            try {
+                return { ...DEFAULT_SCORES, ...JSON.parse(stored) };
+            } catch {
+                return { ...DEFAULT_SCORES };
+            }
+        }
+
+        function registerWin() {
+            const scores = getScores();
+            scores.wins++;
+            if (!usedHintThisRound) {
+                scores.currentStreak++;
+                if (scores.currentStreak > scores.bestStreak) {
+                    scores.bestStreak = scores.currentStreak;
+                }
+            }
+            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            updateScoreboard(scores);
+        }
+
+        function updateScoreboard(scores = getScores()) {
+            document.getElementById('scoreWins').textContent = scores.wins;
+            document.getElementById('scoreStreak').textContent = scores.currentStreak;
+            document.getElementById('scoreBest').textContent = scores.bestStreak;
+            document.getElementById('scoreHints').textContent = scores.hintsUsed;
+        }
+
+        document.getElementById('newGameBtn').onclick = initGame;
+        document.getElementById('hintBtn').onclick = useHint;
+        document.getElementById('shuffleBtn').onclick = shuffleSource;
+
+        updateScoreboard();
+        initGame();
+    </script>
+</body>
+</html>
