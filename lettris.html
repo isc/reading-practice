@@ -802,6 +802,8 @@
             return { r, c };
         }
 
+        let lastPointerX = null, lastPointerY = null;
+
         function onPointerDown(e) {
             if (gameOver) return;
             const point = e.touches ? e.touches[0] : e;
@@ -828,6 +830,8 @@
                 }
             }
             dragging = true;
+            lastPointerX = point.clientX;
+            lastPointerY = point.clientY;
             tryAddCell(cell.r, cell.c);
             e.preventDefault();
         }
@@ -835,15 +839,32 @@
         function onPointerMove(e) {
             if (!dragging || gameOver) return;
             const point = e.touches ? e.touches[0] : e;
-            const cell = tileFromPoint(point.clientX, point.clientY);
-            if (!cell) return;
-            tryAddCell(cell.r, cell.c);
+            const x = point.clientX, y = point.clientY;
+            // Sample intermediate points between the last pointer position and the current
+            // one so fast trackpad/mouse moves don't skip diagonal cells.
+            if (lastPointerX !== null) {
+                const dx = x - lastPointerX, dy = y - lastPointerY;
+                const dist = Math.hypot(dx, dy);
+                const steps = Math.max(1, Math.ceil(dist / 8));
+                for (let i = 1; i <= steps; i++) {
+                    const sx = lastPointerX + dx * (i / steps);
+                    const sy = lastPointerY + dy * (i / steps);
+                    const cell = tileFromPoint(sx, sy);
+                    if (cell) tryAddCell(cell.r, cell.c);
+                }
+            } else {
+                const cell = tileFromPoint(x, y);
+                if (cell) tryAddCell(cell.r, cell.c);
+            }
+            lastPointerX = x;
+            lastPointerY = y;
             e.preventDefault();
         }
 
         function onPointerUp(e) {
             if (!dragging) return;
             dragging = false;
+            lastPointerX = lastPointerY = null;
             // If user dragged across at least 3 cells, submit; otherwise leave for tap mode
             if (path.length >= 3) {
                 // Heuristic: if it's a quick click on a single cell, don't auto-submit
