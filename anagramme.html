@@ -548,13 +548,25 @@
                 slots[targetSlot] = null;
             }
 
-            // Find an unused tile that matches the expected letter
+            // Find a tile with the expected letter — prefer unused, otherwise
+            // pluck one from another (wrong) slot.
             const expected = normalizedWord[targetSlot];
-            const tile = tiles.find(t => !t.used && t.norm === expected);
+            let tile = tiles.find(t => !t.used && t.norm === expected);
+            if (!tile) {
+                for (let i = 0; i < slots.length; i++) {
+                    if (i === targetSlot) continue;
+                    const tid = slots[i];
+                    if (tid !== null && tiles[tid].norm === expected) {
+                        slots[i] = null;
+                        hintedSlots.delete(i);
+                        tile = tiles[tid];
+                        tile.used = false;
+                        break;
+                    }
+                }
+            }
             if (!tile) return;
 
-            // If that tile happens to occupy a different slot already (rare due to above),
-            // it's marked used; we already handled the target slot. Place it now.
             slots[targetSlot] = tile.id;
             tile.used = true;
             hintedSlots.add(targetSlot);
