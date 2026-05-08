@@ -163,22 +163,6 @@
             background: #cbd5e1;
         }
 
-        .key:disabled {
-            background: #4b5563;
-            color: #9ca3af;
-            cursor: not-allowed;
-        }
-
-        .key.correct {
-            background: #dc2626;
-            color: white;
-        }
-
-        .key.present {
-            background: #fbbf24;
-            color: #1a1a1a;
-        }
-
         .btn {
             width: 100%;
             padding: 15px;
@@ -405,7 +389,6 @@
         let currentRow = 0;
         let currentGuess = [];
         let gameOver = false;
-        let letterStates = {};       // 'correct' | 'present' | 'absent'
 
         // Strip accents and normalize to uppercase A-Z
         function normalize(word) {
@@ -464,7 +447,6 @@
             currentRow = 0;
             currentGuess = [secretWord[0]];
             gameOver = false;
-            letterStates = {};
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
             renderGrid();
@@ -520,10 +502,6 @@
                         btn.textContent = key;
                         btn.dataset.key = key;
                         btn.onclick = () => typeLetter(key);
-                        const state = letterStates[key];
-                        if (state === 'correct') btn.classList.add('correct');
-                        else if (state === 'present') btn.classList.add('present');
-                        else if (state === 'absent') btn.disabled = true;
                     }
                     rowEl.appendChild(btn);
                 });
@@ -590,8 +568,6 @@
 
             const result = evaluateGuess(guess, secretWord);
             applyResult(currentRow, guess, result);
-            updateLetterStates(guess, result);
-            renderKeyboard();
 
             if (guess === secretWord) {
                 gameOver = true;
@@ -656,18 +632,6 @@
                     cell.classList.add('flip', result[i]);
                 }, i * 80);
             });
-        }
-
-        function updateLetterStates(guess, result) {
-            const priority = { correct: 3, present: 2, absent: 1 };
-            for (let i = 0; i < guess.length; i++) {
-                const letter = guess[i];
-                const newState = result[i];
-                const oldState = letterStates[letter];
-                if (!oldState || priority[newState] > priority[oldState]) {
-                    letterStates[letter] = newState;
-                }
-            }
         }
 
         function getScores() {
