@@ -423,23 +423,32 @@
         }
 
         async function loadWords() {
-            const response = await fetch('fr_FR.txt');
-            const text = await response.text();
+            const [dictRes, kidsRes] = await Promise.all([
+                fetch('fr_FR.txt'),
+                fetch('mots-enfants.txt'),
+            ]);
+            const dictText = await dictRes.text();
+            const kidsText = await kidsRes.text();
             const set = new Set();
-            const candidates = [];
-            text.split('\n').forEach(line => {
+            dictText.split('\n').forEach(line => {
                 if (!line) return;
                 const word = line.split('\t')[0];
                 if (!word) return;
                 const norm = normalize(word.trim());
                 if (!isValidWord(norm)) return;
                 if (norm.length < 4 || norm.length > 12) return;
-                if (!set.has(norm)) {
-                    set.add(norm);
-                    if (norm.length >= 6 && norm.length <= 9) {
-                        candidates.push(norm);
-                    }
-                }
+                set.add(norm);
+            });
+            const candidates = [];
+            const seen = new Set();
+            kidsText.split('\n').forEach(line => {
+                const norm = normalize(line.trim());
+                if (!isValidWord(norm)) return;
+                if (norm.length < 6 || norm.length > 9) return;
+                if (seen.has(norm)) return;
+                seen.add(norm);
+                set.add(norm);
+                candidates.push(norm);
             });
             validWordsSet = set;
             candidateWords = candidates;

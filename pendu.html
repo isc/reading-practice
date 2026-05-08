@@ -399,27 +399,13 @@
         async function loadWords() {
             if (words) return words;
             try {
-                const res = await fetch('fr_FR.txt');
+                const res = await fetch('mots-enfants.txt');
                 const text = await res.text();
-                const seen = new Set();
-                const list = [];
-                for (const line of text.split('\n')) {
-                    const word = line.split('\t')[0];
-                    if (!word) continue;
-                    // Single word, only French letters, length 5-10
-                    if (!/^[a-zA-ZàâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]+$/.test(word)) continue;
-                    if (word.length < 5 || word.length > 10) continue;
-                    // Skip capitalized (proper nouns)
-                    if (word[0] !== word[0].toLowerCase()) continue;
-                    const norm = normalize(word);
-                    if (seen.has(norm)) continue;
-                    seen.add(norm);
-                    list.push(word.toLowerCase());
-                }
-                words = list;
+                words = text.split('\n')
+                    .map(w => w.trim().toLowerCase())
+                    .filter(w => w.length >= 5 && w.length <= 10);
             } catch (err) {
-                // Fallback minimal list
-                words = ['bonjour', 'maison', 'ordinateur', 'fenetre', 'voiture', 'chocolat', 'musique', 'soleil', 'montagne', 'bibliotheque'];
+                words = ['bonjour', 'maison', 'voiture', 'chocolat', 'musique', 'soleil', 'montagne', 'bateau'];
             }
             return words;
         }
