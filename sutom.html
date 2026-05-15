@@ -165,6 +165,21 @@
             background: #cbd5e1;
         }
 
+        .key.correct {
+            background: #dc2626;
+            color: white;
+        }
+
+        .key.present {
+            background: #fbbf24;
+            color: #1a1a1a;
+        }
+
+        .key.absent {
+            background: #4b5563;
+            color: #9ca3af;
+        }
+
         .btn {
             width: 100%;
             padding: 15px;
@@ -382,7 +397,7 @@
         const KEYBOARD_LAYOUT = [
             ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
             ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'],
-            ['ENTER', 'W', 'X', 'C', 'V', 'B', 'N', 'BACK']
+            ['W', 'X', 'C', 'V', 'B', 'N', 'BACK', 'ENTER']
         ];
 
         let allWords = [];           // Set of valid normalized words for guess validation
@@ -391,7 +406,9 @@
         let secretWord = '';         // Normalized secret (uppercase, no accents)
         let wordLength = 0;
         let currentRow = 0;
-        let currentGuess = [];
+        let currentGuess = [];       // Fixed-size array of length wordLength, null = empty
+        let lockedPositions = new Set(); // Indices verrouillées (lettres déjà bien placées)
+        let keyboardState = {};      // letter -> 'correct' | 'present' | 'absent'
         let gameOver = false;
 
         // Strip accents and normalize to uppercase A-Z
@@ -449,13 +466,21 @@
             secretWord = pickSecret();
             wordLength = secretWord.length;
             currentRow = 0;
-            currentGuess = [secretWord[0]];
+            lockedPositions = new Set([0]);
+            keyboardState = {};
+            currentGuess = buildPrefilledGuess();
             gameOver = false;
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
             document.getElementById('newGameBtn').style.display = 'none';
             renderGrid();
             renderKeyboard();
+        }
+
+        function buildPrefilledGuess() {
+            const arr = new Array(wordLength).fill(null);
+            lockedPositions.forEach(i => { arr[i] = secretWord[i]; });
+            return arr;
         }
 
         function renderGrid() {
@@ -471,13 +496,11 @@
                     cellEl.dataset.row = r;
                     cellEl.dataset.col = c;
                     if (r === currentRow) {
-                        if (c < currentGuess.length) {
-                            cellEl.textContent = currentGuess[c];
-                        }
-                        // First letter always pre-filled and shown red as a hint
-                        if (c === 0) {
+                        if (lockedPositions.has(c)) {
                             cellEl.classList.add('revealed');
-                            cellEl.textContent = secretWord[0];
+                            cellEl.textContent = secretWord[c];
+                        } else if (currentGuess[c]) {
+                            cellEl.textContent = currentGuess[c];
                         }
                     }
                     rowEl.appendChild(cellEl);
@@ -507,6 +530,8 @@
                         btn.textContent = key;
                         btn.dataset.key = key;
                         btn.onclick = () => typeLetter(key);
+                        const state = keyboardState[key];
+                        if (state) btn.classList.add(state);
                     }
                     rowEl.appendChild(btn);
                 });
@@ -516,24 +541,33 @@
 
         function typeLetter(letter) {
             if (gameOver) return;
-            if (currentGuess.length >= wordLength) return;
-            currentGuess.push(letter);
-            updateCurrentRowDisplay();
+            for (let i = 0; i < wordLength; i++) {
+                if (lockedPositions.has(i)) continue;
+                if (!currentGuess[i]) {
+                    currentGuess[i] = letter;
+                    updateCurrentRowDisplay();
+                    return;
+                }
+            }
         }
 
         function deleteLetter() {
             if (gameOver) return;
-            // Cannot delete the first letter (always revealed)
-            if (currentGuess.length <= 1) return;
-            currentGuess.pop();
-            updateCurrentRowDisplay();
+            for (let i = wordLength - 1; i >= 0; i--) {
+                if (lockedPositions.has(i)) continue;
+                if (currentGuess[i]) {
+                    currentGuess[i] = null;
+                    updateCurrentRowDisplay();
+                    return;
+                }
+            }
         }
 
         function updateCurrentRowDisplay() {
             const cells = document.querySelectorAll(`.cell[data-row="${currentRow}"]`);
             cells.forEach((cell, i) => {
-                if (i === 0) {
-                    cell.textContent = secretWord[0];
+                if (lockedPositions.has(i)) {
+                    cell.textContent = secretWord[i];
                 } else {
                     cell.textContent = currentGuess[i] || '';
                 }
@@ -557,7 +591,7 @@
 
         function submitGuess() {
             if (gameOver) return;
-            if (currentGuess.length !== wordLength) {
+            if (currentGuess.some(c => !c)) {
                 showMessage('Mot incomplet', 'info');
                 shakeRow();
                 return;
@@ -573,6 +607,7 @@
 
             const result = evaluateGuess(guess, secretWord);
             applyResult(currentRow, guess, result);
+            updateKeyboardState(guess, result);
 
             if (guess === secretWord) {
                 gameOver = true;
@@ -583,6 +618,11 @@
                     document.getElementById('newGameBtn').style.display = 'block';
                 }, 50);
                 return;
+            }
+
+            // Verrouille les positions trouvées dans cet essai
+            for (let i = 0; i < result.length; i++) {
+                if (result[i] === 'correct') lockedPositions.add(i);
             }
 
             currentRow++;
@@ -596,12 +636,27 @@
                 return;
             }
 
-            // Prepare next row with the revealed first letter
-            currentGuess = [secretWord[0]];
+            // Prépare la rangée suivante avec toutes les lettres déjà bien placées
+            currentGuess = buildPrefilledGuess();
             const nextCells = document.querySelectorAll(`.cell[data-row="${currentRow}"]`);
-            if (nextCells[0]) {
-                nextCells[0].classList.add('revealed');
-                nextCells[0].textContent = secretWord[0];
+            lockedPositions.forEach(i => {
+                if (nextCells[i]) {
+                    nextCells[i].classList.add('revealed');
+                    nextCells[i].textContent = secretWord[i];
+                }
+            });
+            renderKeyboard();
+        }
+
+        function updateKeyboardState(guess, result) {
+            const priority = { correct: 3, present: 2, absent: 1 };
+            for (let i = 0; i < guess.length; i++) {
+                const letter = guess[i];
+                const next = result[i];
+                const current = keyboardState[letter];
+                if (!current || priority[next] > priority[current]) {
+                    keyboardState[letter] = next;
+                }
             }
         }
 
