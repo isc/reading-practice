@@ -336,7 +336,6 @@ maquillage
 maquiller
 marcheur
 marge
-marseille
 marteau
 martien
 matin
@@ -350,7 +349,6 @@ merveilleux
 mesure
 mignon
 millefeuille
-mireille
 miroir
 moineau
 moitié
