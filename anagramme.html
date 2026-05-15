@@ -41,8 +41,38 @@
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-size: 0.85em;
+        }
+
+        .level-selector {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            background: #f0f2f5;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 18px;
+        }
+
+        .level-btn {
+            border: none;
+            background: transparent;
+            border-radius: 7px;
+            padding: 8px 4px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .level-btn.active {
+            background: white;
+            color: #1a1a1a;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .answer-area {
@@ -308,6 +338,12 @@
         <h1>🔤 Anagramme</h1>
         <p class="subtitle">Remets les lettres dans l'ordre</p>
 
+        <div class="level-selector" id="levelSelector">
+            <button class="level-btn" data-level="facile">Facile</button>
+            <button class="level-btn" data-level="moyen">Moyen</button>
+            <button class="level-btn" data-level="difficile">Difficile</button>
+        </div>
+
         <div id="message"></div>
 
         <div class="answer-area" id="answerArea"></div>
@@ -358,7 +394,14 @@
     <script src="confetti.js"></script>
     <script>
         const SCORES_KEY = 'anagramme-scores';
-        const DEFAULT_SCORES = { wins: 0, hintsUsed: 0, bestStreak: 0, currentStreak: 0 };
+        const DEFAULT_LEVEL_SCORES = { wins: 0, hintsUsed: 0, bestStreak: 0, currentStreak: 0 };
+        const LEVELS = ['facile', 'moyen', 'difficile'];
+        const LEVEL_RANGES = {
+            facile: [4, 5],
+            moyen: [6, 7],
+            difficile: [8, 9],
+        };
+        let currentLevel = 'moyen';
 
         let words = null;
         let secretWord = '';
@@ -391,7 +434,10 @@
         }
 
         function pickWord() {
-            return words[Math.floor(Math.random() * words.length)];
+            const [min, max] = LEVEL_RANGES[currentLevel];
+            const pool = words.filter(w => w.length >= min && w.length <= max);
+            const source = pool.length > 0 ? pool : words;
+            return source[Math.floor(Math.random() * source.length)];
         }
 
         function shuffleArray(arr) {
@@ -578,10 +624,11 @@
             hintedSlots.add(targetSlot);
             usedHintThisRound = true;
             // Increment hintsUsed and reset current streak
-            const scores = getScores();
+            const store = loadStore();
+            const scores = store.scores[currentLevel];
             scores.hintsUsed++;
             scores.currentStreak = 0;
-            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            saveStore(store);
             updateScoreboard(scores);
 
             document.getElementById('answerArea').dataset.recent = String(targetSlot);
@@ -612,18 +659,36 @@
             messageDiv.textContent = text;
         }
 
-        function getScores() {
+        function loadStore() {
             const stored = localStorage.getItem(SCORES_KEY);
-            if (!stored) return { ...DEFAULT_SCORES };
-            try {
-                return { ...DEFAULT_SCORES, ...JSON.parse(stored) };
-            } catch {
-                return { ...DEFAULT_SCORES };
+            const base = { level: 'moyen', scores: {} };
+            LEVELS.forEach(l => { base.scores[l] = { ...DEFAULT_LEVEL_SCORES }; });
+            if (!stored) return base;
+            let parsed;
+            try { parsed = JSON.parse(stored); } catch { return base; }
+            // Migration : ancien format à plat → on déverse sous "moyen"
+            if (parsed && parsed.scores && typeof parsed.scores === 'object') {
+                LEVELS.forEach(l => {
+                    base.scores[l] = { ...DEFAULT_LEVEL_SCORES, ...(parsed.scores[l] || {}) };
+                });
+                if (LEVELS.includes(parsed.level)) base.level = parsed.level;
+            } else if (parsed && typeof parsed.wins === 'number') {
+                base.scores.moyen = { ...DEFAULT_LEVEL_SCORES, ...parsed };
             }
+            return base;
+        }
+
+        function saveStore(store) {
+            localStorage.setItem(SCORES_KEY, JSON.stringify(store));
+        }
+
+        function getScores(level = currentLevel) {
+            return loadStore().scores[level];
         }
 
         function registerWin() {
-            const scores = getScores();
+            const store = loadStore();
+            const scores = store.scores[currentLevel];
             scores.wins++;
             if (!usedHintThisRound) {
                 scores.currentStreak++;
@@ -631,7 +696,7 @@
                     scores.bestStreak = scores.currentStreak;
                 }
             }
-            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            saveStore(store);
             updateScoreboard(scores);
         }
 
@@ -646,6 +711,29 @@
         document.getElementById('hintBtn').onclick = useHint;
         document.getElementById('shuffleBtn').onclick = shuffleSource;
 
+        function renderLevelSelector() {
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.level === currentLevel);
+            });
+        }
+
+        function setLevel(level) {
+            if (!LEVELS.includes(level) || level === currentLevel) return;
+            currentLevel = level;
+            const store = loadStore();
+            store.level = level;
+            saveStore(store);
+            renderLevelSelector();
+            updateScoreboard();
+            initGame();
+        }
+
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.onclick = () => setLevel(btn.dataset.level);
+        });
+
+        currentLevel = loadStore().level;
+        renderLevelSelector();
         updateScoreboard();
         initGame();
     </script>
