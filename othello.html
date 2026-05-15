@@ -408,7 +408,7 @@
             <div class="board" id="board"></div>
         </div>
 
-        <button class="btn btn-new" id="newGameBtn">Nouvelle partie</button>
+        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
 
         <div class="rules">
             <h3>Règles du jeu</h3>
@@ -481,6 +481,7 @@
             hoverKey = null;
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
+            document.getElementById('newGameBtn').style.display = 'none';
             computeValidMoves();
             renderBoard();
             updateTurnIndicator();
@@ -683,6 +684,7 @@
                 showMessage(`🤝 Match nul ! ${black} contre ${white}`, 'draw');
                 saveScore('draw');
             }
+            document.getElementById('newGameBtn').style.display = 'block';
         }
 
         function showMessage(text, type) {

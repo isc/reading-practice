@@ -414,7 +414,7 @@
             <button class="btn btn-validate" id="validateBtn" disabled>Valider</button>
         </div>
 
-        <button class="btn-new" id="newGameBtn">Nouvelle partie</button>
+        <button class="btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
 
         <div class="found-section">
             <div class="found-header">
@@ -740,6 +740,7 @@
             clearPath();
             document.getElementById('clearBtn').disabled = true;
             document.getElementById('validateBtn').disabled = true;
+            document.getElementById('newGameBtn').style.display = 'block';
 
             const scores = getScores();
             const isNewBest = score > scores.bestScore;
@@ -773,6 +774,7 @@
             gameStarted = false;
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
+            document.getElementById('newGameBtn').style.display = 'none';
             renderGrid();
             renderFoundWords();
             updateScoreDisplay();
