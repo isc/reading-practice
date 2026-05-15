@@ -336,7 +336,7 @@
 
         <div class="keyboard" id="keyboard"></div>
 
-        <button class="btn btn-new" id="newGameBtn">Nouvelle partie</button>
+        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
 
         <div class="rules">
             <h3>Règles du jeu</h3>
@@ -453,6 +453,7 @@
             gameOver = false;
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
+            document.getElementById('newGameBtn').style.display = 'none';
             renderGrid();
             renderKeyboard();
         }
@@ -579,6 +580,7 @@
                     showMessage(`🎉 Bravo ! Mot trouvé en ${currentRow + 1} essai${currentRow > 0 ? 's' : ''}.`, 'win');
                     saveResult(true);
                     showConfetti();
+                    document.getElementById('newGameBtn').style.display = 'block';
                 }, 50);
                 return;
             }
@@ -589,6 +591,7 @@
                 setTimeout(() => {
                     showMessage(`😔 Perdu ! Le mot était : ${secretWord}`, 'lose');
                     saveResult(false);
+                    document.getElementById('newGameBtn').style.display = 'block';
                 }, 50);
                 return;
             }

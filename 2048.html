@@ -283,7 +283,7 @@
             <div class="grid" id="grid"></div>
         </div>
 
-        <button class="btn btn-new" id="newGameBtn">Nouvelle partie</button>
+        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
 
         <div class="rules">
             <h3>Règles du jeu</h3>
@@ -355,6 +355,7 @@
             gameCounted = false;
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
+            document.getElementById('newGameBtn').style.display = 'none';
             spawnTile();
             spawnTile();
             render();
@@ -520,6 +521,7 @@
                     updateScoreDisplay();
                 }
                 showMessage(`😔 Partie terminée ! Score final : ${score}`, 'lose');
+                document.getElementById('newGameBtn').style.display = 'block';
             }
         }
 

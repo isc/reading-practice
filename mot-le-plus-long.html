@@ -377,7 +377,7 @@
             <button class="btn btn-validate" id="validateBtn">Valider</button>
         </div>
 
-        <button class="btn-new" id="newGameBtn">Nouvelle partie</button>
+        <button class="btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
 
         <div class="found">
             <h3>Mots trouvés</h3>
@@ -703,6 +703,7 @@
             gameActive = false;
             renderTiles();
             updateActionState();
+            document.getElementById('newGameBtn').style.display = 'block';
             const finalLength = bestFound ? bestFound.length : 0;
             saveScore(finalLength);
 
@@ -752,6 +753,7 @@
             bestFound = null;
             gameActive = true;
             clearMessage();
+            document.getElementById('newGameBtn').style.display = 'none';
             renderTiles();
             renderWordArea();
             renderFoundList();
