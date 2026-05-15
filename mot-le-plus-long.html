@@ -123,8 +123,10 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .tile:hover:not(:disabled) {
-            transform: translateY(-2px);
+        @media (hover: hover) {
+            .tile:hover:not(:disabled) {
+                transform: translateY(-2px);
+            }
         }
 
         .tile:disabled {

@@ -60,9 +60,11 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .peg:hover {
-            transform: scale(1.08);
-            border-color: #999;
+        @media (hover: hover) {
+            .peg:hover {
+                transform: scale(1.08);
+                border-color: #999;
+            }
         }
 
         .feedback-peg {
@@ -113,9 +115,11 @@
             transition: all 0.2s ease;
         }
 
-        .color-option:hover {
-            transform: scale(1.15);
-            border-color: #333;
+        @media (hover: hover) {
+            .color-option:hover {
+                transform: scale(1.15);
+                border-color: #333;
+            }
         }
 
         .color-option.selected {

@@ -139,9 +139,11 @@
             box-shadow: 0 2px 0 #1a1a1a;
         }
 
-        .tile.source:hover {
-            background: #f0f2f5;
-            transform: translateY(-2px);
+        @media (hover: hover) {
+            .tile.source:hover {
+                background: #f0f2f5;
+                transform: translateY(-2px);
+            }
         }
 
         .tile.source:active {
