@@ -55,11 +55,7 @@ function showConfetti() {
 
     draw() {
       ctx.beginPath()
-      ctx.moveTo(this.x, this.y)
-      ctx.lineTo(this.x + this.w, this.y + this.h)
-      ctx.lineTo(this.x + this.w * 2, this.y)
-      ctx.lineTo(this.x + this.w, this.y - this.h)
-      ctx.closePath()
+      ctx.arc(this.x, this.y, this.w / 2, 0, Math.PI * 2)
       ctx.fillStyle = this.color
       ctx.fill()
     }
