@@ -67,10 +67,12 @@
             margin: 0;
         }
 
-        .word:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            background: #3182ce;
+        @media (hover: hover) {
+            .word:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                background: #3182ce;
+            }
         }
 
         .word.selected {
