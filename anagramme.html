@@ -371,7 +371,7 @@
         </div>
 
         <div class="scoreboard">
-            <h3>Scores</h3>
+            <h3>Scores — <span id="scoreLevel">Moyen</span></h3>
             <div class="score-row">
                 <div class="score-cell">
                     <div class="label">Victoires</div>
@@ -704,11 +704,14 @@
             updateScoreboard(scores);
         }
 
+        const LEVEL_LABELS = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
+
         function updateScoreboard(scores = getScores()) {
             document.getElementById('scoreWins').textContent = scores.wins;
             document.getElementById('scoreStreak').textContent = scores.currentStreak;
             document.getElementById('scoreBest').textContent = scores.bestStreak;
             document.getElementById('scoreHints').textContent = scores.hintsUsed;
+            document.getElementById('scoreLevel').textContent = LEVEL_LABELS[currentLevel];
         }
 
         document.getElementById('newGameBtn').onclick = initGame;
