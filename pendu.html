@@ -130,24 +130,15 @@
         }
 
         .keyboard-row {
-            display: grid;
+            display: flex;
             gap: 4px;
-        }
-
-        .keyboard-row.row1,
-        .keyboard-row.row2 {
-            grid-template-columns: repeat(10, minmax(0, 1fr));
-        }
-
-        .keyboard-row.row3 {
-            grid-template-columns: repeat(10, minmax(0, 1fr));
-        }
-
-        .keyboard-row.row3 .key:first-child {
-            grid-column-start: 3;
+            justify-content: center;
         }
 
         .key {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 44px;
             height: 48px;
             background: white;
             border: 2px solid #e0e0e0;
@@ -380,10 +371,10 @@
         const MAX_ERRORS = 6;
         const SCORES_KEY = 'pendu-scores';
         const DEFAULT_SCORES = { wins: 0, losses: 0 };
-        const AZERTY_ROWS = [
-            ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-            ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'],
-            ['W', 'X', 'C', 'V', 'B', 'N']
+        const ALPHABET_ROWS = [
+            ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'],
+            ['J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'],
+            ['S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         ];
 
         let secretWord = '';
@@ -455,9 +446,9 @@
         function renderKeyboard() {
             const container = document.getElementById('keyboard');
             container.innerHTML = '';
-            AZERTY_ROWS.forEach((row, idx) => {
+            ALPHABET_ROWS.forEach(row => {
                 const rowEl = document.createElement('div');
-                rowEl.className = `keyboard-row row${idx + 1}`;
+                rowEl.className = 'keyboard-row';
                 row.forEach(letter => {
                     const btn = document.createElement('button');
                     btn.className = 'key';
