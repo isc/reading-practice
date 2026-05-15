@@ -84,13 +84,15 @@
         }
 
         .tile {
-            width: 44px;
-            height: 52px;
+            width: 100%;
+            max-width: 44px;
+            min-width: 0;
+            aspect-ratio: 22 / 26;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5em;
+            font-size: clamp(0.95em, 4.5vw, 1.5em);
             font-weight: 700;
             color: #1a1a1a;
             text-transform: uppercase;
@@ -443,7 +445,7 @@
 
         function renderAnswer() {
             const container = document.getElementById('answerArea');
-            container.style.gridTemplateColumns = `repeat(${secretWord.length}, minmax(0, auto))`;
+            container.style.gridTemplateColumns = `repeat(${secretWord.length}, minmax(0, 44px))`;
             container.innerHTML = '';
             const recentSlot = container.dataset.recent ? parseInt(container.dataset.recent) : -1;
             for (let i = 0; i < slots.length; i++) {
@@ -469,7 +471,7 @@
         function renderSource() {
             const container = document.getElementById('sourceArea');
             const cols = Math.min(tiles.length, 9);
-            container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, auto))`;
+            container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 44px))`;
             container.innerHTML = '';
             displayOrder.forEach(id => {
                 const tile = tiles[id];
