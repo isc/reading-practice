@@ -19,6 +19,21 @@
             justify-content: center;
             align-items: flex-start;
             padding: 20px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        canvas#confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1000;
         }
 
         .container {
@@ -298,6 +313,7 @@
     </style>
 </head>
 <body>
+    <canvas id="confetti"></canvas>
     <div class="container">
         <h1>🧠 Mastermind</h1>
         <p class="subtitle"></p>
@@ -344,6 +360,7 @@
         </div>
     </div>
 
+    <script src="confetti.js"></script>
     <script>
         const colors = [
             '#dc2626', // rouge vif
@@ -378,7 +395,9 @@
             renderCurrentGuess();
             updateSubmitButton();
             document.getElementById('historyContainer').innerHTML = '';
-            document.getElementById('message').innerHTML = '';
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = '';
+            messageDiv.className = '';
             document.getElementById('attemptNumber').textContent = '1';
             document.getElementById('currentGuessSection').style.display = 'block';
             document.getElementById('newGameBtn').style.display = 'none';
@@ -494,6 +513,7 @@
                 showMessage(`🎉 Bravo ! Vous avez trouvé le code en ${attempts.length} tentative${attempts.length > 1 ? 's' : ''} !`, 'win');
                 document.getElementById('currentGuessSection').style.display = 'none';
                 document.getElementById('newGameBtn').style.display = 'block';
+                showConfetti();
                 return;
             }
 
