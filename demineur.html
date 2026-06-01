@@ -74,6 +74,34 @@
             border-color: #1a1a1a;
         }
 
+        .flag-toggle {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            color: #555;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .flag-toggle:hover {
+            border-color: #999;
+        }
+
+        .flag-toggle.active {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #78350f;
+        }
+
         .status-bar {
             background: #f8f9fa;
             border-radius: 15px;
@@ -315,6 +343,11 @@
             </div>
         </div>
 
+        <button class="flag-toggle" id="flagToggle" aria-pressed="false">
+            <span id="flagToggleIcon">⛏️</span>
+            <span id="flagToggleText">Mode : Révéler</span>
+        </button>
+
         <div class="board-wrapper">
             <div class="board" id="board"></div>
         </div>
@@ -327,6 +360,7 @@
                 <li>Cliquez sur une case pour la révéler</li>
                 <li>Le chiffre indique le nombre de mines adjacentes (1 à 8)</li>
                 <li>Maintenez appuyé (ou clic droit) pour poser un drapeau 🚩</li>
+                <li>Activez le <strong>Mode Drapeau</strong> pour poser un drapeau d'un simple clic</li>
                 <li>Cliquez sur un chiffre avec le bon nombre de drapeaux autour pour révéler les voisins</li>
                 <li>Trouvez toutes les cases sans mine pour gagner</li>
             </ul>
@@ -376,6 +410,7 @@
         let timerInterval = null;
         let touchTimer = null;
         let touchTriggeredFlag = false;
+        let flagMode = false; // Quick Flagging: a single tap places/removes a flag
 
         function getScores() {
             const stored = localStorage.getItem(SCORES_KEY);
@@ -568,6 +603,12 @@
         }
 
         function handleClick(r, c) {
+            // Quick Flagging mode: tapping an unrevealed cell toggles its flag
+            // instead of revealing it. Revealed cells still chord normally.
+            if (flagMode && !revealed[r][c]) {
+                toggleFlag(r, c);
+                return;
+            }
             if (flagged[r][c]) return;
 
             if (!minesPlaced) {
@@ -741,6 +782,20 @@
             });
             initGame();
         }
+
+        function updateFlagToggle() {
+            const btn = document.getElementById('flagToggle');
+            btn.classList.toggle('active', flagMode);
+            btn.setAttribute('aria-pressed', flagMode ? 'true' : 'false');
+            document.getElementById('flagToggleIcon').textContent = flagMode ? '🚩' : '⛏️';
+            document.getElementById('flagToggleText').textContent =
+                flagMode ? 'Mode : Drapeau' : 'Mode : Révéler';
+        }
+
+        document.getElementById('flagToggle').addEventListener('click', () => {
+            flagMode = !flagMode;
+            updateFlagToggle();
+        });
 
         document.querySelectorAll('.difficulty button').forEach(btn => {
             btn.addEventListener('click', () => setLevel(btn.dataset.level));

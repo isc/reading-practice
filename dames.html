@@ -688,7 +688,15 @@
                 pieceEl.style.transform = `translate(${dx}px, ${dy}px)`;
             }
 
+            let finished = false;
             const finishMove = () => {
+                // Guard against double execution: transitionend fires once, but the
+                // safety-timeout fallback can also fire because renderBoard() detaches
+                // the animated piece element while it still carries the 'moving' class.
+                // Running twice would copy the now-empty origin onto the destination,
+                // making the piece vanish without being captured.
+                if (finished) return;
+                finished = true;
                 // Apply move to model
                 board[toR][toC] = board[fromR][fromC];
                 board[fromR][fromC] = null;

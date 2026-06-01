@@ -354,11 +354,14 @@
 
         let board = [];
         let currentPlayer = 'red';
+        let startingPlayer = 'red'; // alternates each new game
         let gameOver = false;
 
         function initGame() {
             board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-            currentPlayer = 'red';
+            currentPlayer = startingPlayer;
+            // Alternate who starts the next game (red, yellow, red, ...)
+            startingPlayer = startingPlayer === 'red' ? 'yellow' : 'red';
             gameOver = false;
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
