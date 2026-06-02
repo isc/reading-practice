@@ -438,6 +438,7 @@
     </div>
 
     <script src="confetti.js"></script>
+    <script src="exit-guard.js"></script>
     <script>
         const SIZE = 10;
         const SHIPS = [
@@ -490,6 +491,7 @@
             document.getElementById('placementControls').style.display = 'block';
             document.getElementById('enemyGridContainer').style.display = 'none';
             document.getElementById('newGameBtn').style.display = 'none';
+            if (window.ExitGuard) ExitGuard.setActive(false);
             document.getElementById('phaseIndicator').textContent = 'Placement de votre flotte';
             updateOrientationLabel();
             renderShipChips();
@@ -683,6 +685,7 @@
             if (!ship) return;
             if (!canPlaceShip(playerBoard, r, c, ship.size, placementOrientation)) return;
             placeShipOnBoard(playerBoard, ship, r, c, placementOrientation);
+            if (window.ExitGuard) ExitGuard.setActive(true);
             // Move to next unplaced
             activeShipIndex = playerShips.findIndex(s => s.cells.length === 0);
             if (activeShipIndex === -1) activeShipIndex = 0;
@@ -705,6 +708,7 @@
             playerBoard = emptyBoard();
             playerShips = SHIPS.map(s => ({ ...s, cells: [], hits: 0 }));
             placeShipsRandomly(playerBoard, playerShips);
+            if (window.ExitGuard) ExitGuard.setActive(true);
             activeShipIndex = 0;
             renderShipChips();
             renderOwnGrid();
@@ -845,6 +849,7 @@
 
         function endGame(playerWon) {
             phase = 'over';
+            if (window.ExitGuard) ExitGuard.setActive(false);
             const scores = getScores();
             if (playerWon) {
                 scores.wins++;

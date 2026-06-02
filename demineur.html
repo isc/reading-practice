@@ -360,7 +360,7 @@
                 <li>Cliquez sur une case pour la révéler</li>
                 <li>Le chiffre indique le nombre de mines adjacentes (1 à 8)</li>
                 <li>Maintenez appuyé (ou clic droit) pour poser un drapeau 🚩</li>
-                <li>Activez le <strong>Mode Drapeau</strong> pour poser un drapeau d'un simple clic</li>
+                <li>Activez le <strong>Mode Drapeau</strong> pour poser un drapeau d'un simple clic ; l'appui long révèle alors la case (et inversement en Mode Révéler)</li>
                 <li>Cliquez sur un chiffre avec le bon nombre de drapeaux autour pour révéler les voisins</li>
                 <li>Trouvez toutes les cases sans mine pour gagner</li>
             </ul>
@@ -386,6 +386,7 @@
     </div>
 
     <script src="confetti.js"></script>
+    <script src="exit-guard.js"></script>
     <script>
         const LEVELS = {
             easy:   { rows: 9,  cols: 9,  mines: 10 },
@@ -462,6 +463,7 @@
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
             document.getElementById('newGameBtn').style.display = 'none';
+            if (window.ExitGuard) ExitGuard.setActive(false);
 
             renderBoard();
         }
@@ -488,7 +490,7 @@
             cell.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 if (gameOver) return;
-                toggleFlag(r, c);
+                secondaryAction(r, c);
             });
 
             cell.addEventListener('mousedown', (e) => {
@@ -501,7 +503,7 @@
                     touchTriggeredFlag = false;
                     return;
                 }
-                handleClick(r, c);
+                primaryAction(r, c);
             });
 
             cell.addEventListener('touchstart', (e) => {
@@ -510,7 +512,7 @@
                 clearTimeout(touchTimer);
                 touchTimer = setTimeout(() => {
                     touchTriggeredFlag = true;
-                    toggleFlag(r, c);
+                    secondaryAction(r, c);
                     if (navigator.vibrate) navigator.vibrate(40);
                 }, LONG_PRESS_MS);
             }, { passive: true });
@@ -602,28 +604,45 @@
             return Math.floor((Date.now() - startTime) / 1000);
         }
 
-        function handleClick(r, c) {
-            // Quick Flagging mode: tapping an unrevealed cell toggles its flag
-            // instead of revealing it. Revealed cells still chord normally.
-            if (flagMode && !revealed[r][c]) {
-                toggleFlag(r, c);
-                return;
-            }
+        // The two primitive actions. Either one can be bound to a tap or to a
+        // long-press depending on the current mode, so the whole game stays
+        // playable without ever leaving Quick Flagging mode.
+        function revealAction(r, c) {
             if (flagged[r][c]) return;
-
             if (!minesPlaced) {
                 placeMines(r, c);
                 startTimer();
+                if (window.ExitGuard) ExitGuard.setActive(true);
             }
-
             if (revealed[r][c]) {
                 chordReveal(r, c);
                 return;
             }
-
             revealCell(r, c);
             checkWin();
             updateBoardDisplay();
+        }
+
+        function flagAction(r, c) {
+            // On a revealed number behave like a chord; otherwise toggle the flag.
+            if (revealed[r][c]) {
+                chordReveal(r, c);
+                return;
+            }
+            toggleFlag(r, c);
+        }
+
+        function primaryAction(r, c) {
+            // Bound to a normal tap / left click.
+            if (flagMode) flagAction(r, c);
+            else revealAction(r, c);
+        }
+
+        function secondaryAction(r, c) {
+            // Bound to long-press / right click: always the opposite of the tap
+            // action, so you can dig while in flag mode and flag while in reveal mode.
+            if (flagMode) revealAction(r, c);
+            else flagAction(r, c);
         }
 
         function revealCell(r, c) {
@@ -689,6 +708,7 @@
             gameOver = true;
             won = false;
             clearInterval(timerInterval);
+            if (window.ExitGuard) ExitGuard.setActive(false);
 
             // Reveal all mines
             for (let r = 0; r < rows; r++) {
@@ -716,6 +736,7 @@
                 gameOver = true;
                 won = true;
                 clearInterval(timerInterval);
+                if (window.ExitGuard) ExitGuard.setActive(false);
                 const time = elapsedSeconds();
 
                 // Auto-flag remaining mines visually

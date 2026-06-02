@@ -344,6 +344,7 @@
     </div>
 
     <script src="confetti.js"></script>
+    <script src="exit-guard.js"></script>
     <script>
         const ROWS = 6;
         const COLS = 7;
@@ -366,6 +367,7 @@
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
             document.getElementById('newGameBtn').style.display = 'none';
+            if (window.ExitGuard) ExitGuard.setActive(false);
             renderBoard();
             updateTurnIndicator();
         }
@@ -422,6 +424,7 @@
             board[row][col] = currentPlayer;
             renderBoard();
             animateDrop(row, col);
+            if (window.ExitGuard) ExitGuard.setActive(true);
 
             const winningCells = checkWin(row, col, currentPlayer);
             if (winningCells) {
@@ -431,6 +434,7 @@
                 saveScore(currentPlayer);
                 showConfetti();
                 document.getElementById('newGameBtn').style.display = 'block';
+                if (window.ExitGuard) ExitGuard.setActive(false);
                 return;
             }
 
@@ -439,6 +443,7 @@
                 showMessage(`🤝 Match nul !`, 'draw');
                 saveScore('draw');
                 document.getElementById('newGameBtn').style.display = 'block';
+                if (window.ExitGuard) ExitGuard.setActive(false);
                 return;
             }
 

@@ -414,6 +414,7 @@
     </div>
 
     <script src="confetti.js"></script>
+    <script src="exit-guard.js"></script>
     <script>
         const SIZE = 8;
         const LABELS = { red: 'Rouge', black: 'Noir' };
@@ -459,6 +460,7 @@
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
             document.getElementById('newGameBtn').style.display = 'none';
+            if (window.ExitGuard) ExitGuard.setActive(false);
             computeMoves();
             renderBoard();
             updateTurnIndicator();
@@ -673,6 +675,7 @@
             if (gameOver) return;
             const piece = board[fromR][fromC];
             if (!piece) return;
+            if (window.ExitGuard) ExitGuard.setActive(true);
 
             const [toR, toC] = move.to;
             // Animate piece movement: compute pixel offset between cells
@@ -772,6 +775,7 @@
 
         function endGame(winner) {
             gameOver = true;
+            if (window.ExitGuard) ExitGuard.setActive(false);
             movesByOrigin = new Map();
             renderBoard();
             showMessage(`🎉 ${LABELS[winner]} a gagné !`, `win-${winner}`);
