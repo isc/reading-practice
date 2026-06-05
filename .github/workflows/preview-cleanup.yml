@@ -8,8 +8,14 @@ permissions:
   contents: write
   pull-requests: write
 
+# Groupe DISTINCT de celui de deploy.yml / preview.yml (`gh-pages`).
+# La fermeture d'une PR (cleanup) coïncide toujours avec le merge (push sur
+# main → deploy). S'ils partageaient le même groupe, le cleanup qui arrive en
+# file supplanterait le déploiement encore en attente, et la racine du site ne
+# serait jamais publiée. On isole donc le cleanup ; la concurrence avec un push
+# peaceiris est gérée par la boucle rebase ci-dessous.
 concurrency:
-  group: gh-pages
+  group: gh-pages-cleanup
   cancel-in-progress: false
 
 jobs:
@@ -38,7 +44,18 @@ jobs:
             git config user.email 'github-actions[bot]@users.noreply.github.com'
             git rm -rf "$dir"
             git commit -m "cleanup: remove preview ${{ steps.slug.outputs.slug }}"
-            git push origin gh-pages
+            # N'étant plus sérialisé avec les pushes peaceiris (deploy/preview),
+            # on retente avec rebase si gh-pages a bougé entre-temps.
+            for i in 1 2 3 4 5; do
+              if git push origin gh-pages; then
+                exit 0
+              fi
+              echo "Push refusé (tentative $i), rebase sur gh-pages distant…"
+              git fetch origin gh-pages
+              git rebase origin/gh-pages || exit 1
+            done
+            echo "::error::Impossible de pousser le cleanup après 5 tentatives"
+            exit 1
           else
             echo "No preview directory at $dir, nothing to clean."
           fi
