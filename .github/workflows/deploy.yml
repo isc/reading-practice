@@ -1,26 +1,41 @@
-name: Deploy
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
-  group: deploy
+  # Sérialise les écritures sur gh-pages entre ce déploiement et les previews
+  # de PR, sinon deux jobs peuvent se marcher dessus sur la même branche.
+  group: gh-pages
   cancel-in-progress: false
+
+# peaceiris/actions-gh-pages@v4 déclare encore Node.js 20 et le maintainer
+# n'a pas publié de v5. À partir de 2026-06-02, GitHub force Node 24 par
+# défaut ; on opt-in maintenant pour repérer une éventuelle incompatibilité.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "${{ secrets.FREEBOX_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          echo "${{ secrets.FREEBOX_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
+      - uses: actions/checkout@v4
 
-      - name: Pull on Freebox
-        run: ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes freebox@yge3sf9e.fbxos.fr -p 60337 'git -C /var/www/html/reading-practice pull --ff-only'
+      # Site statique « nobuild » : on publie le dépôt tel quel à la RACINE de
+      # la branche gh-pages. `keep_files: true` préserve le dossier `previews/`
+      # écrit par le workflow de preview, pour que les previews survivent aux
+      # déploiements de main. `exclude_assets` retire le superflu non-web.
+      - name: Publish to gh-pages (root)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          keep_files: true
+          exclude_assets: ".github,.gitignore,.prettierrc,README.md,TODO.md"
+          commit_message: "deploy: main @ ${{ github.sha }}"
