@@ -69,11 +69,11 @@ Une contributrice autorisée peut faire ajouter un jeu **sans écrire de code** 
    ```
    et colle la valeur dans le secret. Aucune facturation API : ça consomme ton
    quota d'abonnement (les mêmes limites que ton usage interactif de Claude Code).
-3. **Déclarer les auteurs autorisés** dans une **variable** de dépôt
-   (_… → Actions → Variables_) : `ISSUE_BUILDER_AUTHORS` = logins GitHub séparés
-   par des virgules **sans espaces**, ex. `isc,le-handle-de-ta-belle-soeur`.
-4. **Inviter les contributrices comme collaboratrices** (accès _write_) :
-   l'action n'agit que pour les utilisateurs autorisés (barrière anti-abus).
+3. **Inviter les contributrices comme collaboratrices** (accès _write_) :
+   _Settings → Collaborators_. C'est ce statut qui sert de barrière anti-abus —
+   les workflows ne se déclenchent que pour le propriétaire ou des collaboratrices
+   (`author_association` ∈ `OWNER` / `COLLABORATOR` / `MEMBER`). Une issue ou un
+   `@claude` d'un inconnu est ignoré.
 
 > Coûts : chaque exécution consomme des minutes GitHub Actions et puise dans le
 > quota de l'abonnement Claude lié au token (mêmes limites que l'usage interactif).

@@ -19,11 +19,12 @@ concurrency:
 
 jobs:
   build-game:
-    # N'agit que pour les auteurs listés dans la variable de dépôt
-    # ISSUE_BUILDER_AUTHORS (logins séparés par des virgules, sans espaces ;
-    # ex. "isc,belle-soeur"). Les virgules encadrantes évitent les correspondances
-    # partielles (ex. "isc" ne doit pas matcher "francisco").
-    if: contains(format(',{0},', vars.ISSUE_BUILDER_AUTHORS), format(',{0},', github.event.issue.user.login))
+    # N'agit que si l'autrice de l'issue est le propriétaire ou une
+    # collaboratrice du dépôt (accès write) — on s'appuie sur le statut
+    # collaborateur natif de GitHub plutôt que sur une liste à maintenir.
+    # Gate explicite (notre propre if:) pour ne pas dépendre du check interne
+    # de l'action, non garanti en mode automation (prompt fourni).
+    if: contains(fromJSON('["OWNER","COLLABORATOR","MEMBER"]'), github.event.issue.author_association)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
