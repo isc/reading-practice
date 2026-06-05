@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            max-width: 480px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+            font-size: 1.6em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+        }
+
+        .gallows-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .gallows {
+            width: 100%;
+            max-width: 220px;
+            height: auto;
+        }
+
+        .gallows line,
+        .gallows circle {
+            stroke: #1a1a1a;
+            stroke-width: 4;
+            stroke-linecap: round;
+            fill: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .gallows .visible {
+            opacity: 1;
+        }
+
+        .errors-counter {
+            text-align: center;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .errors-counter .count {
+            color: #1a1a1a;
+        }
+
+        .errors-counter.danger .count {
+            color: #dc2626;
+        }
+
+        .word-display {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            min-height: 50px;
+        }
+
+        .letter-slot {
+            min-width: 28px;
+            height: 40px;
+            border-bottom: 3px solid #1a1a1a;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1a1a1a;
+            padding-bottom: 2px;
+        }
+
+        .letter-slot.revealed.recent {
+            animation: pop 0.4s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin: 0 -8px 20px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .key {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 44px;
+            height: 48px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            color: #1a1a1a;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .key:hover:not(:disabled) {
+            background: #f0f2f5;
+            border-color: #999;
+        }
+
+        .key:disabled {
+            cursor: not-allowed;
+        }
+
+        .key.correct {
+            background: #c6f6d5;
+            border-color: #22543d;
+            color: #22543d;
+        }
+
+        .key.wrong {
+            background: #fed7d7;
+            border-color: #742a2a;
+            color: #742a2a;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-new {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .btn-new:hover {
+            background: #333;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            animation: slideIn 0.5s ease;
+        }
+
+        .message.win {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .message.lose {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .scoreboard {
+            margin-top: 20px;
+        }
+
+        .scoreboard h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .score-cell {
+            text-align: center;
+        }
+
+        .score-cell .label {
+            font-size: 0.8em;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .score-cell .value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .rules {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .rules h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .rules ul {
+            margin-left: 20px;
+        }
+
+        .rules li {
+            margin-bottom: 5px;
+        }
+
+        canvas#confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="confetti"></canvas>
+    <div class="container">
+        <h1>🪢 Pendu</h1>
+        <p class="subtitle">Devine le mot avant que le bonhomme soit pendu</p>
+
+        <div id="message"></div>
+
+        <div class="gallows-wrapper">
+            <svg class="gallows" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+                <!-- Base -->
+                <line class="part-base" x1="20" y1="210" x2="160" y2="210" />
+                <!-- Pole -->
+                <line class="part-base" x1="50" y1="210" x2="50" y2="20" />
+                <!-- Beam -->
+                <line class="part-base" x1="50" y1="20" x2="140" y2="20" />
+                <!-- Rope -->
+                <line class="part-base" x1="140" y1="20" x2="140" y2="45" />
+                <!-- Head -->
+                <circle class="part-1" cx="140" cy="60" r="15" />
+                <!-- Body -->
+                <line class="part-2" x1="140" y1="75" x2="140" y2="135" />
+                <!-- Left arm -->
+                <line class="part-3" x1="140" y1="90" x2="120" y2="115" />
+                <!-- Right arm -->
+                <line class="part-4" x1="140" y1="90" x2="160" y2="115" />
+                <!-- Left leg -->
+                <line class="part-5" x1="140" y1="135" x2="120" y2="165" />
+                <!-- Right leg -->
+                <line class="part-6" x1="140" y1="135" x2="160" y2="165" />
+            </svg>
+        </div>
+
+        <div class="errors-counter" id="errorsCounter">
+            Erreurs : <span class="count"><span id="errorsCount">0</span>/<span id="errorsMax">6</span></span>
+        </div>
+
+        <div class="word-display" id="wordDisplay"></div>
+
+        <div class="keyboard" id="keyboard"></div>
+
+        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
+
+        <div class="rules">
+            <h3>Règles du jeu</h3>
+            <ul>
+                <li>Un mot français est caché : il apparaît sous forme de tirets</li>
+                <li>Clique sur une lettre (ou utilise ton clavier) pour la proposer</li>
+                <li>Les accents sont ignorés : <strong>E</strong> trouve aussi <strong>É</strong>, <strong>È</strong>, <strong>Ê</strong></li>
+                <li>Tu as droit à <strong>6 erreurs</strong> avant que le pendu soit complet</li>
+                <li>Trouve toutes les lettres pour gagner !</li>
+            </ul>
+        </div>
+
+        <div class="scoreboard">
+            <h3>Scores</h3>
+            <div class="score-row">
+                <div class="score-cell">
+                    <div class="label">Victoires</div>
+                    <div class="value" id="scoreWins">0</div>
+                </div>
+                <div class="score-cell">
+                    <div class="label">Défaites</div>
+                    <div class="value" id="scoreLosses">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="confetti.js"></script>
+    <script>
+        const MAX_ERRORS = 6;
+        const SCORES_KEY = 'pendu-scores';
+        const DEFAULT_SCORES = { wins: 0, losses: 0 };
+        const ALPHABET_ROWS = [
+            ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'],
+            ['J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'],
+            ['S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+        ];
+
+        let secretWord = '';
+        let normalizedWord = '';
+        let guessedLetters = new Set();
+        let errors = 0;
+        let gameOver = false;
+        let words = null;
+        let lastRevealedLetter = null;
+
+        function normalize(str) {
+            return str.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+        }
+
+        async function loadWords() {
+            if (words) return words;
+            try {
+                const res = await fetch('mots-enfants.txt');
+                const text = await res.text();
+                words = text.split('\n')
+                    .map(w => w.trim().toLowerCase())
+                    .filter(w => w.length >= 5 && w.length <= 10);
+            } catch (err) {
+                words = ['bonjour', 'maison', 'voiture', 'chocolat', 'musique', 'soleil', 'montagne', 'bateau'];
+            }
+            return words;
+        }
+
+        function pickWord() {
+            return words[Math.floor(Math.random() * words.length)];
+        }
+
+        async function initGame() {
+            await loadWords();
+            secretWord = pickWord();
+            normalizedWord = normalize(secretWord);
+            guessedLetters = new Set();
+            errors = 0;
+            gameOver = false;
+            lastRevealedLetter = null;
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('message').className = '';
+            document.getElementById('newGameBtn').style.display = 'none';
+            renderWord();
+            renderKeyboard();
+            updateGallows();
+            updateErrorsCounter();
+        }
+
+        function renderWord() {
+            const container = document.getElementById('wordDisplay');
+            container.innerHTML = '';
+            for (let i = 0; i < secretWord.length; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'letter-slot';
+                const normChar = normalizedWord[i];
+                if (guessedLetters.has(normChar) || gameOver) {
+                    slot.textContent = secretWord[i].toUpperCase();
+                    slot.classList.add('revealed');
+                    if (normChar === lastRevealedLetter) {
+                        slot.classList.add('recent');
+                    }
+                } else {
+                    slot.innerHTML = '&nbsp;';
+                }
+                container.appendChild(slot);
+            }
+        }
+
+        function renderKeyboard() {
+            const container = document.getElementById('keyboard');
+            container.innerHTML = '';
+            ALPHABET_ROWS.forEach(row => {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'keyboard-row';
+                row.forEach(letter => {
+                    const btn = document.createElement('button');
+                    btn.className = 'key';
+                    btn.textContent = letter;
+                    btn.dataset.letter = letter;
+                    if (guessedLetters.has(letter)) {
+                        btn.disabled = true;
+                        if (normalizedWord.includes(letter)) {
+                            btn.classList.add('correct');
+                        } else {
+                            btn.classList.add('wrong');
+                        }
+                    }
+                    if (gameOver) {
+                        btn.disabled = true;
+                    }
+                    btn.onclick = () => guessLetter(letter);
+                    rowEl.appendChild(btn);
+                });
+                container.appendChild(rowEl);
+            });
+        }
+
+        function guessLetter(letter) {
+            if (gameOver) return;
+            const normLetter = normalize(letter);
+            if (guessedLetters.has(normLetter)) return;
+            guessedLetters.add(normLetter);
+            lastRevealedLetter = normLetter;
+
+            if (normalizedWord.includes(normLetter)) {
+                renderWord();
+                renderKeyboard();
+                if (isWordComplete()) {
+                    gameOver = true;
+                    showMessage(`🎉 Bravo ! Le mot était « ${secretWord} »`, 'win');
+                    saveScore('wins');
+                    if (typeof showConfetti === 'function') showConfetti();
+                    renderKeyboard();
+                    document.getElementById('newGameBtn').style.display = 'block';
+                }
+            } else {
+                errors++;
+                updateGallows();
+                updateErrorsCounter();
+                renderKeyboard();
+                if (errors >= MAX_ERRORS) {
+                    gameOver = true;
+                    renderWord();
+                    showMessage(`😔 Perdu ! Le mot était « ${secretWord} »`, 'lose');
+                    saveScore('losses');
+                    renderKeyboard();
+                    document.getElementById('newGameBtn').style.display = 'block';
+                }
+            }
+        }
+
+        function isWordComplete() {
+            for (const ch of normalizedWord) {
+                if (!guessedLetters.has(ch)) return false;
+            }
+            return true;
+        }
+
+        function updateGallows() {
+            for (let i = 1; i <= MAX_ERRORS; i++) {
+                const part = document.querySelector(`.part-${i}`);
+                if (!part) continue;
+                if (i <= errors) {
+                    part.classList.add('visible');
+                } else {
+                    part.classList.remove('visible');
+                }
+            }
+            // Base/gallows always visible
+            document.querySelectorAll('.part-base').forEach(el => el.classList.add('visible'));
+        }
+
+        function updateErrorsCounter() {
+            document.getElementById('errorsCount').textContent = errors;
+            document.getElementById('errorsMax').textContent = MAX_ERRORS;
+            const counter = document.getElementById('errorsCounter');
+            if (errors >= MAX_ERRORS - 1) {
+                counter.classList.add('danger');
+            } else {
+                counter.classList.remove('danger');
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+        }
+
+        function getScores() {
+            const stored = localStorage.getItem(SCORES_KEY);
+            return stored ? JSON.parse(stored) : { ...DEFAULT_SCORES };
+        }
+
+        function saveScore(field) {
+            const scores = getScores();
+            scores[field]++;
+            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            updateScoreboard(scores);
+        }
+
+        function updateScoreboard(scores = getScores()) {
+            document.getElementById('scoreWins').textContent = scores.wins;
+            document.getElementById('scoreLosses').textContent = scores.losses;
+        }
+
+        document.getElementById('newGameBtn').onclick = initGame;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            const key = e.key;
+            if (key.length !== 1) return;
+            const norm = normalize(key);
+            if (norm.length !== 1 || norm < 'A' || norm > 'Z') return;
+            guessLetter(norm);
+        });
+
+        updateScoreboard();
+        initGame();
+    </script>
+<script src="exit-guard.js"></script>
+</body>
+</html>
