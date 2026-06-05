@@ -1,0 +1,44 @@
+name: 🎮 Nouveau jeu
+description: Proposer un nouveau jeu à ajouter à la boîte à jeux. Claude l'implémentera et ouvrira une PR.
+title: "Nouveau jeu : "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Décris le jeu que tu aimerais ajouter. Plus c'est précis, mieux Claude
+        pourra l'implémenter. Une fois l'issue créée, Claude code le jeu, ouvre
+        une pull request et te poste le lien ici. Tu pourras tester la preview et
+        demander des ajustements en commentant « @claude … » sur la PR.
+
+  - type: input
+    id: nom
+    attributes:
+      label: Nom du jeu
+      placeholder: "ex. Fracto Dingo"
+    validations:
+      required: true
+
+  - type: textarea
+    id: concept
+    attributes:
+      label: Concept et règles
+      description: En quoi consiste le jeu ? Quelles sont les règles ? Comment gagne-t-on ?
+      placeholder: "ex. Un jeu pour apprendre les fractions : on associe une fraction à la bonne part de pizza…"
+    validations:
+      required: true
+
+  - type: input
+    id: public
+    attributes:
+      label: Public visé / niveau
+      placeholder: "ex. CE2-CM1, fractions simples"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Inspirations, exemples, remarques
+      description: Liens, captures, jeux similaires, contraintes pédagogiques…
+    validations:
+      required: false

@@ -38,3 +38,43 @@ nécessaire pour servir l'app sous un sous-dossier de preview.
 Dans **Settings → Pages** du dépôt, choisir comme source la branche **`gh-pages`**
 (dossier `/ (root)`). La branche est créée automatiquement au premier déploiement
 sur `main`.
+
+## Contribuer un jeu via une issue (Claude)
+
+Une contributrice autorisée peut faire ajouter un jeu **sans écrire de code** :
+
+1. Elle ouvre une **issue** avec le template _« 🎮 Nouveau jeu »_ décrivant le jeu.
+2. Le workflow **`claude-issue-to-pr.yml`** déclenche Claude (modèle Opus), qui
+   implémente le jeu en suivant [`CLAUDE.md`](CLAUDE.md), ouvre une **PR** et
+   poste le lien de la PR dans l'issue.
+3. La **preview** de la PR se déploie (workflow `preview.yml`) → elle teste le jeu
+   en live.
+4. Elle laisse des retours en commentant **`@claude …`** sur la PR ; le workflow
+   **`claude.yml`** relance Claude, qui ajuste et repush (la preview se met à jour).
+5. Le mainteneur relit et merge.
+
+### Mise en place (admin, une fois)
+
+1. **Installer l'app GitHub Claude** sur le dépôt :
+   <https://github.com/apps/claude> (permissions Contents / Issues / Pull requests).
+   _Astuce : la commande `/install-github-app` dans Claude Code fait l'app + le
+   secret d'un coup._ Installer l'app (et non se reposer sur le `GITHUB_TOKEN` par
+   défaut) est nécessaire pour que les PR créées par Claude déclenchent bien les
+   previews et la CI.
+2. **Ajouter le secret** `CLAUDE_CODE_OAUTH_TOKEN`
+   (_Settings → Secrets and variables → Actions → Secrets_). Génère le token
+   localement avec ton abonnement **Claude Pro ou Max** :
+   ```bash
+   claude setup-token
+   ```
+   et colle la valeur dans le secret. Aucune facturation API : ça consomme ton
+   quota d'abonnement (les mêmes limites que ton usage interactif de Claude Code).
+3. **Déclarer les auteurs autorisés** dans une **variable** de dépôt
+   (_… → Actions → Variables_) : `ISSUE_BUILDER_AUTHORS` = logins GitHub séparés
+   par des virgules **sans espaces**, ex. `isc,le-handle-de-ta-belle-soeur`.
+4. **Inviter les contributrices comme collaboratrices** (accès _write_) :
+   l'action n'agit que pour les utilisateurs autorisés (barrière anti-abus).
+
+> Coûts : chaque exécution consomme des minutes GitHub Actions et puise dans le
+> quota de l'abonnement Claude lié au token (mêmes limites que l'usage interactif).
+> `--max-turns` borne les boucles.

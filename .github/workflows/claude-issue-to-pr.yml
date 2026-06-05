@@ -1,0 +1,65 @@
+name: Claude — issue vers PR
+
+# À la création d'une issue (par un auteur autorisé), Claude implémente le jeu
+# demandé, ouvre une PR vers main et poste le lien de la PR dans l'issue.
+# La preview de la PR est ensuite déployée par preview.yml → testable en live.
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: claude-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  build-game:
+    # N'agit que pour les auteurs listés dans la variable de dépôt
+    # ISSUE_BUILDER_AUTHORS (logins séparés par des virgules, sans espaces ;
+    # ex. "isc,belle-soeur"). Les virgules encadrantes évitent les correspondances
+    # partielles (ex. "isc" ne doit pas matcher "francisco").
+    if: contains(format(',{0},', vars.ISSUE_BUILDER_AUTHORS), format(',{0},', github.event.issue.user.login))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          # Authentification via l'abonnement Claude (Pro/Max), pas de
+          # facturation API. Token généré localement par `claude setup-token`.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: "--model claude-opus-4-8 --max-turns 40"
+          prompt: |
+            Tu es déclenché par la création de l'issue #${{ github.event.issue.number }}
+            dans le dépôt ${{ github.repository }}.
+
+            Titre de l'issue : "${{ github.event.issue.title }}"
+
+            Cette issue est une demande d'ajout d'un nouveau jeu à la boîte à jeux
+            éducatifs « Marzouzoute ». Lis attentivement la description de l'issue,
+            puis :
+
+            1. Implémente le jeu demandé en respectant SCRUPULEUSEMENT les
+               conventions du fichier CLAUDE.md (un fichier HTML autonome à la
+               racine, CSS/JS en ligne, chemins relatifs uniquement, interface en
+               français, mobile-first, réutilisation des ressources partagées
+               confetti.js / exit-guard.js si pertinent).
+            2. Ajoute une carte vers ce nouveau jeu dans la grille de index.html.
+            3. Crée une nouvelle branche et ouvre une pull request vers `main`
+               avec ton implémentation. Donne à la PR un titre clair et une
+               description qui résume le jeu et fait référence à l'issue
+               (« Closes #${{ github.event.issue.number }} »).
+            4. Poste un commentaire en français sur l'issue
+               #${{ github.event.issue.number }} avec le lien vers la PR créée,
+               en invitant l'autrice à :
+                 - tester la preview (déployée automatiquement sur la PR, le lien
+                   y est posté en commentaire) ;
+                 - laisser ses retours en commentant « @claude … » directement sur
+                   la PR pour que tu fasses les ajustements.
+
+            Reste simple et ludique : le public visé est constitué d'enfants.
