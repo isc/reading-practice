@@ -21,8 +21,13 @@ permissions:
 
 jobs:
   claude:
+    # Commentaire d'un humain, contenant « @claude », et émis par le
+    # propriétaire ou une collaboratrice (accès write) — même barrière que le
+    # workflow issue→PR, basée sur le statut collaborateur natif.
     if: |
-      github.event.comment.user.type != 'Bot' && (
+      github.event.comment.user.type != 'Bot'
+      && contains(fromJSON('["OWNER","COLLABORATOR","MEMBER"]'), github.event.comment.author_association)
+      && (
         (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
         (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
       )
