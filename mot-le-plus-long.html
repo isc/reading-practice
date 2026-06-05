@@ -710,16 +710,25 @@
             saveScore(finalLength);
 
             const longest = findLongestPossible();
-            let msg;
+            let msg, type;
             if (bestFound) {
-                msg = `⏱️ Temps écoulé ! Meilleur mot : ${bestFound.word} (${bestFound.length} lettres)`;
+                if (longest && longest.length > bestFound.length) {
+                    msg = `⏱️ Temps écoulé ! Ton meilleur mot : ${bestFound.word} (${bestFound.length} lettres). ` +
+                          `Tu pouvais trouver plus long : ${longest} (${longest.length} lettres).`;
+                } else {
+                    msg = `🏆 Temps écoulé ! Ton meilleur mot : ${bestFound.word} (${bestFound.length} lettres) — ` +
+                          `c'est le plus long possible, bravo !`;
+                }
+                type = 'win';
             } else {
-                msg = `⏱️ Temps écoulé ! Aucun mot trouvé.`;
+                if (longest) {
+                    msg = `⏱️ Temps écoulé ! Aucun mot trouvé. Le plus long possible était : ${longest} (${longest.length} lettres).`;
+                } else {
+                    msg = `⏱️ Temps écoulé ! Aucun mot trouvé.`;
+                }
+                type = 'lose';
             }
-            if (longest && (!bestFound || longest.length > bestFound.length)) {
-                msg += `  Possible : ${longest} (${longest.length} lettres)`;
-            }
-            showMessage(msg, bestFound ? 'win' : 'lose');
+            showMessage(msg, type);
         }
 
         function getScores() {
