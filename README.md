@@ -61,13 +61,20 @@ Une contributrice autorisée peut faire ajouter un jeu **sans écrire de code** 
    secret d'un coup._ Installer l'app (et non se reposer sur le `GITHUB_TOKEN` par
    défaut) est nécessaire pour que les PR créées par Claude déclenchent bien les
    previews et la CI.
-2. **Ajouter le secret** `ANTHROPIC_API_KEY`
-   (_Settings → Secrets and variables → Actions → Secrets_).
+2. **Ajouter le secret** `CLAUDE_CODE_OAUTH_TOKEN`
+   (_Settings → Secrets and variables → Actions → Secrets_). Génère le token
+   localement avec ton abonnement **Claude Pro ou Max** :
+   ```bash
+   claude setup-token
+   ```
+   et colle la valeur dans le secret. Aucune facturation API : ça consomme ton
+   quota d'abonnement (les mêmes limites que ton usage interactif de Claude Code).
 3. **Déclarer les auteurs autorisés** dans une **variable** de dépôt
    (_… → Actions → Variables_) : `ISSUE_BUILDER_AUTHORS` = logins GitHub séparés
    par des virgules **sans espaces**, ex. `isc,le-handle-de-ta-belle-soeur`.
 4. **Inviter les contributrices comme collaboratrices** (accès _write_) :
    l'action n'agit que pour les utilisateurs autorisés (barrière anti-abus).
 
-> Coûts : chaque exécution consomme des minutes GitHub Actions et des tokens API
-> (facturés sur le compte Anthropic du secret). `--max-turns` borne les boucles.
+> Coûts : chaque exécution consomme des minutes GitHub Actions et puise dans le
+> quota de l'abonnement Claude lié au token (mêmes limites que l'usage interactif).
+> `--max-turns` borne les boucles.

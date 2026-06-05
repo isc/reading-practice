@@ -30,7 +30,9 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Authentification via l'abonnement Claude (Pro/Max), pas de
+          # facturation API. Token généré localement par `claude setup-token`.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: "--model claude-opus-4-8 --max-turns 40"
           prompt: |
             Tu es déclenché par la création de l'issue #${{ github.event.issue.number }}
