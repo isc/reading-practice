@@ -7,8 +7,11 @@
 //   - pour les autres ressources même-origine, on sert le cache en priorité et
 //     on rafraîchit en arrière-plan (stale-while-revalidate).
 //
-// Le numéro de version ci-dessous purge les anciens caches à chaque activation :
-// pense à l'incrémenter quand des assets précachés changent.
+// Numéro de version du cache. Pas besoin de le changer à chaque déploiement :
+// les pages HTML sont servies réseau-d'abord et les autres assets en
+// stale-while-revalidate, donc tout se met à jour seul (au pire au rechargement
+// suivant). Incrémente-le seulement pour forcer une purge immédiate — correctif
+// critique, ou fichiers supprimés/renommés à évacuer du cache.
 const CACHE_VERSION = "v1"
 const CACHE_NAME = `marzouzoute-${CACHE_VERSION}`
 
