@@ -92,7 +92,9 @@
         justify-content: center;
         align-items: center;
         font-size: 2rem;
-        transition: background-color 0.25s, transform 0.25s;
+        transition:
+          background-color 0.25s,
+          transform 0.25s;
       }
 
       .cell.filled {
@@ -123,6 +125,12 @@
         padding: 0 6px;
       }
 
+      .equation .missing.typing {
+        color: #357abd;
+        background-color: #eaf2fc;
+        border-radius: 6px;
+      }
+
       .pad {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -138,7 +146,9 @@
         cursor: pointer;
         background-color: #e9ecef;
         color: #333;
-        transition: transform 0.15s, background-color 0.15s;
+        transition:
+          transform 0.15s,
+          background-color 0.15s;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
       }
@@ -153,6 +163,65 @@
       .num-btn:disabled {
         opacity: 0.5;
         cursor: default;
+      }
+
+      /* Mise en valeur du chiffre choisi au clavier ou à la voix. */
+      .num-btn.flash {
+        background-color: #cfe3fa;
+        transform: scale(1.08);
+      }
+
+      .input-extra {
+        display: flex;
+        justify-content: center;
+        margin-top: 16px;
+      }
+
+      .mic-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 28px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        background-color: #4a90e2;
+        color: white;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+          background-color 0.2s,
+          transform 0.15s;
+      }
+
+      @media (hover: hover) {
+        .mic-btn:hover {
+          background-color: #357abd;
+        }
+      }
+
+      .mic-btn.listening {
+        background-color: #dc3545;
+        animation: mic-pulse 1s ease-in-out infinite;
+      }
+
+      @keyframes mic-pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.06);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .welcome-hint {
+        font-size: 1rem !important;
+        color: #888 !important;
       }
 
       .feedback {
@@ -225,6 +294,9 @@
           <h1>Les amis de 10</h1>
           <p>Combien faut-il ajouter pour faire 10 ?</p>
           <p>Regarde le cadre : compte les cases vides 🟦</p>
+          <p class="welcome-hint">
+            Réponds en cliquant, à la voix 🎤 ou au clavier ⌨️
+          </p>
           <button class="start-btn" onclick="startGame()">Commencer</button>
           <br />
           <a class="home-link" href="index.html">← Retour aux jeux</a>
@@ -242,6 +314,11 @@
           </div>
           <div class="feedback" id="feedback"></div>
           <div class="pad" id="pad"></div>
+          <div class="input-extra">
+            <button class="mic-btn hidden" id="micBtn" onclick="toggleMic()">
+              🎤 Répondre à la voix
+            </button>
+          </div>
         </div>
 
         <div class="game-end hidden"></div>
@@ -266,6 +343,10 @@
       let currentIndex = 0
       let score = 0
       let answered = false
+      // Tampon de saisie clavier : « 1 » peut devenir « 10 », d'où l'attente.
+      let typed = ""
+      let recognition = null
+      let listening = false
 
       // Construit une liste de compléments à 10 (le nombre donné va de 1 à 9,
       // mélangé) pour travailler tous les « amis » sans répétition trop visible.
@@ -309,6 +390,7 @@
 
       function displayQuestion() {
         answered = false
+        typed = ""
         const given = questions[currentIndex]
         document.getElementById("given").textContent = given
         document.getElementById("missing").textContent = "?"
@@ -328,8 +410,20 @@
         })
       }
 
+      function flashButton(choice) {
+        // Met brièvement en valeur le chiffre choisi (utile au clavier / voix).
+        const btn = [...document.querySelectorAll("#pad .num-btn")].find(
+          (b) => b.textContent === String(choice),
+        )
+        if (!btn) return
+        btn.classList.add("flash")
+        setTimeout(() => btn.classList.remove("flash"), 300)
+      }
+
       function checkAnswer(choice) {
         if (answered) return
+        clearTyped()
+        flashButton(choice)
         const given = questions[currentIndex]
         const correct = 10 - given
         const feedback = document.getElementById("feedback")
@@ -361,7 +455,151 @@
         }
       }
 
+      // ---- Saisie au clavier -------------------------------------------------
+
+      function showTyped() {
+        const missing = document.getElementById("missing")
+        missing.textContent = typed === "" ? "?" : typed
+        missing.classList.toggle("typing", typed !== "")
+      }
+
+      function clearTyped() {
+        typed = ""
+        const missing = document.getElementById("missing")
+        if (!answered) missing.textContent = "?"
+        missing.classList.remove("typing")
+      }
+
+      function handleDigit(d) {
+        // « 1 » est ambigu (1 ou 10) : on attend un éventuel « 0 » ou Entrée.
+        if (typed === "1") {
+          if (d === 0) {
+            checkAnswer(10)
+          } else {
+            checkAnswer(d)
+          }
+          return
+        }
+        if (d === 1) {
+          typed = "1"
+          showTyped()
+          return
+        }
+        checkAnswer(d)
+      }
+
+      function onKeyDown(e) {
+        const isHidden = (sel) =>
+          document.querySelector(sel).classList.contains("hidden")
+
+        // Sur l'accueil ou l'écran de fin : Entrée / Espace (re)lance une partie.
+        if (!isHidden(".welcome-screen") || !isHidden(".game-end")) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            startGame()
+          }
+          return
+        }
+        if (isHidden(".game-screen") || answered) return
+
+        if (e.key >= "0" && e.key <= "9") {
+          e.preventDefault()
+          handleDigit(Number(e.key))
+        } else if (e.key === "Enter" && typed !== "") {
+          e.preventDefault()
+          checkAnswer(Number(typed))
+        } else if (e.key === "Backspace" || e.key === "Escape") {
+          e.preventDefault()
+          clearTyped()
+        }
+      }
+
+      // ---- Réponse à la voix (Web Speech API) --------------------------------
+
+      const NUMBER_WORDS = {
+        zéro: 0,
+        zero: 0,
+        un: 1,
+        une: 1,
+        deux: 2,
+        trois: 3,
+        quatre: 4,
+        cinq: 5,
+        six: 6,
+        sept: 7,
+        huit: 8,
+        neuf: 9,
+        dix: 10,
+      }
+
+      // Extrait le premier nombre de 0 à 10 reconnu (chiffre ou mot français).
+      function parseNumber(text) {
+        const tokens = text.toLowerCase().split(/[^a-zà-ÿ0-9]+/)
+        for (const token of tokens) {
+          if (token === "") continue
+          if (/^\d+$/.test(token)) {
+            const n = Number(token)
+            if (n >= 0 && n <= 10) return n
+          } else if (token in NUMBER_WORDS) {
+            return NUMBER_WORDS[token]
+          }
+        }
+        return null
+      }
+
+      function updateMicUI() {
+        const btn = document.getElementById("micBtn")
+        btn.classList.toggle("listening", listening)
+        btn.textContent = listening ? "🎤 J'écoute…" : "🎤 Répondre à la voix"
+      }
+
+      function toggleMic() {
+        if (listening) {
+          if (recognition) recognition.stop()
+          return
+        }
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+        if (!SR) return
+        recognition = new SR()
+        recognition.lang = "fr-FR"
+        recognition.interimResults = false
+        recognition.continuous = false
+        recognition.maxAlternatives = 5
+
+        recognition.onresult = (event) => {
+          let num = null
+          for (const result of event.results) {
+            for (const alt of result) {
+              num = parseNumber(alt.transcript)
+              if (num !== null) break
+            }
+            if (num !== null) break
+          }
+          if (num !== null) {
+            checkAnswer(num)
+          } else if (!answered) {
+            const feedback = document.getElementById("feedback")
+            feedback.textContent = "Je n'ai pas compris, réessaie 😊"
+            feedback.className = "feedback incorrect"
+          }
+        }
+        recognition.onerror = () => {}
+        recognition.onend = () => {
+          listening = false
+          updateMicUI()
+        }
+
+        listening = true
+        updateMicUI()
+        recognition.start()
+      }
+
+      function stopListening() {
+        if (recognition) recognition.stop()
+      }
+
       function showGameEnd() {
+        stopListening()
         if (window.ExitGuard) ExitGuard.setActive(false)
 
         let message
@@ -400,6 +638,12 @@
         buildQuestions()
         displayQuestion()
       }
+
+      // Affiche le bouton micro uniquement si le navigateur sait écouter.
+      if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+        document.getElementById("micBtn").classList.remove("hidden")
+      }
+      document.addEventListener("keydown", onKeyDown)
     </script>
     <script src="confetti.js"></script>
     <script src="exit-guard.js"></script>
