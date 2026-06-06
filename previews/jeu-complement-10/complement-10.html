@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Les amis de 10</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f0f2f5;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .game-container {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .welcome-screen {
+        text-align: center;
+        padding: 40px 20px;
+      }
+
+      .welcome-screen h1 {
+        color: #4a90e2;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+      }
+
+      .welcome-screen p {
+        color: #666;
+        margin-bottom: 16px;
+        font-size: 1.2rem;
+      }
+
+      .start-btn {
+        margin-top: 14px;
+        padding: 15px 40px;
+        font-size: 1.3rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .start-btn:hover {
+        background-color: #357abd;
+      }
+
+      .stats-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        color: #333;
+        font-size: 1.3rem;
+      }
+
+      /* Cadre de dix : 2 rangées de 5 cases, pour « voir » le nombre 10. */
+      .ten-frame {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        max-width: 360px;
+        margin: 0 auto 24px;
+      }
+
+      .cell {
+        aspect-ratio: 1;
+        border: 3px solid #c7d2e0;
+        border-radius: 12px;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2rem;
+        transition: background-color 0.25s, transform 0.25s;
+      }
+
+      .cell.filled {
+        background-color: #4a90e2;
+        border-color: #4a90e2;
+      }
+
+      .cell.added {
+        background-color: #4caf50;
+        border-color: #4caf50;
+        transform: scale(1.08);
+      }
+
+      .equation {
+        text-align: center;
+        font-size: 2.6rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+        letter-spacing: 2px;
+      }
+
+      .equation .missing {
+        display: inline-block;
+        min-width: 60px;
+        color: #4a90e2;
+        border-bottom: 4px solid #4a90e2;
+        padding: 0 6px;
+      }
+
+      .pad {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      .num-btn {
+        padding: 18px 0;
+        font-size: 1.8rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        background-color: #e9ecef;
+        color: #333;
+        transition: transform 0.15s, background-color 0.15s;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      @media (hover: hover) {
+        .num-btn:hover {
+          transform: scale(1.05);
+          background-color: #dee2e6;
+        }
+      }
+
+      .num-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+
+      .feedback {
+        min-height: 2.4rem;
+        font-size: 1.6rem;
+        text-align: center;
+        margin-bottom: 16px;
+        font-weight: bold;
+      }
+
+      .correct {
+        color: #28a745;
+      }
+
+      .incorrect {
+        color: #dc3545;
+      }
+
+      .game-end {
+        text-align: center;
+      }
+
+      .game-end h2 {
+        color: #4a90e2;
+        margin-bottom: 20px;
+        font-size: 2rem;
+      }
+
+      .game-end p {
+        margin: 10px 0;
+        font-size: 1.3rem;
+        color: #333;
+      }
+
+      .restart-btn {
+        margin-top: 20px;
+        padding: 15px 30px;
+        font-size: 1.2rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .restart-btn:hover {
+        background-color: #357abd;
+      }
+
+      .home-link {
+        display: inline-block;
+        margin-top: 14px;
+        color: #4a90e2;
+        text-decoration: none;
+        font-size: 1.1rem;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="game-container">
+        <div class="welcome-screen">
+          <h1>Les amis de 10</h1>
+          <p>Combien faut-il ajouter pour faire 10 ?</p>
+          <p>Regarde le cadre : compte les cases vides 🟦</p>
+          <button class="start-btn" onclick="startGame()">Commencer</button>
+          <br />
+          <a class="home-link" href="index.html">← Retour aux jeux</a>
+        </div>
+
+        <div class="game-screen hidden">
+          <div class="stats-container">
+            <div>Question <span id="progress">1</span> / 10</div>
+            <div>Score : <span id="scoreValue">0</span></div>
+          </div>
+          <div class="ten-frame" id="tenFrame"></div>
+          <div class="equation">
+            <span id="given">0</span> +
+            <span class="missing" id="missing">?</span> = 10
+          </div>
+          <div class="feedback" id="feedback"></div>
+          <div class="pad" id="pad"></div>
+        </div>
+
+        <div class="game-end hidden"></div>
+      </div>
+    </div>
+
+    <canvas
+      id="confetti"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      "
+    ></canvas>
+
+    <script>
+      const TOTAL_QUESTIONS = 10
+      let questions = []
+      let currentIndex = 0
+      let score = 0
+      let answered = false
+
+      // Construit une liste de compléments à 10 (le nombre donné va de 1 à 9,
+      // mélangé) pour travailler tous les « amis » sans répétition trop visible.
+      function buildQuestions() {
+        const base = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        for (let i = base.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[base[i], base[j]] = [base[j], base[i]]
+        }
+        // On en veut 10 : on complète avec un nombre tiré au hasard.
+        questions = base.slice(0, TOTAL_QUESTIONS)
+        while (questions.length < TOTAL_QUESTIONS) {
+          questions.push(Math.floor(Math.random() * 9) + 1)
+        }
+      }
+
+      function drawTenFrame(given) {
+        const frame = document.getElementById("tenFrame")
+        frame.innerHTML = ""
+        for (let i = 0; i < 10; i++) {
+          const cell = document.createElement("div")
+          cell.className = "cell"
+          if (i < given) {
+            cell.classList.add("filled")
+          }
+          frame.appendChild(cell)
+        }
+      }
+
+      function buildPad() {
+        const pad = document.getElementById("pad")
+        pad.innerHTML = ""
+        for (let n = 0; n <= 10; n++) {
+          const btn = document.createElement("button")
+          btn.className = "num-btn"
+          btn.textContent = n
+          btn.onclick = () => checkAnswer(n)
+          pad.appendChild(btn)
+        }
+      }
+
+      function displayQuestion() {
+        answered = false
+        const given = questions[currentIndex]
+        document.getElementById("given").textContent = given
+        document.getElementById("missing").textContent = "?"
+        document.getElementById("progress").textContent = currentIndex + 1
+        document.getElementById("feedback").textContent = ""
+        drawTenFrame(given)
+        buildPad()
+      }
+
+      function fillRemaining() {
+        // Anime le remplissage des cases manquantes en vert.
+        const cells = document.querySelectorAll("#tenFrame .cell")
+        cells.forEach((cell) => {
+          if (!cell.classList.contains("filled")) {
+            cell.classList.add("added")
+          }
+        })
+      }
+
+      function checkAnswer(choice) {
+        if (answered) return
+        const given = questions[currentIndex]
+        const correct = 10 - given
+        const feedback = document.getElementById("feedback")
+
+        if (choice === correct) {
+          answered = true
+          score++
+          document.getElementById("scoreValue").textContent = score
+          document.getElementById("missing").textContent = correct
+          feedback.textContent = "Bravo ! 🎉"
+          feedback.className = "feedback correct"
+          fillRemaining()
+          document
+            .querySelectorAll("#pad .num-btn")
+            .forEach((b) => (b.disabled = true))
+
+          setTimeout(() => {
+            currentIndex++
+            if (currentIndex >= TOTAL_QUESTIONS) {
+              showGameEnd()
+            } else {
+              displayQuestion()
+            }
+          }, 1400)
+        } else {
+          // On laisse l'enfant réessayer : on ne passe pas à la suite.
+          feedback.textContent = "Essaie encore ! 😊"
+          feedback.className = "feedback incorrect"
+        }
+      }
+
+      function showGameEnd() {
+        if (window.ExitGuard) ExitGuard.setActive(false)
+
+        let message
+        if (score === TOTAL_QUESTIONS) {
+          message = "Sans faute ! Tu connais tous les amis de 10 ! 🌟"
+        } else if (score >= 7) {
+          message = "Super travail ! 👏"
+        } else {
+          message = "Bien joué, continue à t'entraîner ! 💪"
+        }
+
+        document.querySelector(".game-end").innerHTML = `
+          <h2>Partie terminée ! 🎉</h2>
+          <p>${message}</p>
+          <p>Score : ${score} / ${TOTAL_QUESTIONS}</p>
+          <button class="restart-btn" onclick="startGame()">Rejouer</button>
+          <br />
+          <a class="home-link" href="index.html">← Retour aux jeux</a>
+        `
+
+        document.querySelector(".game-screen").classList.add("hidden")
+        document.querySelector(".game-end").classList.remove("hidden")
+        showConfetti()
+      }
+
+      function startGame() {
+        score = 0
+        currentIndex = 0
+        document.getElementById("scoreValue").textContent = "0"
+        document.querySelector(".welcome-screen").classList.add("hidden")
+        document.querySelector(".game-end").classList.add("hidden")
+        document.querySelector(".game-screen").classList.remove("hidden")
+
+        if (window.ExitGuard) ExitGuard.setActive(true)
+
+        buildQuestions()
+        displayQuestion()
+      }
+    </script>
+    <script src="confetti.js"></script>
+    <script src="exit-guard.js"></script>
+  </body>
+</html>
