@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            max-width: 480px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+            font-size: 1.6em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+        }
+
+        .difficulty {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .difficulty button {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .difficulty button:hover {
+            border-color: #999;
+        }
+
+        .difficulty button.active {
+            background: #1a1a1a;
+            border-color: #1a1a1a;
+            color: white;
+        }
+
+        .stats {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        .board {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .card {
+            aspect-ratio: 3 / 4;
+            perspective: 600px;
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease;
+        }
+
+        .card.revealed .card-inner,
+        .card.matched .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+        }
+
+        .card-back {
+            background: #2563eb;
+            box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.2), inset 0 3px 6px rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .card-front {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            transform: rotateY(180deg);
+        }
+
+        .card.matched .card-front {
+            background: #c6f6d5;
+            border-color: #86efac;
+            animation: pop 0.4s ease;
+        }
+
+        .card.locked {
+            cursor: default;
+        }
+
+        @keyframes pop {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.08); }
+            100% { transform: rotateY(180deg) scale(1); }
+        }
+
+        .board.size-facile {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .board.size-moyen {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .board.size-difficile {
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 6px;
+        }
+
+        .board.size-difficile .card-face {
+            font-size: 1.3em;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-new {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .btn-new:hover {
+            background: #333;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            animation: slideIn 0.5s ease;
+        }
+
+        .message.win {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rules {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .rules h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .rules ul {
+            margin-left: 20px;
+        }
+
+        .rules li {
+            margin-bottom: 5px;
+        }
+
+        .scoreboard {
+            margin-top: 20px;
+        }
+
+        .scoreboard h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .scoreboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .scoreboard-table th,
+        .scoreboard-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .scoreboard-table th {
+            color: #999;
+            font-weight: 600;
+        }
+
+        .scoreboard-table td.value {
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .games-won {
+            text-align: center;
+            color: #666;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        canvas#confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="confetti"></canvas>
+    <div class="container">
+        <h1>🃏 Memory</h1>
+        <p class="subtitle">Trouve toutes les paires</p>
+
+        <div class="difficulty" id="difficulty">
+            <button data-level="facile">Facile</button>
+            <button data-level="moyen" class="active">Moyen</button>
+            <button data-level="difficile">Difficile</button>
+        </div>
+
+        <div id="message"></div>
+
+        <div class="stats" id="stats">
+            Coups : 0 · Temps : 00:00 · Paires : 0/8
+        </div>
+
+        <div class="board size-moyen" id="board"></div>
+
+        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
+
+        <div class="rules">
+            <h3>Règles du jeu</h3>
+            <ul>
+                <li>Clique sur une carte pour la retourner</li>
+                <li>Retourne <strong>2 cartes</strong> par tour : si elles sont identiques, elles restent visibles</li>
+                <li>Sinon, elles se retournent à nouveau face cachée</li>
+                <li>Le but : trouver toutes les paires en un minimum de coups et le plus vite possible</li>
+            </ul>
+        </div>
+
+        <div class="scoreboard">
+            <h3>Meilleurs scores</h3>
+            <table class="scoreboard-table">
+                <thead>
+                    <tr>
+                        <th>Difficulté</th>
+                        <th>Coups</th>
+                        <th>Temps</th>
+                    </tr>
+                </thead>
+                <tbody id="scoreboardBody"></tbody>
+            </table>
+            <div class="games-won">Parties gagnées : <span id="gamesWon">0</span></div>
+        </div>
+    </div>
+
+    <script src="confetti.js"></script>
+    <script>
+        const SCORES_KEY = 'memory-scores';
+        const DEFAULT_SCORES = {
+            bestMoves: { facile: null, moyen: null, difficile: null },
+            bestTime: { facile: null, moyen: null, difficile: null },
+            gamesWon: 0
+        };
+
+        const LEVELS = {
+            facile: { rows: 3, cols: 4, pairs: 6, label: 'Facile' },
+            moyen: { rows: 4, cols: 4, pairs: 8, label: 'Moyen' },
+            difficile: { rows: 6, cols: 6, pairs: 18, label: 'Difficile' }
+        };
+
+        const EMOJIS = ['🐶','🐱','🐭','🐰','🦊','🐻','🐼','🦁','🐯','🐨','🐸','🐵','🦄','🐔','🦋','🌻','🍎','🍌','🍓','🍇','🥕','🍕','🍔','🍦','🚀','🚗','⚽','🎈','🎁','⭐','🌈','❤️'];
+
+        let level = 'moyen';
+        let cards = [];
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+        let moves = 0;
+        let matched = 0;
+        let startTime = null;
+        let timerInterval = null;
+
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function initGame() {
+            const config = LEVELS[level];
+            const symbols = shuffle(EMOJIS).slice(0, config.pairs);
+            const deck = shuffle([...symbols, ...symbols]);
+
+            cards = deck.map((sym, i) => ({ id: i, symbol: sym, matched: false, revealed: false }));
+            firstCard = null;
+            secondCard = null;
+            lockBoard = false;
+            moves = 0;
+            matched = 0;
+            startTime = null;
+            clearInterval(timerInterval);
+            timerInterval = null;
+
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('message').className = '';
+            document.getElementById('newGameBtn').style.display = 'none';
+
+            renderBoard();
+            updateStats();
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.className = `board size-${level}`;
+            boardEl.innerHTML = '';
+            cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                if (card.revealed) cardEl.classList.add('revealed');
+                if (card.matched) cardEl.classList.add('matched');
+                cardEl.dataset.id = card.id;
+                cardEl.onclick = () => flipCard(card.id);
+
+                const inner = document.createElement('div');
+                inner.className = 'card-inner';
+
+                const back = document.createElement('div');
+                back.className = 'card-face card-back';
+                back.textContent = '?';
+
+                const front = document.createElement('div');
+                front.className = 'card-face card-front';
+                front.textContent = card.symbol;
+
+                inner.appendChild(back);
+                inner.appendChild(front);
+                cardEl.appendChild(inner);
+                boardEl.appendChild(cardEl);
+            });
+        }
+
+        function getCardEl(id) {
+            return document.querySelector(`.card[data-id="${id}"]`);
+        }
+
+        function flipCard(id) {
+            if (lockBoard) return;
+            const card = cards[id];
+            if (card.matched || card.revealed) return;
+
+            if (!startTime) {
+                startTime = Date.now();
+                timerInterval = setInterval(updateStats, 1000);
+            }
+
+            card.revealed = true;
+            getCardEl(id).classList.add('revealed');
+
+            if (!firstCard) {
+                firstCard = card;
+                return;
+            }
+
+            secondCard = card;
+            moves++;
+            updateStats();
+
+            if (firstCard.symbol === secondCard.symbol) {
+                firstCard.matched = true;
+                secondCard.matched = true;
+                getCardEl(firstCard.id).classList.add('matched');
+                getCardEl(secondCard.id).classList.add('matched');
+                matched++;
+                firstCard = null;
+                secondCard = null;
+                updateStats();
+
+                if (matched === LEVELS[level].pairs) {
+                    handleWin();
+                }
+            } else {
+                lockBoard = true;
+                const a = firstCard;
+                const b = secondCard;
+                setTimeout(() => {
+                    a.revealed = false;
+                    b.revealed = false;
+                    getCardEl(a.id).classList.remove('revealed');
+                    getCardEl(b.id).classList.remove('revealed');
+                    firstCard = null;
+                    secondCard = null;
+                    lockBoard = false;
+                }, 700);
+            }
+        }
+
+        function handleWin() {
+            clearInterval(timerInterval);
+            const elapsed = Date.now() - startTime;
+            const improved = saveScore(moves, elapsed);
+            const timeStr = formatTime(elapsed);
+            const extra = improved.length ? ` 🏆 Nouveau record : ${improved.join(' et ')} !` : '';
+            showMessage(`🎉 Bravo ! ${moves} coups en ${timeStr}.${extra}`, 'win');
+            if (typeof showConfetti === 'function') showConfetti();
+            document.getElementById('newGameBtn').style.display = 'block';
+        }
+
+        function updateStats() {
+            const elapsed = startTime ? Date.now() - startTime : 0;
+            document.getElementById('stats').textContent =
+                `Coups : ${moves} · Temps : ${formatTime(elapsed)} · Paires : ${matched}/${LEVELS[level].pairs}`;
+        }
+
+        function formatTime(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function getScores() {
+            const stored = localStorage.getItem(SCORES_KEY);
+            if (!stored) return JSON.parse(JSON.stringify(DEFAULT_SCORES));
+            const parsed = JSON.parse(stored);
+            return {
+                bestMoves: { ...DEFAULT_SCORES.bestMoves, ...(parsed.bestMoves || {}) },
+                bestTime: { ...DEFAULT_SCORES.bestTime, ...(parsed.bestTime || {}) },
+                gamesWon: parsed.gamesWon || 0
+            };
+        }
+
+        function saveScore(movesCount, elapsedMs) {
+            const scores = getScores();
+            const improved = [];
+            if (scores.bestMoves[level] === null || movesCount < scores.bestMoves[level]) {
+                scores.bestMoves[level] = movesCount;
+                improved.push('coups');
+            }
+            if (scores.bestTime[level] === null || elapsedMs < scores.bestTime[level]) {
+                scores.bestTime[level] = elapsedMs;
+                improved.push('temps');
+            }
+            scores.gamesWon++;
+            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            updateScoreboard(scores);
+            return improved;
+        }
+
+        function updateScoreboard(scores = getScores()) {
+            const tbody = document.getElementById('scoreboardBody');
+            tbody.innerHTML = Object.keys(LEVELS).map(lvl => {
+                const m = scores.bestMoves[lvl];
+                const t = scores.bestTime[lvl];
+                return `
+                    <tr>
+                        <td>${LEVELS[lvl].label}</td>
+                        <td class="value">${m === null ? '—' : m}</td>
+                        <td class="value">${t === null ? '—' : formatTime(t)}</td>
+                    </tr>
+                `;
+            }).join('');
+            document.getElementById('gamesWon').textContent = scores.gamesWon;
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+        }
+
+        function selectLevel(newLevel) {
+            level = newLevel;
+            document.querySelectorAll('#difficulty button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.level === newLevel);
+            });
+            initGame();
+        }
+
+        document.querySelectorAll('#difficulty button').forEach(btn => {
+            btn.onclick = () => selectLevel(btn.dataset.level);
+        });
+        document.getElementById('newGameBtn').onclick = initGame;
+
+        updateScoreboard();
+        initGame();
+    </script>
+<script src="exit-guard.js"></script>
+</body>
+</html>
