@@ -343,6 +343,9 @@
       let currentIndex = 0
       let score = 0
       let answered = false
+      // Vrai dès qu'une mauvaise réponse a été donnée pour la question en cours :
+      // on ne compte un point que si l'enfant trouve du premier coup.
+      let mistakeThisQuestion = false
       // Tampon de saisie clavier : « 1 » peut devenir « 10 », d'où l'attente.
       let typed = ""
       let recognition = null
@@ -390,6 +393,7 @@
 
       function displayQuestion() {
         answered = false
+        mistakeThisQuestion = false
         typed = ""
         const given = questions[currentIndex]
         document.getElementById("given").textContent = given
@@ -430,8 +434,11 @@
 
         if (choice === correct) {
           answered = true
-          score++
-          document.getElementById("scoreValue").textContent = score
+          // Un point seulement si la question est réussie sans erreur préalable.
+          if (!mistakeThisQuestion) {
+            score++
+            document.getElementById("scoreValue").textContent = score
+          }
           document.getElementById("missing").textContent = correct
           feedback.textContent = "Bravo ! 🎉"
           feedback.className = "feedback correct"
@@ -450,6 +457,7 @@
           }, 1400)
         } else {
           // On laisse l'enfant réessayer : on ne passe pas à la suite.
+          mistakeThisQuestion = true
           feedback.textContent = "Essaie encore ! 😊"
           feedback.className = "feedback incorrect"
         }
