@@ -44,4 +44,9 @@ jobs:
           # Authentification via l'abonnement Claude (Pro/Max), pas de
           # facturation API. Token généré localement par `claude setup-token`.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--model claude-opus-4-8 --max-turns 30"
+          # git/gh autorisés pour que Claude puisse pousser ses ajustements sur
+          # la branche de la PR (et au besoin ouvrir/mettre à jour une PR).
+          claude_args: |
+            --model claude-opus-4-8
+            --max-turns 30
+            --allowedTools "Bash(git:*),Bash(gh:*)"

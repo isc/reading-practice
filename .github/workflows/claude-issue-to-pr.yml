@@ -38,7 +38,13 @@ jobs:
           # Authentification via l'abonnement Claude (Pro/Max), pas de
           # facturation API. Token généré localement par `claude setup-token`.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--model claude-opus-4-8 --max-turns 40"
+          # Par défaut l'action n'autorise que l'édition de fichiers, le git en
+          # lecture seule et les commentaires. On étend avec git/gh pour que
+          # Claude puisse créer la branche, pousser et ouvrir la PR.
+          claude_args: |
+            --model claude-opus-4-8
+            --max-turns 40
+            --allowedTools "Bash(git:*),Bash(gh:*)"
           prompt: |
             Tu es déclenché par la création de l'issue #${{ github.event.issue.number }}
             dans le dépôt ${{ github.repository }}.
