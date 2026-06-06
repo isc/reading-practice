@@ -6,12 +6,16 @@ name: Claude — issue vers PR
 
 on:
   issues:
-    types: [opened]
+    types: [opened, reopened]
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
+  # Requis : l'app Claude s'authentifie via OIDC (échange contre un token
+  # d'installation GitHub).
+  id-token: write
+  actions: read
 
 concurrency:
   group: claude-issue-${{ github.event.issue.number }}
