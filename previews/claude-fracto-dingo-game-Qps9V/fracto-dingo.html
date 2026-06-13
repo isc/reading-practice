@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Fracto Dingo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f0f2f5;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 16px;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }
+
+      .screen {
+        display: none;
+        width: 100%;
+        max-width: 480px;
+      }
+
+      .screen.active {
+        display: block;
+      }
+
+      .menu-header {
+        text-align: center;
+        padding: 24px 0 16px;
+      }
+
+      .menu-header h1 {
+        font-size: 2em;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+      }
+
+      .menu-header p {
+        color: #666;
+        font-size: 0.95em;
+      }
+
+      .section-title {
+        font-size: 0.8em;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 20px 0 10px;
+        padding-left: 4px;
+      }
+
+      .mode-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 10px;
+        text-align: left;
+        font-family: inherit;
+      }
+
+      @media (hover: hover) {
+        .mode-btn:hover {
+          border-color: #4a90e2;
+          background: #f0f7ff;
+        }
+      }
+
+      .mode-btn:active {
+        transform: scale(0.98);
+      }
+
+      .mode-icon {
+        font-size: 1.6em;
+        flex-shrink: 0;
+      }
+
+      .mode-name {
+        font-weight: 700;
+        color: #1a1a1a;
+        font-size: 1em;
+        display: block;
+      }
+
+      .mode-desc {
+        color: #888;
+        font-size: 0.8em;
+        display: block;
+        margin-top: 2px;
+      }
+
+      .level-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .level-btn {
+        flex: 1;
+        padding: 12px 8px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        background: white;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9em;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+
+      .level-btn.easy {
+        color: #16a34a;
+      }
+      .level-btn.easy.active {
+        background: #16a34a;
+        border-color: #16a34a;
+        color: white;
+      }
+      .level-btn.medium {
+        color: #ea580c;
+      }
+      .level-btn.medium.active {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: white;
+      }
+      .level-btn.hard {
+        color: #dc2626;
+      }
+      .level-btn.hard.active {
+        background: #dc2626;
+        border-color: #dc2626;
+        color: white;
+      }
+
+      .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .back-btn {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+        padding: 4px 8px;
+        color: #666;
+        font-family: inherit;
+      }
+
+      .game-info {
+        display: flex;
+        gap: 14px;
+        font-size: 0.9em;
+        color: #666;
+        font-weight: 600;
+      }
+
+      .game-info .score {
+        color: #16a34a;
+      }
+
+      .game-info .streak {
+        color: #ea580c;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: #4a90e2;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+
+      .question-label {
+        text-align: center;
+        color: #888;
+        font-size: 0.85em;
+        margin-bottom: 8px;
+      }
+
+      .question-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 110px;
+        margin-bottom: 16px;
+      }
+
+      .options-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .option-card {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 85px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .option-card:active {
+        transform: scale(0.97);
+      }
+
+      .option-card.correct {
+        border-color: #16a34a;
+        background: #f0fdf4;
+        animation: popCorrect 0.4s ease;
+      }
+
+      .option-card.wrong {
+        border-color: #dc2626;
+        background: #fef2f2;
+        animation: shake 0.4s ease;
+      }
+
+      .option-card.reveal {
+        border-color: #16a34a;
+        background: #f0fdf4;
+      }
+
+      .option-card.disabled {
+        pointer-events: none;
+        opacity: 0.5;
+      }
+
+      .repr-fraction {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        font-weight: 700;
+        color: #1a1a1a;
+        line-height: 1.1;
+      }
+
+      .repr-fraction.large {
+        font-size: 1.6em;
+      }
+      .repr-fraction.small {
+        font-size: 1.1em;
+      }
+      .repr-fraction.tiny {
+        font-size: 0.9em;
+      }
+
+      .frac-bar {
+        width: 100%;
+        min-width: 24px;
+        height: 2px;
+        background: #1a1a1a;
+      }
+
+      .repr-number {
+        font-weight: 700;
+        color: #1a1a1a;
+      }
+      .repr-number.large {
+        font-size: 1.8em;
+      }
+      .repr-number.small {
+        font-size: 1.3em;
+      }
+      .repr-number.tiny {
+        font-size: 1em;
+      }
+
+      .repr-text {
+        font-weight: 600;
+        color: #1a1a1a;
+        text-align: center;
+        line-height: 1.3;
+      }
+      .repr-text.large {
+        font-size: 1.15em;
+      }
+      .repr-text.small {
+        font-size: 0.95em;
+      }
+      .repr-text.tiny {
+        font-size: 0.7em;
+      }
+
+      .compare-cards {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+        align-items: center;
+      }
+
+      .compare-card {
+        flex: 1;
+        background: white;
+        border-radius: 16px;
+        padding: 18px 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 120px;
+        cursor: pointer;
+        transition: all 0.15s;
+        border: 3px solid transparent;
+      }
+
+      .compare-card:active {
+        transform: scale(0.97);
+      }
+
+      .compare-card.correct {
+        border-color: #16a34a;
+        background: #f0fdf4;
+        animation: popCorrect 0.4s ease;
+      }
+
+      .compare-card.wrong {
+        border-color: #dc2626;
+        background: #fef2f2;
+        animation: shake 0.4s ease;
+      }
+
+      .compare-card.reveal {
+        border-color: #16a34a;
+        background: #f0fdf4;
+      }
+
+      .compare-vs {
+        font-weight: 700;
+        color: #ccc;
+        font-size: 0.9em;
+        flex-shrink: 0;
+      }
+
+      .equal-btn {
+        width: 100%;
+        padding: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        background: white;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        color: #555;
+        font-family: inherit;
+        margin-bottom: 12px;
+      }
+
+      .equal-btn:active {
+        transform: scale(0.98);
+      }
+
+      .equal-btn.correct {
+        border-color: #16a34a;
+        background: #f0fdf4;
+        color: #16a34a;
+      }
+
+      .equal-btn.wrong {
+        border-color: #dc2626;
+        background: #fef2f2;
+        color: #dc2626;
+      }
+
+      .memory-grid {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .memory-grid.cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .memory-grid.cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .memory-card {
+        aspect-ratio: 1;
+        background: #4a90e2;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid #3b82c4;
+        overflow: hidden;
+      }
+
+      .memory-card .card-back {
+        font-size: 1.4em;
+        color: white;
+      }
+
+      .memory-card .card-front {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        padding: 4px;
+      }
+
+      .memory-card.flipped,
+      .memory-card.matched {
+        background: white;
+        border-color: #e2e8f0;
+      }
+
+      .memory-card.matched {
+        border-color: #16a34a;
+        background: #f0fdf4;
+      }
+
+      .memory-card.flipped .card-back,
+      .memory-card.matched .card-back {
+        display: none;
+      }
+
+      .memory-card.flipped .card-front,
+      .memory-card.matched .card-front {
+        display: flex;
+      }
+
+      .feedback-msg {
+        text-align: center;
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9em;
+        margin-bottom: 10px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+
+      .feedback-msg.correct {
+        background: #f0fdf4;
+        color: #16a34a;
+      }
+
+      .feedback-msg.wrong {
+        background: #fef2f2;
+        color: #dc2626;
+      }
+
+      .results-container {
+        text-align: center;
+        background: white;
+        border-radius: 16px;
+        padding: 28px 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .results-emoji {
+        font-size: 3em;
+        margin-bottom: 8px;
+      }
+
+      .results-title {
+        font-size: 1.4em;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+      }
+
+      .results-subtitle {
+        color: #888;
+        margin-bottom: 20px;
+        font-size: 0.9em;
+      }
+
+      .results-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .stat-box {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 12px 8px;
+      }
+
+      .stat-value {
+        font-size: 1.5em;
+        font-weight: 700;
+        color: #1a1a1a;
+      }
+
+      .stat-label {
+        font-size: 0.75em;
+        color: #888;
+        margin-top: 2px;
+      }
+
+      .results-btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 8px;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+
+      .btn-replay {
+        background: #1a1a1a;
+        color: white;
+      }
+
+      .btn-menu {
+        background: #e2e8f0;
+        color: #1a1a1a;
+      }
+
+      @keyframes popCorrect {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-5px);
+        }
+        75% {
+          transform: translateX(5px);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .animate-in {
+        animation: fadeIn 0.25s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="menu" class="screen active">
+      <div class="menu-header">
+        <h1>🎯 Fracto Dingo</h1>
+        <p>Deviens un champion des fractions !</p>
+      </div>
+
+      <div class="section-title">Choisis ton jeu</div>
+
+      <button class="mode-btn" onclick="startGame('match')">
+        <span class="mode-icon">🔗</span>
+        <div>
+          <span class="mode-name">Trouve l'équivalence</span>
+          <span class="mode-desc">Associe les fractions identiques</span>
+        </div>
+      </button>
+
+      <button class="mode-btn" onclick="startGame('compare')">
+        <span class="mode-icon">⚖️</span>
+        <div>
+          <span class="mode-name">Qui est le plus grand ?</span>
+          <span class="mode-desc">Compare deux fractions</span>
+        </div>
+      </button>
+
+      <button class="mode-btn" onclick="startGame('memory')">
+        <span class="mode-icon">🧠</span>
+        <div>
+          <span class="mode-name">Mémory</span>
+          <span class="mode-desc">Retrouve les paires équivalentes</span>
+        </div>
+      </button>
+
+      <div class="section-title">Niveau</div>
+      <div class="level-buttons">
+        <button
+          class="level-btn easy active"
+          onclick="selectLevel('easy')"
+        >
+          Facile
+        </button>
+        <button class="level-btn medium" onclick="selectLevel('medium')">
+          Moyen
+        </button>
+        <button class="level-btn hard" onclick="selectLevel('hard')">
+          Difficile
+        </button>
+      </div>
+    </div>
+
+    <div id="game-match" class="screen">
+      <div class="game-header">
+        <button class="back-btn" onclick="goToMenu()">←</button>
+        <div class="game-info">
+          <span>Q. <span id="match-progress">1/10</span></span>
+          <span class="score">✓ <span id="match-score">0</span></span>
+          <span class="streak" id="match-streak"></span>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="match-bar" style="width: 0%"></div>
+      </div>
+      <div class="question-label">Trouve l'équivalence !</div>
+      <div class="question-card" id="match-question"></div>
+      <div class="options-grid" id="match-options"></div>
+      <div class="feedback-msg" id="match-feedback"></div>
+    </div>
+
+    <div id="game-compare" class="screen">
+      <div class="game-header">
+        <button class="back-btn" onclick="goToMenu()">←</button>
+        <div class="game-info">
+          <span>Q. <span id="compare-progress">1/10</span></span>
+          <span class="score">✓ <span id="compare-score">0</span></span>
+          <span class="streak" id="compare-streak"></span>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="compare-bar" style="width: 0%"></div>
+      </div>
+      <div class="question-label">Tape sur la plus grande !</div>
+      <div class="compare-cards">
+        <div
+          class="compare-card"
+          id="compare-left"
+          onclick="handleCompare('left')"
+        ></div>
+        <span class="compare-vs">ou</span>
+        <div
+          class="compare-card"
+          id="compare-right"
+          onclick="handleCompare('right')"
+        ></div>
+      </div>
+      <button class="equal-btn" id="equal-btn" onclick="handleCompare('equal')">
+        = Elles sont égales
+      </button>
+      <div class="feedback-msg" id="compare-feedback"></div>
+    </div>
+
+    <div id="game-memory" class="screen">
+      <div class="game-header">
+        <button class="back-btn" onclick="goToMenu()">←</button>
+        <div class="game-info">
+          <span>Coups : <span id="memory-moves">0</span></span>
+          <span class="score"
+            >Paires : <span id="memory-pairs">0/0</span></span
+          >
+        </div>
+      </div>
+      <div class="memory-grid" id="memory-grid"></div>
+      <div class="feedback-msg" id="memory-feedback"></div>
+    </div>
+
+    <div id="results" class="screen">
+      <div class="results-container">
+        <div class="results-emoji" id="results-emoji">🎉</div>
+        <div class="results-title" id="results-title">Bravo !</div>
+        <div class="results-subtitle" id="results-subtitle"></div>
+        <div class="results-stats" id="results-stats"></div>
+        <button class="results-btn btn-replay" id="btn-replay">
+          Rejouer
+        </button>
+        <button class="results-btn btn-menu" onclick="goToMenu()">
+          Menu
+        </button>
+      </div>
+    </div>
+
+    <canvas id="confetti"></canvas>
+    <script src="confetti.js"></script>
+    <script>
+      // ===== DATA =====
+      const FRACTIONS = [
+        {
+          id: "half",
+          num: 1,
+          den: 2,
+          value: 0.5,
+          decimal: "0,5",
+          percent: "50",
+          text: "un demi",
+        },
+        {
+          id: "third",
+          num: 1,
+          den: 3,
+          value: 1 / 3,
+          text: "un tiers",
+        },
+        {
+          id: "two-thirds",
+          num: 2,
+          den: 3,
+          value: 2 / 3,
+          text: "deux tiers",
+        },
+        {
+          id: "quarter",
+          num: 1,
+          den: 4,
+          value: 0.25,
+          decimal: "0,25",
+          percent: "25",
+          text: "un quart",
+        },
+        {
+          id: "three-quarters",
+          num: 3,
+          den: 4,
+          value: 0.75,
+          decimal: "0,75",
+          percent: "75",
+          text: "trois quarts",
+        },
+        {
+          id: "fifth",
+          num: 1,
+          den: 5,
+          value: 0.2,
+          decimal: "0,2",
+          percent: "20",
+          text: "un cinquième",
+        },
+        {
+          id: "two-fifths",
+          num: 2,
+          den: 5,
+          value: 0.4,
+          decimal: "0,4",
+          percent: "40",
+          text: "deux cinquièmes",
+        },
+        {
+          id: "three-fifths",
+          num: 3,
+          den: 5,
+          value: 0.6,
+          decimal: "0,6",
+          percent: "60",
+          text: "trois cinquièmes",
+        },
+        {
+          id: "four-fifths",
+          num: 4,
+          den: 5,
+          value: 0.8,
+          decimal: "0,8",
+          percent: "80",
+          text: "quatre cinquièmes",
+        },
+        {
+          id: "tenth",
+          num: 1,
+          den: 10,
+          value: 0.1,
+          decimal: "0,1",
+          percent: "10",
+          text: "un dixième",
+        },
+        {
+          id: "three-tenths",
+          num: 3,
+          den: 10,
+          value: 0.3,
+          decimal: "0,3",
+          percent: "30",
+          text: "trois dixièmes",
+        },
+        {
+          id: "seven-tenths",
+          num: 7,
+          den: 10,
+          value: 0.7,
+          decimal: "0,7",
+          percent: "70",
+          text: "sept dixièmes",
+        },
+        {
+          id: "nine-tenths",
+          num: 9,
+          den: 10,
+          value: 0.9,
+          decimal: "0,9",
+          percent: "90",
+          text: "neuf dixièmes",
+        },
+      ]
+
+      const LEVELS = {
+        easy: {
+          fractionIds: [
+            "half",
+            "third",
+            "two-thirds",
+            "quarter",
+            "three-quarters",
+          ],
+          types: ["fraction", "visual", "text"],
+          memoryPairs: 4,
+          memoryCols: 4,
+        },
+        medium: {
+          fractionIds: [
+            "half",
+            "third",
+            "two-thirds",
+            "quarter",
+            "three-quarters",
+            "fifth",
+            "two-fifths",
+            "three-fifths",
+            "four-fifths",
+          ],
+          types: ["fraction", "visual", "text", "decimal"],
+          memoryPairs: 6,
+          memoryCols: 4,
+        },
+        hard: {
+          fractionIds: FRACTIONS.map((f) => f.id),
+          types: ["fraction", "visual", "text", "decimal", "percent"],
+          memoryPairs: 8,
+          memoryCols: 4,
+        },
+      }
+
+      const TOTAL_ROUNDS = 10
+
+      // ===== STATE =====
+      let currentLevel = "easy"
+      let game = {}
+
+      // ===== UTILITIES =====
+      function shuffle(arr) {
+        const a = [...arr]
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[a[i], a[j]] = [a[j], a[i]]
+        }
+        return a
+      }
+
+      function pickRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)]
+      }
+
+      function getLevelFractions(level) {
+        return LEVELS[level].fractionIds.map((id) =>
+          FRACTIONS.find((f) => f.id === id),
+        )
+      }
+
+      function getAvailableTypes(frac, level) {
+        return LEVELS[level].types.filter((t) => {
+          if (t === "decimal") return !!frac.decimal
+          if (t === "percent") return !!frac.percent
+          return true
+        })
+      }
+
+      function createPieSVG(num, den, size) {
+        const r = size / 2 - 2
+        const cx = size / 2
+        const cy = size / 2
+        const value = num / den
+
+        let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`
+        svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.5"/>`
+
+        if (value > 0 && value < 1) {
+          const angle = value * 2 * Math.PI
+          const endX = cx + r * Math.sin(angle)
+          const endY = cy - r * Math.cos(angle)
+          const largeArc = value > 0.5 ? 1 : 0
+          svg += `<path d="M${cx},${cy} L${cx},${(cy - r).toFixed(2)} A${r},${r} 0 ${largeArc},1 ${endX.toFixed(2)},${endY.toFixed(2)} Z" fill="#4a90e2"/>`
+        } else if (value >= 1) {
+          svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#4a90e2"/>`
+        }
+
+        for (let i = 0; i < den; i++) {
+          const a = (i / den) * 2 * Math.PI - Math.PI / 2
+          const lx = cx + r * Math.cos(a)
+          const ly = cy + r * Math.sin(a)
+          svg += `<line x1="${cx}" y1="${cy}" x2="${lx.toFixed(2)}" y2="${ly.toFixed(2)}" stroke="#94a3b8" stroke-width="1"/>`
+        }
+
+        svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>`
+        svg += `</svg>`
+        return svg
+      }
+
+      function renderRepr(frac, type, sizeClass) {
+        const sc = sizeClass || "large"
+        switch (type) {
+          case "fraction":
+            return `<div class="repr-fraction ${sc}"><span>${frac.num}</span><span class="frac-bar"></span><span>${frac.den}</span></div>`
+          case "decimal":
+            return `<div class="repr-number ${sc}">${frac.decimal}</div>`
+          case "percent":
+            return `<div class="repr-number ${sc}">${frac.percent} %</div>`
+          case "visual": {
+            const pxSize = sc === "large" ? 80 : sc === "small" ? 60 : 42
+            return createPieSVG(frac.num, frac.den, pxSize)
+          }
+          case "text":
+            return `<div class="repr-text ${sc}">${frac.text}</div>`
+          default:
+            return ""
+        }
+      }
+
+      // ===== SCREEN =====
+      function showScreen(id) {
+        document.querySelectorAll(".screen").forEach((s) => {
+          s.classList.remove("active")
+        })
+        document.getElementById(id).classList.add("active")
+      }
+
+      function goToMenu() {
+        showScreen("menu")
+      }
+
+      function selectLevel(level) {
+        currentLevel = level
+        document.querySelectorAll(".level-btn").forEach((b) => {
+          b.classList.remove("active")
+        })
+        document
+          .querySelector(`.level-btn.${level}`)
+          .classList.add("active")
+      }
+
+      // ===== START GAME =====
+      function startGame(mode) {
+        game = {
+          mode,
+          level: currentLevel,
+          score: 0,
+          streak: 0,
+          bestStreak: 0,
+          round: 0,
+          rounds: [],
+          startTime: Date.now(),
+        }
+
+        if (mode === "match") initMatch()
+        else if (mode === "compare") initCompare()
+        else if (mode === "memory") initMemory()
+      }
+
+      // ===== MATCH GAME =====
+      function initMatch() {
+        game.rounds = generateMatchRounds()
+        game.round = 0
+        game.locked = false
+        showScreen("game-match")
+        showMatchRound()
+      }
+
+      function generateMatchRounds() {
+        const fracs = getLevelFractions(game.level)
+        const rounds = []
+        for (let i = 0; i < TOTAL_ROUNDS; i++) {
+          let round
+          let attempts = 0
+          do {
+            round = generateOneMatchRound(fracs)
+            attempts++
+          } while (
+            i > 0 &&
+            round.target.id === rounds[i - 1].target.id &&
+            attempts < 20
+          )
+          rounds.push(round)
+        }
+        return rounds
+      }
+
+      function generateOneMatchRound(fracs) {
+        const target = pickRandom(fracs)
+        const targetTypes = getAvailableTypes(target, game.level)
+        const questionType = pickRandom(targetTypes)
+        const answerCandidates = targetTypes.filter(
+          (t) => t !== questionType,
+        )
+        const answerType = pickRandom(answerCandidates)
+
+        const wrongCandidates = fracs.filter(
+          (f) =>
+            f.id !== target.id &&
+            getAvailableTypes(f, game.level).includes(answerType),
+        )
+        const wrongs = shuffle(wrongCandidates).slice(
+          0,
+          Math.min(3, wrongCandidates.length),
+        )
+
+        const options = shuffle([
+          { fraction: target, isCorrect: true },
+          ...wrongs.map((f) => ({ fraction: f, isCorrect: false })),
+        ])
+
+        return { target, questionType, answerType, options }
+      }
+
+      function showMatchRound() {
+        const r = game.rounds[game.round]
+        const questionEl = document.getElementById("match-question")
+        const optionsEl = document.getElementById("match-options")
+        const feedbackEl = document.getElementById("match-feedback")
+
+        document.getElementById("match-progress").textContent =
+          `${game.round + 1}/${TOTAL_ROUNDS}`
+        document.getElementById("match-score").textContent = game.score
+        document.getElementById("match-streak").textContent =
+          game.streak >= 2 ? `🔥${game.streak}` : ""
+        document.getElementById("match-bar").style.width =
+          `${(game.round / TOTAL_ROUNDS) * 100}%`
+
+        questionEl.innerHTML = renderRepr(r.target, r.questionType, "large")
+        questionEl.classList.add("animate-in")
+
+        feedbackEl.textContent = ""
+        feedbackEl.className = "feedback-msg"
+
+        optionsEl.innerHTML = ""
+        r.options.forEach((opt, idx) => {
+          const card = document.createElement("div")
+          card.className = "option-card animate-in"
+          card.style.animationDelay = `${idx * 0.05}s`
+          card.innerHTML = renderRepr(opt.fraction, r.answerType, "small")
+          card.onclick = () => handleMatch(idx)
+          optionsEl.appendChild(card)
+        })
+      }
+
+      function handleMatch(idx) {
+        if (game.locked) return
+        game.locked = true
+
+        const r = game.rounds[game.round]
+        const cards = document.querySelectorAll(".option-card")
+        const feedbackEl = document.getElementById("match-feedback")
+        const isCorrect = r.options[idx].isCorrect
+
+        if (isCorrect) {
+          cards[idx].classList.add("correct")
+          game.score++
+          game.streak++
+          if (game.streak > game.bestStreak)
+            game.bestStreak = game.streak
+          feedbackEl.textContent = pickRandom([
+            "Bravo !",
+            "Correct !",
+            "Bien joué !",
+            "Super !",
+            "Exactement !",
+          ])
+          feedbackEl.className = "feedback-msg correct"
+        } else {
+          cards[idx].classList.add("wrong")
+          game.streak = 0
+          const correctIdx = r.options.findIndex((o) => o.isCorrect)
+          cards[correctIdx].classList.add("reveal")
+          feedbackEl.textContent = "Pas tout à fait…"
+          feedbackEl.className = "feedback-msg wrong"
+        }
+
+        cards.forEach((c) => c.classList.add("disabled"))
+        document.getElementById("match-score").textContent = game.score
+        document.getElementById("match-streak").textContent =
+          game.streak >= 2 ? `🔥${game.streak}` : ""
+
+        setTimeout(
+          () => {
+            game.round++
+            if (game.round >= TOTAL_ROUNDS) {
+              endGame()
+            } else {
+              game.locked = false
+              showMatchRound()
+            }
+          },
+          isCorrect ? 800 : 1400,
+        )
+      }
+
+      // ===== COMPARE GAME =====
+      function initCompare() {
+        game.rounds = generateCompareRounds()
+        game.round = 0
+        game.locked = false
+        showScreen("game-compare")
+        showCompareRound()
+      }
+
+      function generateCompareRounds() {
+        const fracs = getLevelFractions(game.level)
+        const rounds = []
+        for (let i = 0; i < TOTAL_ROUNDS; i++) {
+          const isEqual = Math.random() < 0.2
+          let left, right
+          if (isEqual) {
+            left = right = pickRandom(fracs)
+          } else {
+            left = pickRandom(fracs)
+            let attempts = 0
+            do {
+              right = pickRandom(fracs)
+              attempts++
+            } while (
+              Math.abs(right.value - left.value) < 0.001 &&
+              attempts < 20
+            )
+          }
+
+          const leftType = pickRandom(
+            getAvailableTypes(left, game.level),
+          )
+          const rightType = pickRandom(
+            getAvailableTypes(right, game.level),
+          )
+
+          let correctAnswer
+          if (left.value > right.value + 0.001) correctAnswer = "left"
+          else if (right.value > left.value + 0.001)
+            correctAnswer = "right"
+          else correctAnswer = "equal"
+
+          rounds.push({
+            left,
+            right,
+            leftType,
+            rightType,
+            correctAnswer,
+          })
+        }
+        return rounds
+      }
+
+      function showCompareRound() {
+        const r = game.rounds[game.round]
+        const leftEl = document.getElementById("compare-left")
+        const rightEl = document.getElementById("compare-right")
+        const feedbackEl = document.getElementById("compare-feedback")
+        const equalBtn = document.getElementById("equal-btn")
+
+        document.getElementById("compare-progress").textContent =
+          `${game.round + 1}/${TOTAL_ROUNDS}`
+        document.getElementById("compare-score").textContent = game.score
+        document.getElementById("compare-streak").textContent =
+          game.streak >= 2 ? `🔥${game.streak}` : ""
+        document.getElementById("compare-bar").style.width =
+          `${(game.round / TOTAL_ROUNDS) * 100}%`
+
+        leftEl.innerHTML = renderRepr(r.left, r.leftType, "small")
+        leftEl.className = "compare-card animate-in"
+        rightEl.innerHTML = renderRepr(r.right, r.rightType, "small")
+        rightEl.className = "compare-card animate-in"
+        equalBtn.className = "equal-btn"
+        feedbackEl.textContent = ""
+        feedbackEl.className = "feedback-msg"
+      }
+
+      function handleCompare(answer) {
+        if (game.locked) return
+        game.locked = true
+
+        const r = game.rounds[game.round]
+        const leftEl = document.getElementById("compare-left")
+        const rightEl = document.getElementById("compare-right")
+        const equalBtn = document.getElementById("equal-btn")
+        const feedbackEl = document.getElementById("compare-feedback")
+        const isCorrect = answer === r.correctAnswer
+
+        if (isCorrect) {
+          game.score++
+          game.streak++
+          if (game.streak > game.bestStreak)
+            game.bestStreak = game.streak
+          feedbackEl.textContent = pickRandom([
+            "Bravo !",
+            "Correct !",
+            "Bien joué !",
+            "Super !",
+          ])
+          feedbackEl.className = "feedback-msg correct"
+
+          if (answer === "left") leftEl.classList.add("correct")
+          else if (answer === "right") rightEl.classList.add("correct")
+          else equalBtn.classList.add("correct")
+        } else {
+          game.streak = 0
+          feedbackEl.className = "feedback-msg wrong"
+
+          if (answer === "left") {
+            leftEl.classList.add("wrong")
+            feedbackEl.textContent =
+              r.correctAnswer === "right"
+                ? "Non, c'est la droite !"
+                : "Non, elles sont égales !"
+          } else if (answer === "right") {
+            rightEl.classList.add("wrong")
+            feedbackEl.textContent =
+              r.correctAnswer === "left"
+                ? "Non, c'est la gauche !"
+                : "Non, elles sont égales !"
+          } else {
+            equalBtn.classList.add("wrong")
+            feedbackEl.textContent =
+              r.correctAnswer === "left"
+                ? "Non, la gauche est plus grande !"
+                : "Non, la droite est plus grande !"
+          }
+
+          if (r.correctAnswer === "left") leftEl.classList.add("reveal")
+          else if (r.correctAnswer === "right")
+            rightEl.classList.add("reveal")
+          else equalBtn.classList.add("correct")
+        }
+
+        document.getElementById("compare-score").textContent = game.score
+        document.getElementById("compare-streak").textContent =
+          game.streak >= 2 ? `🔥${game.streak}` : ""
+
+        setTimeout(
+          () => {
+            game.round++
+            if (game.round >= TOTAL_ROUNDS) {
+              endGame()
+            } else {
+              game.locked = false
+              showCompareRound()
+            }
+          },
+          isCorrect ? 800 : 1400,
+        )
+      }
+
+      // ===== MEMORY GAME =====
+      function initMemory() {
+        const config = LEVELS[game.level]
+        const fracs = shuffle(getLevelFractions(game.level)).slice(
+          0,
+          config.memoryPairs,
+        )
+
+        const cards = []
+        fracs.forEach((frac, i) => {
+          const availTypes = getAvailableTypes(frac, game.level)
+          const picked = shuffle(availTypes).slice(0, 2)
+          cards.push({
+            pairId: i,
+            fraction: frac,
+            type: picked[0],
+            flipped: false,
+            matched: false,
+          })
+          cards.push({
+            pairId: i,
+            fraction: frac,
+            type: picked[1] || picked[0],
+            flipped: false,
+            matched: false,
+          })
+        })
+
+        game.cards = shuffle(cards)
+        game.flippedIndices = []
+        game.moves = 0
+        game.matchedPairs = 0
+        game.totalPairs = config.memoryPairs
+        game.locked = false
+
+        showScreen("game-memory")
+        renderMemoryGrid()
+      }
+
+      function renderMemoryGrid() {
+        const gridEl = document.getElementById("memory-grid")
+        const cols = LEVELS[game.level].memoryCols
+        gridEl.className = `memory-grid cols-${cols}`
+        gridEl.innerHTML = ""
+
+        document.getElementById("memory-moves").textContent = game.moves
+        document.getElementById("memory-pairs").textContent =
+          `${game.matchedPairs}/${game.totalPairs}`
+
+        game.cards.forEach((card, idx) => {
+          const cardEl = document.createElement("div")
+          cardEl.className = "memory-card"
+          if (card.flipped) cardEl.classList.add("flipped")
+          if (card.matched) cardEl.classList.add("matched")
+
+          cardEl.innerHTML = `
+            <div class="card-back">?</div>
+            <div class="card-front">${renderRepr(card.fraction, card.type, "tiny")}</div>
+          `
+          cardEl.onclick = () => handleMemoryCard(idx)
+          gridEl.appendChild(cardEl)
+        })
+      }
+
+      function handleMemoryCard(idx) {
+        if (game.locked) return
+        const card = game.cards[idx]
+        if (card.flipped || card.matched) return
+
+        card.flipped = true
+        game.flippedIndices.push(idx)
+        renderMemoryGrid()
+
+        if (game.flippedIndices.length === 2) {
+          game.moves++
+          game.locked = true
+          document.getElementById("memory-moves").textContent =
+            game.moves
+
+          const [i1, i2] = game.flippedIndices
+          const c1 = game.cards[i1]
+          const c2 = game.cards[i2]
+
+          if (c1.pairId === c2.pairId) {
+            c1.matched = true
+            c2.matched = true
+            game.matchedPairs++
+            game.flippedIndices = []
+            game.locked = false
+
+            document.getElementById("memory-pairs").textContent =
+              `${game.matchedPairs}/${game.totalPairs}`
+            renderMemoryGrid()
+
+            const feedbackEl =
+              document.getElementById("memory-feedback")
+            feedbackEl.textContent = pickRandom([
+              "Paire trouvée !",
+              "Bravo !",
+              "Bien vu !",
+            ])
+            feedbackEl.className = "feedback-msg correct"
+            setTimeout(() => {
+              feedbackEl.textContent = ""
+              feedbackEl.className = "feedback-msg"
+            }, 800)
+
+            if (game.matchedPairs >= game.totalPairs) {
+              setTimeout(() => endGame(), 600)
+            }
+          } else {
+            setTimeout(() => {
+              c1.flipped = false
+              c2.flipped = false
+              game.flippedIndices = []
+              game.locked = false
+              renderMemoryGrid()
+            }, 900)
+          }
+        }
+      }
+
+      // ===== RESULTS =====
+      function endGame() {
+        const elapsed = Date.now() - game.startTime
+        const minutes = Math.floor(elapsed / 60000)
+        const seconds = Math.floor((elapsed % 60000) / 1000)
+        const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`
+
+        let emoji, title, subtitle
+        const statsHtml = []
+
+        if (game.mode === "memory") {
+          const efficiency = Math.round(
+            (game.totalPairs / game.moves) * 100,
+          )
+          if (game.moves <= game.totalPairs + 2) {
+            emoji = "🏆"
+            title = "Incroyable !"
+            subtitle = "Quelle mémoire !"
+          } else if (game.moves <= game.totalPairs * 2) {
+            emoji = "🎉"
+            title = "Très bien !"
+            subtitle = "Tu as un bon œil !"
+          } else {
+            emoji = "👏"
+            title = "Bien joué !"
+            subtitle = "Continue comme ça !"
+          }
+          statsHtml.push(
+            `<div class="stat-box"><div class="stat-value">${game.totalPairs}</div><div class="stat-label">paires trouvées</div></div>`,
+          )
+          statsHtml.push(
+            `<div class="stat-box"><div class="stat-value">${game.moves}</div><div class="stat-label">coups joués</div></div>`,
+          )
+          statsHtml.push(
+            `<div class="stat-box"><div class="stat-value">${efficiency}%</div><div class="stat-label">efficacité</div></div>`,
+          )
+          statsHtml.push(
+            `<div class="stat-box"><div class="stat-value">${timeStr}</div><div class="stat-label">temps</div></div>`,
+          )
+        } else {
+          const pct = Math.round((game.score / TOTAL_ROUNDS) * 100)
+          if (pct === 100) {
+            emoji = "🏆"
+            title = "Parfait !"
+            subtitle = "Sans aucune erreur !"
+          } else if (pct >= 80) {
+            emoji = "🎉"
+            title = "Excellent !"
+            subtitle = "Tu maîtrises les fractions !"
+          } else if (pct >= 60) {
+            emoji = "👏"
+            title = "Bien joué !"
+            subtitle = "Continue pour t'améliorer !"
+          } else {
+            emoji = "💪"
+            title = "Courage !"
+            subtitle = "Tu vas y arriver !"
+          }
+          statsHtml.push(
+            `<div class="stat-box"><div class="stat-value">${game.score}/${TOTAL_ROUNDS}</div><div class="stat-label">bonnes réponses</div></div>`,
+          )
+          statsHtml.push(
+            `<div class="stat-box"><div class="stat-value">${pct}%</div><div class="stat-label">réussite</div></div>`,
+          )
+          statsHtml.push(
+            `<div class="stat-box"><div class="stat-value">${game.bestStreak}</div><div class="stat-label">meilleure série</div></div>`,
+          )
+          statsHtml.push(
+            `<div class="stat-box"><div class="stat-value">${timeStr}</div><div class="stat-label">temps</div></div>`,
+          )
+        }
+
+        document.getElementById("results-emoji").textContent = emoji
+        document.getElementById("results-title").textContent = title
+        document.getElementById("results-subtitle").textContent = subtitle
+        document.getElementById("results-stats").innerHTML =
+          statsHtml.join("")
+
+        document.getElementById("btn-replay").onclick = () =>
+          startGame(game.mode)
+
+        saveScore(timeStr)
+        showScreen("results")
+
+        if (
+          (game.mode !== "memory" && game.score === TOTAL_ROUNDS) ||
+          (game.mode === "memory" &&
+            game.moves <= game.totalPairs + 2)
+        ) {
+          if (typeof showConfetti === "function") showConfetti()
+        }
+      }
+
+      function saveScore(timeStr) {
+        const key = `fracto-dingo-${game.mode}`
+        const scores = JSON.parse(localStorage.getItem(key) || "[]")
+        const entry = {
+          date: new Date().toLocaleDateString(),
+          level: game.level,
+          time: timeStr,
+        }
+        if (game.mode === "memory") {
+          entry.moves = game.moves
+          entry.pairs = game.totalPairs
+        } else {
+          entry.score = game.score
+          entry.total = TOTAL_ROUNDS
+        }
+        scores.unshift(entry)
+        scores.splice(20)
+        localStorage.setItem(key, JSON.stringify(scores))
+      }
+    </script>
+  </body>
+</html>
