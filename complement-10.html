@@ -125,16 +125,12 @@
         padding: 0 6px;
       }
 
-      .equation .missing.typing {
-        color: #357abd;
-        background-color: #eaf2fc;
-        border-radius: 6px;
-      }
-
       .pad {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
+        max-width: 360px;
+        margin: 0 auto;
       }
 
       .num-btn {
@@ -404,8 +400,6 @@
       // Vrai dès qu'une mauvaise réponse a été donnée pour la question en cours :
       // on ne compte un point que si l'enfant trouve du premier coup.
       let mistakeThisQuestion = false
-      // Tampon de saisie clavier : « 1 » peut devenir « 10 », d'où l'attente.
-      let typed = ""
       // Début de la partie : on mesure sa durée sans afficher de chronomètre.
       let startTime = 0
       let recognition = null
@@ -442,7 +436,9 @@
       function buildPad() {
         const pad = document.getElementById("pad")
         pad.innerHTML = ""
-        for (let n = 0; n <= 10; n++) {
+        // Les réponses possibles vont de 1 à 9 (le nombre donné va de 1 à 9) :
+        // 0 et 10 ne sont jamais demandés, donc ils ne figurent pas sur le pavé.
+        for (let n = 1; n <= 9; n++) {
           const btn = document.createElement("button")
           btn.className = "num-btn"
           btn.textContent = n
@@ -454,7 +450,6 @@
       function displayQuestion() {
         answered = false
         mistakeThisQuestion = false
-        typed = ""
         const given = questions[currentIndex]
         document.getElementById("given").textContent = given
         document.getElementById("missing").textContent = "?"
@@ -486,7 +481,6 @@
 
       function checkAnswer(choice) {
         if (answered) return
-        clearTyped()
         flashButton(choice)
         const given = questions[currentIndex]
         const correct = 10 - given
@@ -525,37 +519,6 @@
 
       // ---- Saisie au clavier -------------------------------------------------
 
-      function showTyped() {
-        const missing = document.getElementById("missing")
-        missing.textContent = typed === "" ? "?" : typed
-        missing.classList.toggle("typing", typed !== "")
-      }
-
-      function clearTyped() {
-        typed = ""
-        const missing = document.getElementById("missing")
-        if (!answered) missing.textContent = "?"
-        missing.classList.remove("typing")
-      }
-
-      function handleDigit(d) {
-        // « 1 » est ambigu (1 ou 10) : on attend un éventuel « 0 » ou Entrée.
-        if (typed === "1") {
-          if (d === 0) {
-            checkAnswer(10)
-          } else {
-            checkAnswer(d)
-          }
-          return
-        }
-        if (d === 1) {
-          typed = "1"
-          showTyped()
-          return
-        }
-        checkAnswer(d)
-      }
-
       function onKeyDown(e) {
         const isHidden = (sel) =>
           document.querySelector(sel).classList.contains("hidden")
@@ -570,15 +533,10 @@
         }
         if (isHidden(".game-screen") || answered) return
 
-        if (e.key >= "0" && e.key <= "9") {
+        // Réponses de 1 à 9 : chaque touche valide directement, comme le pavé.
+        if (e.key >= "1" && e.key <= "9") {
           e.preventDefault()
-          handleDigit(Number(e.key))
-        } else if (e.key === "Enter" && typed !== "") {
-          e.preventDefault()
-          checkAnswer(Number(typed))
-        } else if (e.key === "Backspace" || e.key === "Escape") {
-          e.preventDefault()
-          clearTyped()
+          checkAnswer(Number(e.key))
         }
       }
 
