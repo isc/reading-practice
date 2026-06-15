@@ -296,6 +296,9 @@
         color: #888;
         text-align: center;
         font-size: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        padding: 18px 12px;
       }
 
       .history-table {
@@ -363,7 +366,7 @@
 
         <div class="history" id="history">
           <h3>Historique des parties</h3>
-          <table class="history-table">
+          <table class="history-table" id="historyTable">
             <thead>
               <tr>
                 <th>Date</th>
@@ -707,7 +710,13 @@
           `,
           )
           .join("")
-        empty.classList.toggle("hidden", history.length > 0)
+        // On masque le tableau (et ses en-têtes) tant qu'aucune partie n'a été
+        // jouée, pour ne pas afficher des colonnes vides au-dessus du message.
+        const hasGames = history.length > 0
+        document
+          .getElementById("historyTable")
+          .classList.toggle("hidden", !hasGames)
+        empty.classList.toggle("hidden", hasGames)
       }
 
       function showGameEnd() {
