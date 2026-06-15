@@ -609,6 +609,58 @@
         pointer-events: none;
         z-index: 1000;
       }
+
+      .history {
+        margin-top: 28px;
+      }
+
+      .history-empty {
+        color: #888;
+        text-align: center;
+        font-size: 0.95em;
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px 12px;
+      }
+
+      .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        font-size: 0.85em;
+      }
+
+      .history-table th,
+      .history-table td {
+        padding: 10px 8px;
+        text-align: left;
+        border-bottom: 1px solid #eef0f3;
+      }
+
+      .history-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .history-table th {
+        color: #999;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.82em;
+        letter-spacing: 0.5px;
+      }
+
+      .history-table td:last-child,
+      .history-table th:last-child {
+        text-align: right;
+        font-weight: 600;
+        color: #4a90e2;
+      }
+
+      .hidden {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -658,6 +710,24 @@
         <button class="level-btn hard" onclick="selectLevel('hard')">
           Difficile
         </button>
+      </div>
+
+      <div class="history">
+        <div class="section-title">Historique des parties</div>
+        <table class="history-table" id="historyTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Jeu</th>
+              <th>Niveau</th>
+              <th>Résultat</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <p class="history-empty hidden" id="historyEmpty">
+          Aucune partie pour l'instant. À toi de jouer !
+        </p>
       </div>
     </div>
 
@@ -1526,25 +1596,71 @@
         }
       }
 
+      // ===== HISTORIQUE DES PARTIES (localStorage) =====
+      const HISTORY_KEY = "fracto-dingo-history"
+
+      const MODE_LABELS = {
+        match: "🔗 Équivalence",
+        compare: "⚖️ Comparaison",
+        memory: "🧠 Mémory",
+      }
+      const LEVEL_LABELS = {
+        easy: "Facile",
+        medium: "Moyen",
+        hard: "Difficile",
+      }
+
       function saveScore(timeStr) {
-        const key = `fracto-dingo-${game.mode}`
-        const scores = JSON.parse(localStorage.getItem(key) || "[]")
+        const history = JSON.parse(
+          localStorage.getItem(HISTORY_KEY) || "[]",
+        )
         const entry = {
-          date: new Date().toLocaleDateString(),
+          date: new Date().toLocaleString("fr-FR", {
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          mode: game.mode,
           level: game.level,
           time: timeStr,
+          result:
+            game.mode === "memory"
+              ? `${game.moves} coups`
+              : `${game.score}/${TOTAL_ROUNDS}`,
         }
-        if (game.mode === "memory") {
-          entry.moves = game.moves
-          entry.pairs = game.totalPairs
-        } else {
-          entry.score = game.score
-          entry.total = TOTAL_ROUNDS
-        }
-        scores.unshift(entry)
-        scores.splice(20)
-        localStorage.setItem(key, JSON.stringify(scores))
+        history.unshift(entry)
+        history.splice(10) // On ne garde que les 10 dernières parties.
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+        updateHistory()
       }
+
+      function updateHistory() {
+        const history = JSON.parse(
+          localStorage.getItem(HISTORY_KEY) || "[]",
+        )
+        const tbody = document.getElementById("historyBody")
+        const empty = document.getElementById("historyEmpty")
+        tbody.innerHTML = history
+          .map(
+            (g) => `
+            <tr>
+              <td>${g.date}</td>
+              <td>${MODE_LABELS[g.mode] || g.mode}</td>
+              <td>${LEVEL_LABELS[g.level] || g.level}</td>
+              <td>${g.result}</td>
+            </tr>
+          `,
+          )
+          .join("")
+        const hasGames = history.length > 0
+        document
+          .getElementById("historyTable")
+          .classList.toggle("hidden", !hasGames)
+        empty.classList.toggle("hidden", hasGames)
+      }
+
+      updateHistory()
     </script>
   </body>
 </html>
