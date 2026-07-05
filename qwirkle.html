@@ -411,6 +411,59 @@
         pointer-events: none;
         z-index: 1000;
       }
+
+      .handoff-overlay {
+        position: fixed;
+        inset: 0;
+        background: #4a90e2;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 900;
+      }
+
+      .handoff-overlay.visible {
+        display: flex;
+      }
+
+      .handoff-card {
+        background: white;
+        border-radius: 16px;
+        padding: 32px 24px;
+        text-align: center;
+        max-width: 360px;
+        width: 100%;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      .handoff-emoji {
+        font-size: 3em;
+        margin-bottom: 8px;
+      }
+
+      .handoff-sub {
+        color: #666;
+        font-size: 0.95em;
+        margin-bottom: 4px;
+      }
+
+      .handoff-name {
+        color: #4a90e2;
+        font-size: 1.8em;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+
+      .handoff-hint {
+        color: #999;
+        font-size: 0.85em;
+        margin-bottom: 24px;
+      }
+
+      .handoff-card .btn {
+        margin-top: 0;
+      }
     </style>
   </head>
   <body>
@@ -513,6 +566,19 @@
       </div>
     </div>
 
+    <div class="handoff-overlay" id="handoff">
+      <div class="handoff-card">
+        <div class="handoff-emoji">🔄</div>
+        <p class="handoff-sub">Passe l'appareil à</p>
+        <h2 class="handoff-name" id="handoffName">Joueur 2</h2>
+        <p class="handoff-hint">
+          Les tuiles de l'adversaire sont cachées. Prends l'appareil avant de
+          continuer.
+        </p>
+        <button class="btn btn-primary" id="handoffBtn">Voir mes tuiles</button>
+      </div>
+    </div>
+
     <script src="confetti.js"></script>
     <script>
       const COLORS = [
@@ -588,6 +654,7 @@
         exchangeSelection = new Set()
         gameOver = false
         document.getElementById("newGameBtn").style.display = "none"
+        document.getElementById("handoff").classList.remove("visible")
         clearMessage()
         render(true)
       }
@@ -872,6 +939,20 @@
       function nextTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.length
         selectedRackIndex = null
+        exchangeMode = false
+        exchangeSelection = new Set()
+        render(true)
+        showHandoff()
+      }
+
+      function showHandoff() {
+        document.getElementById("handoffName").textContent =
+          currentPlayer().name
+        document.getElementById("handoff").classList.add("visible")
+      }
+
+      function hideHandoff() {
+        document.getElementById("handoff").classList.remove("visible")
         render(true)
       }
 
@@ -1099,6 +1180,7 @@
       }
 
       document.getElementById("newGameBtn").onclick = initGame
+      document.getElementById("handoffBtn").onclick = hideHandoff
 
       updateScoreboard()
       initGame()
