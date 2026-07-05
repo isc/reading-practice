@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#4a90e2" />
+    <meta
+      name="description"
+      content="Boîte à jeux éducatifs : lecture, orthographe, logique et jeux de société."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Marzouzoute" />
+    <link rel="icon" type="image/png" href="icon-192x192.png" />
+    <link rel="apple-touch-icon" href="icon-192x192.png" />
+    <!-- Splash screens iOS (Safari ne lit pas le manifest pour ça). Une image
+         par appareil, ciblée via media query. -->
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1170x2532.png"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1179x2556.png"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1290x2796.png"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/ipad-1668x2388.png"
+      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+    />
+    <title>Marzouzoute — Boîte à jeux</title>
+    <style>
+      :root {
+        --primary-color: #4a90e2;
+      }
+
+      @font-face {
+        font-family: "OpenDyslexicRegular";
+        src: url("./OpenDyslexic-Regular.woff2") format("woff2");
+        font-weight: normal;
+        font-style: normal;
+      }
+
+      body {
+        font-family: "OpenDyslexicRegular", sans-serif;
+        background-color: #f0f2f5;
+        min-height: 100vh;
+      }
+
+      .grid-selection {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .grid-option {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      @media (hover: hover) {
+        .grid-option:hover {
+          transform: translateY(-2px);
+        }
+      }
+
+      .grid-option h3 {
+        color: var(--primary-color);
+      }
+    </style>
+    <link rel="manifest" href="manifest.json" />
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("service-worker.js")
+            .then((registration) => {
+              console.log(
+                "Service Worker registered with scope:",
+                registration.scope,
+              )
+            })
+            .catch((error) => {
+              console.error("Service Worker registration failed:", error)
+            })
+        })
+      }
+    </script>
+  </head>
+  <body>
+    <div class="grid-selection">
+      <a class="grid-option" href="word-search-game.html">
+        <h3>Mots mêlés</h3>
+      </a>
+      <a class="grid-option" href="b-ou-d.html">
+        <h3>b ou d ?</h3>
+      </a>
+      <a class="grid-option" href="p-ou-q.html">
+        <h3>p ou q ?</h3>
+      </a>
+      <a class="grid-option" href="ou-ou-on.html">
+        <h3>ou ou on ?</h3>
+      </a>
+      <a class="grid-option" href="c-doux-dur.html">
+        <h3>C doux ou C dur ?</h3>
+      </a>
+      <a class="grid-option" href="reading-game.html">
+        <h3>Lecture</h3>
+      </a>
+      <a class="grid-option" href="mastermind.html">
+        <h3>Mastermind</h3>
+      </a>
+      <a class="grid-option" href="puissance4.html">
+        <h3>Puissance 4</h3>
+      </a>
+      <a class="grid-option" href="sutom.html">
+        <h3>Sutom</h3>
+      </a>
+      <a class="grid-option" href="pendu.html">
+        <h3>Pendu</h3>
+      </a>
+      <a class="grid-option" href="demineur.html">
+        <h3>Démineur</h3>
+      </a>
+      <a class="grid-option" href="othello.html">
+        <h3>Othello</h3>
+      </a>
+      <a class="grid-option" href="bataille-navale.html">
+        <h3>Bataille navale</h3>
+      </a>
+      <a class="grid-option" href="anagramme.html">
+        <h3>Anagramme</h3>
+      </a>
+      <a class="grid-option" href="lettris.html">
+        <h3>Lettris</h3>
+      </a>
+      <a class="grid-option" href="mot-le-plus-long.html">
+        <h3>Le mot le plus long</h3>
+      </a>
+      <a class="grid-option" href="memory.html">
+        <h3>Memory</h3>
+      </a>
+      <a class="grid-option" href="2048.html">
+        <h3>2048</h3>
+      </a>
+      <a class="grid-option" href="dames.html">
+        <h3>Dames</h3>
+      </a>
+      <a class="grid-option" href="complement-10.html">
+        <h3>Les amis de 10</h3>
+      </a>
+      <a class="grid-option" href="fracto-dingo.html">
+        <h3>Fracto Dingo</h3>
+      </a>
+      <a class="grid-option" href="qwirkle.html">
+        <h3>Qwirkle</h3>
+      </a>
+    </div>
+  </body>
+</html>
