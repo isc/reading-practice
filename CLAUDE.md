@@ -65,10 +65,19 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
 - **Confettis de victoire** : ajoute `<canvas id="confetti"></canvas>` (en
   position fixe, plein écran, `pointer-events: none`), inclus
   `<script src="confetti.js"></script>` et appelle `showConfetti()` à la victoire.
-- **Garde anti-sortie** : `<script src="exit-guard.js"></script>` demande
+- **Garde anti-sortie** : `<script src="exit-guard.js"></script>` (dans le
+  `<head>`, pour être disponible dès l'exécution du script du jeu) demande
   confirmation avant de quitter une partie en cours (utile pour le geste
-  « retour » sur mobile). Optionnel : `ExitGuard.setActive(true/false)` pour
-  délimiter précisément une partie.
+  « retour » sur mobile). À défaut d'indication, le garde s'arme à la première
+  interaction avec la page — trop grossier : **chaque jeu doit délimiter ses
+  parties explicitement** avec `if (window.ExitGuard) ExitGuard.setActive(…)` :
+  - `true` quand la partie est réellement engagée (premier coup joué, première
+    réponse saisie…), pas au simple affichage du plateau ;
+  - `false` au chargement / sur les écrans d'accueil, de choix de niveau et de
+    fin de partie, ainsi qu'à chaque nouvelle partie.
+
+  Sans ça, on demande « Une partie est en cours ? » sur l'écran des scores ou
+  après la victoire, et les enfants finissent par répondre au hasard.
 - **Listes de mots** : `fetch('fr_FR.txt')` (gros dictionnaire français) ou
   `fetch('mots-enfants.txt')` (mots adaptés aux enfants).
 

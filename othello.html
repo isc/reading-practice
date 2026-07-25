@@ -378,6 +378,7 @@
             z-index: 1000;
         }
     </style>
+    <script src="exit-guard.js"></script>
 </head>
 <body>
     <canvas id="confetti"></canvas>
@@ -482,6 +483,7 @@
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
             document.getElementById('newGameBtn').style.display = 'none';
+            if (window.ExitGuard) ExitGuard.setActive(false);
             computeValidMoves();
             renderBoard();
             updateTurnIndicator();
@@ -590,6 +592,7 @@
             if (gameOver) return;
             const key = `${row},${col}`;
             if (!validMoves.has(key)) return;
+            if (window.ExitGuard) ExitGuard.setActive(true);
             const flips = validMoves.get(key);
             const previousPlayer = currentPlayer;
 
@@ -668,6 +671,7 @@
 
         function endGame() {
             gameOver = true;
+            if (window.ExitGuard) ExitGuard.setActive(false);
             validMoves = new Map();
             const { black, white } = countDiscs();
             renderBoard();
@@ -716,6 +720,5 @@
         updateScoreboard();
         initGame();
     </script>
-<script src="exit-guard.js"></script>
 </body>
 </html>

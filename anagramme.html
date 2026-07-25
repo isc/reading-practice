@@ -333,6 +333,7 @@
             z-index: 1000;
         }
     </style>
+    <script src="exit-guard.js"></script>
 </head>
 <body>
     <canvas id="confetti"></canvas>
@@ -470,6 +471,8 @@
         }
 
         async function initGame() {
+            // Nouveau mot : rien n'est encore joué, on ne garde pas la sortie.
+            if (window.ExitGuard) ExitGuard.setActive(false);
             await loadWords();
             secretWord = pickWord();
             normalizedWord = normalize(secretWord);
@@ -541,6 +544,8 @@
             if (nextSlot === -1) return;
             slots[nextSlot] = tileId;
             tile.used = true;
+            // Première lettre posée : la partie est engagée.
+            if (window.ExitGuard) ExitGuard.setActive(true);
             document.getElementById('answerArea').dataset.recent = String(nextSlot);
             render();
             if (slots.every(s => s !== null)) {
@@ -566,6 +571,7 @@
             const guess = currentWordFromSlots();
             if (guess === normalizedWord) {
                 gameOver = true;
+                if (window.ExitGuard) ExitGuard.setActive(false);
                 const answerArea = document.getElementById('answerArea');
                 answerArea.classList.add('correct');
                 showMessage(`🎉 Bravo ! Le mot était « ${secretWord} »`, 'win');
@@ -744,6 +750,5 @@
         updateScoreboard();
         initGame();
     </script>
-<script src="exit-guard.js"></script>
 </body>
 </html>

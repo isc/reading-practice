@@ -184,6 +184,7 @@
         display: none;
       }
     </style>
+    <script src="exit-guard.js"></script>
   </head>
   <body>
     <div class="container">
@@ -352,6 +353,7 @@
       function showGameEnd() {
         const finalTime = document.getElementById("timerValue").textContent
         clearInterval(timerInterval)
+        if (window.ExitGuard) ExitGuard.setActive(false)
 
         document.querySelector(".game-end").innerHTML = `
                 <h2>Félicitations ! 🎉</h2>
@@ -372,12 +374,15 @@
         document.querySelector(".game-end").classList.add("hidden")
         document.querySelector(".game-screen").classList.remove("hidden")
 
+        if (window.ExitGuard) ExitGuard.setActive(true)
         shuffleAndSelectWords()
         setObjective()
         displayWord()
         startTimer()
       }
+
+      // Écran d'accueil : aucune partie en cours.
+      if (window.ExitGuard) ExitGuard.setActive(false)
     </script>
-  <script src="exit-guard.js"></script>
   </body>
 </html>

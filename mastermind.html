@@ -311,6 +311,7 @@
             margin-bottom: 5px;
         }
     </style>
+    <script src="exit-guard.js"></script>
 </head>
 <body>
     <canvas id="confetti"></canvas>
@@ -381,6 +382,8 @@
         let timerInterval;
 
         function initGame() {
+            // Nouvelle partie : rien n'est encore joué, on ne garde pas la sortie.
+            if (window.ExitGuard) ExitGuard.setActive(false);
             secretCode = [];
             for (let i = 0; i < 4; i++) {
                 secretCode.push(colors[Math.floor(Math.random() * colors.length)]);
@@ -497,6 +500,9 @@
         function submitGuess() {
             if (gameOver) return;
 
+            // Première proposition validée : la partie est engagée.
+            if (window.ExitGuard) ExitGuard.setActive(true);
+
             const feedback = calculateFeedback(currentGuess, secretCode);
             attempts.push({
                 guess: [...currentGuess],
@@ -509,6 +515,7 @@
             // Check win condition
             if (feedback.filter(f => f === 'red').length === 4) {
                 gameOver = true;
+                if (window.ExitGuard) ExitGuard.setActive(false);
                 saveGame(true);
                 showMessage(`🎉 Bravo ! Vous avez trouvé le code en ${attempts.length} tentative${attempts.length > 1 ? 's' : ''} !`, 'win');
                 document.getElementById('currentGuessSection').style.display = 'none';
@@ -520,6 +527,7 @@
             // Check lose condition
             if (attempts.length >= maxAttempts) {
                 gameOver = true;
+                if (window.ExitGuard) ExitGuard.setActive(false);
                 saveGame(false);
                 showMessage(`😔 Perdu ! Vous avez utilisé vos 10 tentatives.`, 'lose');
                 document.getElementById('currentGuessSection').style.display = 'none';
@@ -622,6 +630,5 @@
         updateScoreboard();
         initGame();
     </script>
-<script src="exit-guard.js"></script>
 </body>
 </html>
