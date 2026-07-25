@@ -112,6 +112,7 @@
         background-color: #ffd6ba30;
       }
     </style>
+    <script src="exit-guard.js"></script>
   </head>
   <body>
     <div class="title">Orthographe - Les nasales</div>
@@ -241,6 +242,12 @@
       function createWordElements() {
         const container = document.getElementById("wordContainer")
         container.innerHTML = ""
+        // Nouvel exercice : rien n'est encore rempli.
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        // Dès qu'une réponse est saisie, l'exercice est en cours.
+        container.oninput = () => {
+          if (window.ExitGuard) ExitGuard.setActive(true)
+        }
 
         if (currentRule === "mix") {
           let allWords = []
@@ -282,6 +289,8 @@
         })
 
         const percentage = Math.round((correct / currentWords.length) * 100)
+        // Exercice réussi : plus rien à protéger.
+        if (percentage === 100 && window.ExitGuard) ExitGuard.setActive(false)
         feedback.innerHTML = `
                 <div class="${percentage === 100 ? "correct" : "incorrect"}">
                     Tu as ${correct} réponse${correct > 1 ? "s" : ""} correcte${
@@ -301,6 +310,5 @@
       // Initialize the game
       changeRule()
     </script>
-  <script src="exit-guard.js"></script>
   </body>
 </html>

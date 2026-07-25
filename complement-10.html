@@ -323,6 +323,7 @@
         display: none;
       }
     </style>
+    <script src="exit-guard.js"></script>
   </head>
   <body>
     <div class="container">
@@ -730,8 +731,9 @@
       }
       document.addEventListener("keydown", onKeyDown)
       updateHistory()
+      // Écran d'accueil : aucune partie en cours.
+      if (window.ExitGuard) ExitGuard.setActive(false)
     </script>
     <script src="confetti.js"></script>
-    <script src="exit-guard.js"></script>
   </body>
 </html>

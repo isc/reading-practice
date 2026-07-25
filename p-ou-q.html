@@ -237,6 +237,7 @@
         display: none;
       }
     </style>
+    <script src="exit-guard.js"></script>
   </head>
   <body>
     <div class="container">
@@ -392,6 +393,7 @@
       function showGameEnd() {
         const finalTime = document.getElementById("timerValue").textContent
         clearInterval(timerInterval)
+        if (window.ExitGuard) ExitGuard.setActive(false)
 
         saveScore(score, finalTime)
 
@@ -412,6 +414,7 @@
         hide(".welcome-screen, .scoreboard, .game-end")
         show(".game-screen")
         document.getElementById("numberOfWords").textContent = NUMBER_OF_WORDS
+        if (window.ExitGuard) ExitGuard.setActive(true)
         shuffleWords()
         displayWord()
         startTimer()
@@ -481,7 +484,8 @@
       }
 
       updateScoreboard()
+      // Écran d'accueil : aucune partie en cours.
+      if (window.ExitGuard) ExitGuard.setActive(false)
     </script>
-  <script src="exit-guard.js"></script>
   </body>
 </html>

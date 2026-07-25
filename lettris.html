@@ -379,6 +379,7 @@
             z-index: 1000;
         }
     </style>
+    <script src="exit-guard.js"></script>
 </head>
 <body>
     <canvas id="confetti"></canvas>
@@ -724,6 +725,7 @@
         function startGame() {
             if (gameStarted) return;
             gameStarted = true;
+            if (window.ExitGuard) ExitGuard.setActive(true);
             timerInterval = setInterval(() => {
                 timeLeft--;
                 updateTimerDisplay();
@@ -737,6 +739,7 @@
             gameOver = true;
             clearInterval(timerInterval);
             timerInterval = null;
+            if (window.ExitGuard) ExitGuard.setActive(false);
             clearPath();
             document.getElementById('clearBtn').disabled = true;
             document.getElementById('validateBtn').disabled = true;
@@ -765,6 +768,8 @@
         function initGame() {
             clearInterval(timerInterval);
             timerInterval = null;
+            // Nouvelle grille : rien n'est encore joué, on ne garde pas la sortie.
+            if (window.ExitGuard) ExitGuard.setActive(false);
             grid = generateGrid();
             path = [];
             foundWords = new Set();
@@ -918,6 +923,8 @@
         updateTimerDisplay();
         renderFoundWords();
 
+        // Pendant le chargement du dictionnaire : rien à protéger.
+        if (window.ExitGuard) ExitGuard.setActive(false);
         loadWords().then(() => {
             initGame();
         }).catch(err => {
@@ -927,6 +934,5 @@
             messageDiv.textContent = 'Impossible de charger le dictionnaire';
         });
     </script>
-<script src="exit-guard.js"></script>
 </body>
 </html>

@@ -7,6 +7,7 @@ let recognition
 
 function startGame() {
   UI.setButtonVisibility("start", false)
+  if (window.ExitGuard) window.ExitGuard.setActive(true)
   initializeNewSentence()
 }
 
@@ -41,6 +42,7 @@ function onSentenceComplete(sentence) {
 function nextSentence() {
   const canContinue = game.nextSentence()
   if (!canContinue) {
+    if (window.ExitGuard) window.ExitGuard.setActive(false)
     const isBestTime = game.checkBestTime()
     UI.showGameEndMessage(game.timer, game.bestTime, isBestTime)
     UI.setButtonVisibility("start", true)
@@ -59,3 +61,6 @@ UI.setupKeyboardControls(nextSentence, startGame)
 
 // Initialize UI
 UI.updateLevelDisplay(game.currentLevel)
+
+// Écran d'accueil : aucune partie en cours.
+if (window.ExitGuard) window.ExitGuard.setActive(false)
