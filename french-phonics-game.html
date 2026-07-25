@@ -251,6 +251,7 @@
         }
       }
     </style>
+    <script src="exit-guard.js"></script>
   </head>
   <body>
     <div class="container">
@@ -357,6 +358,9 @@
             word.classList.remove("highlighted-green")
             word.classList.add(`highlighted-${selectedColor}`)
           }
+
+          // Un mot a été colorié : l'exercice est commencé.
+          if (window.ExitGuard) ExitGuard.setActive(true)
         })
       })
 
@@ -386,6 +390,8 @@
 
         feedback.style.display = "block"
         if (correct) {
+          // Exercice terminé : plus rien à protéger.
+          if (window.ExitGuard) ExitGuard.setActive(false)
           feedback.textContent =
             "Bravo ! Toutes tes réponses sont correctes ! 🌟"
           feedback.classList.add("success")
@@ -399,6 +405,8 @@
       }
 
       function resetGame() {
+        // Exercice remis à zéro : rien n'est en cours.
+        if (window.ExitGuard) ExitGuard.setActive(false)
         words.forEach((word) => {
           word.classList.remove("highlighted-red")
           word.classList.remove("highlighted-green")
@@ -410,7 +418,9 @@
           btn.classList.remove("selected")
         })
       }
+
+      // Au chargement : exercice vierge, rien à protéger.
+      if (window.ExitGuard) ExitGuard.setActive(false)
     </script>
-  <script src="exit-guard.js"></script>
   </body>
 </html>

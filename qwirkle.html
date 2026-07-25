@@ -465,6 +465,7 @@
         margin-top: 0;
       }
     </style>
+    <script src="exit-guard.js"></script>
   </head>
   <body>
     <canvas id="confetti"></canvas>
@@ -655,6 +656,8 @@
         gameOver = false
         document.getElementById("newGameBtn").style.display = "none"
         document.getElementById("handoff").classList.remove("visible")
+        // Nouvelle partie : rien n'est encore joué, on ne garde pas la sortie.
+        if (window.ExitGuard) ExitGuard.setActive(false)
         clearMessage()
         render(true)
       }
@@ -937,6 +940,8 @@
       }
 
       function nextTurn() {
+        // Un tour a été joué (pose, échange ou passe) : la partie est engagée.
+        if (window.ExitGuard) ExitGuard.setActive(true)
         currentPlayerIndex = (currentPlayerIndex + 1) % players.length
         selectedRackIndex = null
         exchangeMode = false
@@ -958,6 +963,7 @@
 
       function finishGame(extraMessage) {
         gameOver = true
+        if (window.ExitGuard) ExitGuard.setActive(false)
         const [p1, p2] = players
         let text
         if (p1.score === p2.score) {
@@ -1185,6 +1191,5 @@
       updateScoreboard()
       initGame()
     </script>
-    <script src="exit-guard.js"></script>
   </body>
 </html>

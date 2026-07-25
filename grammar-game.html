@@ -216,6 +216,7 @@
             }
         }
     </style>
+    <script src="exit-guard.js"></script>
 </head>
 <body>
     <div class="header">
@@ -295,6 +296,8 @@
                 zone.appendChild(selectedWord);
                 selectedWord.classList.remove('selected');
                 selectedWord = null;
+                // Un mot a été déplacé : l'exercice est commencé.
+                if (window.ExitGuard) ExitGuard.setActive(true);
             }
         };
 
@@ -344,6 +347,8 @@
             if (allCorrect) {
                 feedback.textContent = 'Bravo ! Toutes les réponses sont correctes ! 🎉';
                 feedback.className = 'feedback success';
+                // Exercice terminé : plus rien à protéger.
+                if (window.ExitGuard) ExitGuard.setActive(false);
             } else {
                 if (placedWords < totalWords) {
                     feedback.textContent = 'Place tous les mots avant de vérifier ! 🤔';
@@ -353,7 +358,9 @@
                 feedback.className = 'feedback error';
             }
         });
+
+        // Au chargement : exercice vierge, rien à protéger.
+        if (window.ExitGuard) ExitGuard.setActive(false);
     </script>
-<script src="exit-guard.js"></script>
 </body>
 </html>

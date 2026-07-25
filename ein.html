@@ -19,6 +19,7 @@
         padding: 3px;
       }
     </style>
+    <script src="exit-guard.js"></script>
   </head>
   <body>
     <main class="container" x-data="frenchExercise()">
@@ -27,7 +28,10 @@
         <p>Complétez les phrases avec les mots manquants</p>
       </hgroup>
 
-      <form @submit.prevent="checkAnswers">
+      <form
+        @submit.prevent="checkAnswers"
+        @change="window.ExitGuard && ExitGuard.setActive(true)"
+      >
         <template x-for="(q, idx) in questions">
           <span>
             <span x-text="q.before"></span>
@@ -137,6 +141,11 @@
           score: 0,
           totalQuestions: 17,
 
+          init() {
+            // Au chargement : exercice vierge, rien à protéger.
+            if (window.ExitGuard) ExitGuard.setActive(false)
+          },
+
           isCorrect(index) {
             return this.answers[index] === this.correctAnswers[index]
           },
@@ -155,15 +164,20 @@
                 this.score++
             }
             this.showResults = true
+            // Exercice réussi : plus rien à protéger.
+            if (this.score === this.totalQuestions && window.ExitGuard) {
+              ExitGuard.setActive(false)
+            }
           },
 
           reset() {
             this.showResults = false
             this.answers = {}
+            // Exercice remis à zéro : rien n'est en cours.
+            if (window.ExitGuard) ExitGuard.setActive(false)
           }
         }
       }
     </script>
-  <script src="exit-guard.js"></script>
   </body>
 </html>

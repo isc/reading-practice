@@ -193,6 +193,7 @@
         }
       }
     </style>
+    <script src="exit-guard.js"></script>
   </head>
   <body>
     <div class="container">
@@ -278,6 +279,7 @@
 
       function startGame(index) {
         currentGame = gameGrids[index]
+        if (window.ExitGuard) ExitGuard.setActive(true)
         document.getElementById("gridSelection").style.display = "none"
         document.getElementById("gameContainer").style.display = "flex"
         document.getElementById("backButton").style.display = "block"
@@ -444,6 +446,7 @@
       }
 
       function returnToSelection() {
+        if (window.ExitGuard) ExitGuard.setActive(false)
         document.getElementById("gridSelection").style.display = "grid"
         document.getElementById("gameContainer").style.display = "none"
         document.querySelector(".instructions").textContent =
@@ -460,7 +463,8 @@
         .getElementById("backButton")
         .addEventListener("click", backButton)
       createGridSelection()
+      // Écran de choix de grille : aucune partie en cours.
+      if (window.ExitGuard) ExitGuard.setActive(false)
     </script>
-  <script src="exit-guard.js"></script>
   </body>
 </html>

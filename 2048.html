@@ -259,6 +259,7 @@
             z-index: 1000;
         }
     </style>
+    <script src="exit-guard.js"></script>
 </head>
 <body>
     <canvas id="confetti"></canvas>
@@ -347,6 +348,8 @@
         }
 
         function initGame() {
+            // Nouvelle partie : rien n'est encore joué, on ne garde pas la sortie.
+            if (window.ExitGuard) ExitGuard.setActive(false);
             grid = emptyGrid();
             pendingAnims = emptyAnims();
             score = 0;
@@ -481,6 +484,9 @@
 
             if (!totalMoved) return;
 
+            // Premier coup joué : la partie est engagée.
+            if (window.ExitGuard) ExitGuard.setActive(true);
+
             grid = newGrid;
             pendingAnims = mergeFlags;
             score += totalGained;
@@ -512,6 +518,7 @@
             // Game over check
             if (!hasMoves()) {
                 gameOver = true;
+                if (window.ExitGuard) ExitGuard.setActive(false);
                 if (!gameCounted) {
                     gameCounted = true;
                     const finalScores = getScores();
@@ -590,6 +597,5 @@
         updateScoreDisplay();
         initGame();
     </script>
-<script src="exit-guard.js"></script>
 </body>
 </html>
