@@ -464,6 +464,37 @@
       .handoff-card .btn {
         margin-top: 0;
       }
+
+      .name-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin: 16px 0 24px;
+        text-align: left;
+      }
+
+      .name-field span {
+        display: block;
+        font-size: 0.8em;
+        color: #999;
+        margin-bottom: 4px;
+      }
+
+      .name-field input {
+        width: 100%;
+        padding: 12px;
+        font-family: inherit;
+        font-size: 1em;
+        color: #1a1a1a;
+        background: #f8f9fa;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+      }
+
+      .name-field input:focus {
+        outline: none;
+        border-color: #4a90e2;
+      }
     </style>
     <script src="exit-guard.js"></script>
   </head>
@@ -482,11 +513,11 @@
 
       <div class="live-score">
         <div class="live-score-cell">
-          <span class="name">Joueur 1</span>
+          <span class="name" id="liveName0">Joueur 1</span>
           <span class="count" id="score0">0</span>
         </div>
         <div class="live-score-cell">
-          <span class="name">Joueur 2</span>
+          <span class="name" id="liveName1">Joueur 2</span>
           <span class="count" id="score1">0</span>
         </div>
       </div>
@@ -512,9 +543,7 @@
         <button class="btn btn-text" id="passBtn">Passer le tour</button>
       </div>
 
-      <button class="btn btn-new" id="newGameBtn" style="display: none">
-        Nouvelle partie
-      </button>
+      <button class="btn btn-new" id="newGameBtn">Nouvelle partie</button>
 
       <div class="rules">
         <h3>Règles du jeu</h3>
@@ -545,6 +574,10 @@
             La partie se termine quand la pioche est vide et qu'un joueur pose
             sa dernière tuile (+6 points bonus). Le plus grand score gagne !
           </li>
+          <li>
+            La partie est enregistrée automatiquement : tu peux fermer le jeu et
+            la reprendre plus tard sur le même appareil.
+          </li>
         </ul>
       </div>
 
@@ -552,7 +585,7 @@
         <h3>Parties gagnées</h3>
         <div class="score-row">
           <div class="score-cell">
-            <div class="label">Joueur 1</div>
+            <div class="label" id="labelP1">Joueur 1</div>
             <div class="value" id="scoreP1">0</div>
           </div>
           <div class="score-cell">
@@ -560,10 +593,40 @@
             <div class="value" id="scoreDraws">0</div>
           </div>
           <div class="score-cell">
-            <div class="label">Joueur 2</div>
+            <div class="label" id="labelP2">Joueur 2</div>
             <div class="value" id="scoreP2">0</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="handoff-overlay" id="setup">
+      <div class="handoff-card">
+        <div class="handoff-emoji">🔷</div>
+        <p class="handoff-sub">Qui joue ?</p>
+        <div class="name-fields">
+          <label class="name-field">
+            <span>Premier joueur</span>
+            <input
+              type="text"
+              id="name0"
+              maxlength="14"
+              autocomplete="off"
+              placeholder="Joueur 1"
+            />
+          </label>
+          <label class="name-field">
+            <span>Deuxième joueur</span>
+            <input
+              type="text"
+              id="name1"
+              maxlength="14"
+              autocomplete="off"
+              placeholder="Joueur 2"
+            />
+          </label>
+        </div>
+        <button class="btn btn-primary" id="setupBtn">C'est parti !</button>
       </div>
     </div>
 
@@ -582,17 +645,27 @@
 
     <script src="confetti.js"></script>
     <script>
+      // Palette choisie pour que deux couleurs voisines restent faciles à
+      // distinguer par un enfant : on écarte les teintes (rouge franc → orange
+      // vif → jaune pur) *et* la luminosité (rouge sombre, orange moyen, jaune
+      // clair). Idem côté froid : vert franc plutôt que vert-de-gris, qui se
+      // confondait avec le bleu.
       const COLORS = [
-        { id: "rouge", hex: "#e63946" },
-        { id: "orange", hex: "#f3722c" },
-        { id: "jaune", hex: "#f9c74f" },
-        { id: "vert", hex: "#43aa8b" },
-        { id: "bleu", hex: "#277da1" },
+        { id: "rouge", hex: "#d1001f" },
+        { id: "orange", hex: "#ff8c00" },
+        { id: "jaune", hex: "#ffd60a" },
+        { id: "vert", hex: "#2f9e44" },
+        { id: "bleu", hex: "#2563c9" },
         { id: "violet", hex: "#7209b7" },
       ]
       const SHAPES = ["rond", "carre", "losange", "etoile", "croix", "triangle"]
       const CELL_SIZE = 38
       const SCORES_KEY = "qwirkle-scores"
+      const STATE_KEY = "qwirkle-state"
+      const NAMES_KEY = "qwirkle-names"
+      const STATE_VERSION = 1
+      const DEFAULT_NAMES = ["Joueur 1", "Joueur 2"]
+      const MAX_NAME_LENGTH = 14
 
       let board = new Map()
       let pending = new Map()
@@ -603,6 +676,8 @@
       let exchangeMode = false
       let exchangeSelection = new Set()
       let gameOver = false
+      let gameEngaged = false
+      let handoffPending = false
 
       function key(r, c) {
         return `${r},${c}`
@@ -638,14 +713,11 @@
         }
       }
 
-      function initGame() {
+      function initGame(names = loadNames()) {
         board = new Map()
         pending = new Map()
         bag = buildBag()
-        players = [
-          { name: "Joueur 1", rack: [], score: 0 },
-          { name: "Joueur 2", rack: [], score: 0 },
-        ]
+        players = names.map((name) => ({ name, rack: [], score: 0 }))
         for (const player of players) {
           refillRack(player)
         }
@@ -654,10 +726,12 @@
         exchangeMode = false
         exchangeSelection = new Set()
         gameOver = false
-        document.getElementById("newGameBtn").style.display = "none"
+        gameEngaged = false
+        handoffPending = false
         document.getElementById("handoff").classList.remove("visible")
         // Nouvelle partie : rien n'est encore joué, on ne garde pas la sortie.
         if (window.ExitGuard) ExitGuard.setActive(false)
+        clearSavedState()
         clearMessage()
         render(true)
       }
@@ -941,11 +1015,13 @@
 
       function nextTurn() {
         // Un tour a été joué (pose, échange ou passe) : la partie est engagée.
+        gameEngaged = true
         if (window.ExitGuard) ExitGuard.setActive(true)
         currentPlayerIndex = (currentPlayerIndex + 1) % players.length
         selectedRackIndex = null
         exchangeMode = false
         exchangeSelection = new Set()
+        handoffPending = true
         render(true)
         showHandoff()
       }
@@ -957,12 +1033,15 @@
       }
 
       function hideHandoff() {
+        handoffPending = false
         document.getElementById("handoff").classList.remove("visible")
         render(true)
       }
 
       function finishGame(extraMessage) {
         gameOver = true
+        gameEngaged = false
+        handoffPending = false
         if (window.ExitGuard) ExitGuard.setActive(false)
         const [p1, p2] = players
         let text
@@ -976,7 +1055,6 @@
           if (typeof showConfetti === "function") showConfetti()
         }
         showMessage(`${text} ${extraMessage}`, "win")
-        document.getElementById("newGameBtn").style.display = "block"
         render()
       }
 
@@ -1090,6 +1168,15 @@
         document.getElementById("score1").textContent = players[1].score
       }
 
+      // Les noms saisis apparaissent partout où l'on parlait de « Joueur 1/2 » :
+      // scores en direct et tableau des parties gagnées.
+      function updatePlayerNames() {
+        document.getElementById("liveName0").textContent = players[0].name
+        document.getElementById("liveName1").textContent = players[1].name
+        document.getElementById("labelP1").textContent = players[0].name
+        document.getElementById("labelP2").textContent = players[1].name
+      }
+
       function updateBagInfo() {
         document.getElementById("bagInfo").textContent =
           `Pioche : ${bag.length} tuile${bag.length > 1 ? "s" : ""}`
@@ -1161,10 +1248,199 @@
         renderBoard()
         renderRack()
         updateTurnIndicator()
+        updatePlayerNames()
         updateLiveScore()
         updateBagInfo()
         updateActionButtons()
         if (recenter) centerBoardView()
+        persistState()
+      }
+
+      // ===== Sauvegarde de la partie en cours =====
+      //
+      // Une partie de Qwirkle est longue : on enregistre l'état complet après
+      // chaque rendu pour pouvoir fermer l'onglet et reprendre plus tard.
+
+      function isTile(tile) {
+        return (
+          !!tile &&
+          COLORS.some((color) => color.id === tile.color) &&
+          SHAPES.includes(tile.shape)
+        )
+      }
+
+      function persistState() {
+        // Rien à reprendre tant que personne n'a joué, et plus rien à la fin.
+        if (
+          gameOver ||
+          (!gameEngaged && board.size === 0 && pending.size === 0)
+        ) {
+          clearSavedState()
+        } else {
+          saveState()
+        }
+      }
+
+      // Un nom vient d'une saisie libre : on le borne et on retombe sur
+      // « Joueur 1 / 2 » si le champ est vide.
+      function sanitizeName(value, index) {
+        const clean =
+          typeof value === "string"
+            ? value.replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH)
+            : ""
+        return clean || DEFAULT_NAMES[index]
+      }
+
+      function loadNames() {
+        let stored
+        try {
+          stored = JSON.parse(localStorage.getItem(NAMES_KEY))
+        } catch (e) {
+          stored = null
+        }
+        return DEFAULT_NAMES.map((_, i) =>
+          sanitizeName(Array.isArray(stored) ? stored[i] : null, i),
+        )
+      }
+
+      function saveNames(names) {
+        try {
+          localStorage.setItem(NAMES_KEY, JSON.stringify(names))
+        } catch (e) {}
+      }
+
+      function saveState() {
+        const state = {
+          version: STATE_VERSION,
+          board: [...board],
+          pending: [...pending],
+          bag,
+          players: players.map((player) => ({
+            name: player.name,
+            rack: player.rack,
+            score: player.score,
+          })),
+          currentPlayerIndex,
+          gameEngaged,
+          handoffPending,
+        }
+        try {
+          localStorage.setItem(STATE_KEY, JSON.stringify(state))
+        } catch (e) {
+          // Stockage indisponible (navigation privée, quota…) : on joue quand
+          // même, simplement sans reprise possible.
+        }
+      }
+
+      function clearSavedState() {
+        try {
+          localStorage.removeItem(STATE_KEY)
+        } catch (e) {}
+      }
+
+      function loadSavedState() {
+        let state
+        try {
+          const raw = localStorage.getItem(STATE_KEY)
+          if (!raw) return null
+          state = JSON.parse(raw)
+        } catch (e) {
+          return null
+        }
+        // Sauvegarde d'une version antérieure ou abîmée : on repart de zéro
+        // plutôt que de casser l'affichage.
+        if (!state || state.version !== STATE_VERSION) return null
+        const cellsValid = (entries) =>
+          Array.isArray(entries) &&
+          entries.every(
+            (entry) =>
+              Array.isArray(entry) &&
+              entry.length === 2 &&
+              /^-?\d+,-?\d+$/.test(entry[0]) &&
+              isTile(entry[1]),
+          )
+        if (!cellsValid(state.board) || !cellsValid(state.pending)) return null
+        if (!Array.isArray(state.bag) || !state.bag.every(isTile)) return null
+        if (
+          !Array.isArray(state.players) ||
+          state.players.length !== DEFAULT_NAMES.length ||
+          !state.players.every(
+            (player) =>
+              !!player &&
+              Array.isArray(player.rack) &&
+              player.rack.every(isTile) &&
+              typeof player.score === "number",
+          )
+        ) {
+          return null
+        }
+        if (!DEFAULT_NAMES[state.currentPlayerIndex]) return null
+        return state
+      }
+
+      function restoreGame(state) {
+        board = new Map(state.board)
+        pending = new Map(state.pending)
+        bag = state.bag
+        players = state.players.map((player, i) => ({
+          name: sanitizeName(player.name, i),
+          rack: player.rack,
+          score: player.score,
+        }))
+        currentPlayerIndex = state.currentPlayerIndex
+        selectedRackIndex = null
+        exchangeMode = false
+        exchangeSelection = new Set()
+        gameOver = false
+        gameEngaged = !!state.gameEngaged
+        handoffPending = !!state.handoffPending
+        if (window.ExitGuard) ExitGuard.setActive(gameEngaged)
+        showMessage(
+          `Partie reprise là où vous l'aviez laissée. Au tour de ${currentPlayer().name}.`,
+          "info",
+        )
+        render(true)
+        // On avait quitté pendant le passage d'appareil : on le redemande,
+        // sinon les tuiles de l'adversaire s'afficheraient au rechargement.
+        if (handoffPending) showHandoff()
+      }
+
+      function startNewGame() {
+        if (
+          gameEngaged &&
+          !gameOver &&
+          !confirm(
+            "Abandonner la partie en cours et en commencer une nouvelle ?",
+          )
+        ) {
+          return
+        }
+        initGame()
+        showSetup()
+      }
+
+      // ===== Noms des joueurs =====
+
+      function showSetup() {
+        players.forEach((player, i) => {
+          // Champ laissé vide tant qu'on est sur « Joueur 1 / 2 » : le
+          // placeholder suffit et on peut taper sans rien effacer.
+          document.getElementById(`name${i}`).value =
+            player.name === DEFAULT_NAMES[i] ? "" : player.name
+        })
+        document.getElementById("setup").classList.add("visible")
+      }
+
+      function confirmSetup() {
+        const names = players.map((_, i) =>
+          sanitizeName(document.getElementById(`name${i}`).value, i),
+        )
+        players.forEach((player, i) => {
+          player.name = names[i]
+        })
+        saveNames(names)
+        document.getElementById("setup").classList.remove("visible")
+        render()
       }
 
       function getScores() {
@@ -1185,11 +1461,24 @@
         document.getElementById("scoreDraws").textContent = scores.draws
       }
 
-      document.getElementById("newGameBtn").onclick = initGame
+      document.getElementById("newGameBtn").onclick = startNewGame
       document.getElementById("handoffBtn").onclick = hideHandoff
+      document.getElementById("setupBtn").onclick = confirmSetup
+      for (const i of [0, 1]) {
+        document.getElementById(`name${i}`).onkeydown = (event) => {
+          if (event.key === "Enter") confirmSetup()
+        }
+      }
 
       updateScoreboard()
-      initGame()
+      const savedState = loadSavedState()
+      if (savedState) {
+        restoreGame(savedState)
+      } else {
+        // Nouvelle partie au premier chargement : on demande d'abord les noms.
+        initGame()
+        showSetup()
+      }
     </script>
   </body>
 </html>
