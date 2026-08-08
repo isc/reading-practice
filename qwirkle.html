@@ -464,6 +464,37 @@
       .handoff-card .btn {
         margin-top: 0;
       }
+
+      .name-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin: 16px 0 24px;
+        text-align: left;
+      }
+
+      .name-field span {
+        display: block;
+        font-size: 0.8em;
+        color: #999;
+        margin-bottom: 4px;
+      }
+
+      .name-field input {
+        width: 100%;
+        padding: 12px;
+        font-family: inherit;
+        font-size: 1em;
+        color: #1a1a1a;
+        background: #f8f9fa;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+      }
+
+      .name-field input:focus {
+        outline: none;
+        border-color: #4a90e2;
+      }
     </style>
     <script src="exit-guard.js"></script>
   </head>
@@ -482,11 +513,11 @@
 
       <div class="live-score">
         <div class="live-score-cell">
-          <span class="name">Joueur 1</span>
+          <span class="name" id="liveName0">Joueur 1</span>
           <span class="count" id="score0">0</span>
         </div>
         <div class="live-score-cell">
-          <span class="name">Joueur 2</span>
+          <span class="name" id="liveName1">Joueur 2</span>
           <span class="count" id="score1">0</span>
         </div>
       </div>
@@ -554,7 +585,7 @@
         <h3>Parties gagnées</h3>
         <div class="score-row">
           <div class="score-cell">
-            <div class="label">Joueur 1</div>
+            <div class="label" id="labelP1">Joueur 1</div>
             <div class="value" id="scoreP1">0</div>
           </div>
           <div class="score-cell">
@@ -562,10 +593,40 @@
             <div class="value" id="scoreDraws">0</div>
           </div>
           <div class="score-cell">
-            <div class="label">Joueur 2</div>
+            <div class="label" id="labelP2">Joueur 2</div>
             <div class="value" id="scoreP2">0</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="handoff-overlay" id="setup">
+      <div class="handoff-card">
+        <div class="handoff-emoji">🔷</div>
+        <p class="handoff-sub">Qui joue ?</p>
+        <div class="name-fields">
+          <label class="name-field">
+            <span>Premier joueur</span>
+            <input
+              type="text"
+              id="name0"
+              maxlength="14"
+              autocomplete="off"
+              placeholder="Joueur 1"
+            />
+          </label>
+          <label class="name-field">
+            <span>Deuxième joueur</span>
+            <input
+              type="text"
+              id="name1"
+              maxlength="14"
+              autocomplete="off"
+              placeholder="Joueur 2"
+            />
+          </label>
+        </div>
+        <button class="btn btn-primary" id="setupBtn">C'est parti !</button>
       </div>
     </div>
 
@@ -601,8 +662,10 @@
       const CELL_SIZE = 38
       const SCORES_KEY = "qwirkle-scores"
       const STATE_KEY = "qwirkle-state"
+      const NAMES_KEY = "qwirkle-names"
       const STATE_VERSION = 1
-      const PLAYER_NAMES = ["Joueur 1", "Joueur 2"]
+      const DEFAULT_NAMES = ["Joueur 1", "Joueur 2"]
+      const MAX_NAME_LENGTH = 14
 
       let board = new Map()
       let pending = new Map()
@@ -650,11 +713,11 @@
         }
       }
 
-      function initGame() {
+      function initGame(names = loadNames()) {
         board = new Map()
         pending = new Map()
         bag = buildBag()
-        players = PLAYER_NAMES.map((name) => ({ name, rack: [], score: 0 }))
+        players = names.map((name) => ({ name, rack: [], score: 0 }))
         for (const player of players) {
           refillRack(player)
         }
@@ -1105,6 +1168,15 @@
         document.getElementById("score1").textContent = players[1].score
       }
 
+      // Les noms saisis apparaissent partout où l'on parlait de « Joueur 1/2 » :
+      // scores en direct et tableau des parties gagnées.
+      function updatePlayerNames() {
+        document.getElementById("liveName0").textContent = players[0].name
+        document.getElementById("liveName1").textContent = players[1].name
+        document.getElementById("labelP1").textContent = players[0].name
+        document.getElementById("labelP2").textContent = players[1].name
+      }
+
       function updateBagInfo() {
         document.getElementById("bagInfo").textContent =
           `Pioche : ${bag.length} tuile${bag.length > 1 ? "s" : ""}`
@@ -1176,6 +1248,7 @@
         renderBoard()
         renderRack()
         updateTurnIndicator()
+        updatePlayerNames()
         updateLiveScore()
         updateBagInfo()
         updateActionButtons()
@@ -1208,6 +1281,34 @@
         }
       }
 
+      // Un nom vient d'une saisie libre : on le borne et on retombe sur
+      // « Joueur 1 / 2 » si le champ est vide.
+      function sanitizeName(value, index) {
+        const clean =
+          typeof value === "string"
+            ? value.replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH)
+            : ""
+        return clean || DEFAULT_NAMES[index]
+      }
+
+      function loadNames() {
+        let stored
+        try {
+          stored = JSON.parse(localStorage.getItem(NAMES_KEY))
+        } catch (e) {
+          stored = null
+        }
+        return DEFAULT_NAMES.map((_, i) =>
+          sanitizeName(Array.isArray(stored) ? stored[i] : null, i),
+        )
+      }
+
+      function saveNames(names) {
+        try {
+          localStorage.setItem(NAMES_KEY, JSON.stringify(names))
+        } catch (e) {}
+      }
+
       function saveState() {
         const state = {
           version: STATE_VERSION,
@@ -1215,6 +1316,7 @@
           pending: [...pending],
           bag,
           players: players.map((player) => ({
+            name: player.name,
             rack: player.rack,
             score: player.score,
           })),
@@ -1261,7 +1363,7 @@
         if (!Array.isArray(state.bag) || !state.bag.every(isTile)) return null
         if (
           !Array.isArray(state.players) ||
-          state.players.length !== PLAYER_NAMES.length ||
+          state.players.length !== DEFAULT_NAMES.length ||
           !state.players.every(
             (player) =>
               !!player &&
@@ -1272,7 +1374,7 @@
         ) {
           return null
         }
-        if (!PLAYER_NAMES[state.currentPlayerIndex]) return null
+        if (!DEFAULT_NAMES[state.currentPlayerIndex]) return null
         return state
       }
 
@@ -1280,10 +1382,10 @@
         board = new Map(state.board)
         pending = new Map(state.pending)
         bag = state.bag
-        players = PLAYER_NAMES.map((name, i) => ({
-          name,
-          rack: state.players[i].rack,
-          score: state.players[i].score,
+        players = state.players.map((player, i) => ({
+          name: sanitizeName(player.name, i),
+          rack: player.rack,
+          score: player.score,
         }))
         currentPlayerIndex = state.currentPlayerIndex
         selectedRackIndex = null
@@ -1314,6 +1416,31 @@
           return
         }
         initGame()
+        showSetup()
+      }
+
+      // ===== Noms des joueurs =====
+
+      function showSetup() {
+        players.forEach((player, i) => {
+          // Champ laissé vide tant qu'on est sur « Joueur 1 / 2 » : le
+          // placeholder suffit et on peut taper sans rien effacer.
+          document.getElementById(`name${i}`).value =
+            player.name === DEFAULT_NAMES[i] ? "" : player.name
+        })
+        document.getElementById("setup").classList.add("visible")
+      }
+
+      function confirmSetup() {
+        const names = players.map((_, i) =>
+          sanitizeName(document.getElementById(`name${i}`).value, i),
+        )
+        players.forEach((player, i) => {
+          player.name = names[i]
+        })
+        saveNames(names)
+        document.getElementById("setup").classList.remove("visible")
+        render()
       }
 
       function getScores() {
@@ -1336,11 +1463,22 @@
 
       document.getElementById("newGameBtn").onclick = startNewGame
       document.getElementById("handoffBtn").onclick = hideHandoff
+      document.getElementById("setupBtn").onclick = confirmSetup
+      for (const i of [0, 1]) {
+        document.getElementById(`name${i}`).onkeydown = (event) => {
+          if (event.key === "Enter") confirmSetup()
+        }
+      }
 
       updateScoreboard()
       const savedState = loadSavedState()
-      if (savedState) restoreGame(savedState)
-      else initGame()
+      if (savedState) {
+        restoreGame(savedState)
+      } else {
+        // Nouvelle partie au premier chargement : on demande d'abord les noms.
+        initGame()
+        showSetup()
+      }
     </script>
   </body>
 </html>
