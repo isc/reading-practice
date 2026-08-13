@@ -611,6 +611,57 @@
       let timerId = null
       let gameEngaged = false
       let gameOver = true
+      let audioCtx = null
+
+      // ===== Effets sonores =====
+      //
+      // Générés à la volée (oscillateurs), sans fichier audio : le joueur qui
+      // mime ou décrit ne regarde pas l'écran, le retour sonore lui indique
+      // si son mot a été trouvé, passé, ou si le temps est écoulé.
+
+      function getAudioCtx() {
+        const Ctx = window.AudioContext || window.webkitAudioContext
+        if (!Ctx) return null
+        if (!audioCtx) audioCtx = new Ctx()
+        if (audioCtx.state === "suspended") audioCtx.resume()
+        return audioCtx
+      }
+
+      function playTone(ctx, freq, startTime, duration, type, peakGain) {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = type
+        osc.frequency.value = freq
+        gain.gain.setValueAtTime(0, startTime)
+        gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.02)
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(startTime)
+        osc.stop(startTime + duration + 0.05)
+      }
+
+      function playFoundSound() {
+        const ctx = getAudioCtx()
+        if (!ctx) return
+        const now = ctx.currentTime
+        playTone(ctx, 660, now, 0.12, "sine", 0.25)
+        playTone(ctx, 880, now + 0.1, 0.18, "sine", 0.25)
+      }
+
+      function playPassSound() {
+        const ctx = getAudioCtx()
+        if (!ctx) return
+        playTone(ctx, 220, ctx.currentTime, 0.15, "square", 0.15)
+      }
+
+      function playTimeUpSound() {
+        const ctx = getAudioCtx()
+        if (!ctx) return
+        const now = ctx.currentTime
+        playTone(ctx, 300, now, 0.25, "square", 0.2)
+        playTone(ctx, 220, now + 0.28, 0.35, "square", 0.2)
+      }
 
       function shuffle(arr) {
         const copy = arr.slice()
@@ -821,6 +872,7 @@
       }
 
       function startTurn() {
+        getAudioCtx()
         document.getElementById("handoffOverlay").classList.remove("visible")
         gameEngaged = true
         if (window.ExitGuard) ExitGuard.setActive(true)
@@ -860,6 +912,7 @@
 
       function markFound() {
         if (!turnActive) return
+        playFoundSound()
         teams[currentTeamIndex].score++
         turnFound++
         updateFoundCounter()
@@ -869,6 +922,7 @@
 
       function markPass() {
         if (!turnActive) return
+        playPassSound()
         remainingDeck.push(currentWord)
         showNextCard()
       }
@@ -877,6 +931,7 @@
         if (!turnActive) return
         turnActive = false
         clearInterval(timerId)
+        if (!roundComplete) playTimeUpSound()
         document.getElementById("wordDisplay").textContent = "—"
         const team = teams[currentTeamIndex]
         document.getElementById("recapEmoji").textContent = roundComplete
