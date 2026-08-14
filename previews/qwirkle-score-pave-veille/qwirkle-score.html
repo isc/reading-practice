@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#171a21" />
+    <title>Qwirkle — feuille de score</title>
+    <script src="exit-guard.js"></script>
+    <style>
+      :root {
+        --table: #171a21;
+        --table-hi: #1e222b;
+        --tile: #0a0b0d;
+        --edge: rgba(255, 255, 255, 0.1);
+        --ink: #eff1f5;
+        --muted: #868c9b;
+        --red: #e33c31;
+        --orange: #f0851f;
+        --yellow: #f2c319;
+        --green: #34a34f;
+        --blue: #3080d6;
+        --violet: #9048b8;
+        --r: 13px;
+        --display: "Segoe UI", system-ui, Arial, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        min-width: 0;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+      body {
+        background: radial-gradient(
+          120% 70% at 50% 0%,
+          #1f242e 0%,
+          var(--table) 55%,
+          #101319 100%
+        );
+        color: var(--ink);
+        font-family: var(--display);
+        display: flex;
+        justify-content: center;
+        padding: 12px 10px calc(14px + env(safe-area-inset-bottom));
+      }
+      .app {
+        width: 100%;
+        max-width: 470px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+
+      canvas#confetti {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 2px;
+      }
+      h1 {
+        font-size: 19px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+      h1 span {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .meta {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      /* ---- écran de départ ---- */
+      .setup {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 22px 4px 8px;
+        text-align: center;
+      }
+      .setup h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .setup .sub {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-top: -8px;
+      }
+      .setup > div {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .counts {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .count {
+        aspect-ratio: 1;
+        border: 0;
+        border-radius: 14px;
+        background: var(--tile);
+        color: var(--ink);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        font-family: inherit;
+        font-size: 30px;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.13),
+          0 5px 12px -6px #000;
+        transition:
+          transform 0.12s ease,
+          filter 0.12s ease;
+      }
+      .count:active {
+        transform: translateY(2px);
+      }
+      .count em {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-style: normal;
+        color: var(--muted);
+        font-weight: 400;
+        letter-spacing: 0.05em;
+      }
+      .count .dots {
+        display: flex;
+        gap: 3px;
+        height: 9px;
+        align-items: center;
+      }
+      .count .dots i {
+        width: 9px;
+        height: 9px;
+        border-radius: 2px;
+        display: block;
+      }
+      .starters {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .starter {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        gap: 11px;
+        align-items: center;
+        background: var(--table-hi);
+        border: 1px solid var(--edge);
+        border-radius: var(--r);
+        padding: 9px 12px;
+        text-align: left;
+      }
+      .starter .name {
+        font-size: 15.5px;
+        border-bottom: 1px dashed var(--edge);
+      }
+      .go {
+        border: 0;
+        border-radius: 9px;
+        background: var(--ink);
+        color: #101319;
+        font-family: inherit;
+        font-weight: 700;
+        font-size: 12.5px;
+        padding: 10px 13px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      /* ---- joueurs ---- */
+      .players {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .player {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 11px;
+        background: var(--table-hi);
+        border: 1px solid var(--edge);
+        border-radius: var(--r);
+        padding: 9px 12px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          background 0.18s ease;
+      }
+      .player.active {
+        background: #262c39;
+        transform: translateY(-2px);
+        box-shadow:
+          0 8px 20px -8px rgba(0, 0, 0, 0.8),
+          inset 0 0 0 1px var(--pc);
+      }
+      .player.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 13px;
+        bottom: 13px;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: var(--pc);
+      }
+      .player.win {
+        box-shadow: inset 0 0 0 1px var(--pc);
+      }
+      .chip {
+        width: 40px;
+        height: 40px;
+        border-radius: 9px;
+        background: var(--tile);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.14),
+          0 3px 8px -3px #000;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .chip svg {
+        width: 22px;
+        height: 22px;
+      }
+      .name {
+        font: inherit;
+        font-size: 15.5px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+        background: none;
+        border: 0;
+        padding: 0;
+        width: 100%;
+        border-bottom: 1px dashed transparent;
+        text-overflow: ellipsis;
+      }
+      .name:focus {
+        outline: none;
+        border-bottom-color: var(--pc);
+      }
+      .strip {
+        display: flex;
+        gap: 4px;
+        margin-top: 5px;
+        flex-wrap: wrap;
+        min-height: 15px;
+      }
+      .strip b {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--muted);
+        background: rgba(0, 0, 0, 0.35);
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+      .strip b.q {
+        color: #0a0b0d;
+        background: var(--pc);
+      }
+      .total {
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        flex: none;
+      }
+      .player.active .total {
+        color: var(--pc);
+      }
+
+      .tally {
+        border: 1px dashed var(--edge);
+        border-radius: var(--r);
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 52px;
+      }
+      .tally .lines {
+        font-family: var(--mono);
+        font-size: 13.5px;
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+      .tally .lines em {
+        font-style: normal;
+        color: var(--ink);
+      }
+      .tally .sum {
+        font-size: 21px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .tally .hint {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        letter-spacing: 0.02em;
+        overflow-wrap: anywhere;
+      }
+
+      .pad {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .key {
+        aspect-ratio: 5 / 3;
+        border: 0;
+        border-radius: 14px;
+        background: var(--tile);
+        color: var(--ink);
+        padding: 0;
+        font-family: inherit;
+        font-size: clamp(24px, 8vw, 34px);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.13),
+          0 3px 7px -3px #000;
+        cursor: pointer;
+        transition:
+          transform 0.1s ease,
+          filter 0.1s ease;
+      }
+      .key:active {
+        transform: translateY(2px);
+        filter: brightness(1.35);
+      }
+      .key.q {
+        grid-column: span 2;
+        aspect-ratio: auto;
+        background: linear-gradient(
+          135deg,
+          var(--red),
+          var(--orange) 22%,
+          var(--yellow) 42%,
+          var(--green) 62%,
+          var(--blue) 80%,
+          var(--violet)
+        );
+        color: #0a0b0d;
+      }
+      .legend {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--muted);
+        text-align: right;
+        margin-top: -7px;
+        letter-spacing: 0.03em;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .btn {
+        border: 1px solid var(--edge);
+        background: var(--table-hi);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 13px 8px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        overflow-wrap: anywhere;
+      }
+      .btn.primary {
+        background: var(--ink);
+        color: #101319;
+        border-color: transparent;
+      }
+      .btn.primary:disabled {
+        background: var(--table-hi);
+        color: #4e5461;
+        border-color: var(--edge);
+        cursor: default;
+      }
+      .btn.ghost {
+        font-weight: 500;
+        color: var(--muted);
+        font-size: 12.5px;
+        background: none;
+        border-color: transparent;
+        padding: 11px 4px;
+      }
+      .btn.warn {
+        color: #0a0b0d;
+        background: var(--yellow);
+        font-weight: 700;
+        border-color: transparent;
+      }
+      .foot {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+        margin-top: -2px;
+      }
+
+      .final {
+        border-radius: var(--r);
+        padding: 13px;
+        background: var(--table-hi);
+        border: 1px solid var(--edge);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .final .cup {
+        font-size: 24px;
+        flex: none;
+      }
+      .final .txt strong {
+        display: block;
+        font-size: 16px;
+      }
+      .final .txt span {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .home {
+        display: block;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        text-decoration: none;
+        padding: 6px;
+      }
+
+      button:focus-visible,
+      .name:focus-visible {
+        outline: 2px solid #7fb2ff;
+        outline-offset: 2px;
+      }
+
+      /* Le survol ne doit pas « coller » après un appui sur tactile. */
+      @media (hover: hover) {
+        .count:hover {
+          filter: brightness(1.25);
+        }
+        .go:hover {
+          filter: brightness(0.92);
+        }
+        .player:hover {
+          background: #232833;
+        }
+        .btn:hover {
+          background: #252a35;
+        }
+        .btn.ghost:hover {
+          color: var(--ink);
+          background: var(--table-hi);
+        }
+        .btn.warn:hover {
+          background: var(--yellow);
+          filter: brightness(1.08);
+        }
+        .home:hover {
+          color: var(--ink);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="confetti"></canvas>
+    <div class="app">
+      <header>
+        <h1>Qwirkle <span>· score</span></h1>
+        <div class="meta" id="meta"></div>
+      </header>
+
+      <!-- écran de départ -->
+      <div class="setup" id="setup" hidden>
+        <div id="step1">
+          <h2>Combien de joueurs ?</h2>
+          <div class="sub">de 2 à 4 autour de la table</div>
+          <div class="counts" id="counts"></div>
+        </div>
+        <div id="step2" hidden>
+          <h2>Qui commence ?</h2>
+          <div class="sub">la plus longue série au tirage ouvre la partie</div>
+          <div class="starters" id="starters"></div>
+          <button class="btn ghost" id="backStep">← nombre de joueurs</button>
+        </div>
+      </div>
+
+      <!-- partie -->
+      <div class="stack" id="game" hidden>
+        <div class="players" id="players"></div>
+        <div class="tally" id="tally"></div>
+
+        <div class="pad" id="pad"></div>
+        <div class="legend">
+          une touche par ligne · ligne de 6 = Qwirkle = 12
+        </div>
+
+        <div class="row">
+          <button class="btn" id="pass">Passe (0)</button>
+          <button class="btn primary" id="commit">Valider</button>
+        </div>
+
+        <div class="foot">
+          <button class="btn ghost" id="back">← ligne</button>
+          <button class="btn ghost" id="undo">Annuler tour</button>
+          <button class="btn ghost" id="reset">Nouvelle partie</button>
+        </div>
+
+        <div id="endZone"></div>
+      </div>
+
+      <a class="home" href="index.html">← retour aux jeux</a>
+    </div>
+
+    <script src="confetti.js"></script>
+    <script>
+      const KEY = "qwirkle-score-v1"
+      const VALUES = [2, 3, 4, 5, 12]
+      const SHAPES = {
+        star: '<path d="M12 1l2.6 6.8L21.4 10l-6.8 2.6L12 19.4 9.4 12.6 2.6 10l6.8-2.2z"/>',
+        clover:
+          '<path d="M12 2a3.4 3.4 0 013.2 4.5A3.4 3.4 0 0119 12a3.4 3.4 0 01-3.8 5.5A3.4 3.4 0 0112 22a3.4 3.4 0 01-3.2-4.5A3.4 3.4 0 015 12a3.4 3.4 0 013.8-5.5A3.4 3.4 0 0112 2z"/>',
+        diamond: '<path d="M12 1.5L18 12l-6 10.5L6 12z"/>',
+        cross:
+          '<path d="M9.6 2h4.8v5.2H19.6v4.8h-5.2V22H9.6v-10H4.4V7.2h5.2z"/>',
+      }
+      const PROFILES = [
+        { color: "var(--red)", shape: "star" },
+        { color: "var(--green)", shape: "clover" },
+        { color: "var(--blue)", shape: "diamond" },
+        { color: "var(--violet)", shape: "cross" },
+      ]
+      const DEFAULT = () => ({
+        started: false,
+        names: ["Joueur 1", "Joueur 2", "Joueur 3", "Joueur 4"],
+        players: [],
+        active: 0,
+        pending: [],
+        log: [],
+        over: false,
+        winner: null,
+      })
+      let S = DEFAULT()
+      let flash = ""
+
+      function save() {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(S))
+        } catch (e) {}
+      }
+      function load() {
+        try {
+          const raw = localStorage.getItem(KEY)
+          if (raw) S = Object.assign(DEFAULT(), JSON.parse(raw))
+        } catch (e) {}
+        render()
+      }
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        )
+      const sum = (a) => a.reduce((x, y) => x + y, 0)
+      const total = (p) => sum(p.turns)
+      const lastScorer = () =>
+        S.log.length ? S.log[S.log.length - 1].p : S.active
+
+      // La garde anti-sortie ne s'arme qu'une fois la partie réellement engagée
+      // (un tour validé ou des points en cours de saisie), jamais sur l'écran
+      // d'accueil ni sur l'écran de fin.
+      function syncGuard() {
+        if (!window.ExitGuard) return
+        ExitGuard.setActive(
+          S.started && !S.over && (S.log.length > 0 || S.pending.length > 0),
+        )
+      }
+
+      function start(n, first) {
+        S.players = PROFILES.slice(0, n).map((pr, i) => ({
+          ...pr,
+          name: S.names[i],
+          turns: [],
+        }))
+        S.started = true
+        S.active = first
+        S.pending = []
+        S.log = []
+        S.over = false
+        S.winner = null
+        render()
+        save()
+      }
+
+      /* ---------- écran de départ ---------- */
+      let setupN = 0
+      const counts = document.getElementById("counts")
+      ;[2, 3, 4].forEach((n) => {
+        const b = document.createElement("button")
+        b.className = "count"
+        b.innerHTML = `<div class="dots">${PROFILES.slice(0, n)
+          .map((p) => `<i style="background:${p.color}"></i>`)
+          .join("")}</div>${n}<em>joueurs</em>`
+        b.addEventListener("click", () => {
+          setupN = n
+          renderSetup()
+        })
+        counts.appendChild(b)
+      })
+      document.getElementById("backStep").addEventListener("click", () => {
+        setupN = 0
+        renderSetup()
+      })
+
+      function renderSetup() {
+        document.getElementById("step1").hidden = setupN > 0
+        document.getElementById("step2").hidden = setupN === 0
+        if (!setupN) return
+        const list = document.getElementById("starters")
+        list.innerHTML = ""
+        PROFILES.slice(0, setupN).forEach((pr, i) => {
+          const row = document.createElement("div")
+          row.className = "starter"
+          row.innerHTML = `
+            <div class="chip"><svg viewBox="0 0 24 24" fill="${pr.color}">${SHAPES[pr.shape]}</svg></div>
+            <input class="name" value="${esc(S.names[i])}" aria-label="Nom du joueur ${i + 1}" style="--pc:${pr.color}">
+            <button class="go">Commence</button>`
+          row.querySelector(".name").addEventListener("input", (e) => {
+            S.names[i] = e.target.value
+            save()
+          })
+          row
+            .querySelector(".go")
+            .addEventListener("click", () => start(setupN, i))
+          list.appendChild(row)
+        })
+      }
+
+      /* ---------- rendu ---------- */
+      function render() {
+        syncGuard()
+        document.getElementById("setup").hidden = S.started
+        document.getElementById("game").hidden = !S.started
+        if (!S.started) {
+          document.getElementById("meta").textContent = "nouvelle partie"
+          renderSetup()
+          return
+        }
+
+        const box = document.getElementById("players")
+        box.innerHTML = ""
+        S.players.forEach((p, i) => {
+          const el = document.createElement("div")
+          el.className =
+            "player" +
+            (i === S.active && !S.over ? " active" : "") +
+            (S.over && i === S.winner ? " win" : "")
+          el.style.setProperty("--pc", p.color)
+          el.innerHTML = `
+            <div class="chip"><svg viewBox="0 0 24 24" fill="${p.color}">${SHAPES[p.shape]}</svg></div>
+            <div>
+              <input class="name" value="${esc(p.name)}" aria-label="Nom du joueur ${i + 1}">
+              <div class="strip">${p.turns
+                .slice(-9)
+                .map((v) => `<b class="${v >= 12 ? "q" : ""}">${v}</b>`)
+                .join("")}</div>
+            </div>
+            <div class="total">${total(p)}</div>`
+          el.addEventListener("click", (e) => {
+            if (e.target.classList.contains("name") || S.over) return
+            S.active = i
+            render()
+            save()
+          })
+          el.querySelector(".name").addEventListener("input", (e) => {
+            p.name = e.target.value
+            S.names[i] = e.target.value
+            save()
+          })
+          box.appendChild(el)
+        })
+
+        const t = document.getElementById("tally"),
+          cur = S.players[S.active]
+        if (S.over) {
+          t.innerHTML =
+            '<div class="hint">Partie terminée — « Annuler tour » pour revenir en arrière</div>'
+        } else if (S.pending.length) {
+          t.innerHTML = `<div class="lines">${
+            flash
+              ? `<em style="color:var(--yellow)">${esc(flash)}</em><br>`
+              : ""
+          }${S.pending.map((v) => `<em>${v}</em>`).join(" + ")}</div>
+            <div class="sum" style="color:${cur.color}">${sum(S.pending)}</div>`
+          if (flash) {
+            const f = flash
+            setTimeout(() => {
+              if (flash === f) {
+                flash = ""
+                render()
+              }
+            }, 2500)
+          }
+        } else {
+          t.innerHTML = `<div class="hint">Au tour de <span style="color:${cur.color}">${esc(cur.name)}</span> — tape chaque ligne marquée</div>`
+        }
+
+        document.getElementById("commit").disabled = S.over || !S.pending.length
+        document.getElementById("pass").disabled = S.over
+        document.getElementById("meta").textContent =
+          "tour " + (Math.floor(S.log.length / S.players.length) + 1)
+
+        const z = document.getElementById("endZone")
+        if (S.over) {
+          const rank = [...S.players].sort((a, b) => total(b) - total(a))
+          z.innerHTML = `<div class="final"><div class="cup">🏆</div><div class="txt">
+            <strong>${esc(rank[0].name)} l'emporte — ${total(rank[0])} points</strong>
+            <span>${rank
+              .slice(1)
+              .map((p) => esc(p.name) + " " + total(p))
+              .join(" · ")}</span></div></div>`
+        } else {
+          z.innerHTML = `<button class="btn" id="end" style="width:100%">Fin de partie : +6 à ${esc(
+            S.players[lastScorer()].name,
+          )}</button>`
+          document.getElementById("end").addEventListener("click", () => {
+            if (S.pending.length) {
+              flash = "Valide d'abord le tour en cours"
+              render()
+              return
+            }
+            const i = lastScorer()
+            S.players[i].turns.push(6)
+            S.log.push({ p: i, v: 6 })
+            S.over = true
+            S.winner = S.players.indexOf(
+              [...S.players].sort((a, b) => total(b) - total(a))[0],
+            )
+            render()
+            save()
+            showConfetti()
+          })
+        }
+      }
+
+      /* ---------- pavé ---------- */
+      const pad = document.getElementById("pad")
+      VALUES.forEach((n) => {
+        const b = document.createElement("button")
+        b.className = "key" + (n === 12 ? " q" : "")
+        b.textContent = n
+        b.setAttribute(
+          "aria-label",
+          n === 12 ? "Qwirkle, 12 points" : n + " points",
+        )
+        b.addEventListener("click", () => {
+          if (S.over) return
+          S.pending.push(n)
+          render()
+          save()
+        })
+        pad.appendChild(b)
+      })
+
+      function commit(v) {
+        S.players[S.active].turns.push(v)
+        S.log.push({ p: S.active, v })
+        S.pending = []
+        S.active = (S.active + 1) % S.players.length
+        render()
+        save()
+      }
+      document.getElementById("commit").addEventListener("click", () => {
+        if (S.pending.length) commit(sum(S.pending))
+      })
+      document.getElementById("pass").addEventListener("click", () => {
+        S.pending = []
+        commit(0)
+      })
+      document.getElementById("back").addEventListener("click", () => {
+        S.pending.pop()
+        render()
+        save()
+      })
+      document.getElementById("undo").addEventListener("click", () => {
+        if (S.pending.length) {
+          S.pending = []
+          render()
+          save()
+          return
+        }
+        const last = S.log.pop()
+        if (!last) return
+        S.players[last.p].turns.pop()
+        S.active = last.p
+        S.over = false
+        S.winner = null
+        render()
+        save()
+      })
+
+      const resetBtn = document.getElementById("reset")
+      let armed = false,
+        armTimer = null
+      function disarm() {
+        armed = false
+        clearTimeout(armTimer)
+        resetBtn.textContent = "Nouvelle partie"
+        resetBtn.classList.remove("warn")
+      }
+      resetBtn.addEventListener("click", () => {
+        if (!armed) {
+          armed = true
+          resetBtn.textContent = "Confirmer ?"
+          resetBtn.classList.add("warn")
+          armTimer = setTimeout(disarm, 4000)
+          return
+        }
+        disarm()
+        setupN = 0
+        S.started = false
+        S.players = []
+        S.log = []
+        S.pending = []
+        S.over = false
+        S.winner = null
+        S.active = 0
+        render()
+        save()
+      })
+
+      /* ---------- veille écran ---------- */
+      // Une partie dure longtemps entre deux saisies : on empêche l'écran
+      // de s'éteindre tant que la feuille de score est affichée.
+      let wakeLock = null
+      async function keepAwake() {
+        if (wakeLock || !("wakeLock" in navigator)) return
+        if (document.visibilityState !== "visible") return
+        try {
+          wakeLock = await navigator.wakeLock.request("screen")
+          wakeLock.addEventListener("release", () => {
+            wakeLock = null
+          })
+        } catch (e) {
+          // refusé (batterie faible, onglet masqué…) : on retentera au tap
+        }
+      }
+      document.addEventListener("visibilitychange", keepAwake)
+      document.addEventListener("pointerdown", keepAwake)
+      keepAwake()
+
+      load()
+    </script>
+  </body>
+</html>

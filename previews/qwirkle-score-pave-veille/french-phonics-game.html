@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lecture et Orthographe - Son /ɑ̃/</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap");
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Nunito", sans-serif;
+        background-color: #f0f2f5;
+        padding: 10px;
+        min-height: 100vh;
+      }
+
+      .container {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 15px;
+          border-radius: 12px;
+        }
+      }
+
+      h1 {
+        color: #2563eb;
+        margin-bottom: 20px;
+        font-size: clamp(1.5rem, 5vw, 2.2rem);
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        word-wrap: break-word;
+      }
+
+      .instruction {
+        font-size: clamp(1rem, 4vw, 1.2rem);
+        margin-bottom: 20px;
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border-left: 4px solid #2563eb;
+      }
+
+      .color-selector {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .color-btn {
+        padding: clamp(8px, 2vw, 12px) clamp(15px, 4vw, 25px);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: clamp(0.9rem, 3vw, 1rem);
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: calc(50% - 5px);
+        max-width: 200px;
+        white-space: nowrap;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      @media (max-width: 380px) {
+        .color-btn {
+          width: 100%;
+          max-width: none;
+        }
+      }
+
+      .color-btn.red {
+        background-color: #fee2e2;
+        color: #dc2626;
+      }
+
+      .color-btn.green {
+        background-color: #dcfce7;
+        color: #16a34a;
+      }
+
+      .color-btn.selected {
+        transform: scale(1.02);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        outline: 3px solid #2563eb;
+        outline-offset: 2px;
+      }
+
+      .word-list,
+      .sentence {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+        justify-content: center;
+      }
+
+      .word {
+        padding: 8px 12px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        font-size: clamp(0.9rem, 3vw, 1.1rem);
+        text-align: center;
+      }
+
+      @media (hover: hover) {
+        .word:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+      }
+
+      .word.highlighted-red {
+        background-color: #fee2e2;
+        color: #dc2626;
+        border-color: #dc2626;
+      }
+
+      .word.highlighted-green {
+        background-color: #dcfce7;
+        color: #16a34a;
+        border-color: #16a34a;
+      }
+
+      .controls {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .control-btn {
+        padding: clamp(8px, 2vw, 12px) clamp(15px, 4vw, 25px);
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: clamp(0.9rem, 3vw, 1rem);
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        width: calc(50% - 5px);
+        max-width: 200px;
+      }
+
+      @media (max-width: 380px) {
+        .control-btn {
+          width: 100%;
+          max-width: none;
+        }
+      }
+
+      .control-btn:active {
+        transform: scale(0.98);
+      }
+
+      .control-btn.reset {
+        background-color: #64748b;
+      }
+
+      .feedback {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        display: none;
+        text-align: center;
+        font-weight: 600;
+        animation: fadeIn 0.5s ease;
+        font-size: clamp(0.9rem, 3vw, 1rem);
+      }
+
+      .feedback.success {
+        background-color: #dcfce7;
+        color: #16a34a;
+        border: 2px solid #16a34a;
+      }
+
+      .feedback.error {
+        background-color: #fee2e2;
+        color: #dc2626;
+        border: 2px solid #dc2626;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .section {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 12px;
+      }
+
+      @media (max-width: 600px) {
+        .section {
+          padding: 12px;
+        }
+      }
+
+      .divider {
+        height: 2px;
+        background: #e2e8f0;
+        margin: 20px 0;
+        border-radius: 2px;
+      }
+
+      /* Ajustements pour écrans très petits */
+      @media (max-width: 320px) {
+        .container {
+          padding: 10px;
+        }
+
+        .word {
+          padding: 6px 10px;
+        }
+
+        .instruction {
+          padding: 10px;
+        }
+      }
+    </style>
+    <script src="exit-guard.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Lecture et Orthographe</h1>
+
+      <div class="instruction">
+        Colorie <strong>an</strong> en
+        <span style="color: #dc2626">rouge</span> et <strong>am</strong> en
+        <span style="color: #16a34a">vert</span> si tu entends le son "an".
+      </div>
+
+      <div class="color-selector">
+        <button class="color-btn red" onclick="selectColor('red')">
+          Rouge (an)
+        </button>
+        <button class="color-btn green" onclick="selectColor('green')">
+          Vert (am)
+        </button>
+      </div>
+
+      <div class="section">
+        <div class="word-list">
+          <span class="word">dimanche</span>
+          <span class="word">rampe</span>
+          <span class="word">manie</span>
+          <span class="word">banc</span>
+          <span class="word">cane</span>
+          <span class="word">branche</span>
+          <span class="word">nature</span>
+          <span class="word">manger</span>
+          <span class="word">camper</span>
+          <span class="word">plante</span>
+          <span class="word">mine</span>
+          <span class="word">rame</span>
+          <span class="word">orange</span>
+          <span class="word">sable</span>
+          <span class="word">tambour</span>
+          <span class="word">pantalon</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sentence">
+          <span class="word">Le</span>
+          <span class="word">toucan</span>
+          <span class="word">est</span>
+          <span class="word">un</span>
+          <span class="word">oiseau</span>
+          <span class="word">vraiment</span>
+          <span class="word">fascinant</span>
+          <span class="word">C'est</span>
+          <span class="word">un</span>
+          <span class="word">champion</span>
+        </div>
+      </div>
+
+      <div class="feedback"></div>
+
+      <div class="controls">
+        <button class="control-btn" onclick="verifyAnswers()">Vérifier</button>
+        <button class="control-btn reset" onclick="resetGame()">
+          Recommencer
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let selectedColor = null
+
+      const wordsWithAnSound = [
+        "dimanche",
+        "banc",
+        "branche",
+        "manger",
+        "plante",
+        "pantalon",
+        "toucan",
+        "fascinant",
+        "orange",
+      ]
+      const wordsWithAmSound = ["rampe", "camper", "tambour", "champion"]
+
+      function selectColor(color) {
+        selectedColor = color
+        document.querySelectorAll(".color-btn").forEach((btn) => {
+          btn.classList.remove("selected")
+        })
+        document.querySelector(`.color-btn.${color}`).classList.add("selected")
+      }
+
+      const words = document.querySelectorAll(".word")
+
+      words.forEach((word) => {
+        word.addEventListener("click", () => {
+          if (!selectedColor) {
+            alert("Sélectionne d'abord une couleur (rouge ou vert)")
+            return
+          }
+
+          if (word.classList.contains(`highlighted-${selectedColor}`)) {
+            word.classList.remove(`highlighted-${selectedColor}`)
+          } else {
+            word.classList.remove("highlighted-red")
+            word.classList.remove("highlighted-green")
+            word.classList.add(`highlighted-${selectedColor}`)
+          }
+
+          // Un mot a été colorié : l'exercice est commencé.
+          if (window.ExitGuard) ExitGuard.setActive(true)
+        })
+      })
+
+      function verifyAnswers() {
+        let correct = true
+        const feedback = document.querySelector(".feedback")
+
+        words.forEach((word) => {
+          const isAnSound = wordsWithAnSound.includes(word.textContent)
+          const isAmSound = wordsWithAmSound.includes(word.textContent)
+
+          if (isAnSound && !word.classList.contains("highlighted-red")) {
+            correct = false
+          }
+          if (isAmSound && !word.classList.contains("highlighted-green")) {
+            correct = false
+          }
+          if (
+            !isAnSound &&
+            !isAmSound &&
+            (word.classList.contains("highlighted-red") ||
+              word.classList.contains("highlighted-green"))
+          ) {
+            correct = false
+          }
+        })
+
+        feedback.style.display = "block"
+        if (correct) {
+          // Exercice terminé : plus rien à protéger.
+          if (window.ExitGuard) ExitGuard.setActive(false)
+          feedback.textContent =
+            "Bravo ! Toutes tes réponses sont correctes ! 🌟"
+          feedback.classList.add("success")
+          feedback.classList.remove("error")
+        } else {
+          feedback.textContent =
+            "Il y a encore des erreurs. Continue d'essayer ! 💪"
+          feedback.classList.add("error")
+          feedback.classList.remove("success")
+        }
+      }
+
+      function resetGame() {
+        // Exercice remis à zéro : rien n'est en cours.
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        words.forEach((word) => {
+          word.classList.remove("highlighted-red")
+          word.classList.remove("highlighted-green")
+        })
+        const feedback = document.querySelector(".feedback")
+        feedback.style.display = "none"
+        selectedColor = null
+        document.querySelectorAll(".color-btn").forEach((btn) => {
+          btn.classList.remove("selected")
+        })
+      }
+
+      // Au chargement : exercice vierge, rien à protéger.
+      if (window.ExitGuard) ExitGuard.setActive(false)
+    </script>
+  </body>
+</html>

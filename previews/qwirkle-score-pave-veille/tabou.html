@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tabou</title>
+    <script src="exit-guard.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f0f2f5;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .card-panel {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      h1 {
+        color: #4a90e2;
+        font-size: 2.5rem;
+        text-align: center;
+        margin-bottom: 16px;
+      }
+
+      h2 {
+        color: #4a90e2;
+        font-size: 1.8rem;
+        text-align: center;
+        margin-bottom: 12px;
+      }
+
+      .rules {
+        color: #666;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin: 0 auto 20px;
+        max-width: 26rem;
+        padding-left: 1.2rem;
+      }
+
+      .setting {
+        margin-bottom: 18px;
+        text-align: center;
+      }
+
+      .setting-label {
+        color: #666;
+        display: block;
+        font-size: 1rem;
+        margin-bottom: 8px;
+      }
+
+      .choices {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .choice {
+        background: #eef3fa;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        color: #4a90e2;
+        cursor: pointer;
+        font-size: 1.1rem;
+        min-width: 72px;
+        padding: 12px 16px;
+        touch-action: manipulation;
+      }
+
+      .choice.selected {
+        background: #4a90e2;
+        color: white;
+      }
+
+      .btn {
+        background-color: #4a90e2;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: block;
+        font-size: 1.3rem;
+        margin: 20px auto 0;
+        padding: 15px 40px;
+        touch-action: manipulation;
+        transition: background-color 0.2s;
+      }
+
+      @media (hover: hover) {
+        .btn:hover {
+          background-color: #357abd;
+        }
+
+        .choice:hover {
+          border-color: #4a90e2;
+        }
+      }
+
+      .home-link {
+        color: #4a90e2;
+        display: block;
+        font-size: 1rem;
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      /* Barre de score + chrono */
+      .top-bar {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .team-score {
+        background: white;
+        border: 3px solid transparent;
+        border-radius: 12px;
+        flex: 1;
+        padding: 10px 6px;
+        text-align: center;
+      }
+
+      .team-score .points {
+        font-size: 1.8rem;
+        font-weight: bold;
+      }
+
+      .team-score .name {
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .team-score.team1 .points {
+        color: #e24a4a;
+      }
+
+      .team-score.team2 .points {
+        color: #4a90e2;
+      }
+
+      .team-score.active.team1 {
+        border-color: #e24a4a;
+      }
+
+      .team-score.active.team2 {
+        border-color: #4a90e2;
+      }
+
+      .timer {
+        font-size: 2.2rem;
+        font-weight: bold;
+        min-width: 5rem;
+        text-align: center;
+      }
+
+      .timer.urgent {
+        color: #e24a4a;
+      }
+
+      /* Carte de jeu */
+      .word {
+        color: #4a90e2;
+        font-size: 2.6rem;
+        font-weight: bold;
+        margin: 10px 0 20px;
+        text-align: center;
+        word-break: break-word;
+      }
+
+      .taboo-title {
+        border-top: 2px dashed #f0d0d0;
+        color: #e24a4a;
+        font-size: 1rem;
+        letter-spacing: 0.05em;
+        padding-top: 14px;
+        text-align: center;
+      }
+
+      .taboo-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 12px;
+      }
+
+      .taboo-list li {
+        background: #fdeeee;
+        border-radius: 8px;
+        color: #c23b3b;
+        font-size: 1.3rem;
+        list-style: none;
+        padding: 10px;
+        text-align: center;
+      }
+
+      .actions {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+        margin-top: 18px;
+      }
+
+      .action {
+        border: none;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 18px 10px;
+        touch-action: manipulation;
+      }
+
+      .action.found {
+        background-color: #4caf50;
+      }
+
+      .action.taboo {
+        background-color: #e24a4a;
+      }
+
+      .action.skip {
+        background-color: #f0a500;
+      }
+
+      .action.pause {
+        background-color: #8a94a6;
+      }
+
+      .action:disabled {
+        opacity: 0.5;
+      }
+
+      .paused-note {
+        color: #666;
+        font-size: 1.1rem;
+        margin-top: 14px;
+        text-align: center;
+      }
+
+      .recap {
+        color: #666;
+        font-size: 1.2rem;
+        line-height: 1.6;
+        text-align: center;
+      }
+
+      .recap strong {
+        color: #4a90e2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Accueil -->
+      <div class="card-panel welcome-screen">
+        <h1>🎭 Tabou</h1>
+        <ul class="rules">
+          <li>Un joueur fait deviner le mot à son équipe.</li>
+          <li>Interdit de dire les mots de la liste rouge !</li>
+          <li>Mot trouvé : +1 point. Mot interdit dit : −1 point.</li>
+          <li>Les équipes jouent chacune leur tour.</li>
+        </ul>
+
+        <div class="setting">
+          <span class="setting-label">Durée d'un tour</span>
+          <div class="choices" id="durationChoices"></div>
+        </div>
+
+        <div class="setting">
+          <span class="setting-label">Points pour gagner</span>
+          <div class="choices" id="targetChoices"></div>
+        </div>
+
+        <button class="btn" id="startBtn" disabled>⏳ Chargement…</button>
+        <a class="home-link" href="index.html">← Retour aux jeux</a>
+      </div>
+
+      <!-- Partie -->
+      <div class="game-screen hidden">
+        <div class="top-bar">
+          <div class="team-score team1" id="scoreTeam1">
+            <div class="points">0</div>
+            <div class="name">🔴 Équipe 1</div>
+          </div>
+          <div class="timer" id="timer">60</div>
+          <div class="team-score team2" id="scoreTeam2">
+            <div class="points">0</div>
+            <div class="name">🔵 Équipe 2</div>
+          </div>
+        </div>
+
+        <div class="card-panel">
+          <div class="word" id="word"></div>
+          <div class="taboo-title">🚫 MOTS INTERDITS</div>
+          <ul class="taboo-list" id="tabooList"></ul>
+        </div>
+
+        <div class="actions">
+          <button class="action found" id="foundBtn">✅ Trouvé (+1)</button>
+          <button class="action taboo" id="tabooBtn">🚫 Tabou (−1)</button>
+          <button class="action skip" id="skipBtn">⏭️ Passer</button>
+          <button class="action pause" id="pauseBtn">⏸️ Pause</button>
+        </div>
+        <p class="paused-note hidden" id="pausedNote">
+          Partie en pause — la carte est masquée.
+        </p>
+      </div>
+
+      <!-- Fin de tour -->
+      <div class="card-panel round-end hidden">
+        <h2 id="roundEndTitle">Fin du tour !</h2>
+        <p class="recap" id="roundRecap"></p>
+        <button class="btn" id="nextRoundBtn">▶️ Tour suivant</button>
+      </div>
+
+      <!-- Fin de partie -->
+      <div class="card-panel game-end hidden">
+        <h2 id="winnerTitle"></h2>
+        <p class="recap" id="finalRecap"></p>
+        <button class="btn" id="replayBtn">🔁 Rejouer</button>
+        <a class="home-link" href="index.html">← Retour aux jeux</a>
+      </div>
+    </div>
+
+    <canvas
+      id="confetti"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      "
+    ></canvas>
+
+    <script>
+      const DURATIONS = [30, 60, 90]
+      const TARGETS = [5, 10, 15]
+
+      let cards = []
+      let deck = [] // indices restants, mélangés
+      let currentCard = null
+      let duration = 60
+      let target = 10
+      let scores = [0, 0] // index 0 = équipe 1
+      let currentTeam = 0
+      let roundPoints = 0
+      let timeLeft = 60
+      let timer = null
+      let running = false
+
+      const $ = (id) => document.getElementById(id)
+
+      const welcomeScreen = document.querySelector(".welcome-screen")
+      const gameScreen = document.querySelector(".game-screen")
+      const roundEndScreen = document.querySelector(".round-end")
+      const gameEndScreen = document.querySelector(".game-end")
+
+      const teamName = (team) => (team === 0 ? "🔴 Équipe 1" : "🔵 Équipe 2")
+
+      function show(screen) {
+        for (const s of [
+          welcomeScreen,
+          gameScreen,
+          roundEndScreen,
+          gameEndScreen,
+        ]) {
+          s.classList.toggle("hidden", s !== screen)
+        }
+      }
+
+      // --- Son -------------------------------------------------------------
+      // L'AudioContext n'est créé qu'au premier geste du joueur : les
+      // navigateurs refusent de le démarrer avant.
+      let audioContext = null
+
+      function beep(duration, frequency) {
+        try {
+          if (!audioContext) audioContext = new AudioContext()
+          if (audioContext.state === "suspended") audioContext.resume()
+          const oscillator = audioContext.createOscillator()
+          const gain = audioContext.createGain()
+          oscillator.connect(gain)
+          gain.connect(audioContext.destination)
+          oscillator.frequency.value = frequency
+          oscillator.type = "square"
+          gain.gain.value = 0.15
+          oscillator.start(audioContext.currentTime)
+          oscillator.stop(audioContext.currentTime + duration / 1000)
+        } catch (e) {
+          // Pas de son disponible : le jeu reste jouable.
+        }
+      }
+
+      // --- Réglages --------------------------------------------------------
+      function buildChoices(container, values, label, selected, onPick) {
+        container.innerHTML = ""
+        for (const value of values) {
+          const btn = document.createElement("button")
+          btn.className = "choice" + (value === selected ? " selected" : "")
+          btn.textContent = label(value)
+          btn.addEventListener("click", () => {
+            for (const other of container.children) {
+              other.classList.remove("selected")
+            }
+            btn.classList.add("selected")
+            onPick(value)
+          })
+          container.appendChild(btn)
+        }
+      }
+
+      buildChoices(
+        $("durationChoices"),
+        DURATIONS,
+        (v) => v + " s",
+        duration,
+        (v) => (duration = v),
+      )
+      buildChoices(
+        $("targetChoices"),
+        TARGETS,
+        (v) => v + " pts",
+        target,
+        (v) => (target = v),
+      )
+
+      // --- Cartes ----------------------------------------------------------
+      async function loadCards() {
+        try {
+          const response = await fetch("tabou-cartes.json")
+          cards = await response.json()
+        } catch (error) {
+          // Repli minimal si le fichier n'est pas accessible.
+          cards = [
+            {
+              word: "PIZZA",
+              taboo: ["ITALIEN", "FROMAGE", "PÂTE", "TOMATE", "RESTAURANT"],
+            },
+            {
+              word: "CHOCOLAT",
+              taboo: ["CACAO", "SUCRÉ", "TABLETTE", "DESSERT", "BONBON"],
+            },
+          ]
+        }
+        $("startBtn").disabled = false
+        $("startBtn").textContent = "▶️ Commencer la partie"
+      }
+
+      function shuffleDeck() {
+        deck = cards.map((_, i) => i)
+        for (let i = deck.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[deck[i], deck[j]] = [deck[j], deck[i]]
+        }
+      }
+
+      function drawCard() {
+        if (deck.length === 0) shuffleDeck()
+        currentCard = cards[deck.pop()]
+        displayCard()
+      }
+
+      function displayCard() {
+        $("word").textContent = running ? currentCard.word : "…"
+        const list = $("tabooList")
+        list.innerHTML = ""
+        if (!running) return
+        for (const word of currentCard.taboo) {
+          const li = document.createElement("li")
+          li.textContent = word
+          list.appendChild(li)
+        }
+      }
+
+      // --- Partie ----------------------------------------------------------
+      function startGame() {
+        scores = [0, 0]
+        currentTeam = 0
+        shuffleDeck()
+        updateScores()
+        startRound()
+      }
+
+      function startRound() {
+        roundPoints = 0
+        timeLeft = duration
+        running = true
+        updateTimer()
+        updateScores()
+        setActionsEnabled(true)
+        $("pauseBtn").textContent = "⏸️ Pause"
+        $("pausedNote").classList.add("hidden")
+        drawCard()
+        show(gameScreen)
+        if (window.ExitGuard) ExitGuard.setActive(true)
+        startTimer()
+      }
+
+      function startTimer() {
+        clearTimer()
+        timer = setInterval(() => {
+          timeLeft--
+          updateTimer()
+          if (timeLeft <= 5 && timeLeft > 0) beep(80, 660)
+          if (timeLeft <= 0) endRound()
+        }, 1000)
+      }
+
+      function clearTimer() {
+        if (timer) {
+          clearInterval(timer)
+          timer = null
+        }
+      }
+
+      function togglePause() {
+        running = !running
+        $("pauseBtn").textContent = running ? "⏸️ Pause" : "▶️ Reprendre"
+        $("pausedNote").classList.toggle("hidden", running)
+        setActionsEnabled(running)
+        displayCard()
+        if (running) startTimer()
+        else clearTimer()
+      }
+
+      function setActionsEnabled(enabled) {
+        for (const id of ["foundBtn", "tabooBtn", "skipBtn"]) {
+          $(id).disabled = !enabled
+        }
+      }
+
+      function score(delta) {
+        if (!running) return
+        scores[currentTeam] = Math.max(0, scores[currentTeam] + delta)
+        roundPoints += delta
+        updateScores()
+        beep(120, delta > 0 ? 880 : 220)
+        if (scores[currentTeam] >= target) {
+          clearTimer()
+          running = false
+          setActionsEnabled(false)
+          endGame(currentTeam)
+          return
+        }
+        drawCard()
+      }
+
+      function updateScores() {
+        $("scoreTeam1").querySelector(".points").textContent = scores[0]
+        $("scoreTeam2").querySelector(".points").textContent = scores[1]
+        $("scoreTeam1").classList.toggle("active", currentTeam === 0)
+        $("scoreTeam2").classList.toggle("active", currentTeam === 1)
+      }
+
+      function updateTimer() {
+        $("timer").textContent = Math.max(0, timeLeft)
+        $("timer").classList.toggle("urgent", timeLeft <= 10)
+      }
+
+      function endRound() {
+        clearTimer()
+        running = false
+        setActionsEnabled(false)
+        beep(700, 440)
+
+        const played = teamName(currentTeam)
+        currentTeam = currentTeam === 0 ? 1 : 0
+        updateScores()
+
+        $("roundEndTitle").textContent = "⏰ Fin du tour !"
+        $("roundRecap").innerHTML =
+          `${played} marque <strong>${roundPoints >= 0 ? "+" : ""}${roundPoints}</strong> point(s) ce tour.<br />` +
+          `Score : <strong>${scores[0]} – ${scores[1]}</strong><br />` +
+          `Au tour de ${teamName(currentTeam)} !`
+        $("nextRoundBtn").textContent = `▶️ Tour de ${teamName(currentTeam)}`
+        show(roundEndScreen)
+        if (window.ExitGuard) ExitGuard.setActive(false)
+      }
+
+      function endGame(winner) {
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        $("winnerTitle").textContent = `🏆 ${teamName(winner)} gagne !`
+        $("finalRecap").innerHTML =
+          `Score final : <strong>${scores[0]} – ${scores[1]}</strong>`
+        show(gameEndScreen)
+        showConfetti()
+      }
+
+      // --- Branchements ----------------------------------------------------
+      $("startBtn").addEventListener("click", startGame)
+      $("replayBtn").addEventListener("click", startGame)
+      $("nextRoundBtn").addEventListener("click", startRound)
+      $("foundBtn").addEventListener("click", () => score(1))
+      $("tabooBtn").addEventListener("click", () => score(-1))
+      $("skipBtn").addEventListener("click", () => {
+        if (running) drawCard()
+      })
+      $("pauseBtn").addEventListener("click", togglePause)
+
+      // Écran d'accueil : aucune partie en cours.
+      if (window.ExitGuard) ExitGuard.setActive(false)
+      loadCards()
+    </script>
+    <script src="confetti.js"></script>
+  </body>
+</html>
