@@ -355,18 +355,18 @@
 
       .pad {
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
-        gap: 6px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
       }
       .key {
-        aspect-ratio: 1;
+        aspect-ratio: 5 / 3;
         border: 0;
-        border-radius: 11px;
+        border-radius: 14px;
         background: var(--tile);
         color: var(--ink);
         padding: 0;
         font-family: inherit;
-        font-size: clamp(16px, 5.2vw, 22px);
+        font-size: clamp(24px, 8vw, 34px);
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         box-shadow:
@@ -382,6 +382,8 @@
         filter: brightness(1.35);
       }
       .key.q {
+        grid-column: span 2;
+        aspect-ratio: auto;
         background: linear-gradient(
           135deg,
           var(--red),
@@ -553,7 +555,9 @@
         <div class="tally" id="tally"></div>
 
         <div class="pad" id="pad"></div>
-        <div class="legend">1 tuile → 5 · ligne de 6 = Qwirkle = 12</div>
+        <div class="legend">
+          une touche par ligne · ligne de 6 = Qwirkle = 12
+        </div>
 
         <div class="row">
           <button class="btn" id="pass">Passe (0)</button>
@@ -575,7 +579,7 @@
     <script src="confetti.js"></script>
     <script>
       const KEY = "qwirkle-score-v1"
-      const VALUES = [1, 2, 3, 4, 5, 12]
+      const VALUES = [2, 3, 4, 5, 12]
       const SHAPES = {
         star: '<path d="M12 1l2.6 6.8L21.4 10l-6.8 2.6L12 19.4 9.4 12.6 2.6 10l6.8-2.2z"/>',
         clover:
@@ -887,6 +891,26 @@
         render()
         save()
       })
+
+      /* ---------- veille écran ---------- */
+      // Une partie dure longtemps entre deux saisies : on empêche l'écran
+      // de s'éteindre tant que la feuille de score est affichée.
+      let wakeLock = null
+      async function keepAwake() {
+        if (wakeLock || !("wakeLock" in navigator)) return
+        if (document.visibilityState !== "visible") return
+        try {
+          wakeLock = await navigator.wakeLock.request("screen")
+          wakeLock.addEventListener("release", () => {
+            wakeLock = null
+          })
+        } catch (e) {
+          // refusé (batterie faible, onglet masqué…) : on retentera au tap
+        }
+      }
+      document.addEventListener("visibilitychange", keepAwake)
+      document.addEventListener("pointerdown", keepAwake)
+      keepAwake()
 
       load()
     </script>
