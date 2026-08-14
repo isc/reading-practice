@@ -25,6 +25,7 @@ const PRECACHE_URLS = [
   "./style.css",
   "./confetti.js",
   "./exit-guard.js",
+  "./wake-lock.js",
   "./OpenDyslexic-Regular.woff2",
   "./icon-192x192.png",
   "./icon-512x512.png",
