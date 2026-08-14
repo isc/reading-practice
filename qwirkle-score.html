@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#171a21" />
     <title>Qwirkle — feuille de score</title>
     <script src="exit-guard.js"></script>
+    <script src="wake-lock.js" defer></script>
     <style>
       :root {
         --table: #171a21;
@@ -381,6 +382,10 @@
         transform: translateY(2px);
         filter: brightness(1.35);
       }
+      /* Le Qwirkle occupe les deux dernières cases de la grille : il doit donc
+         rester en dernier dans VALUES, et sa hauteur suit celle de la rangée
+         (sans « auto », le ratio 5/3 appliqué à sa double largeur le rendrait
+         deux fois plus haut que ses voisines). */
       .key.q {
         grid-column: span 2;
         aspect-ratio: auto;
@@ -891,26 +896,6 @@
         render()
         save()
       })
-
-      /* ---------- veille écran ---------- */
-      // Une partie dure longtemps entre deux saisies : on empêche l'écran
-      // de s'éteindre tant que la feuille de score est affichée.
-      let wakeLock = null
-      async function keepAwake() {
-        if (wakeLock || !("wakeLock" in navigator)) return
-        if (document.visibilityState !== "visible") return
-        try {
-          wakeLock = await navigator.wakeLock.request("screen")
-          wakeLock.addEventListener("release", () => {
-            wakeLock = null
-          })
-        } catch (e) {
-          // refusé (batterie faible, onglet masqué…) : on retentera au tap
-        }
-      }
-      document.addEventListener("visibilitychange", keepAwake)
-      document.addEventListener("pointerdown", keepAwake)
-      keepAwake()
 
       load()
     </script>
