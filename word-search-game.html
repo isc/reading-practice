@@ -264,7 +264,7 @@
       let selectedCells = []
       let foundWords = new Set()
       let isSelecting = false
-      let startTouchCell = null
+      let startCell = null
 
       function createGridSelection() {
         const container = document.getElementById("gridSelection")
@@ -336,9 +336,7 @@
       function handleTouchStart(e) {
         e.preventDefault()
         isSelecting = true
-        startTouchCell = e.target
-        selectedCells = [startTouchCell]
-        startTouchCell.classList.add("selected")
+        beginSelection(e.target)
       }
 
       function handleTouchMove(e) {
@@ -349,12 +347,7 @@
         const element = document.elementFromPoint(touch.clientX, touch.clientY)
 
         if (element && element.tagName === "TD") {
-          if (isAdjacent(selectedCells[selectedCells.length - 1], element)) {
-            if (!selectedCells.includes(element)) {
-              selectedCells.push(element)
-              element.classList.add("selected")
-            }
-          }
+          extendSelection(element)
         }
       }
 
@@ -365,22 +358,33 @@
       }
 
       function startSelection(e) {
-        selectedCells = [e.target]
-        e.target.classList.add("selected")
+        isSelecting = true
+        beginSelection(e.target)
       }
 
       function continueSelection(e) {
-        if (e.buttons === 1 && selectedCells.length > 0) {
-          const lastCell = selectedCells[selectedCells.length - 1]
-          const currentCell = e.target
-
-          if (isAdjacent(lastCell, currentCell)) {
-            if (!selectedCells.includes(currentCell)) {
-              selectedCells.push(currentCell)
-              currentCell.classList.add("selected")
-            }
-          }
+        if (e.buttons === 1 && isSelecting) {
+          extendSelection(e.target)
         }
+      }
+
+      function beginSelection(cell) {
+        startCell = cell
+        setSelection([cell])
+      }
+
+      // La sélection va toujours de la case de départ à la case survolée, en
+      // ligne droite : on la recalcule entièrement à chaque déplacement.
+      function extendSelection(cell) {
+        if (!startCell || !cell) return
+        const path = straightPath(startCell, cell)
+        if (path) setSelection(path)
+      }
+
+      function setSelection(cells) {
+        selectedCells.forEach((cell) => cell.classList.remove("selected"))
+        selectedCells = cells
+        selectedCells.forEach((cell) => cell.classList.add("selected"))
       }
 
       function endSelection() {
@@ -403,15 +407,39 @@
 
         selectedCells.forEach((cell) => cell.classList.remove("selected"))
         selectedCells = []
+        startCell = null
+        isSelecting = false
       }
 
-      function isAdjacent(cell1, cell2) {
-        const row1 = parseInt(cell1.dataset.row)
-        const col1 = parseInt(cell1.dataset.col)
-        const row2 = parseInt(cell2.dataset.row)
-        const col2 = parseInt(cell2.dataset.col)
+      function cellAt(row, col) {
+        const gridRow = document.getElementById("grid").rows[row]
+        return gridRow ? gridRow.cells[col] || null : null
+      }
 
-        return Math.abs(row1 - row2) <= 1 && Math.abs(col1 - col2) <= 1
+      // Cases alignées entre `from` et `to` (horizontale, verticale ou
+      // diagonale), ou null si les deux cases ne sont pas alignées.
+      function straightPath(from, to) {
+        const row1 = parseInt(from.dataset.row)
+        const col1 = parseInt(from.dataset.col)
+        const row2 = parseInt(to.dataset.row)
+        const col2 = parseInt(to.dataset.col)
+        const dRow = row2 - row1
+        const dCol = col2 - col1
+
+        if (dRow !== 0 && dCol !== 0 && Math.abs(dRow) !== Math.abs(dCol)) {
+          return null
+        }
+
+        const steps = Math.max(Math.abs(dRow), Math.abs(dCol))
+        const stepRow = Math.sign(dRow)
+        const stepCol = Math.sign(dCol)
+        const path = []
+        for (let i = 0; i <= steps; i++) {
+          const cell = cellAt(row1 + stepRow * i, col1 + stepCol * i)
+          if (!cell) return null
+          path.push(cell)
+        }
+        return path
       }
 
       function getSelectedWord() {
