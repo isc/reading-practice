@@ -54,6 +54,81 @@
         min-height: 100vh;
       }
 
+      .search-bar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f0f2f5;
+        padding: 1rem 1rem 0.5rem;
+      }
+
+      .search-field {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .search-field::before {
+        content: "🔍";
+        position: absolute;
+        left: 0.9rem;
+        font-size: 1.1rem;
+        pointer-events: none;
+      }
+
+      #search {
+        width: 100%;
+        padding: 0.9rem 2.8rem;
+        font-family: inherit;
+        font-size: 1rem;
+        color: inherit;
+        background: white;
+        border: 2px solid transparent;
+        border-radius: 999px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      #search:focus {
+        outline: none;
+        border-color: var(--primary-color);
+      }
+
+      /* La croix native de type="search" est minuscule : on met la nôtre. */
+      #search::-webkit-search-cancel-button {
+        display: none;
+      }
+
+      #search-clear {
+        position: absolute;
+        right: 0.4rem;
+        width: 2.2rem;
+        height: 2.2rem;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        font-family: inherit;
+        font-size: 1.3rem;
+        line-height: 1;
+        color: #888;
+        cursor: pointer;
+      }
+
+      .no-result {
+        padding: 0 1rem 1rem;
+        color: #666;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
       .grid-selection {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -81,6 +156,10 @@
       .grid-option h3 {
         color: var(--primary-color);
       }
+
+      .grid-option[hidden] {
+        display: none;
+      }
     </style>
     <link rel="manifest" href="manifest.json" />
     <script>
@@ -102,85 +181,265 @@
     </script>
   </head>
   <body>
+    <div class="search-bar">
+      <div class="search-field">
+        <label class="visually-hidden" for="search">Chercher un jeu</label>
+        <input
+          type="search"
+          id="search"
+          placeholder="Chercher un jeu…"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+        <button id="search-clear" type="button" hidden aria-label="Effacer">
+          ✕
+        </button>
+      </div>
+    </div>
+    <p class="no-result" id="no-result" hidden>
+      Aucun jeu ne correspond à « <span id="no-result-query"></span> ».
+    </p>
     <div class="grid-selection">
-      <a class="grid-option" href="word-search-game.html">
+      <a
+        class="grid-option"
+        href="word-search-game.html"
+        data-tags="lecture mots lettres grille vocabulaire"
+      >
         <h3>Mots mêlés</h3>
       </a>
-      <a class="grid-option" href="b-ou-d.html">
+      <a
+        class="grid-option"
+        href="b-ou-d.html"
+        data-tags="lecture lettres confusion orthographe dyslexie"
+      >
         <h3>b ou d ?</h3>
       </a>
-      <a class="grid-option" href="p-ou-q.html">
+      <a
+        class="grid-option"
+        href="p-ou-q.html"
+        data-tags="lecture lettres confusion orthographe dyslexie"
+      >
         <h3>p ou q ?</h3>
       </a>
-      <a class="grid-option" href="ou-ou-on.html">
+      <a
+        class="grid-option"
+        href="ou-ou-on.html"
+        data-tags="lecture sons phonétique orthographe"
+      >
         <h3>ou ou on ?</h3>
       </a>
-      <a class="grid-option" href="c-doux-dur.html">
+      <a
+        class="grid-option"
+        href="c-doux-dur.html"
+        data-tags="lecture sons phonétique orthographe"
+      >
         <h3>C doux ou C dur ?</h3>
       </a>
-      <a class="grid-option" href="reading-game.html">
+      <a
+        class="grid-option"
+        href="reading-game.html"
+        data-tags="lecture mots syllabes"
+      >
         <h3>Lecture</h3>
       </a>
-      <a class="grid-option" href="mastermind.html">
+      <a
+        class="grid-option"
+        href="mastermind.html"
+        data-tags="logique couleurs déduction réflexion"
+      >
         <h3>Mastermind</h3>
       </a>
-      <a class="grid-option" href="puissance4.html">
+      <a
+        class="grid-option"
+        href="puissance4.html"
+        data-tags="société deux joueurs stratégie alignement"
+      >
         <h3>Puissance 4</h3>
       </a>
-      <a class="grid-option" href="sutom.html">
+      <a
+        class="grid-option"
+        href="sutom.html"
+        data-tags="mots lettres orthographe devinette wordle"
+      >
         <h3>Sutom</h3>
       </a>
-      <a class="grid-option" href="pendu.html">
+      <a
+        class="grid-option"
+        href="pendu.html"
+        data-tags="mots lettres orthographe devinette"
+      >
         <h3>Pendu</h3>
       </a>
-      <a class="grid-option" href="demineur.html">
+      <a
+        class="grid-option"
+        href="demineur.html"
+        data-tags="logique réflexion chiffres grille"
+      >
         <h3>Démineur</h3>
       </a>
-      <a class="grid-option" href="othello.html">
+      <a
+        class="grid-option"
+        href="othello.html"
+        data-tags="société deux joueurs stratégie pions reversi"
+      >
         <h3>Othello</h3>
       </a>
-      <a class="grid-option" href="bataille-navale.html">
+      <a
+        class="grid-option"
+        href="bataille-navale.html"
+        data-tags="société deux joueurs stratégie grille bateaux"
+      >
         <h3>Bataille navale</h3>
       </a>
-      <a class="grid-option" href="anagramme.html">
+      <a
+        class="grid-option"
+        href="anagramme.html"
+        data-tags="mots lettres orthographe"
+      >
         <h3>Anagramme</h3>
       </a>
-      <a class="grid-option" href="lettris.html">
+      <a
+        class="grid-option"
+        href="lettris.html"
+        data-tags="mots lettres chute rapidité"
+      >
         <h3>Lettris</h3>
       </a>
-      <a class="grid-option" href="mot-le-plus-long.html">
+      <a
+        class="grid-option"
+        href="mot-le-plus-long.html"
+        data-tags="mots lettres vocabulaire"
+      >
         <h3>Le mot le plus long</h3>
       </a>
-      <a class="grid-option" href="memory.html">
+      <a
+        class="grid-option"
+        href="memory.html"
+        data-tags="mémoire cartes paires concentration"
+      >
         <h3>Memory</h3>
       </a>
-      <a class="grid-option" href="2048.html">
+      <a
+        class="grid-option"
+        href="2048.html"
+        data-tags="chiffres nombres calcul logique"
+      >
         <h3>2048</h3>
       </a>
-      <a class="grid-option" href="dames.html">
+      <a
+        class="grid-option"
+        href="dames.html"
+        data-tags="société deux joueurs stratégie pions"
+      >
         <h3>Dames</h3>
       </a>
-      <a class="grid-option" href="complement-10.html">
+      <a
+        class="grid-option"
+        href="complement-10.html"
+        data-tags="calcul maths nombres addition"
+      >
         <h3>Les amis de 10</h3>
       </a>
-      <a class="grid-option" href="fracto-dingo.html">
+      <a
+        class="grid-option"
+        href="fracto-dingo.html"
+        data-tags="calcul maths fractions nombres"
+      >
         <h3>Fracto Dingo</h3>
       </a>
-      <a class="grid-option" href="qwirkle.html">
+      <a
+        class="grid-option"
+        href="qwirkle.html"
+        data-tags="société formes couleurs tuiles"
+      >
         <h3>Qwirkle</h3>
       </a>
-      <a class="grid-option" href="qwirkle-score.html">
+      <a
+        class="grid-option"
+        href="qwirkle-score.html"
+        data-tags="société score points compteur"
+      >
         <h3>Qwirkle — feuille de score</h3>
       </a>
-      <a class="grid-option" href="timesup.html">
+      <a
+        class="grid-option"
+        href="timesup.html"
+        data-tags="société parole équipes cartes devinette"
+      >
         <h3>Time's Up</h3>
       </a>
-      <a class="grid-option" href="tabou.html">
+      <a
+        class="grid-option"
+        href="tabou.html"
+        data-tags="société parole équipes cartes devinette"
+      >
         <h3>Tabou</h3>
       </a>
-      <a class="grid-option" href="tetris.html">
+      <a
+        class="grid-option"
+        href="tetris.html"
+        data-tags="briques chute logique espace rapidité"
+      >
         <h3>Tetris</h3>
       </a>
     </div>
+    <script>
+      // Recherche dans la grille : on filtre sur le nom du jeu et sur les
+      // mots-clés de sa carte (« calcul », « société »…). Accents et casse
+      // ignorés, pour qu'un enfant qui tape « societe » trouve quand même.
+      const searchInput = document.getElementById("search")
+      const clearButton = document.getElementById("search-clear")
+      const noResult = document.getElementById("no-result")
+      const noResultQuery = document.getElementById("no-result-query")
+      const cards = Array.from(document.querySelectorAll(".grid-option"))
+
+      function normalize(text) {
+        return text
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+      }
+
+      const haystacks = new Map(
+        cards.map((card) => [
+          card,
+          normalize(card.textContent + " " + (card.dataset.tags || "")),
+        ]),
+      )
+
+      function applyFilter() {
+        const query = searchInput.value.trim()
+        // Plusieurs mots : tous doivent correspondre.
+        const terms = normalize(query).split(/\s+/).filter(Boolean)
+        let matches = 0
+
+        cards.forEach((card) => {
+          const haystack = haystacks.get(card)
+          const found = terms.every((term) => haystack.includes(term))
+          card.hidden = !found
+          if (found) matches++
+        })
+
+        clearButton.hidden = query === ""
+        noResult.hidden = matches > 0
+        noResultQuery.textContent = query
+      }
+
+      function clearSearch() {
+        searchInput.value = ""
+        applyFilter()
+        searchInput.focus()
+      }
+
+      searchInput.addEventListener("input", applyFilter)
+      searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") clearSearch()
+      })
+      clearButton.addEventListener("click", clearSearch)
+
+      // Le navigateur peut restaurer la saisie au retour d'un jeu.
+      applyFilter()
+    </script>
   </body>
 </html>
