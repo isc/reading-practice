@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>Fracto Dingo</title>
+    <script src="exit-guard.js"></script>
     <style>
       * {
         margin: 0;
@@ -1052,6 +1053,13 @@
         }
       }
 
+      // La partie ne compte comme engagée qu'à la première réponse : afficher
+      // le plateau ne suffit pas, sinon on demande « une partie est en cours ? »
+      // sur un écran où il n'y a encore rien à perdre.
+      function markPlaying() {
+        if (window.ExitGuard) ExitGuard.setActive(true)
+      }
+
       // ===== SCREEN =====
       function showScreen(id) {
         document.querySelectorAll(".screen").forEach((s) => {
@@ -1061,6 +1069,7 @@
       }
 
       function goToMenu() {
+        if (window.ExitGuard) ExitGuard.setActive(false)
         showScreen("menu")
       }
 
@@ -1180,6 +1189,7 @@
 
       function handleMatch(idx) {
         if (game.locked) return
+        markPlaying()
         game.locked = true
 
         const r = game.rounds[game.round]
@@ -1308,6 +1318,7 @@
 
       function handleCompare(answer) {
         if (game.locked) return
+        markPlaying()
         game.locked = true
 
         const r = game.rounds[game.round]
@@ -1447,6 +1458,7 @@
 
       function handleMemoryCard(idx) {
         if (game.locked) return
+        markPlaying()
         const card = game.cards[idx]
         if (card.flipped || card.matched) return
 
@@ -1505,6 +1517,7 @@
 
       // ===== RESULTS =====
       function endGame() {
+        if (window.ExitGuard) ExitGuard.setActive(false)
         const elapsed = Date.now() - game.startTime
         const minutes = Math.floor(elapsed / 60000)
         const seconds = Math.floor((elapsed % 60000) / 1000)
@@ -1661,6 +1674,8 @@
       }
 
       updateHistory()
+
+      if (window.ExitGuard) ExitGuard.setActive(false)
     </script>
   </body>
 </html>
