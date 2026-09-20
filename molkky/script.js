@@ -46,8 +46,25 @@ const teamColors = [
 ]
 
 document.addEventListener("DOMContentLoaded", function () {
-  loadState()
-  updateDisplay()
+  try {
+    loadState()
+    updateDisplay()
+  } catch (e) {
+    // État illisible, ou écrit par une version antérieure dont la forme a
+    // changé depuis (un joueur sans `history`, par exemple) : on repart d'une
+    // partie vierge. Sinon la page reste cassée au chargement, sans autre
+    // issue que vider les données du site.
+    console.warn("État Mölkky illisible, on repart d'une partie vierge :", e)
+    localStorage.removeItem("molkkyState")
+    players = []
+    teams = []
+    currentTeamId = null
+    teamPlayerIndexes = {}
+    teamMissCount = {}
+    gameStarted = false
+    gameEnded = false
+    updateDisplay()
+  }
   var forceLink = document.getElementById("forceNewGameLink")
   forceLink.addEventListener("click", function (e) {
     e.preventDefault()
