@@ -42,16 +42,22 @@ jobs:
       # Site statique : on publie le dépôt tel quel dans previews/<slug>/.
       # Tous les chemins de l'app sont relatifs, donc rien à réécrire pour
       # servir sous un sous-dossier.
+      # Même réessai que dans deploy.yml : le cleanup d'une autre PR peut pousser
+      # sur gh-pages entre le clone et le push de cette preview.
       - name: Publish to gh-pages (previews/${{ steps.slug.outputs.slug }})
-        uses: peaceiris/actions-gh-pages@v4
+        uses: Wandalen/wretry.action@v3.8.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
-          publish_branch: gh-pages
-          destination_dir: previews/${{ steps.slug.outputs.slug }}
-          keep_files: true
-          exclude_assets: ".github,.gitignore,.prettierrc,README.md,TODO.md"
-          commit_message: "preview: ${{ steps.slug.outputs.slug }} @ ${{ github.event.pull_request.head.sha }}"
+          action: peaceiris/actions-gh-pages@v4
+          attempt_limit: 3
+          attempt_delay: 5000
+          with: |
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            publish_dir: .
+            publish_branch: gh-pages
+            destination_dir: previews/${{ steps.slug.outputs.slug }}
+            keep_files: true
+            exclude_assets: ".github,.gitignore,.prettierrc,README.md,TODO.md"
+            commit_message: "preview: ${{ steps.slug.outputs.slug }} @ ${{ github.event.pull_request.head.sha }}"
 
       - name: Wait for GitHub Pages to serve fresh preview
         env:

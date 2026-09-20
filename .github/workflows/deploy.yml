@@ -30,12 +30,24 @@ jobs:
       # la branche gh-pages. `keep_files: true` préserve le dossier `previews/`
       # écrit par le workflow de preview, pour que les previews survivent aux
       # déploiements de main. `exclude_assets` retire le superflu non-web.
+      #
+      # Le groupe de concurrence ci-dessus ne couvre pas preview-cleanup.yml,
+      # qui a volontairement le sien (voir le commentaire là-bas) et pousse sur
+      # gh-pages au moment précis où un merge déclenche ce déploiement. Quand le
+      # cleanup gagne la course, peaceiris échoue sur « cannot lock ref » : il
+      # ne retente pas, alors que le cleanup, lui, rebase et réessaie. D'où ce
+      # wrapper : chaque tentative re-clone gh-pages, donc la seconde repart de
+      # la référence à jour.
       - name: Publish to gh-pages (root)
-        uses: peaceiris/actions-gh-pages@v4
+        uses: Wandalen/wretry.action@v3.8.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
-          publish_branch: gh-pages
-          keep_files: true
-          exclude_assets: ".github,.gitignore,.prettierrc,README.md,TODO.md"
-          commit_message: "deploy: main @ ${{ github.sha }}"
+          action: peaceiris/actions-gh-pages@v4
+          attempt_limit: 3
+          attempt_delay: 5000
+          with: |
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            publish_dir: .
+            publish_branch: gh-pages
+            keep_files: true
+            exclude_assets: ".github,.gitignore,.prettierrc,README.md,TODO.md"
+            commit_message: "deploy: main @ ${{ github.sha }}"
