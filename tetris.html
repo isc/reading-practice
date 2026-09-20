@@ -416,7 +416,10 @@
         <span class="emoji">🐢</span>
         <span>
           <span class="label">Tranquille</span><br />
-          <span class="hint">Les briques descendent lentement</span>
+          <span class="hint"
+            >Les briques descendent lentement, et une ombre montre où elles vont
+            se poser</span
+          >
         </span>
       </button>
       <button class="speed-btn" onclick="startGame('normal')">
@@ -608,6 +611,9 @@
       let lines = 0
       let level = 1
       let baseSpeed = SPEEDS.normal
+      // L'ombre de pose est une aide : elle vise à la place du joueur, donc on
+      // la réserve au mode le plus lent.
+      let showGhost = false
       let dropTimer = 0
       let lockTimer = 0
       let landed = false
@@ -667,6 +673,7 @@
       function startGame(speedKey) {
         currentSpeedKey = speedKey
         baseSpeed = SPEEDS[speedKey] || SPEEDS.normal
+        showGhost = speedKey === "calme"
         grid = []
         for (let r = 0; r < ROWS; r++) grid.push(new Array(COLS).fill(null))
         score = 0
@@ -1024,10 +1031,12 @@
 
         if (!piece) return
 
-        // Ombre à l'endroit où la pièce va se poser : très utile pour viser.
+        // Ombre à l'endroit où la pièce va se poser (mode Tranquille seul).
         let ghostY = piece.y
-        while (!collides(piece.shape, piece.x, ghostY + 1)) ghostY++
-        if (ghostY !== piece.y) {
+        if (showGhost) {
+          while (!collides(piece.shape, piece.x, ghostY + 1)) ghostY++
+        }
+        if (showGhost && ghostY !== piece.y) {
           for (let r = 0; r < piece.shape.length; r++) {
             for (let c = 0; c < piece.shape.length; c++) {
               if (!piece.shape[r][c]) continue
