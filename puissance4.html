@@ -95,8 +95,64 @@
             transition: background 0.15s ease;
         }
 
-        .column:hover:not(.full) {
-            background: rgba(255, 255, 255, 0.12);
+        @media (hover: hover) {
+            .board:not(.locked) .column:hover:not(.full) {
+                background: rgba(255, 255, 255, 0.12);
+            }
+        }
+
+        .board.locked .column {
+            cursor: default;
+        }
+
+        .mode-select {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .segmented {
+            display: flex;
+            background: #f0f2f5;
+            border-radius: 10px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .segmented button {
+            flex: 1;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            padding: 10px 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .segmented button.active {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .segmented.levels button {
+            padding: 8px 6px;
+            font-size: 0.85em;
+        }
+
+        .turn-indicator.thinking #turnLabel::after {
+            content: '';
+            animation: dots 1.2s steps(4) infinite;
+        }
+
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
         }
 
         .cell {
@@ -170,8 +226,10 @@
             color: white;
         }
 
-        .btn-new:hover {
-            background: #333;
+        @media (hover: hover) {
+            .btn-new:hover {
+                background: #333;
+            }
         }
 
         .message {
@@ -295,10 +353,22 @@
         <h1>🔴🟡 Puissance 4</h1>
         <p class="subtitle">Aligne 4 pions pour gagner</p>
 
+        <div class="mode-select">
+            <div class="segmented" id="modeSelect">
+                <button type="button" data-mode="2p">👫 2 joueurs</button>
+                <button type="button" data-mode="ia">🤖 Contre l'ordi</button>
+            </div>
+            <div class="segmented levels" id="levelSelect">
+                <button type="button" data-level="facile">😊 Facile</button>
+                <button type="button" data-level="moyen">🙂 Moyen</button>
+                <button type="button" data-level="difficile">😎 Difficile</button>
+            </div>
+        </div>
+
         <div id="message"></div>
 
         <div class="turn-indicator" id="turnIndicator">
-            <span>Au tour de</span>
+            <span id="turnPrefix">Au tour de</span>
             <div class="turn-token red" id="turnToken"></div>
             <span id="turnLabel">Rouge</span>
         </div>
@@ -316,16 +386,17 @@
                 <li>Le pion tombe au plus bas dans la colonne choisie</li>
                 <li>Le premier à aligner <strong>4 pions</strong> (horizontalement, verticalement ou en diagonale) gagne</li>
                 <li>Si la grille est pleine sans alignement, c'est match nul</li>
+                <li>Contre l'ordi, tu as les pions <strong>rouges</strong> 🔴 et l'ordinateur les <strong>jaunes</strong> 🟡</li>
             </ul>
         </div>
 
         <div class="scoreboard">
-            <h3>Scores</h3>
+            <h3 id="scoreTitle">Scores</h3>
             <div class="score-row">
                 <div class="score-cell">
                     <div class="label">
                         <div class="turn-token red"></div>
-                        Rouge
+                        <span id="scoreLabelRed">Rouge</span>
                     </div>
                     <div class="value" id="scoreRed">0</div>
                 </div>
@@ -336,7 +407,7 @@
                 <div class="score-cell">
                     <div class="label">
                         <div class="turn-token yellow"></div>
-                        Jaune
+                        <span id="scoreLabelYellow">Jaune</span>
                     </div>
                     <div class="value" id="scoreYellow">0</div>
                 </div>
@@ -348,21 +419,83 @@
     <script>
         const ROWS = 6;
         const COLS = 7;
-        const LABELS = { red: 'Rouge', yellow: 'Jaune' };
-        const SCORES_KEY = 'puissance4-scores';
+        const DIRECTIONS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+        const LEVEL_NAMES = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
+        const SETTINGS_KEY = 'puissance4-settings';
         const DEFAULT_SCORES = { red: 0, yellow: 0, draws: 0 };
         const SCORE_FIELD = { red: 'red', yellow: 'yellow', draw: 'draws' };
+        const HUMAN = 'red';
+        const COMPUTER = 'yellow';
+        // Everything that differs between the two modes
+        const MODES = {
+            '2p': {
+                names: { red: 'Rouge', yellow: 'Jaune' },
+                isHuman: () => true,
+                scoresKey: () => 'puissance4-scores',
+                scoreTitle: () => 'Scores',
+            },
+            ia: {
+                names: { red: 'Toi', yellow: 'Ordinateur' },
+                isHuman: player => player === HUMAN,
+                scoresKey: () => `puissance4-scores-ia-${level}`,
+                scoreTitle: () => `Scores contre l'ordi (${LEVEL_NAMES[level]})`,
+            },
+        };
+        // Center columns first: better alpha-beta pruning
+        const COLUMN_ORDER = [3, 2, 4, 1, 5, 0, 6];
+        const WIN_SCORE = 1000000;
+        const SEARCH_DEPTH = { moyen: 3, difficile: 6 };
+        // The 69 lines of 4 cells on the board, computed once for the evaluation
+        const WINDOWS = [];
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                for (const [dr, dc] of DIRECTIONS) {
+                    const endR = r + dr * 3;
+                    const endC = c + dc * 3;
+                    if (endR < 0 || endR >= ROWS || endC < 0 || endC >= COLS) continue;
+                    WINDOWS.push([0, 1, 2, 3].map(i => [r + dr * i, c + dc * i]));
+                }
+            }
+        }
 
         let board = [];
-        let currentPlayer = 'red';
-        let startingPlayer = 'red'; // alternates each new game
+        let currentPlayer = HUMAN;
+        let startingPlayer = HUMAN; // alternates each new game
         let gameOver = false;
+        let mode = '2p'; // key of MODES
+        let level = 'moyen';
+        let aiTimer = null;
+
+        function loadSettings() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+                if (stored && MODES[stored.mode]) mode = stored.mode;
+                if (stored && LEVEL_NAMES[stored.level]) level = stored.level;
+            } catch (e) {}
+        }
+
+        function saveSettings() {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify({ mode, level }));
+        }
+
+        function otherPlayer(player) {
+            return player === 'red' ? 'yellow' : 'red';
+        }
+
+        function isComputerTurn() {
+            return !gameOver && !MODES[mode].isHuman(currentPlayer);
+        }
+
+        function acceptsHumanInput() {
+            return !gameOver && MODES[mode].isHuman(currentPlayer);
+        }
 
         function initGame() {
+            clearTimeout(aiTimer);
             board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
             currentPlayer = startingPlayer;
             // Alternate who starts the next game (red, yellow, red, ...)
-            startingPlayer = startingPlayer === 'red' ? 'yellow' : 'red';
+            startingPlayer = otherPlayer(startingPlayer);
             gameOver = false;
             document.getElementById('message').innerHTML = '';
             document.getElementById('message').className = '';
@@ -370,16 +503,46 @@
             if (window.ExitGuard) ExitGuard.setActive(false);
             renderBoard();
             updateTurnIndicator();
+            scheduleComputerMove();
+        }
+
+        function renderModeSelect() {
+            document.querySelectorAll('#modeSelect button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            document.querySelectorAll('#levelSelect button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.level === level);
+            });
+            document.getElementById('levelSelect').style.display = mode === 'ia' ? 'flex' : 'none';
+            const { names, scoreTitle } = MODES[mode];
+            document.getElementById('scoreLabelRed').textContent = names.red;
+            document.getElementById('scoreLabelYellow').textContent = names.yellow;
+            document.getElementById('scoreTitle').textContent = scoreTitle();
+            updateScoreboard();
+        }
+
+        function changeSettings(newMode, newLevel) {
+            if (newMode === mode && newLevel === level) return;
+            mode = newMode;
+            level = newLevel;
+            saveSettings();
+            // The child always starts the first game after a settings change
+            startingPlayer = HUMAN;
+            renderModeSelect();
+            initGame();
         }
 
         function renderBoard() {
             const boardEl = document.getElementById('board');
             boardEl.innerHTML = '';
+            boardEl.classList.toggle('locked', !acceptsHumanInput());
             for (let c = 0; c < COLS; c++) {
                 const colEl = document.createElement('div');
                 colEl.className = 'column';
                 colEl.dataset.col = c;
-                colEl.onclick = () => playMove(c);
+                colEl.onclick = () => {
+                    if (acceptsHumanInput()) playMove(c);
+                };
                 if (isColumnFull(c)) {
                     colEl.classList.add('full');
                 }
@@ -399,10 +562,23 @@
         }
 
         function updateTurnIndicator() {
+            const indicator = document.getElementById('turnIndicator');
+            const prefix = document.getElementById('turnPrefix');
             const token = document.getElementById('turnToken');
             const label = document.getElementById('turnLabel');
             token.className = `turn-token ${currentPlayer}`;
-            label.textContent = LABELS[currentPlayer];
+            indicator.classList.toggle('thinking', isComputerTurn());
+            prefix.textContent = '';
+            if (gameOver) {
+                label.textContent = 'Partie terminée';
+            } else if (isComputerTurn()) {
+                label.textContent = "L'ordinateur réfléchit";
+            } else if (mode === 'ia') {
+                label.textContent = 'À toi de jouer !';
+            } else {
+                prefix.textContent = 'Au tour de';
+                label.textContent = MODES[mode].names[currentPlayer];
+            }
         }
 
         function isColumnFull(col) {
@@ -422,34 +598,159 @@
             if (row === -1) return;
 
             board[row][col] = currentPlayer;
-            renderBoard();
-            animateDrop(row, col);
             if (window.ExitGuard) ExitGuard.setActive(true);
 
             const winningCells = checkWin(row, col, currentPlayer);
-            if (winningCells) {
+            const result = winningCells ? currentPlayer : isBoardFull() ? 'draw' : null;
+            if (result) {
                 gameOver = true;
-                highlightWinning(winningCells);
-                showMessage(`🎉 ${LABELS[currentPlayer]} a gagné !`, `win-${currentPlayer}`);
-                saveScore(currentPlayer);
-                showConfetti();
-                document.getElementById('newGameBtn').style.display = 'block';
-                if (window.ExitGuard) ExitGuard.setActive(false);
-                return;
+            } else {
+                currentPlayer = otherPlayer(currentPlayer);
             }
-
-            if (isBoardFull()) {
-                gameOver = true;
-                showMessage(`🤝 Match nul !`, 'draw');
-                saveScore('draw');
-                document.getElementById('newGameBtn').style.display = 'block';
-                if (window.ExitGuard) ExitGuard.setActive(false);
-                return;
-            }
-
-            currentPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
+            renderBoard();
+            animateDrop(row, col);
             updateTurnIndicator();
+
+            if (result) {
+                if (winningCells) highlightWinning(winningCells);
+                endGame(result);
+            } else {
+                scheduleComputerMove();
+            }
         }
+
+        function endGame(result) {
+            if (result === 'draw') {
+                showMessage(`🤝 Match nul !`, 'draw');
+            } else if (!MODES[mode].isHuman(result)) {
+                showMessage(`🤖 L'ordinateur a gagné ! Essaie encore !`, `win-${result}`);
+            } else {
+                const text = mode === 'ia' ? '🎉 Bravo, tu as gagné !' : `🎉 ${MODES[mode].names[result]} a gagné !`;
+                showMessage(text, `win-${result}`);
+                showConfetti();
+            }
+            saveScore(result);
+            document.getElementById('newGameBtn').style.display = 'block';
+            if (window.ExitGuard) ExitGuard.setActive(false);
+        }
+
+        function scheduleComputerMove() {
+            if (!isComputerTurn()) return;
+            // Short pause so the child sees their token land before the reply
+            // (initGame cancels it if a new game starts meanwhile)
+            aiTimer = setTimeout(() => playMove(chooseComputerMove()), 700);
+        }
+
+        // ---------- Ordinateur ----------
+
+        function validColumns() {
+            return COLUMN_ORDER.filter(c => !isColumnFull(c));
+        }
+
+        function randomItem(list) {
+            return list[Math.floor(Math.random() * list.length)];
+        }
+
+        // Column where `player` would win right now, or -1
+        function findWinningColumn(player) {
+            for (const c of validColumns()) {
+                const r = findLowestRow(c);
+                board[r][c] = player;
+                const wins = checkWin(r, c, player);
+                board[r][c] = null;
+                if (wins) return c;
+            }
+            return -1;
+        }
+
+        function chooseComputerMove() {
+            if (level === 'facile') return chooseEasyMove();
+            return chooseBestMove(SEARCH_DEPTH[level]);
+        }
+
+        // Facile: wins when it can, blocks only half the time, otherwise plays at random
+        function chooseEasyMove() {
+            const win = findWinningColumn(COMPUTER);
+            if (win !== -1) return win;
+            const block = findWinningColumn(HUMAN);
+            if (block !== -1 && Math.random() < 0.5) return block;
+            return randomItem(validColumns());
+        }
+
+        // Moyen / Difficile: negamax with alpha-beta pruning
+        function chooseBestMove(depth) {
+            let bestScore = -Infinity;
+            let bestCols = [];
+            for (const c of validColumns()) {
+                // Scores are integers: alpha = best - 1 prunes worse moves
+                // while still scoring ties exactly
+                const score = scoreMove(c, COMPUTER, depth, bestScore - 1, Infinity);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCols = [c];
+                } else if (score === bestScore) {
+                    bestCols.push(c);
+                }
+            }
+            // Random among equally good moves so games vary
+            return randomItem(bestCols);
+        }
+
+        // Score of `player` dropping a token in `col`, from `player`'s point of view
+        function scoreMove(col, player, depth, alpha, beta) {
+            const r = findLowestRow(col);
+            board[r][col] = player;
+            let score;
+            if (checkWin(r, col, player)) {
+                score = WIN_SCORE + depth; // prefer faster wins
+            } else if (depth <= 1) {
+                score = evaluate(player);
+            } else {
+                score = -negamax(otherPlayer(player), depth - 1, -beta, -alpha);
+            }
+            board[r][col] = null;
+            return score;
+        }
+
+        function negamax(player, depth, alpha, beta) {
+            const cols = validColumns();
+            if (cols.length === 0) return 0; // draw
+            let best = -Infinity;
+            for (const c of cols) {
+                const score = scoreMove(c, player, depth, alpha, beta);
+                if (score > best) best = score;
+                if (score > alpha) alpha = score;
+                if (alpha >= beta) break;
+            }
+            return best;
+        }
+
+        // Heuristic value of the board for `player`
+        function evaluate(player) {
+            const opponent = otherPlayer(player);
+            let score = 0;
+            for (let r = 0; r < ROWS; r++) {
+                if (board[r][3] === player) score += 3;
+                else if (board[r][3] === opponent) score -= 3;
+            }
+            for (const window of WINDOWS) {
+                let mine = 0;
+                let theirs = 0;
+                for (const [r, c] of window) {
+                    const v = board[r][c];
+                    if (v === player) mine++;
+                    else if (v === opponent) theirs++;
+                }
+                if (mine && theirs) continue;
+                if (mine === 3) score += 5;
+                else if (mine === 2) score += 2;
+                else if (theirs === 3) score -= 4;
+                else if (theirs === 2) score -= 1;
+            }
+            return score;
+        }
+
+        // ---------- Affichage & scores ----------
 
         function animateDrop(row, col) {
             const colEl = document.querySelector(`.column[data-col="${col}"]`);
@@ -468,9 +769,7 @@
         }
 
         function checkWin(row, col, player) {
-            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
-
-            for (const [dr, dc] of directions) {
+            for (const [dr, dc] of DIRECTIONS) {
                 const cells = [[row, col]];
                 for (const sign of [1, -1]) {
                     for (let step = 1; step < 4; step++) {
@@ -502,15 +801,15 @@
             messageDiv.textContent = text;
         }
 
-        function getScores() {
-            const stored = localStorage.getItem(SCORES_KEY);
+                function getScores() {
+            const stored = localStorage.getItem(MODES[mode].scoresKey());
             return stored ? JSON.parse(stored) : { ...DEFAULT_SCORES };
         }
 
         function saveScore(result) {
             const scores = getScores();
             scores[SCORE_FIELD[result]]++;
-            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            localStorage.setItem(MODES[mode].scoresKey(), JSON.stringify(scores));
             updateScoreboard(scores);
         }
 
@@ -521,8 +820,15 @@
         }
 
         document.getElementById('newGameBtn').onclick = initGame;
+        document.querySelectorAll('#modeSelect button').forEach(btn => {
+            btn.onclick = () => changeSettings(btn.dataset.mode, level);
+        });
+        document.querySelectorAll('#levelSelect button').forEach(btn => {
+            btn.onclick = () => changeSettings(mode, btn.dataset.level);
+        });
 
-        updateScoreboard();
+        loadSettings();
+        renderModeSelect();
         initGame();
     </script>
 </body>
