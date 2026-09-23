@@ -99,10 +99,10 @@
             min-height: 50px;
         }
 
-        /* Les cases rétrécissent pour que les mots longs (ex. « gazouiller »)
-           tiennent sur une seule ligne, même sur petit écran. */
+        /* Les cases rétrécissent pour que les mots longs tiennent sur une seule
+           ligne, même sur petit écran (10 lettres max, cf. loadWords). */
         .letter-slot {
-            flex: 0 1 28px;
+            flex-basis: 28px;
             min-width: 0;
             height: 40px;
             border-bottom: 3px solid #1a1a1a;
