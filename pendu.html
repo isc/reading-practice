@@ -93,20 +93,23 @@
         .word-display {
             display: flex;
             justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
+            flex-wrap: nowrap;
+            gap: clamp(3px, 1.5vw, 8px);
             margin-bottom: 20px;
             min-height: 50px;
         }
 
+        /* Les cases rétrécissent pour que les mots longs tiennent sur une seule
+           ligne, même sur petit écran (10 lettres max, cf. loadWords). */
         .letter-slot {
-            min-width: 28px;
+            flex-basis: 28px;
+            min-width: 0;
             height: 40px;
             border-bottom: 3px solid #1a1a1a;
             display: flex;
             align-items: flex-end;
             justify-content: center;
-            font-size: 1.4em;
+            font-size: clamp(1em, 5.5vw, 1.4em);
             font-weight: 700;
             color: #1a1a1a;
             padding-bottom: 2px;
