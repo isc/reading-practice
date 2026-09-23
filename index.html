@@ -308,6 +308,54 @@
         clip: rect(0 0 0 0);
         white-space: nowrap;
       }
+      /* ===== Partage ===== */
+
+      .share-button {
+        flex-shrink: 0;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.6rem 0.95rem;
+        border: none;
+        border-radius: 999px;
+        background: var(--card);
+        box-shadow: var(--shadow);
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        cursor: pointer;
+      }
+
+      .share-button svg {
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+
+      .share-button:active {
+        transform: scale(0.96);
+      }
+
+      .share-button:focus-visible {
+        outline: 3px solid var(--primary-color);
+        outline-offset: 2px;
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(1.5rem + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: 20;
+        padding: 0.75rem 1.1rem;
+        border-radius: 999px;
+        background: var(--ink);
+        color: #fff;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        box-shadow: var(--shadow);
+      }
     </style>
     <link rel="manifest" href="manifest.json" />
     <script>
@@ -335,7 +383,27 @@
         <h1>Marzouzoute</h1>
         <p>Une boîte à jeux pour apprendre en s'amusant</p>
       </div>
+      <button class="share-button" id="share" type="button">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
+          <line x1="15.4" y1="6.5" x2="8.6" y2="10.5" />
+        </svg>
+        Partager
+      </button>
     </header>
+
+    <p class="toast" id="toast" role="status" hidden></p>
 
     <div class="search-bar">
       <div class="container">
@@ -692,6 +760,44 @@
 
       // Le navigateur peut restaurer la saisie au retour d'un jeu.
       applyFilter()
+
+      // Partage : feuille de partage native sur mobile (SMS, WhatsApp…), sinon
+      // on copie le lien. L'URL est celle du dossier de l'accueil, pour
+      // fonctionner sous /reading-practice/ comme dans les previews.
+      const shareButton = document.getElementById("share")
+      const toast = document.getElementById("toast")
+      let toastTimer = null
+
+      function showToast(text) {
+        toast.textContent = text
+        toast.hidden = false
+        clearTimeout(toastTimer)
+        toastTimer = setTimeout(() => (toast.hidden = true), 2500)
+      }
+
+      shareButton.addEventListener("click", async () => {
+        const url = new URL("./", location.href).href
+        const data = {
+          title: "Marzouzoute",
+          text: "Une boîte à jeux pour apprendre en s'amusant",
+          url,
+        }
+        if (navigator.share) {
+          try {
+            await navigator.share(data)
+            return
+          } catch (error) {
+            // Partage annulé par l'utilisateur : rien à faire.
+            if (error.name === "AbortError") return
+          }
+        }
+        try {
+          await navigator.clipboard.writeText(url)
+          showToast("Lien copié !")
+        } catch (error) {
+          window.prompt("Copie ce lien pour partager Marzouzoute :", url)
+        }
+      })
     </script>
   </body>
 </html>
