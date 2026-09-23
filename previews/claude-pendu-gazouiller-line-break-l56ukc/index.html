@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#4a90e2" />
+    <meta
+      name="description"
+      content="Boîte à jeux éducatifs : lecture, orthographe, logique et jeux de société."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Marzouzoute" />
+    <link rel="icon" type="image/png" href="icon-192x192.png" />
+    <link rel="apple-touch-icon" href="icon-192x192.png" />
+    <!-- Splash screens iOS (Safari ne lit pas le manifest pour ça). Une image
+         par appareil, ciblée via media query. -->
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1170x2532.png"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1179x2556.png"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1290x2796.png"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/ipad-1668x2388.png"
+      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+    />
+    <title>Marzouzoute — Boîte à jeux</title>
+    <style>
+      :root {
+        --primary-color: #4a90e2;
+        --bg: #f0f2f5;
+        --card: #ffffff;
+        --ink: #1f2933;
+        --ink-soft: #6b7280;
+        --radius: 16px;
+        --shadow:
+          0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.05);
+        /* Une teinte par famille de jeux : la couleur porte le repérage, les
+           cartes restent blanches. */
+        --tint: #eaf2fd;
+        --tint-ink: #2f6fb5;
+      }
+
+      /* La police dédiée à la dyslexie est réservée aux jeux de lecture, où on
+         lit vraiment des mots. L'accueil est une page de navigation : il suit
+         la police système, comme les pages de jeu. */
+      @font-face {
+        font-family: "OpenDyslexicRegular";
+        src: url("./OpenDyslexic-Regular.woff2") format("woff2");
+        font-weight: normal;
+        font-style: normal;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        min-height: 100vh;
+        padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding-left: calc(1rem + env(safe-area-inset-left));
+        padding-right: calc(1rem + env(safe-area-inset-right));
+      }
+
+      /* ===== En-tête ===== */
+
+      .app-header {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding-top: calc(1.5rem + env(safe-area-inset-top));
+        padding-bottom: 1rem;
+      }
+
+      .app-logo {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+      }
+
+      .app-header h1 {
+        margin: 0;
+        font-size: 1.6rem;
+        letter-spacing: -0.02em;
+      }
+
+      .app-header p {
+        margin: 0.15rem 0 0;
+        color: var(--ink-soft);
+        font-size: 0.9rem;
+      }
+
+      /* ===== Recherche ===== */
+
+      .search-bar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg);
+        padding-top: 0.5rem;
+        padding-bottom: 0.75rem;
+      }
+
+      .search-field {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .search-field::before {
+        content: "🔍";
+        position: absolute;
+        left: 0.95rem;
+        font-size: 1rem;
+        pointer-events: none;
+      }
+
+      #search {
+        width: 100%;
+        padding: 0.85rem 2.9rem;
+        font-family: inherit;
+        font-size: 1rem;
+        color: inherit;
+        background: var(--card);
+        border: 2px solid transparent;
+        border-radius: 999px;
+        box-shadow: var(--shadow);
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      #search::placeholder {
+        color: var(--ink-soft);
+      }
+
+      #search:focus {
+        outline: none;
+        border-color: var(--primary-color);
+      }
+
+      /* La croix native de type="search" est minuscule : on met la nôtre. */
+      #search::-webkit-search-cancel-button {
+        display: none;
+      }
+
+      #search-clear {
+        position: absolute;
+        right: 0.45rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        font-family: inherit;
+        font-size: 1.15rem;
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+
+      .no-result {
+        margin: 0.5rem 0 0;
+        color: var(--ink-soft);
+      }
+
+      /* ===== Familles de jeux ===== */
+
+      .category {
+        margin-bottom: 1.75rem;
+      }
+
+      .category[data-category="lecture"] {
+        --tint: #eaf2fd;
+        --tint-ink: #2f6fb5;
+      }
+
+      .category[data-category="mots"] {
+        --tint: #f1ecfd;
+        --tint-ink: #6d4fc4;
+      }
+
+      .category[data-category="calcul"] {
+        --tint: #e6f6ec;
+        --tint-ink: #2b8a5b;
+      }
+
+      .category[data-category="logique"] {
+        --tint: #fdf0e3;
+        --tint-ink: #b46a15;
+      }
+
+      .category[data-category="plateau"] {
+        --tint: #fdeaea;
+        --tint-ink: #c04545;
+      }
+
+      .category[data-category="parole"] {
+        --tint: #e4f4f6;
+        --tint-ink: #17818f;
+      }
+
+      .category-title {
+        margin: 0 0 0.7rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--tint-ink);
+      }
+
+      .game-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .game {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 118px;
+        padding: 1rem 0.6rem;
+        background: var(--card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        text-decoration: none;
+        color: inherit;
+        text-align: center;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      .game-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: var(--tint);
+        font-size: 1.45rem;
+        line-height: 1;
+      }
+
+      .game-name {
+        font-size: 0.92rem;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+
+      .game:active {
+        transform: scale(0.97);
+      }
+
+      @media (hover: hover) {
+        .game:hover {
+          transform: translateY(-2px);
+          box-shadow:
+            0 2px 4px rgba(16, 24, 40, 0.08),
+            0 10px 20px rgba(16, 24, 40, 0.09);
+        }
+      }
+
+      .game:focus-visible {
+        outline: 3px solid var(--primary-color);
+        outline-offset: 2px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+    </style>
+    <link rel="manifest" href="manifest.json" />
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("service-worker.js")
+            .then((registration) => {
+              console.log(
+                "Service Worker registered with scope:",
+                registration.scope,
+              )
+            })
+            .catch((error) => {
+              console.error("Service Worker registration failed:", error)
+            })
+        })
+      }
+    </script>
+  </head>
+  <body>
+    <header class="app-header container">
+      <img class="app-logo" src="icon-192x192.png" alt="" />
+      <div>
+        <h1>Marzouzoute</h1>
+        <p>Une boîte à jeux pour apprendre en s'amusant</p>
+      </div>
+    </header>
+
+    <div class="search-bar">
+      <div class="container">
+        <div class="search-field">
+          <label class="visually-hidden" for="search">Chercher un jeu</label>
+          <input
+            type="search"
+            id="search"
+            placeholder="Chercher un jeu…"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <button id="search-clear" type="button" hidden aria-label="Effacer">
+            ✕
+          </button>
+        </div>
+        <p class="no-result" id="no-result" hidden>
+          Aucun jeu ne correspond à « <span id="no-result-query"></span> ».
+        </p>
+      </div>
+    </div>
+
+    <main class="container">
+      <section class="category" data-category="lecture">
+        <h2 class="category-title">
+          <span aria-hidden="true">📖</span> Lecture et sons
+        </h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="b-ou-d.html"
+            data-tags="lecture lettres confusion orthographe dyslexie"
+          >
+            <span class="game-icon" aria-hidden="true">🔡</span>
+            <span class="game-name">b ou d ?</span>
+          </a>
+          <a
+            class="game"
+            href="p-ou-q.html"
+            data-tags="lecture lettres confusion orthographe dyslexie"
+          >
+            <span class="game-icon" aria-hidden="true">🔡</span>
+            <span class="game-name">p ou q ?</span>
+          </a>
+          <a
+            class="game"
+            href="ou-ou-on.html"
+            data-tags="lecture sons phonétique orthographe"
+          >
+            <span class="game-icon" aria-hidden="true">👂</span>
+            <span class="game-name">ou ou on ?</span>
+          </a>
+          <a
+            class="game"
+            href="c-doux-dur.html"
+            data-tags="lecture sons phonétique orthographe"
+          >
+            <span class="game-icon" aria-hidden="true">👂</span>
+            <span class="game-name">C doux ou C dur ?</span>
+          </a>
+          <a
+            class="game"
+            href="reading-game.html"
+            data-tags="lecture mots syllabes"
+          >
+            <span class="game-icon" aria-hidden="true">📖</span>
+            <span class="game-name">Lecture</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="mots">
+        <h2 class="category-title">
+          <span aria-hidden="true">🔤</span> Mots et lettres
+        </h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="word-search-game.html"
+            data-tags="lecture mots lettres grille vocabulaire"
+          >
+            <span class="game-icon" aria-hidden="true">🔎</span>
+            <span class="game-name">Mots mêlés</span>
+          </a>
+          <a
+            class="game"
+            href="sutom.html"
+            data-tags="mots lettres orthographe devinette wordle"
+          >
+            <span class="game-icon" aria-hidden="true">🟨</span>
+            <span class="game-name">Sutom</span>
+          </a>
+          <a
+            class="game"
+            href="pendu.html"
+            data-tags="mots lettres orthographe devinette"
+          >
+            <span class="game-icon" aria-hidden="true">🪢</span>
+            <span class="game-name">Pendu</span>
+          </a>
+          <a
+            class="game"
+            href="anagramme.html"
+            data-tags="mots lettres orthographe"
+          >
+            <span class="game-icon" aria-hidden="true">🔀</span>
+            <span class="game-name">Anagramme</span>
+          </a>
+          <a
+            class="game"
+            href="lettris.html"
+            data-tags="mots lettres chute rapidité"
+          >
+            <span class="game-icon" aria-hidden="true">🔤</span>
+            <span class="game-name">Lettris</span>
+          </a>
+          <a
+            class="game"
+            href="mot-le-plus-long.html"
+            data-tags="mots lettres vocabulaire"
+          >
+            <span class="game-icon" aria-hidden="true">📏</span>
+            <span class="game-name">Le mot le plus long</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="calcul">
+        <h2 class="category-title">
+          <span aria-hidden="true">🔢</span> Chiffres et calcul
+        </h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="complement-10.html"
+            data-tags="calcul maths nombres addition"
+          >
+            <span class="game-icon" aria-hidden="true">🔟</span>
+            <span class="game-name">Les amis de 10</span>
+          </a>
+          <a
+            class="game"
+            href="fracto-dingo.html"
+            data-tags="calcul maths fractions nombres"
+          >
+            <span class="game-icon" aria-hidden="true">🍕</span>
+            <span class="game-name">Fracto Dingo</span>
+          </a>
+          <a
+            class="game"
+            href="2048.html"
+            data-tags="chiffres nombres calcul logique"
+          >
+            <span class="game-icon" aria-hidden="true">🔢</span>
+            <span class="game-name">2048</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="logique">
+        <h2 class="category-title">
+          <span aria-hidden="true">🧩</span> Logique et réflexe
+        </h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="mastermind.html"
+            data-tags="logique couleurs déduction réflexion"
+          >
+            <span class="game-icon" aria-hidden="true">🎯</span>
+            <span class="game-name">Mastermind</span>
+          </a>
+          <a
+            class="game"
+            href="demineur.html"
+            data-tags="logique réflexion chiffres grille"
+          >
+            <span class="game-icon" aria-hidden="true">💣</span>
+            <span class="game-name">Démineur</span>
+          </a>
+          <a
+            class="game"
+            href="memory.html"
+            data-tags="mémoire cartes paires concentration"
+          >
+            <span class="game-icon" aria-hidden="true">🃏</span>
+            <span class="game-name">Memory</span>
+          </a>
+          <a
+            class="game"
+            href="tetris.html"
+            data-tags="briques chute logique espace rapidité"
+          >
+            <span class="game-icon" aria-hidden="true">🧱</span>
+            <span class="game-name">Tetris</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="plateau">
+        <h2 class="category-title">
+          <span aria-hidden="true">♟️</span> Jeux de plateau
+        </h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="puissance4.html"
+            data-tags="société deux joueurs stratégie alignement"
+          >
+            <span class="game-icon" aria-hidden="true">🔴</span>
+            <span class="game-name">Puissance 4</span>
+          </a>
+          <a
+            class="game"
+            href="othello.html"
+            data-tags="société deux joueurs stratégie pions reversi"
+          >
+            <span class="game-icon" aria-hidden="true">⚫</span>
+            <span class="game-name">Othello</span>
+          </a>
+          <a
+            class="game"
+            href="dames.html"
+            data-tags="société deux joueurs stratégie pions"
+          >
+            <span class="game-icon" aria-hidden="true">👑</span>
+            <span class="game-name">Dames</span>
+          </a>
+          <a
+            class="game"
+            href="bataille-navale.html"
+            data-tags="société deux joueurs stratégie grille bateaux"
+          >
+            <span class="game-icon" aria-hidden="true">🚢</span>
+            <span class="game-name">Bataille navale</span>
+          </a>
+          <a
+            class="game"
+            href="qwirkle.html"
+            data-tags="société formes couleurs tuiles"
+          >
+            <span class="game-icon" aria-hidden="true">🔷</span>
+            <span class="game-name">Qwirkle</span>
+          </a>
+          <a
+            class="game"
+            href="qwirkle-score.html"
+            data-tags="société score points compteur"
+          >
+            <span class="game-icon" aria-hidden="true">📝</span>
+            <span class="game-name">Qwirkle — feuille de score</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="parole">
+        <h2 class="category-title">
+          <span aria-hidden="true">🎤</span> À plusieurs
+        </h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="timesup.html"
+            data-tags="société parole équipes cartes devinette"
+          >
+            <span class="game-icon" aria-hidden="true">⏳</span>
+            <span class="game-name">Time's Up</span>
+          </a>
+          <a
+            class="game"
+            href="tabou.html"
+            data-tags="société parole équipes cartes devinette"
+          >
+            <span class="game-icon" aria-hidden="true">🤐</span>
+            <span class="game-name">Tabou</span>
+          </a>
+          <a
+            class="game"
+            href="molkky/index.html"
+            data-tags="société score points compteur quilles plein air mölkky"
+          >
+            <span class="game-icon" aria-hidden="true">🎳</span>
+            <span class="game-name">Mölkky — feuille de score</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // Recherche dans la grille : on filtre sur le nom du jeu, sa famille et
+      // les mots-clés de sa carte (« calcul », « société »…). Accents et casse
+      // ignorés, pour qu'un enfant qui tape « societe » trouve quand même.
+      const searchInput = document.getElementById("search")
+      const clearButton = document.getElementById("search-clear")
+      const noResult = document.getElementById("no-result")
+      const noResultQuery = document.getElementById("no-result-query")
+      const categories = Array.from(document.querySelectorAll(".category"))
+      const cards = Array.from(document.querySelectorAll(".game"))
+
+      function normalize(text) {
+        return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+      }
+
+      const haystacks = new Map(
+        cards.map((card) => {
+          const title = card
+            .closest(".category")
+            .querySelector(".category-title").textContent
+          return [
+            card,
+            normalize(card.textContent + " " + title + " " + card.dataset.tags),
+          ]
+        }),
+      )
+
+      function applyFilter() {
+        const query = searchInput.value.trim()
+        // Plusieurs mots : tous doivent correspondre.
+        const terms = normalize(query).split(/\s+/).filter(Boolean)
+        let matches = 0
+
+        cards.forEach((card) => {
+          const haystack = haystacks.get(card)
+          const found = terms.every((term) => haystack.includes(term))
+          card.hidden = !found
+          if (found) matches++
+        })
+
+        // Une famille dont plus rien ne ressort disparaît avec son titre.
+        categories.forEach((category) => {
+          const visible = Array.from(category.querySelectorAll(".game")).some(
+            (card) => !card.hidden,
+          )
+          category.hidden = !visible
+        })
+
+        clearButton.hidden = query === ""
+        noResult.hidden = matches > 0
+        noResultQuery.textContent = query
+      }
+
+      function clearSearch() {
+        searchInput.value = ""
+        applyFilter()
+        searchInput.focus()
+      }
+
+      searchInput.addEventListener("input", applyFilter)
+      searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") clearSearch()
+      })
+      clearButton.addEventListener("click", clearSearch)
+
+      // Le navigateur peut restaurer la saisie au retour d'un jeu.
+      applyFilter()
+    </script>
+  </body>
+</html>
