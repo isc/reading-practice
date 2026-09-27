@@ -633,7 +633,8 @@
             d'une case, dans la direction de ton choix.
           </li>
           <li>
-            Touche tes billes pour les choisir, puis touche une
+            Touche tes billes pour les choisir (ou glisse le doigt sur une
+            rangée pour la prendre d'un coup), puis touche une
             <strong>flèche</strong> : <span class="dot move"></span> tu avances,
             <span class="dot push"></span> tu pousses,
             <span class="dot eject"></span> tu sors une bille !
@@ -1130,6 +1131,9 @@
       // ou une case.
       const ARROW_REACH = 0.5
       const CELL_REACH = 0.6
+      // Au-delà de ce petit tremblement du doigt, ce n'est plus un tap mais
+      // un glissé.
+      const TAP_SLOP = 0.35
 
       const svg = document.getElementById("board")
       const marblesLayer = document.getElementById("marbles")
@@ -1438,28 +1442,25 @@
       // besoin le trou d'une bille entre les deux ; null si ça ne fait pas une
       // rangée d'au plus 3 billes.
       function extendSelection(cell) {
-        if (selection.length === 1) {
-          const [first] = selection
-          for (let dir = 0; dir < 6; dir++) {
-            const next = NEIGHBOR[first * 6 + dir]
-            if (next === cell) return [first, cell]
-            if (
-              next !== -1 &&
-              board[next] === currentPlayer &&
-              NEIGHBOR[next * 6 + dir] === cell
-            ) {
-              return [first, next, cell]
-            }
-          }
+        for (const end of selection) {
+          const line = lineBetween(end, cell)
+          if (line && selection.every((c) => line.includes(c))) return line
         }
-        if (selection.length === 2) {
-          const [first, second] = selection
-          const dir = DIRECTIONS.findIndex(
-            (_, d) => NEIGHBOR[first * 6 + d] === second,
-          )
-          if (NEIGHBOR[second * 6 + dir] === cell) return [first, second, cell]
-          if (NEIGHBOR[first * 6 + ((dir + 3) % 6)] === cell) {
-            return [cell, first, second]
+        return null
+      }
+
+      // Billes du joueur en ligne droite de `from` à `to` (3 au plus, dans
+      // l'ordre), ou null s'il n'y a pas de telle rangée.
+      function lineBetween(from, to) {
+        if (from === to) return [from]
+        for (let dir = 0; dir < 6; dir++) {
+          const line = [from]
+          let cell = from
+          while (line.length < 3) {
+            cell = NEIGHBOR[cell * 6 + dir]
+            if (cell === -1 || board[cell] !== currentPlayer) break
+            line.push(cell)
+            if (cell === to) return line
           }
         }
         return null
@@ -1500,22 +1501,32 @@
         return best
       }
 
-      // Tout le plateau est cliquable : un tap vise la flèche ou, à défaut,
-      // la case la plus proche. Plus tolérant que des cibles au pixel près
-      // pour des petits doigts.
-      svg.addEventListener("click", (event) => {
-        if (!acceptsHumanInput()) return
+      // ----- Toucher et glisser -----
+
+      // Point du plateau (en écarts entre billes) sous le doigt ou la souris.
+      function boardPoint({ clientX, clientY }) {
         const point = svg.createSVGPoint()
-        point.x = event.clientX
-        point.y = event.clientY
+        point.x = clientX
+        point.y = clientY
         const { x, y } = point.matrixTransform(svg.getScreenCTM().inverse())
-        const arrow = closest(arrows, x / UNIT, y / UNIT, ARROW_REACH)
+        return { x: x / UNIT, y: y / UNIT }
+      }
+
+      function cellNear({ x, y }) {
+        const near = closest(CELLS, x, y, CELL_REACH)
+        return near ? CELLS.indexOf(near) : -1
+      }
+
+      // Tout le plateau répond : un tap vise la flèche ou, à défaut, la case
+      // la plus proche. Plus tolérant que des cibles au pixel près pour des
+      // petits doigts.
+      function tap(point) {
+        const arrow = closest(arrows, point.x, point.y, ARROW_REACH)
         if (arrow) {
           playMove(arrow.move)
           return
         }
-        const near = closest(CELLS, x / UNIT, y / UNIT, CELL_REACH)
-        const cell = near ? CELLS.indexOf(near) : -1
+        const cell = cellNear(point)
         // Une case où iraient les billes, ou une bille adverse qui serait
         // poussée, désigne aussi le coup… sauf si deux coups y mènent.
         const aimed =
@@ -1527,7 +1538,67 @@
               )
         if (aimed.length === 1) playMove(aimed[0].move)
         else if (aimed.length === 0) tapCell(cell)
+      }
+
+      // Glisser le doigt d'une de ses billes jusqu'à une autre choisit d'un
+      // seul geste la rangée entre les deux.
+      let drag = null // { pointerId, start, from, moved }
+
+      // Un nouvel appui principal remplace toujours le geste précédent : même
+      // si sa fin s'est perdue, le plateau ne reste jamais bloqué.
+      svg.addEventListener("pointerdown", (event) => {
+        if (!event.isPrimary || event.button !== 0) return
+        drag = null
+        if (!acceptsHumanInput()) return
+        const start = boardPoint(event)
+        drag = {
+          pointerId: event.pointerId,
+          start,
+          from: cellNear(start),
+          moved: false,
+        }
+        // Pour suivre le geste même si le doigt sort du plateau.
+        svg.setPointerCapture(event.pointerId)
       })
+
+      svg.addEventListener("pointermove", (event) => {
+        if (!drag || event.pointerId !== drag.pointerId) return
+        const point = boardPoint(event)
+        const { start, from } = drag
+        if (Math.hypot(point.x - start.x, point.y - start.y) > TAP_SLOP) {
+          drag.moved = true
+        }
+        if (!drag.moved || from === -1 || board[from] !== currentPlayer) return
+        // Hors d'une rangée (case vide, bille adverse…), on garde la dernière.
+        const line = lineBetween(from, cellNear(point))
+        if (!line || marblesKey(line) === marblesKey(selection)) return
+        selection = line
+        updateArrows()
+        render()
+      })
+
+      svg.addEventListener("pointerup", (event) => {
+        if (!drag || event.pointerId !== drag.pointerId) return
+        const { start, moved } = drag
+        drag = null
+        if (!moved && acceptsHumanInput()) tap(start)
+      })
+
+      svg.addEventListener("pointercancel", () => {
+        drag = null
+      })
+
+      // Posé sur une de ses billes, le doigt choisit au lieu de faire défiler
+      // la page. Partout ailleurs sur le plateau, on peut toujours défiler.
+      svg.addEventListener(
+        "touchstart",
+        (event) => {
+          const cell = cellNear(boardPoint(event.changedTouches[0]))
+          const ownMarble = cell !== -1 && board[cell] === currentPlayer
+          if (ownMarble && acceptsHumanInput()) event.preventDefault()
+        },
+        { passive: false },
+      )
 
       // ----- Dessin -----
 
@@ -1734,7 +1805,7 @@
         if (!acceptsHumanInput()) {
           text = ""
         } else if (selection.length === 0) {
-          text = "Touche 1, 2 ou 3 de tes billes alignées."
+          text = "Touche une de tes billes, ou glisse le doigt sur 2 ou 3."
         } else if (arrows.length === 0) {
           text = "Ces billes ne peuvent pas bouger. Choisis-en d'autres."
         } else if (arrows.some(({ info }) => info.ejects)) {
