@@ -17,9 +17,12 @@ permissions:
   id-token: write
   actions: read
 
+# En file : sans `queue: max`, GitHub ne garde qu'un run en attente par groupe
+# et annule en silence le précédent — une demande perdue.
 concurrency:
   group: claude-issue-${{ github.event.issue.number }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   build-game:

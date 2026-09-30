@@ -7,12 +7,18 @@ on:
 
 permissions:
   contents: write
+  # Relance du build Pages par la dernière étape.
+  pages: write
 
 concurrency:
-  # Sérialise les écritures sur gh-pages entre ce déploiement et les previews
-  # de PR, sinon deux jobs peuvent se marcher dessus sur la même branche.
+  # Sérialise les écritures sur gh-pages entre ce déploiement, les previews de
+  # PR et leur suppression, sinon deux jobs peuvent se marcher dessus sur la
+  # même branche. `queue: max` : sans lui, GitHub ne garde qu'un run en attente
+  # par groupe et annule EN SILENCE celui qui attendait dès qu'un autre arrive
+  # (cf. CLAUDE.md, « Déploiement »).
   group: gh-pages
   cancel-in-progress: false
+  queue: max
 
 # peaceiris/actions-gh-pages@v4 déclare encore Node.js 20 et le maintainer
 # n'a pas publié de v5. À partir de 2026-06-02, GitHub force Node 24 par
@@ -24,20 +30,30 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # La tête de main au moment du run, pas le commit de l'événement : ni le
+      # re-run d'un ancien déploiement, ni deux runs sortis de la file dans le
+      # désordre ne peuvent remettre en ligne une version plus ancienne.
       - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      # Témoin du commit publié, lu par la dernière étape (comme .preview-sha).
+      - name: Write deployment marker
+        run: |
+          sha=$(git rev-parse HEAD)
+          echo "$sha" > .deploy-sha
+          echo "DEPLOY_SHA=$sha" >> "$GITHUB_ENV"
 
       # Site statique « nobuild » : on publie le dépôt tel quel à la RACINE de
       # la branche gh-pages. `keep_files: true` préserve le dossier `previews/`
       # écrit par le workflow de preview, pour que les previews survivent aux
       # déploiements de main. `exclude_assets` retire le superflu non-web.
       #
-      # Le groupe de concurrence ci-dessus ne couvre pas preview-cleanup.yml,
-      # qui a volontairement le sien (voir le commentaire là-bas) et pousse sur
-      # gh-pages au moment précis où un merge déclenche ce déploiement. Quand le
-      # cleanup gagne la course, peaceiris échoue sur « cannot lock ref » : il
-      # ne retente pas, alors que le cleanup, lui, rebase et réessaie. D'où ce
-      # wrapper : chaque tentative re-clone gh-pages, donc la seconde repart de
-      # la référence à jour.
+      # Filet de secours : la file ci-dessus sérialise toutes les écritures
+      # gh-pages de ce dépôt, mais rien n'interdit une écriture venue d'ailleurs
+      # (push manuel), et peaceiris ne retente pas un push refusé (« cannot
+      # lock ref »). Chaque tentative re-clone gh-pages, donc la seconde repart
+      # de la référence à jour.
       - name: Publish to gh-pages (root)
         uses: Wandalen/wretry.action@v3.8.0
         with:
@@ -50,4 +66,33 @@ jobs:
             publish_branch: gh-pages
             keep_files: true
             exclude_assets: ".github,.gitignore,.prettierrc,README.md,TODO.md"
-            commit_message: "deploy: main @ ${{ github.sha }}"
+            commit_message: "deploy: main @ ${{ env.DEPLOY_SHA }}"
+
+      # Le push ne met pas le site en ligne : c'est pages-build-deployment (géré
+      # par GitHub), qui échoue parfois de façon transitoire, laissant le site
+      # sur l'ancienne version derrière un déploiement vert. On attend donc que
+      # le site serve ce commit, on redemande un build Pages une fois sinon,
+      # puis on échoue : un déploiement vert veut dire « en ligne ». curl borné :
+      # un appel bloqué immobiliserait toute la file.
+      - name: Attendre que le site serve ce commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          wait_live() {
+            for i in $(seq 1 120); do
+              actual=$(curl -fsSL --max-time 10 https://isc.github.io/reading-practice/.deploy-sha 2>/dev/null | tr -d '[:space:]' || true)
+              if [ "$actual" = "$DEPLOY_SHA" ]; then
+                echo "En ligne avec $DEPLOY_SHA après ${i}×5s"
+                return 0
+              fi
+              echo "Tentative $i/120 : '$actual' au lieu de '$DEPLOY_SHA'"
+              sleep 5
+            done
+            return 1
+          }
+          wait_live && exit 0
+          echo "::warning::Le site ne sert pas $DEPLOY_SHA après 10 min : nouvelle demande de build Pages"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/pages/builds" --silent || true
+          wait_live && exit 0
+          echo "::error::Le site ne sert toujours pas $DEPLOY_SHA : voir les runs pages-build-deployment"
+          exit 1
