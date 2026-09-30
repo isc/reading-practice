@@ -109,3 +109,10 @@ Ajoute une carte dans la grille de `index.html` :
 - Push sur `main` → publication sur GitHub Pages.
 - Chaque PR → preview isolée déployée automatiquement, avec lien posté en
   commentaire. C'est cette preview qui sert à tester un nouveau jeu avant merge.
+- **Tout workflow qui écrit sur `gh-pages` rejoint le groupe de concurrence
+  `gh-pages` avec `queue: max`** (donc `cancel-in-progress: false`). Sans la
+  file, GitHub ne garde qu'un run en attente par groupe et annule l'autre en
+  silence : au merge d'une PR, déploiement et suppression de la preview
+  arrivent ensemble, et le déploiement pouvait disparaître. La file ne garantit
+  l'ordre qu'au mieux : le déploiement publie donc la tête de main du moment,
+  et n'est vert qu'une fois le site en train de la servir (`/.deploy-sha`).
