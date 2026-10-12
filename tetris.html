@@ -737,21 +737,44 @@
       const MUSIC_KEY = "tetris-music"
       const SFX_KEY = "tetris-sfx"
 
-      // Une mesure par chaîne, en croches : « D5:2 » dure deux croches, une
-      // note sans durée en dure une, « - » est un silence.
-      const MELODY = [
-        "E5:2 B4 C5 D5:2 C5 B4",
-        "A4:2 A4 C5 E5:2 D5 C5",
-        "B4:3 C5 D5:2 E5:2",
-        "C5:2 A4:2 A4:2 -:2",
-        "- D5:2 F5 A5:2 G5 F5",
-        "E5:3 C5 E5:2 D5 C5",
-        "B4:2 B4 C5 D5:2 E5:2",
-        "C5:2 A4:2 A4:2 -:2",
-      ]
+      // Chaque partie : une mesure par chaîne, en croches. « D5:2 » dure deux
+      // croches, une note sans durée en dure une, « - » est un silence. Un
+      // accord par demi-mesure (un seul nom : toute la mesure).
+      const PARTS = {
+        // Le thème, tel que la chanson populaire.
+        A: {
+          melody: [
+            "E5:2 B4 C5 D5:2 C5 B4",
+            "A4:2 A4 C5 E5:2 D5 C5",
+            "B4:3 C5 D5:2 E5:2",
+            "C5:2 A4:2 A4:2 -:2",
+            "- D5:2 F5 A5:2 G5 F5",
+            "E5:3 C5 E5:2 D5 C5",
+            "B4:2 B4 C5 D5:2 E5:2",
+            "C5:2 A4:2 A4:2 -:2",
+          ],
+          chords: ["Am E", "Am", "E", "Am", "Dm", "C", "E", "Am"],
+        },
+        // Partie centrale de notre cru, en majeur comme le trio d'une polka,
+        // qui finit sur l'accord de mi pour relancer le thème.
+        B: {
+          melody: [
+            "G5:3 E5 C5:2 E5:2",
+            "D5:3 B4 G4:2 B4:2",
+            "C5:3 A4 E5:2 A5:2",
+            "G#4:2 B4:2 E5:4",
+            "A5:3 F5 C5:2 F5:2",
+            "G5:3 E5 C6:2 G5:2",
+            "F5 E5 D5 F5 E5 D5 C5 B4",
+            "G#4 B4 E5 G#5 B5:2 -:2",
+          ],
+          chords: ["C", "G", "Am", "E", "F", "C", "Dm E", "E"],
+        },
+      }
 
-      // Un accord par demi-mesure (un seul nom : toute la mesure).
-      const CHORDS = ["Am E", "Am", "E", "Am", "Dm", "C", "E", "Am"]
+      // Ordre de lecture ; « ' » : reprise avec la mélodie doublée à l'octave
+      // du dessous.
+      const FORM = "A A' B A'"
 
       // Basse : fondamentale au changement d'accord, puis quinte s'il dure.
       const CHORD_NOTES = {
@@ -759,6 +782,8 @@
         E: { bass: ["E2", "B2"], stab: ["G#3", "B3", "E4"] },
         Dm: { bass: ["D2", "A2"], stab: ["A3", "D4", "F4"] },
         C: { bass: ["C3", "G2"], stab: ["G3", "C4", "E4"] },
+        G: { bass: ["G2", "D3"], stab: ["G3", "B3", "D4"] },
+        F: { bass: ["F2", "C3"], stab: ["A3", "C4", "F4"] },
       }
 
       const TUNE = buildTune()
@@ -778,29 +803,36 @@
 
       // La partition dépliée en croches : à chaque pas, ce qui commence.
       function buildTune() {
-        const steps = Array.from({ length: MELODY.length * 8 }, () => ({}))
-        MELODY.forEach((bar, b) => {
-          let pos = b * 8
-          bar.split(" ").forEach((token) => {
-            const [name, len] = token.split(":")
-            const eighths = Number(len || 1)
-            if (name !== "-")
-              steps[pos].lead = { freq: freq(name), len: eighths }
-            pos += eighths
+        const steps = []
+        FORM.split(" ").forEach((part) => {
+          const { melody, chords } = PARTS[part[0]]
+          const doubled = part.endsWith("'")
+          const start = steps.length
+          melody.forEach((bar) => {
+            for (let i = 0; i < 8; i++) steps.push({})
+            let pos = steps.length - 8
+            bar.split(" ").forEach((token) => {
+              const [name, len] = token.split(":")
+              const eighths = Number(len || 1)
+              if (name !== "-") {
+                steps[pos].lead = { freq: freq(name), len: eighths, doubled }
+              }
+              pos += eighths
+            })
           })
-        })
-        // Polka : basse sur les temps 1 et 3, accord bref sur les temps 2 et 4.
-        let prev = null
-        CHORDS.forEach((bar, b) => {
-          const halves = bar.split(" ")
-          for (let h = 0; h < 2; h++) {
-            const name = halves[h] || halves[0]
-            const chord = CHORD_NOTES[name]
-            const pos = b * 8 + h * 4
-            steps[pos].bass = freq(chord.bass[name === prev ? 1 : 0])
-            steps[pos + 2].stab = chord.stab.map(freq)
-            prev = name
-          }
+          // Polka : basse sur les temps 1 et 3, accord bref sur les temps 2 et 4.
+          let prev = null
+          chords.forEach((bar, b) => {
+            const halves = bar.split(" ")
+            for (let h = 0; h < 2; h++) {
+              const name = halves[h] || halves[0]
+              const chord = CHORD_NOTES[name]
+              const pos = start + b * 8 + h * 4
+              steps[pos].bass = freq(chord.bass[name === prev ? 1 : 0])
+              steps[pos + 2].stab = chord.stab.map(freq)
+              prev = name
+            }
+          })
         })
         return steps
       }
@@ -1005,19 +1037,18 @@
           const eighth = 30 / musicTempo()
           playStep(music.step, music.time, eighth)
           music.time += eighth
-          music.step = (music.step + 1) % (TUNE.length * 2)
+          music.step = (music.step + 1) % TUNE.length
         }
       }
 
       function playStep(step, at, eighth) {
-        const s = TUNE[step % TUNE.length]
+        const s = TUNE[step]
         const out = music.out
         if (s.lead) {
           const lead = s.lead.freq
           const o = { at, dur: s.lead.len * eighth * 0.92, sustain: 0.7 }
           tone({ ...o, type: "square", freq: lead, vol: 0.07 }, out)
-          // Au second passage, la mélodie est doublée à l'octave du dessous.
-          if (step >= TUNE.length) {
+          if (s.lead.doubled) {
             tone({ ...o, type: "triangle", freq: lead / 2, vol: 0.1 }, out)
           }
         }
