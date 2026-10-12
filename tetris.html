@@ -140,6 +140,65 @@
         font-variant-numeric: tabular-nums;
       }
 
+      /* Record et réglages du son côte à côte, pour que l'accueil tienne
+         sans défiler. */
+      .menu-row {
+        display: flex;
+        gap: 10px;
+      }
+
+      .menu-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .menu-col .best-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .menu-col .sound-col {
+        flex: 1;
+      }
+
+      .sound-col {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .sound-btn {
+        flex: 1;
+        padding: 6px 10px;
+        border: 2px solid #4a90e2;
+        border-radius: 12px;
+        background: white;
+        color: #1a1a1a;
+        font-size: 0.95em;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+
+      .sound-btn.off {
+        border-color: #e2e8f0;
+        background: #e2e8f0;
+        color: #888;
+      }
+
+      .overlay .sound-col {
+        font-size: 0.7em;
+      }
+
+      .overlay .sound-btn {
+        padding: 8px 16px;
+      }
+
       .rules {
         margin-top: 18px;
         font-size: 0.85em;
@@ -387,7 +446,8 @@
         color: #1a1a1a;
       }
 
-      .big-btn:active {
+      .big-btn:active,
+      .sound-btn:active {
         transform: scale(0.98);
       }
 
@@ -437,10 +497,29 @@
         </span>
       </button>
 
-      <div class="section-title">Meilleur score</div>
-      <div class="best-card">
-        <div class="label">Record</div>
-        <div class="value" id="menu-best">0</div>
+      <div class="menu-row">
+        <div class="menu-col">
+          <div class="section-title">Meilleur score</div>
+          <div class="best-card">
+            <div class="label">Record</div>
+            <div class="value" id="menu-best">0</div>
+          </div>
+        </div>
+        <div class="menu-col">
+          <div class="section-title">Son</div>
+          <div class="sound-col">
+            <button
+              class="sound-btn"
+              data-sound="music"
+              onclick="toggleMusic()"
+            ></button>
+            <button
+              class="sound-btn"
+              data-sound="sfx"
+              onclick="toggleSfx()"
+            ></button>
+          </div>
+        </div>
       </div>
 
       <p class="rules">
@@ -495,6 +574,18 @@
           >
             Quitter
           </button>
+          <div class="sound-col">
+            <button
+              class="sound-btn"
+              data-sound="music"
+              onclick="toggleMusic()"
+            ></button>
+            <button
+              class="sound-btn"
+              data-sound="sfx"
+              onclick="toggleSfx()"
+            ></button>
+          </div>
         </div>
         <div class="toast" id="toast"></div>
       </div>
@@ -595,7 +686,12 @@
         Z: "#ef4444",
       }
 
-      const SPEEDS = { calme: 1100, normal: 800, rapide: 550 }
+      // Intervalle de chute (ms) et tempo de la musique (noires par minute).
+      const SPEEDS = {
+        calme: { drop: 1100, tempo: 120 },
+        normal: { drop: 800, tempo: 140 },
+        rapide: { drop: 550, tempo: 160 },
+      }
       const LINE_POINTS = [0, 100, 300, 500, 800]
       const LOCK_DELAY = 500
       const CLEAR_ANIM = 260
@@ -610,7 +706,7 @@
       let score = 0
       let lines = 0
       let level = 1
-      let baseSpeed = SPEEDS.normal
+      let speed = SPEEDS.normal
       // L'ombre de pose est une aide : elle vise à la place du joueur, donc on
       // la réserve au mode le plus lent.
       let showGhost = false
@@ -622,13 +718,368 @@
       let paused = false
       let lastFrame = 0
       let cell = 20
-      let best = loadBest()
+      let best = parseInt(readStore(BEST_KEY), 10) || 0
 
       const boardCanvas = document.getElementById("board")
       const ctx = boardCanvas.getContext("2d")
       const nextCanvas = document.getElementById("next")
       const nextCtx = nextCanvas.getContext("2d")
       const toastEl = document.getElementById("toast")
+
+      // ===== Son =====
+      //
+      // Tout est synthétisé à la volée (Web Audio), sans fichier audio. La
+      // musique est notre propre arrangement de « Korobeiniki », chanson
+      // populaire russe du XIXᵉ siècle devenue l'air de Tetris : la mélodie
+      // est dans le domaine public, mais pas l'arrangement Game Boy de 1989,
+      // qu'on ne reprend donc pas (ici, accompagnement façon polka).
+
+      const MUSIC_KEY = "tetris-music"
+      const SFX_KEY = "tetris-sfx"
+
+      // Une mesure par chaîne, en croches : « D5:2 » dure deux croches, une
+      // note sans durée en dure une, « - » est un silence.
+      const MELODY = [
+        "E5:2 B4 C5 D5:2 C5 B4",
+        "A4:2 A4 C5 E5:2 D5 C5",
+        "B4:3 C5 D5:2 E5:2",
+        "C5:2 A4:2 A4:2 -:2",
+        "- D5:2 F5 A5:2 G5 F5",
+        "E5:3 C5 E5:2 D5 C5",
+        "B4:2 B4 C5 D5:2 E5:2",
+        "C5:2 A4:2 A4:2 -:2",
+      ]
+
+      // Un accord par demi-mesure (un seul nom : toute la mesure).
+      const CHORDS = ["Am E", "Am", "E", "Am", "Dm", "C", "E", "Am"]
+
+      // Basse : fondamentale au changement d'accord, puis quinte s'il dure.
+      const CHORD_NOTES = {
+        Am: { bass: ["A2", "E2"], stab: ["A3", "C4", "E4"] },
+        E: { bass: ["E2", "B2"], stab: ["G#3", "B3", "E4"] },
+        Dm: { bass: ["D2", "A2"], stab: ["A3", "D4", "F4"] },
+        C: { bass: ["C3", "G2"], stab: ["G3", "C4", "E4"] },
+      }
+
+      const TUNE = buildTune()
+
+      let audioCtx = null
+      let noiseBuffer = null
+      let musicOn = readStore(MUSIC_KEY) !== "off"
+      let sfxOn = readStore(SFX_KEY) !== "off"
+      let audioSleep = null
+      const music = { out: null, bass: null, step: 0, time: 0 }
+
+      function freq(name) {
+        const m = /^([A-G])(#?)(\d)$/.exec(name)
+        const semis = "C D EF G A B".indexOf(m[1]) + (m[2] ? 1 : 0)
+        return 440 * Math.pow(2, (12 * (Number(m[3]) + 1) + semis - 69) / 12)
+      }
+
+      // La partition dépliée en croches : à chaque pas, ce qui commence.
+      function buildTune() {
+        const steps = Array.from({ length: MELODY.length * 8 }, () => ({}))
+        MELODY.forEach((bar, b) => {
+          let pos = b * 8
+          bar.split(" ").forEach((token) => {
+            const [name, len] = token.split(":")
+            const eighths = Number(len || 1)
+            if (name !== "-")
+              steps[pos].lead = { freq: freq(name), len: eighths }
+            pos += eighths
+          })
+        })
+        // Polka : basse sur les temps 1 et 3, accord bref sur les temps 2 et 4.
+        let prev = null
+        CHORDS.forEach((bar, b) => {
+          const halves = bar.split(" ")
+          for (let h = 0; h < 2; h++) {
+            const name = halves[h] || halves[0]
+            const chord = CHORD_NOTES[name]
+            const pos = b * 8 + h * 4
+            steps[pos].bass = freq(chord.bass[name === prev ? 1 : 0])
+            steps[pos + 2].stab = chord.stab.map(freq)
+            prev = name
+          }
+        })
+        return steps
+      }
+
+      // Les navigateurs n'autorisent le son qu'après un geste du joueur : on
+      // crée et relance le contexte audio au départ et à la reprise.
+      function resumeAudio() {
+        if (!musicOn && !sfxOn) return
+        const Ctx = window.AudioContext || window.webkitAudioContext
+        if (!Ctx) return
+        if (!audioCtx) audioCtx = new Ctx()
+        audioCtx.resume()
+      }
+
+      // Une note : attaque franche, retombée vers `sustain` (fraction du
+      // volume), extinction à la fin. `to` fait glisser la hauteur.
+      function tone(o, dest = audioCtx.destination) {
+        const osc = audioCtx.createOscillator()
+        const gain = audioCtx.createGain()
+        osc.type = o.type
+        osc.frequency.setValueAtTime(o.freq, o.at)
+        if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, o.at + o.dur)
+        gain.gain.setValueAtTime(0, o.at)
+        gain.gain.linearRampToValueAtTime(o.vol, o.at + 0.005)
+        gain.gain.setTargetAtTime(o.vol * (o.sustain || 0), o.at + 0.005, 0.06)
+        gain.gain.setTargetAtTime(0, o.at + o.dur, 0.02)
+        osc.connect(gain)
+        gain.connect(dest)
+        osc.start(o.at)
+        osc.stop(o.at + o.dur + 0.15)
+      }
+
+      // Souffle filtré, pour les chocs.
+      function noise(at, dur, vol, cutoff) {
+        if (!noiseBuffer) {
+          const rate = audioCtx.sampleRate
+          noiseBuffer = audioCtx.createBuffer(1, rate / 2, rate)
+          const data = noiseBuffer.getChannelData(0)
+          for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+        }
+        const src = audioCtx.createBufferSource()
+        const filter = audioCtx.createBiquadFilter()
+        const gain = audioCtx.createGain()
+        src.buffer = noiseBuffer
+        filter.type = "lowpass"
+        filter.frequency.setValueAtTime(cutoff, at)
+        filter.frequency.exponentialRampToValueAtTime(cutoff / 8, at + dur)
+        gain.gain.setValueAtTime(vol, at)
+        gain.gain.exponentialRampToValueAtTime(0.001, at + dur)
+        src.connect(filter)
+        filter.connect(gain)
+        gain.connect(audioCtx.destination)
+        src.start(at)
+        src.stop(at + dur)
+      }
+
+      function arpeggio(names, at, gap, o) {
+        names.forEach((name, i) => {
+          tone({
+            ...o,
+            freq: freq(name),
+            at: at + i * gap,
+          })
+        })
+      }
+
+      const SFX = {
+        move: (t) =>
+          tone({
+            type: "square",
+            freq: 330,
+            at: t,
+            dur: 0.03,
+            vol: 0.04,
+          }),
+        rotate: (t) =>
+          tone({
+            type: "square",
+            freq: 520,
+            to: 880,
+            at: t,
+            dur: 0.07,
+            vol: 0.05,
+            sustain: 0.5,
+          }),
+        soft: (t) =>
+          tone({
+            type: "triangle",
+            freq: 200,
+            at: t,
+            dur: 0.03,
+            vol: 0.08,
+          }),
+        lock: (t) => {
+          tone({
+            type: "triangle",
+            freq: 160,
+            to: 60,
+            at: t,
+            dur: 0.12,
+            vol: 0.3,
+            sustain: 0.6,
+          })
+          noise(t, 0.05, 0.08, 2000)
+        },
+        drop: (t) => {
+          noise(t, 0.18, 0.2, 6000)
+          tone({
+            type: "triangle",
+            freq: 220,
+            to: 55,
+            at: t,
+            dur: 0.18,
+            vol: 0.35,
+            sustain: 0.8,
+          })
+        },
+        // Plus il y a de lignes, plus l'arpège monte haut.
+        clear: (t, count) =>
+          arpeggio(["C6", "E6", "G6", "C7"].slice(0, count + 1), t, 0.06, {
+            type: "square",
+            dur: 0.12,
+            vol: 0.06,
+            sustain: 0.4,
+          }),
+        tetris: (t) => {
+          const o = { type: "square", dur: 0.1, vol: 0.06, sustain: 0.5 }
+          arpeggio(["C5", "E5", "G5", "C6", "E6"], t, 0.05, o)
+          arpeggio(["C6", "E6", "G6"], t + 0.28, 0, {
+            ...o,
+            dur: 0.5,
+            vol: 0.04,
+          })
+        },
+        levelUp: (t) => {
+          const notes = ["A5", "C#6", "E6", "A6"]
+          const o = { dur: 0.16, sustain: 0.6 }
+          arpeggio(notes, t, 0.08, { ...o, type: "triangle", vol: 0.14 })
+          arpeggio(notes, t, 0.08, { ...o, type: "square", vol: 0.03 })
+        },
+        // « Wah wah wah waaah » : quatre notes qui retombent.
+        gameOver: (t) => {
+          ;[392, 370, 349, 330].forEach((f, i) => {
+            const last = i === 3
+            tone({
+              type: "square",
+              freq: f,
+              to: f * (last ? 0.94 : 0.97),
+              at: t + i * 0.3,
+              dur: last ? 0.8 : 0.26,
+              vol: 0.06,
+              sustain: 0.7,
+            })
+          })
+        },
+        record: (t) => {
+          const o = { type: "square", dur: 0.14, vol: 0.06, sustain: 0.6 }
+          arpeggio(["G5", "G5", "G5"], t, 0.12, o)
+          arpeggio(["C6", "E6", "G6"], t + 0.4, 0, {
+            ...o,
+            dur: 0.7,
+            vol: 0.04,
+          })
+        },
+      }
+
+      function sfx(name, arg) {
+        if (sfxOn && audioCtx) SFX[name](audioCtx.currentTime + 0.01, arg)
+      }
+
+      // Le tempo suit la vitesse choisie et accélère à chaque niveau.
+      function musicTempo() {
+        return Math.min(200, speed.tempo + (level - 1) * 6)
+      }
+
+      function startMusic() {
+        if (!musicOn || !audioCtx) return
+        music.out = audioCtx.createGain()
+        music.out.connect(audioCtx.destination)
+        music.bass = audioCtx.createBiquadFilter()
+        music.bass.type = "lowpass"
+        music.bass.frequency.value = 800
+        music.bass.connect(music.out)
+        music.step = 0
+        music.time = audioCtx.currentTime + 0.1
+        scheduleMusic()
+      }
+
+      function stopMusic() {
+        if (!music.out) return
+        const out = music.out
+        out.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03)
+        setTimeout(() => out.disconnect(), 300)
+        music.out = null
+      }
+
+      // Appelée à chaque image de la boucle de jeu, trop irrégulière pour
+      // tenir le rythme : les notes sont posées un peu à l'avance sur
+      // l'horloge audio, elle exacte. En pause, boucle et horloge s'arrêtent.
+      function scheduleMusic() {
+        while (music.time < audioCtx.currentTime + 0.2) {
+          const eighth = 30 / musicTempo()
+          playStep(music.step, music.time, eighth)
+          music.time += eighth
+          music.step = (music.step + 1) % (TUNE.length * 2)
+        }
+      }
+
+      function playStep(step, at, eighth) {
+        const s = TUNE[step % TUNE.length]
+        const out = music.out
+        if (s.lead) {
+          const lead = s.lead.freq
+          const o = { at, dur: s.lead.len * eighth * 0.92, sustain: 0.7 }
+          tone({ ...o, type: "square", freq: lead, vol: 0.07 }, out)
+          // Au second passage, la mélodie est doublée à l'octave du dessous.
+          if (step >= TUNE.length) {
+            tone({ ...o, type: "triangle", freq: lead / 2, vol: 0.1 }, out)
+          }
+        }
+        if (s.bass) {
+          const o = { type: "square", at, dur: eighth * 1.8, sustain: 0.5 }
+          tone({ ...o, freq: s.bass, vol: 0.12 }, music.bass)
+        }
+        if (s.stab) {
+          const o = { type: "triangle", at, dur: eighth * 0.8, sustain: 0.2 }
+          s.stab.forEach((f) => tone({ ...o, freq: f, vol: 0.05 }, out))
+        }
+      }
+
+      // Le son suit l'état de la partie : la musique ne joue qu'en partie, la
+      // pause fige tout, et hors partie le contexte audio s'endort une fois
+      // le dernier bruitage joué (sinon il tourne à vide et use la batterie).
+      function syncAudio() {
+        clearTimeout(audioSleep)
+        if (!musicOn || !playing) stopMusic()
+        if (paused) {
+          if (audioCtx) audioCtx.suspend()
+        } else if (playing) {
+          resumeAudio()
+          if (!music.out) startMusic()
+        } else if (audioCtx) {
+          audioSleep = setTimeout(() => audioCtx.suspend(), 2500)
+        }
+      }
+
+      function toggleMusic() {
+        musicOn = !musicOn
+        writeStore(MUSIC_KEY, musicOn ? "on" : "off")
+        renderSoundButtons()
+        syncAudio()
+      }
+
+      function toggleSfx() {
+        sfxOn = !sfxOn
+        writeStore(SFX_KEY, sfxOn ? "on" : "off")
+        renderSoundButtons()
+        // Petit aperçu, sauf en pause où le son reste coupé.
+        if (sfxOn && !paused) {
+          resumeAudio()
+          sfx("rotate")
+        }
+        syncAudio()
+      }
+
+      const SOUND_LABELS = {
+        music: ["🎵", "Musique"],
+        sfx: ["🔔", "Bruitages"],
+      }
+
+      function renderSoundButtons() {
+        document.querySelectorAll("[data-sound]").forEach((btn) => {
+          const on = btn.dataset.sound === "music" ? musicOn : sfxOn
+          const [icon, label] = SOUND_LABELS[btn.dataset.sound]
+          btn.textContent = (on ? icon : "🔇") + " " + label
+          btn.classList.toggle("off", !on)
+          btn.setAttribute("aria-pressed", on)
+        })
+      }
 
       // ===== Écrans =====
 
@@ -638,25 +1089,26 @@
         })
       }
 
-      function loadBest() {
+      function readStore(key) {
         try {
-          return parseInt(localStorage.getItem(BEST_KEY), 10) || 0
+          return localStorage.getItem(key)
         } catch (e) {
-          return 0
+          return null
         }
       }
 
-      function saveBest(value) {
+      function writeStore(key, value) {
         try {
-          localStorage.setItem(BEST_KEY, String(value))
+          localStorage.setItem(key, value)
         } catch (e) {
-          // navigation privée : tant pis, le record ne sera pas gardé
+          // navigation privée : tant pis, rien ne sera gardé après la visite
         }
       }
 
       function goToMenu() {
         playing = false
         paused = false
+        syncAudio()
         if (window.ExitGuard) ExitGuard.setActive(false)
         document.getElementById("menu-best").textContent = best
         showScreen("screen-menu")
@@ -672,7 +1124,7 @@
 
       function startGame(speedKey) {
         currentSpeedKey = speedKey
-        baseSpeed = SPEEDS[speedKey] || SPEEDS.normal
+        speed = SPEEDS[speedKey] || SPEEDS.normal
         showGhost = speedKey === "calme"
         grid = []
         for (let r = 0; r < ROWS; r++) grid.push(new Array(COLS).fill(null))
@@ -693,6 +1145,7 @@
         layout()
         spawn()
         playing = true
+        syncAudio()
         lastFrame = performance.now()
         // La partie est réellement engagée : les briques tombent déjà.
         if (window.ExitGuard) ExitGuard.setActive(true)
@@ -763,6 +1216,7 @@
         if (!canPlay()) return
         if (!collides(piece.shape, piece.x + dx, piece.y)) {
           piece.x += dx
+          sfx("move")
           refreshLanding()
           draw()
         }
@@ -777,6 +1231,7 @@
           if (!collides(rotated, piece.x + k, piece.y)) {
             piece.shape = rotated
             piece.x += k
+            sfx("rotate")
             refreshLanding()
             draw()
             return
@@ -789,6 +1244,7 @@
         if (!collides(piece.shape, piece.x, piece.y + 1)) {
           piece.y++
           score += 1
+          sfx("soft")
           dropTimer = 0
           updateStats()
           refreshLanding()
@@ -805,6 +1261,7 @@
         }
         score += dist * 2
         updateStats()
+        sfx("drop")
         lockPiece()
       }
 
@@ -827,6 +1284,7 @@
         document.getElementById("overlay").classList.toggle("show", paused)
         document.getElementById("overlay-text").textContent = "Pause"
         document.getElementById("pause-btn").textContent = paused ? "▶" : "⏸"
+        syncAudio()
         if (!paused) {
           lastFrame = performance.now()
           requestAnimationFrame(loop)
@@ -850,7 +1308,9 @@
           if (grid[r].every((v) => v !== null)) full.push(r)
         }
 
+        sfx("lock")
         if (full.length > 0) {
+          sfx(full.length === 4 ? "tetris" : "clear", full.length)
           clearing = { rows: full, elapsed: 0 }
           piece = null
           draw()
@@ -877,6 +1337,7 @@
         if (newLevel > level) {
           level = newLevel
           showToast("Niveau " + level + " !")
+          sfx("levelUp")
         } else if (rows.length === 4) {
           showToast("TETRIS !")
           showConfetti()
@@ -907,23 +1368,26 @@
         playing = false
         piece = null
         if (window.ExitGuard) ExitGuard.setActive(false)
+        syncAudio()
         const isRecord = score > best
+        const newRecord = isRecord && score > 0
+        sfx(newRecord ? "record" : "gameOver")
         if (isRecord) {
           best = score
-          saveBest(best)
+          writeStore(BEST_KEY, String(best))
         }
         document.getElementById("over-score").textContent = score
         document.getElementById("over-lines").textContent = lines
         document.getElementById("over-best").textContent = best
         document
           .getElementById("over-record")
-          .classList.toggle("show", isRecord && score > 0)
+          .classList.toggle("show", newRecord)
         document.getElementById("over-msg").textContent =
           lines === 0
             ? "La pile a touché le haut. On retente ?"
             : "Tu as complété " + lines + (lines > 1 ? " lignes." : " ligne.")
         showScreen("screen-over")
-        if (isRecord && score > 0) showConfetti()
+        if (newRecord) showConfetti()
       }
 
       // ===== Boucle de jeu =====
@@ -932,6 +1396,7 @@
         if (!playing || paused) return
         const dt = Math.min(now - lastFrame, 100)
         lastFrame = now
+        if (music.out) scheduleMusic()
 
         if (clearing) {
           clearing.elapsed += dt
@@ -941,7 +1406,7 @@
           return
         }
 
-        const interval = Math.max(110, baseSpeed * Math.pow(0.85, level - 1))
+        const interval = Math.max(110, speed.drop * Math.pow(0.85, level - 1))
         dropTimer += dt
 
         if (collides(piece.shape, piece.x, piece.y + 1)) {
@@ -1213,6 +1678,7 @@
 
       if (window.ExitGuard) ExitGuard.setActive(false)
       document.getElementById("menu-best").textContent = best
+      renderSoundButtons()
     </script>
   </body>
 </html>
