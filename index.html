@@ -770,8 +770,11 @@
       applyFilter()
 
       // Partage : feuille de partage native sur mobile (SMS, WhatsApp…), sinon
-      // on copie le lien. L'URL est celle du dossier de l'accueil, pour
-      // fonctionner sous /reading-practice/ comme dans les previews.
+      // on copie le lien. On partage l'adresse exacte de la page affichée
+      // (…/index.html dans l'appli installée), et non celle du dossier : Chrome
+      // illustre le partage avec l'icône qu'il connaît pour cette adresse, et
+      // pour une adresse jamais visitée il prend une icône du même domaine
+      // isc.github.io, celle de Bémol. Ça marche aussi dans les previews.
       const shareButton = document.getElementById("share")
       const toast = document.getElementById("toast")
       let toastTimer = null
@@ -784,7 +787,7 @@
       }
 
       shareButton.addEventListener("click", async () => {
-        const url = new URL("./", location.href).href
+        const url = location.origin + location.pathname
         const data = {
           title: "Marzouzoute",
           text: "Une boîte à jeux pour apprendre en s'amusant",
