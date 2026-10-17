@@ -227,13 +227,20 @@
         padding-left: 4px;
       }
 
+      /* Trois tuiles de même hauteur, celle de la plus longue. */
+      .speeds {
+        display: grid;
+        grid-auto-rows: 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
       .speed-btn {
         display: flex;
         align-items: center;
         gap: 14px;
         width: 100%;
         padding: 10px 16px;
-        margin-bottom: 10px;
         text-align: left;
       }
 
@@ -392,8 +399,14 @@
         padding: var(--frame);
       }
 
+      /* Le plateau et ce qui s'affiche par-dessus (pause, bandeau). */
+      .board-box {
+        position: relative;
+      }
+
       /* La boîte laquée : un cadre noir et or autour du plateau. */
       #board {
+        display: block;
         border-radius: 4px;
         touch-action: none;
         box-shadow:
@@ -406,7 +419,7 @@
 
       .overlay {
         position: absolute;
-        inset: var(--frame);
+        inset: 0;
         display: none;
         flex-direction: column;
         align-items: center;
@@ -416,6 +429,11 @@
         border-radius: 4px;
         color: var(--gold-light);
         font-size: 1.5em;
+      }
+
+      /* Le bandeau s'efface derrière la pause. */
+      .overlay.show ~ .toast {
+        display: none;
       }
 
       .overlay.show {
@@ -575,12 +593,26 @@
         color: var(--cream);
       }
 
+      .round svg {
+        width: 30px;
+        height: 30px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .round .head {
+        fill: currentColor;
+      }
+
       .caption {
         font-size: 0.7em;
       }
 
-      /* Petit et penché comme Select et Start : on ne l'enfonce pas par
-         mégarde. */
+      /* Petit et penché comme Start sur la Game Boy, qui met aussi en pause :
+         on ne l'enfonce pas par mégarde. On quitte depuis la pause. */
       .pill {
         align-self: end;
         margin-bottom: 14px;
@@ -718,42 +750,44 @@
       </div>
 
       <div class="section-title">Choisis ta vitesse</div>
-      <button class="speed-btn lacquer" onclick="startGame('calme')">
-        <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 24px"><use href="#matryoshka" /></svg></span>
-        <span class="speed-text">
-          <span class="label">Tranquille</span><br />
-          <span class="hint"
-            >Les briques descendent lentement, et une ombre montre où elles vont
-            se poser</span
-          >
-        </span>
-        <span class="speed-record">
-          <span class="rec-label">Record</span>
-          <span class="rec-value" data-record="calme">0</span>
-        </span>
-      </button>
-      <button class="speed-btn lacquer" onclick="startGame('normal')">
-        <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 32px"><use href="#matryoshka" /></svg></span>
-        <span class="speed-text">
-          <span class="label">Normal</span><br />
-          <span class="hint">La vitesse classique</span>
-        </span>
-        <span class="speed-record">
-          <span class="rec-label">Record</span>
-          <span class="rec-value" data-record="normal">0</span>
-        </span>
-      </button>
-      <button class="speed-btn lacquer" onclick="startGame('rapide')">
-        <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 42px"><use href="#matryoshka" /></svg></span>
-        <span class="speed-text">
-          <span class="label">Rapide</span><br />
-          <span class="hint">Pour les pros de la brique</span>
-        </span>
-        <span class="speed-record">
-          <span class="rec-label">Record</span>
-          <span class="rec-value" data-record="rapide">0</span>
-        </span>
-      </button>
+      <div class="speeds">
+        <button class="speed-btn lacquer" onclick="startGame('calme')">
+          <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 24px"><use href="#matryoshka" /></svg></span>
+          <span class="speed-text">
+            <span class="label">Tranquille</span><br />
+            <span class="hint"
+              >Les briques descendent lentement, et une ombre montre où elles vont
+              se poser</span
+            >
+          </span>
+          <span class="speed-record">
+            <span class="rec-label">Record</span>
+            <span class="rec-value" data-record="calme">0</span>
+          </span>
+        </button>
+        <button class="speed-btn lacquer" onclick="startGame('normal')">
+          <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 32px"><use href="#matryoshka" /></svg></span>
+          <span class="speed-text">
+            <span class="label">Normal</span><br />
+            <span class="hint">La vitesse classique</span>
+          </span>
+          <span class="speed-record">
+            <span class="rec-label">Record</span>
+            <span class="rec-value" data-record="normal">0</span>
+          </span>
+        </button>
+        <button class="speed-btn lacquer" onclick="startGame('rapide')">
+          <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 42px"><use href="#matryoshka" /></svg></span>
+          <span class="speed-text">
+            <span class="label">Rapide</span><br />
+            <span class="hint">Pour les pros de la brique</span>
+          </span>
+          <span class="speed-record">
+            <span class="rec-label">Record</span>
+            <span class="rec-value" data-record="rapide">0</span>
+          </span>
+        </button>
+      </div>
 
       <div class="section-title">Son</div>
       <div class="sound-col row">
@@ -813,38 +847,40 @@
       </div>
 
       <div class="board-wrap" id="board-wrap">
-        <canvas id="board"></canvas>
-        <div class="overlay" id="overlay">
-          <span id="overlay-text">Pause</span>
-          <button
-            class="big-btn lacquer red"
-            style="width: auto; padding: 12px 28px"
-            onclick="togglePause()"
-          >
-            Reprendre
-          </button>
-          <button
-            class="big-btn lacquer"
-            style="width: auto; padding: 10px 24px"
-            onclick="goToMenu()"
-          >
-            Quitter
-          </button>
-          <div class="sound-col">
+        <div class="board-box">
+          <canvas id="board"></canvas>
+          <div class="overlay" id="overlay">
+            <span>Pause</span>
             <button
-              class="sound-btn lacquer"
-              data-sound="music"
-              onclick="toggleMusic()"
-            ></button>
+              class="big-btn lacquer red"
+              style="width: auto; padding: 12px 28px"
+              onclick="togglePause()"
+            >
+              Reprendre
+            </button>
             <button
-              class="sound-btn lacquer"
-              data-sound="sfx"
-              onclick="toggleSfx()"
-            ></button>
+              class="big-btn lacquer"
+              style="width: auto; padding: 10px 24px"
+              onclick="goToMenu()"
+            >
+              Quitter
+            </button>
+            <div class="sound-col">
+              <button
+                class="sound-btn lacquer"
+                data-sound="music"
+                onclick="toggleMusic()"
+              ></button>
+              <button
+                class="sound-btn lacquer"
+                data-sound="sfx"
+                onclick="toggleSfx()"
+              ></button>
+            </div>
           </div>
-        </div>
-        <div class="toast lacquer red" id="toast">
-          <svg class="doll" viewBox="0 0 60 80" aria-hidden="true"><use href="#matryoshka" /></svg><span id="toast-text"></span>
+          <div class="toast lacquer red" id="toast">
+            <svg class="doll" viewBox="0 0 60 80" aria-hidden="true"><use href="#matryoshka" /></svg><span id="toast-text"></span>
+          </div>
         </div>
       </div>
 
@@ -873,14 +909,21 @@
             <circle class="hub" cx="50" cy="50" r="8" />
           </svg>
         </div>
-        <button class="pill lacquer" onclick="askQuit()">Menu</button>
+        <button class="pill lacquer" onclick="togglePause()">Pause</button>
         <div class="ab" id="ab" role="group" aria-label="Boutons">
           <div class="ab-btn drop">
-            <span class="round lacquer" data-key="drop">⇊</span>
+            <span class="round lacquer" data-key="drop"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3V15M6 10L12 16L18 10M5 21H19" /></svg
+            ></span>
             <span class="label caption">Chute</span>
           </div>
           <div class="ab-btn rotate">
-            <span class="round lacquer red" data-key="rotate">⟳</span>
+            <span class="round lacquer red" data-key="rotate"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M19.52 14.74A8 8 0 1 1 17.66 6.34" />
+                <path class="head" d="M20.13 3.87V8.81H15.19Z" /></svg
+            ></span>
             <span class="label caption">Tourner</span>
           </div>
         </div>
@@ -1515,15 +1558,6 @@
         showScreen("screen-menu")
       }
 
-      // Le bouton Menu est sous le pouce : en partie, il met en pause et
-      // demande confirmation au lieu d'abandonner la partie d'un coup.
-      function askQuit() {
-        if (!playing) return goToMenu()
-        if (!paused) togglePause()
-        document.getElementById("overlay-text").textContent =
-          "Quitter la partie ?"
-      }
-
       function replay() {
         startGame(currentSpeedKey)
       }
@@ -1694,7 +1728,6 @@
         releaseAll()
         paused = !paused
         document.getElementById("overlay").classList.toggle("show", paused)
-        document.getElementById("overlay-text").textContent = "Pause"
         document.getElementById("pause-btn").textContent = paused ? "▶" : PAUSE_ICON
         syncAudio()
         if (!paused) {
