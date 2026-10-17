@@ -414,32 +414,46 @@
             height: 0.65em;
         }
 
-        .score-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            border-top: 2px solid var(--ink);
-        }
-
-        .score-cell {
-            padding: 10px 4px 0;
-        }
-
-        .score-cell + .score-cell {
-            border-left: 2px solid var(--ink);
-            padding-left: 12px;
-        }
-
-        .score-cell .value {
-            font-size: 1.8em;
-            font-weight: 600;
+        /* Un tableau, une ligne par niveau ; celle du niveau en cours est
+           surlignée en jaune. */
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
             font-variant-numeric: tabular-nums;
         }
 
-        .score-cell .label {
-            display: flex;
+        .score-table th,
+        .score-table td {
+            padding: 8px 4px;
+            text-align: left;
+        }
+
+        .score-table thead th {
+            font-size: 0.85em;
+            font-weight: 500;
+            line-height: 1.15;
+            vertical-align: bottom;
+            border-bottom: 2px solid var(--ink);
+        }
+
+        .score-table tbody tr {
+            border-bottom: 1px solid rgba(29, 29, 27, 0.2);
+        }
+
+        .score-table tbody tr.current {
+            background: rgba(242, 185, 30, 0.22);
+        }
+
+        .score-table .level {
+            display: inline-flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.9em;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .score-table td {
+            font-size: 1.35em;
+            font-weight: 600;
         }
 
         @media (max-width: 400px) {
@@ -515,20 +529,12 @@
 
         <div class="scoreboard">
             <h3>scores</h3>
-            <div class="score-row">
-                <div class="score-cell">
-                    <div class="value" id="scoreWins">0</div>
-                    <div class="label"><span class="shape circle blue"></span>victoires</div>
-                </div>
-                <div class="score-cell">
-                    <div class="value" id="scoreLosses">0</div>
-                    <div class="label"><span class="shape red"></span>défaites</div>
-                </div>
-                <div class="score-cell">
-                    <div class="value" id="scoreBest">—</div>
-                    <div class="label"><span class="shape triangle yellow"></span>meilleur temps</div>
-                </div>
-            </div>
+            <table class="score-table">
+                <thead>
+                    <tr><th></th><th>victoires</th><th>défaites</th><th>meilleur temps</th></tr>
+                </thead>
+                <tbody id="scoreRows"></tbody>
+            </table>
         </div>
     </div>
 
@@ -539,7 +545,6 @@
             hard:   { rows: 16, cols: 16, mines: 40 }
         };
         const SCORES_KEY = 'demineur-scores';
-        const DEFAULT_SCORES = { wins: 0, losses: 0, bestTime: null };
         const LONG_PRESS_MS = 400;
 
         // La palette vit dans les variables CSS de :root.
@@ -661,14 +666,22 @@
 
         // ===== Partie =====
 
+        // Les scores sont tenus par niveau : une victoire en facile et une
+        // défaite en difficile ne se comparent pas. Les anciens compteurs, tous
+        // niveaux confondus (wins, losses, bestTime), ne disent pas d'où ils
+        // viennent : on ne les reprend pas.
         function getScores() {
-            const stored = localStorage.getItem(SCORES_KEY);
-            if (!stored) return { ...DEFAULT_SCORES };
+            let stored = {};
             try {
-                return { ...DEFAULT_SCORES, ...JSON.parse(stored) };
+                stored = JSON.parse(localStorage.getItem(SCORES_KEY)) || {};
             } catch (e) {
-                return { ...DEFAULT_SCORES };
+                // Scores illisibles : on repart de zéro.
             }
+            const scores = {};
+            for (const name of Object.keys(LEVELS)) {
+                scores[name] = { wins: 0, losses: 0, bestTime: null, ...stored[name] };
+            }
+            return scores;
         }
 
         function saveScores(scores) {
@@ -683,9 +696,15 @@
 
         function updateScoreboard() {
             const scores = getScores();
-            document.getElementById('scoreWins').textContent = scores.wins;
-            document.getElementById('scoreLosses').textContent = scores.losses;
-            document.getElementById('scoreBest').textContent = scores.bestTime != null ? formatTime(scores.bestTime) : '—';
+            document.getElementById('scoreRows').innerHTML = Object.keys(LEVELS).map((name) => {
+                const { wins, losses, bestTime } = scores[name];
+                // Le nom et la forme du niveau, comme sur son bouton.
+                const label = document.querySelector(`.difficulty button[data-level="${name}"]`).innerHTML;
+                return `<tr class="${name === level ? 'current' : ''}">` +
+                    `<th scope="row"><span class="level">${label}</span></th>` +
+                    `<td>${wins}</td><td>${losses}</td>` +
+                    `<td>${bestTime != null ? formatTime(bestTime) : '—'}</td></tr>`;
+            }).join('');
         }
 
         function initGame() {
@@ -987,7 +1006,7 @@
             explode(explodedR, explodedC);
 
             const scores = getScores();
-            scores.losses++;
+            scores[level].losses++;
             saveScores(scores);
             updateScoreboard();
             showMessage('boum\u00a0! tu as touché une mine.', 'lose');
@@ -1030,16 +1049,16 @@
                 document.getElementById('minesRemaining').textContent = 0;
 
                 const scores = getScores();
-                scores.wins++;
-                if (scores.bestTime == null || time < scores.bestTime) {
-                    scores.bestTime = time;
-                }
+                const current = scores[level];
+                current.wins++;
+                const record = current.bestTime == null || time < current.bestTime;
+                if (record) current.bestTime = time;
                 saveScores(scores);
                 updateScoreboard();
                 // L'affiche apparaît en entier, et le cartel note le temps.
                 document.getElementById('boardFrame').classList.add('complete');
                 document.getElementById('compoInfo').textContent += ` · ${formatTime(time)}`;
-                showMessage(`bravo\u00a0! affiche dévoilée en ${formatTime(time)}`, 'win');
+                showMessage(`bravo\u00a0! affiche dévoilée en ${formatTime(time)}${record ? ' · nouveau record' : ''}`, 'win');
                 document.getElementById('newGameBtn').style.display = 'block';
             }
         }
@@ -1090,6 +1109,7 @@
             document.querySelectorAll('.difficulty button').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.level === newLevel);
             });
+            updateScoreboard();
             initGame();
         }
 
