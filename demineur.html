@@ -416,8 +416,15 @@
 
         .score-row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-auto-flow: column;
+            grid-auto-columns: 1fr;
             border-top: 2px solid var(--ink);
+        }
+
+        .scoreboard h4 {
+            font-size: 1em;
+            font-weight: 600;
+            margin: 18px 0 6px;
         }
 
         .score-cell {
@@ -524,9 +531,20 @@
                     <div class="value" id="scoreLosses">0</div>
                     <div class="label"><span class="shape red"></span>défaites</div>
                 </div>
+            </div>
+            <h4>meilleurs temps</h4>
+            <div class="score-row">
                 <div class="score-cell">
-                    <div class="value" id="scoreBest">—</div>
-                    <div class="label"><span class="shape triangle yellow"></span>meilleur temps</div>
+                    <div class="value" id="best-easy">—</div>
+                    <div class="label"><span class="shape circle blue"></span>facile</div>
+                </div>
+                <div class="score-cell">
+                    <div class="value" id="best-medium">—</div>
+                    <div class="label"><span class="shape red"></span>moyen</div>
+                </div>
+                <div class="score-cell">
+                    <div class="value" id="best-hard">—</div>
+                    <div class="label"><span class="shape triangle yellow"></span>difficile</div>
                 </div>
             </div>
         </div>
@@ -539,7 +557,6 @@
             hard:   { rows: 16, cols: 16, mines: 40 }
         };
         const SCORES_KEY = 'demineur-scores';
-        const DEFAULT_SCORES = { wins: 0, losses: 0, bestTime: null };
         const LONG_PRESS_MS = 400;
 
         // La palette vit dans les variables CSS de :root.
@@ -661,14 +678,16 @@
 
         // ===== Partie =====
 
+        // Un meilleur temps par niveau. L'ancien record unique (clé bestTime),
+        // tous niveaux confondus, ne disait pas d'où il venait : on le laisse.
         function getScores() {
-            const stored = localStorage.getItem(SCORES_KEY);
-            if (!stored) return { ...DEFAULT_SCORES };
+            let stored = {};
             try {
-                return { ...DEFAULT_SCORES, ...JSON.parse(stored) };
+                stored = JSON.parse(localStorage.getItem(SCORES_KEY)) || {};
             } catch (e) {
-                return { ...DEFAULT_SCORES };
+                // Scores illisibles : on repart de zéro.
             }
+            return { wins: stored.wins || 0, losses: stored.losses || 0, bestTimes: { ...stored.bestTimes } };
         }
 
         function saveScores(scores) {
@@ -685,7 +704,10 @@
             const scores = getScores();
             document.getElementById('scoreWins').textContent = scores.wins;
             document.getElementById('scoreLosses').textContent = scores.losses;
-            document.getElementById('scoreBest').textContent = scores.bestTime != null ? formatTime(scores.bestTime) : '—';
+            for (const name of Object.keys(LEVELS)) {
+                const best = scores.bestTimes[name];
+                document.getElementById(`best-${name}`).textContent = best != null ? formatTime(best) : '—';
+            }
         }
 
         function initGame() {
@@ -1031,15 +1053,14 @@
 
                 const scores = getScores();
                 scores.wins++;
-                if (scores.bestTime == null || time < scores.bestTime) {
-                    scores.bestTime = time;
-                }
+                const record = scores.bestTimes[level] == null || time < scores.bestTimes[level];
+                if (record) scores.bestTimes[level] = time;
                 saveScores(scores);
                 updateScoreboard();
                 // L'affiche apparaît en entier, et le cartel note le temps.
                 document.getElementById('boardFrame').classList.add('complete');
                 document.getElementById('compoInfo').textContent += ` · ${formatTime(time)}`;
-                showMessage(`bravo\u00a0! affiche dévoilée en ${formatTime(time)}`, 'win');
+                showMessage(`bravo\u00a0! affiche dévoilée en ${formatTime(time)}${record ? ' · nouveau record' : ''}`, 'win');
                 document.getElementById('newGameBtn').style.display = 'block';
             }
         }
