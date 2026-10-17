@@ -6,6 +6,32 @@
     <title>Fracto Dingo</title>
     <script src="exit-guard.js"></script>
     <style>
+      /* La pâtisserie des fractions : une vitrine avec son store rayé, des
+         tartes et des tablettes de chocolat à partager, une boîte de macarons
+         qui se remplit, et le ticket de caisse des parties. Police Fraunces
+         (licence SIL OFL). */
+      @font-face {
+        font-family: "Fraunces";
+        src: url("Fraunces-Variable.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: swap;
+      }
+
+      :root {
+        --cream: #fbf3e6;
+        --paper: #fffaf3;
+        --raspberry: #d6456a;
+        --raspberry-dark: #a92f50;
+        --pink: #f7d3dc;
+        --pistachio: #8fbf74;
+        --pistachio-dark: #5e8f48;
+        --caramel: #d9933b;
+        --chocolate: #5a3624;
+        --gold: #e2c172;
+        --line: #ead9c4;
+        --box-pink: #fbe3e9;
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -13,96 +39,178 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background: #f0f2f5;
+        position: relative;
+        font-family: "Fraunces", Georgia, serif;
+        color: var(--chocolate);
+        background: var(--cream);
         min-height: 100vh;
         min-height: 100dvh;
         display: flex;
         justify-content: center;
         align-items: flex-start;
-        padding: 16px;
+        padding: 0 16px 24px;
         -webkit-tap-highlight-color: transparent;
         user-select: none;
+      }
+
+      /* Le store rayé de la vitrine, avec son bord festonné. */
+      .awning {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50px;
+        filter: drop-shadow(0 4px 3px rgba(90, 54, 36, 0.22));
+      }
+
+      .awning::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          90deg,
+          var(--raspberry) 0 28px,
+          #fff6f8 28px 56px
+        );
+        -webkit-mask:
+          radial-gradient(14px at 14px 36px, #000 98%, #0000) 0 0 / 28px 100%
+            repeat-x,
+          linear-gradient(#000 0 0) top / 100% 36px no-repeat;
+        mask:
+          radial-gradient(14px at 14px 36px, #000 98%, #0000) 0 0 / 28px 100%
+            repeat-x,
+          linear-gradient(#000 0 0) top / 100% 36px no-repeat;
       }
 
       .screen {
         display: none;
         width: 100%;
         max-width: 480px;
+        padding-top: 64px;
       }
 
       .screen.active {
         display: block;
       }
 
-      .menu-header {
+      /* ===== Menu ===== */
+
+      /* L'enseigne : lettres dorées sur bois chocolat. */
+      .shop-sign {
         text-align: center;
-        padding: 24px 0 16px;
+        background: linear-gradient(180deg, #6a412c, var(--chocolate));
+        color: var(--gold);
+        border-radius: 14px;
+        padding: 14px 12px 16px;
+        box-shadow:
+          inset 0 0 0 3px #4a2b1c,
+          inset 0 0 0 5px var(--gold),
+          0 6px 14px rgba(90, 54, 36, 0.25);
       }
 
-      .menu-header h1 {
-        font-size: 2em;
-        color: #1a1a1a;
-        margin-bottom: 4px;
+      .shop-sign .sign-small {
+        font-size: 0.75em;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
       }
 
-      .menu-header p {
-        color: #666;
-        font-size: 0.95em;
+      .shop-sign h1 {
+        font-size: 2.3em;
+        font-weight: 800;
+        line-height: 1.1;
+        text-shadow: 0 2px 0 #3a2216;
+      }
+
+      .shop-sign .sign-tagline {
+        font-size: 0.9em;
+        color: #f1e0c0;
       }
 
       .section-title {
-        font-size: 0.8em;
-        color: #999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85em;
+        font-weight: 700;
+        color: var(--raspberry);
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin: 20px 0 10px;
-        padding-left: 4px;
+        letter-spacing: 0.12em;
+        margin: 22px 0 10px;
+      }
+
+      .section-title::before,
+      .section-title::after {
+        content: "";
+        flex: 1;
+        border-top: 2px dotted var(--pink);
+      }
+
+      /* Les cartes : des étiquettes de pâtissier, avec leur pointillé rose. */
+      .label-card {
+        background: var(--paper);
+        border-radius: 18px;
+        box-shadow:
+          0 3px 0 var(--line),
+          0 6px 14px rgba(90, 54, 36, 0.08);
+        outline: 2px dashed var(--pink);
+        outline-offset: -7px;
       }
 
       .mode-btn {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         width: 100%;
-        padding: 14px 16px;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        background: white;
+        padding: 14px 18px;
+        border: none;
         cursor: pointer;
-        transition: all 0.2s;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
         text-align: left;
         font-family: inherit;
+        color: inherit;
+        transition: transform 0.15s;
       }
 
-      @media (hover: hover) {
-        .mode-btn:hover {
-          border-color: #4a90e2;
-          background: #f0f7ff;
-        }
+      .mode-btn:active,
+      .paper-btn:active,
+      .results-btn:active {
+        transform: translateY(2px);
       }
 
-      .mode-btn:active {
-        transform: scale(0.98);
+      /* Les boutons en papier crème (retour, « c'est pareil », menu). */
+      .paper-btn {
+        border: none;
+        background: var(--paper);
+        box-shadow: 0 3px 0 var(--line);
+        color: var(--chocolate);
+        font-family: inherit;
+        font-weight: 700;
+        cursor: pointer;
       }
 
       .mode-icon {
-        font-size: 1.6em;
+        display: flex;
+        align-items: center;
+        gap: 2px;
         flex-shrink: 0;
+        width: 76px;
+        justify-content: center;
+        font-weight: 800;
+      }
+
+      #icon-memory svg {
+        width: 46px;
       }
 
       .mode-name {
         font-weight: 700;
-        color: #1a1a1a;
-        font-size: 1em;
+        font-size: 1.1em;
         display: block;
       }
 
       .mode-desc {
-        color: #888;
-        font-size: 0.8em;
+        color: #8a6a58;
+        font-size: 0.85em;
         display: block;
         margin-top: 2px;
       }
@@ -114,153 +222,240 @@
 
       .level-btn {
         flex: 1;
-        padding: 12px 8px;
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        background: white;
+        padding: 11px 8px;
+        border: 2px solid var(--c);
+        border-radius: 999px;
+        background: var(--paper);
+        color: var(--c);
         cursor: pointer;
-        font-weight: 600;
-        font-size: 0.9em;
-        transition: all 0.2s;
+        font-weight: 700;
+        font-size: 0.95em;
         font-family: inherit;
+        transition: all 0.2s;
       }
 
       .level-btn.easy {
-        color: #16a34a;
-      }
-      .level-btn.easy.active {
-        background: #16a34a;
-        border-color: #16a34a;
-        color: white;
+        --c: var(--pistachio-dark);
       }
       .level-btn.medium {
-        color: #ea580c;
-      }
-      .level-btn.medium.active {
-        background: #ea580c;
-        border-color: #ea580c;
-        color: white;
+        --c: var(--caramel);
       }
       .level-btn.hard {
-        color: #dc2626;
+        --c: var(--raspberry);
       }
-      .level-btn.hard.active {
-        background: #dc2626;
-        border-color: #dc2626;
-        color: white;
+
+      .level-btn.active {
+        background: var(--c);
+        color: #fff;
+        box-shadow: 0 3px 0 rgba(90, 54, 36, 0.25);
       }
+
+      /* L'historique : un ticket de caisse au bord en dents de scie (l'ombre
+         sur l'enveloppe, sinon le masque la couperait). */
+      .receipt-wrap {
+        filter: drop-shadow(0 2px 4px rgba(90, 54, 36, 0.18));
+      }
+
+      .receipt {
+        background: #fff;
+        padding: 16px 18px 26px;
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 0.8em;
+        color: #4a3b33;
+        -webkit-mask: conic-gradient(
+            from -45deg at bottom,
+            #0000,
+            #000 1deg 89deg,
+            #0000 90deg
+          )
+          50% / 14px 100%;
+        mask: conic-gradient(
+            from -45deg at bottom,
+            #0000,
+            #000 1deg 89deg,
+            #0000 90deg
+          )
+          50% / 14px 100%;
+      }
+
+      .receipt-head {
+        text-align: center;
+        line-height: 1.5;
+        padding-bottom: 8px;
+        margin-bottom: 6px;
+        border-bottom: 1px dashed #b9a99c;
+      }
+
+      .history-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .history-table th,
+      .history-table td {
+        padding: 5px 2px;
+        text-align: left;
+        font-weight: normal;
+      }
+
+      .history-table th {
+        color: #9a8a7e;
+      }
+
+      .history-table td:last-child,
+      .history-table th:last-child {
+        text-align: right;
+        font-weight: 700;
+      }
+
+      .history-empty {
+        text-align: center;
+        padding: 8px 0;
+      }
+
+      /* ===== En jeu ===== */
 
       .game-header {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
+        gap: 8px;
+        margin-bottom: 14px;
       }
 
       .back-btn {
-        background: none;
-        border: none;
-        font-size: 1.5em;
-        cursor: pointer;
-        padding: 4px 8px;
-        color: #666;
-        font-family: inherit;
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 1.3em;
+      }
+
+      /* La boîte de macarons : un macaron par bonne réponse, des miettes
+         pour une erreur. */
+      .macarons {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        gap: 3px;
+      }
+
+      .slot {
+        width: 22px;
+        height: 22px;
+        min-width: 0;
+        border-radius: 50%;
+      }
+
+      .slot:empty {
+        border: 2px dashed var(--line);
+      }
+
+      .slot.current {
+        border-color: var(--raspberry);
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+
+      /* Un macaron (ou des miettes) qui tombe dans sa case. */
+      .slot svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        animation: drop-in 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+      }
+
+      @keyframes pulse {
+        50% {
+          transform: scale(1.15);
+        }
+      }
+
+      @keyframes drop-in {
+        from {
+          transform: translateY(-14px) scale(0.4);
+          opacity: 0;
+        }
+      }
+
+      .streak {
+        flex-shrink: 0;
+        min-width: 36px;
+        font-weight: 700;
+        color: var(--caramel);
+        text-align: right;
       }
 
       .game-info {
+        flex: 1;
         display: flex;
+        justify-content: flex-end;
         gap: 14px;
-        font-size: 0.9em;
-        color: #666;
-        font-weight: 600;
+        font-weight: 700;
       }
 
       .game-info .score {
-        color: #16a34a;
-      }
-
-      .game-info .streak {
-        color: #ea580c;
-      }
-
-      .progress-bar {
-        width: 100%;
-        height: 6px;
-        background: #e2e8f0;
-        border-radius: 3px;
-        margin-bottom: 16px;
-        overflow: hidden;
-      }
-
-      .progress-fill {
-        height: 100%;
-        background: #4a90e2;
-        border-radius: 3px;
-        transition: width 0.3s ease;
+        color: var(--pistachio-dark);
       }
 
       .question-label {
         text-align: center;
-        color: #888;
-        font-size: 0.85em;
-        margin-bottom: 8px;
+        color: var(--raspberry-dark);
+        font-weight: 700;
+        font-size: 1.05em;
+        margin-bottom: 10px;
       }
 
       .question-card {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 110px;
+        min-height: 140px;
+        padding: 20px;
         margin-bottom: 16px;
       }
 
       .options-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        gap: 12px;
         margin-bottom: 12px;
       }
 
-      .option-card {
-        background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 14px 8px;
+      .option-card,
+      .compare-card {
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 85px;
+        min-height: 100px;
+        padding: 14px 8px;
         cursor: pointer;
-        transition: all 0.15s;
+        transition: transform 0.15s;
       }
 
-      .option-card:active {
+      .option-card:active,
+      .compare-card:active {
         transform: scale(0.97);
       }
 
-      .option-card.correct {
-        border-color: #16a34a;
-        background: #f0fdf4;
-        animation: popCorrect 0.4s ease;
+      /* La bonne réponse (choisie, ou montrée après une erreur) et la mauvaise. */
+      .label-card.correct,
+      .label-card.reveal,
+      .memory-card.matched .card-front {
+        background: #eef7e7;
+        outline-color: var(--pistachio);
       }
 
-      .option-card.wrong {
-        border-color: #dc2626;
-        background: #fef2f2;
+      .label-card.correct {
+        animation: pop 0.4s ease;
+      }
+
+      .label-card.wrong {
+        background: #fdecef;
+        outline-color: var(--raspberry);
         animation: shake 0.4s ease;
       }
 
-      .option-card.reveal {
-        border-color: #16a34a;
-        background: #f0fdf4;
-      }
-
-      .option-card.disabled {
-        pointer-events: none;
+      .faded {
         opacity: 0.5;
       }
 
@@ -268,273 +463,229 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 2px;
-        font-weight: 700;
-        color: #1a1a1a;
-        line-height: 1.1;
+        gap: 3px;
+        font-weight: 800;
+        line-height: 1;
       }
 
       .repr-fraction.large {
-        font-size: 1.6em;
+        font-size: 2.2em;
       }
       .repr-fraction.small {
-        font-size: 1.1em;
+        font-size: 1.6em;
       }
       .repr-fraction.tiny {
-        font-size: 0.9em;
+        font-size: 1.05em;
       }
 
       .frac-bar {
         width: 100%;
-        min-width: 24px;
-        height: 2px;
-        background: #1a1a1a;
+        min-width: 26px;
+        height: 0.12em;
+        border-radius: 1em;
+        background: var(--chocolate);
       }
 
       .repr-number {
-        font-weight: 700;
-        color: #1a1a1a;
+        font-weight: 800;
       }
       .repr-number.large {
-        font-size: 1.8em;
+        font-size: 2.4em;
       }
       .repr-number.small {
-        font-size: 1.3em;
+        font-size: 1.7em;
       }
       .repr-number.tiny {
-        font-size: 1em;
+        font-size: 1.05em;
       }
 
       .repr-text {
-        font-weight: 600;
-        color: #1a1a1a;
+        font-weight: 700;
+        color: var(--raspberry-dark);
         text-align: center;
-        line-height: 1.3;
+        line-height: 1.2;
       }
       .repr-text.large {
-        font-size: 1.15em;
+        font-size: 1.5em;
       }
       .repr-text.small {
-        font-size: 0.95em;
+        font-size: 1.15em;
       }
       .repr-text.tiny {
-        font-size: 0.7em;
+        font-size: 0.75em;
       }
 
       .compare-cards {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         margin-bottom: 16px;
         align-items: center;
       }
 
       .compare-card {
         flex: 1;
-        background: white;
-        border-radius: 16px;
-        padding: 18px 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 120px;
-        cursor: pointer;
-        transition: all 0.15s;
-        border: 3px solid transparent;
-      }
-
-      .compare-card:active {
-        transform: scale(0.97);
-      }
-
-      .compare-card.correct {
-        border-color: #16a34a;
-        background: #f0fdf4;
-        animation: popCorrect 0.4s ease;
-      }
-
-      .compare-card.wrong {
-        border-color: #dc2626;
-        background: #fef2f2;
-        animation: shake 0.4s ease;
-      }
-
-      .compare-card.reveal {
-        border-color: #16a34a;
-        background: #f0fdf4;
+        min-height: 140px;
       }
 
       .compare-vs {
         font-weight: 700;
-        color: #ccc;
-        font-size: 0.9em;
+        color: var(--caramel);
         flex-shrink: 0;
       }
 
       .equal-btn {
         width: 100%;
         padding: 14px;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        background: white;
-        font-size: 1em;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.15s;
-        color: #555;
-        font-family: inherit;
+        border-radius: 999px;
+        font-size: 1.05em;
         margin-bottom: 12px;
       }
 
-      .equal-btn:active {
-        transform: scale(0.98);
-      }
-
-      .equal-btn.correct {
-        border-color: #16a34a;
-        background: #f0fdf4;
-        color: #16a34a;
+      .equal-btn.correct,
+      .equal-btn.reveal {
+        color: var(--pistachio-dark);
+        box-shadow: 0 0 0 2px var(--pistachio);
       }
 
       .equal-btn.wrong {
-        border-color: #dc2626;
-        background: #fef2f2;
-        color: #dc2626;
-      }
-
-      .memory-grid {
-        display: grid;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-
-      .memory-grid.cols-3 {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .memory-grid.cols-4 {
-        grid-template-columns: repeat(4, 1fr);
-      }
-
-      .memory-card {
-        aspect-ratio: 1;
-        background: #4a90e2;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.25s;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border: 2px solid #3b82c4;
-        overflow: hidden;
-      }
-
-      .memory-card .card-back {
-        font-size: 1.4em;
-        color: white;
-      }
-
-      .memory-card .card-front {
-        display: none;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-        padding: 4px;
-      }
-
-      .memory-card.flipped,
-      .memory-card.matched {
-        background: white;
-        border-color: #e2e8f0;
-      }
-
-      .memory-card.matched {
-        border-color: #16a34a;
-        background: #f0fdf4;
-      }
-
-      .memory-card.flipped .card-back,
-      .memory-card.matched .card-back {
-        display: none;
-      }
-
-      .memory-card.flipped .card-front,
-      .memory-card.matched .card-front {
-        display: flex;
+        color: var(--raspberry-dark);
+        box-shadow: 0 0 0 2px var(--raspberry);
       }
 
       .feedback-msg {
         text-align: center;
-        padding: 10px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.9em;
-        margin-bottom: 10px;
+        font-weight: 700;
+        font-size: 1.15em;
         min-height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s;
       }
 
       .feedback-msg.correct {
-        background: #f0fdf4;
-        color: #16a34a;
+        color: var(--pistachio-dark);
+        animation: pop 0.4s ease;
       }
 
       .feedback-msg.wrong {
-        background: #fef2f2;
-        color: #dc2626;
+        color: var(--raspberry-dark);
       }
+
+      /* ===== Mémory : des boîtes à gâteaux qu'on retourne ===== */
+
+      .memory-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .memory-card {
+        aspect-ratio: 1;
+        perspective: 600px;
+        cursor: pointer;
+      }
+
+      .card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.4s ease;
+        transform-style: preserve-3d;
+      }
+
+      .memory-card.flipped .card-inner,
+      .memory-card.matched .card-inner {
+        transform: rotateY(180deg);
+      }
+
+      .card-back,
+      .card-front {
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+      }
+
+      .card-back svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .card-front {
+        transform: rotateY(180deg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 4px;
+        outline-offset: -5px;
+      }
+
+      /* ===== Résultats ===== */
 
       .results-container {
         text-align: center;
-        background: white;
-        border-radius: 16px;
-        padding: 28px 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 26px 20px 20px;
       }
 
-      .results-emoji {
-        font-size: 3em;
-        margin-bottom: 8px;
+      .results-visual {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 14px;
+      }
+
+      .macaron-box {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        padding: 12px;
+        background: var(--box-pink);
+        border: 3px solid var(--raspberry);
+        border-radius: 14px;
+        box-shadow: inset 0 3px 6px rgba(169, 47, 80, 0.2);
+      }
+
+      .macaron-box .slot {
+        width: 38px;
+        height: 38px;
+        background: rgba(255, 255, 255, 0.55);
       }
 
       .results-title {
-        font-size: 1.4em;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin-bottom: 4px;
+        font-size: 1.7em;
+        font-weight: 800;
+        margin-bottom: 2px;
       }
 
       .results-subtitle {
-        color: #888;
-        margin-bottom: 20px;
-        font-size: 0.9em;
+        color: #8a6a58;
+        margin-bottom: 18px;
       }
 
       .results-stats {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
-        margin-bottom: 20px;
+        margin-bottom: 18px;
       }
 
       .stat-box {
-        background: #f8f9fa;
-        border-radius: 10px;
+        background: #fff;
+        border-radius: 12px;
         padding: 12px 8px;
+        border: 2px dashed var(--pink);
       }
 
       .stat-value {
         font-size: 1.5em;
-        font-weight: 700;
-        color: #1a1a1a;
+        font-weight: 800;
       }
 
       .stat-label {
-        font-size: 0.75em;
-        color: #888;
+        font-size: 0.8em;
+        color: #8a6a58;
         margin-top: 2px;
       }
 
@@ -542,42 +693,27 @@
         width: 100%;
         padding: 14px;
         border: none;
-        border-radius: 10px;
-        font-size: 1em;
-        font-weight: 600;
+        border-radius: 999px;
+        font-size: 1.05em;
+        font-weight: 700;
         cursor: pointer;
-        margin-bottom: 8px;
-        transition: all 0.2s;
+        margin-bottom: 10px;
         font-family: inherit;
       }
 
       .btn-replay {
-        background: #1a1a1a;
-        color: white;
+        background: var(--raspberry);
+        color: #fff;
+        box-shadow: 0 4px 0 var(--raspberry-dark);
       }
 
-      .btn-menu {
-        background: #e2e8f0;
-        color: #1a1a1a;
-      }
-
-      @keyframes popCorrect {
-        0% {
-          transform: scale(1);
-        }
+      @keyframes pop {
         50% {
-          transform: scale(1.05);
-        }
-        100% {
-          transform: scale(1);
+          transform: scale(1.06);
         }
       }
 
       @keyframes shake {
-        0%,
-        100% {
-          transform: translateX(0);
-        }
         25% {
           transform: translateX(-5px);
         }
@@ -591,14 +727,10 @@
           opacity: 0;
           transform: translateY(8px);
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
       }
 
       .animate-in {
-        animation: fadeIn 0.25s ease;
+        animation: fadeIn 0.25s ease backwards;
       }
 
       canvas#confetti {
@@ -611,98 +743,86 @@
         z-index: 1000;
       }
 
-      .history {
-        margin-top: 28px;
-      }
-
-      .history-empty {
-        color: #888;
-        text-align: center;
-        font-size: 0.95em;
-        background: #fff;
-        border-radius: 12px;
-        padding: 18px 12px;
-      }
-
-      .history-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: #fff;
-        border-radius: 12px;
-        overflow: hidden;
-        font-size: 0.85em;
-      }
-
-      .history-table th,
-      .history-table td {
-        padding: 10px 8px;
-        text-align: left;
-        border-bottom: 1px solid #eef0f3;
-      }
-
-      .history-table tr:last-child td {
-        border-bottom: none;
-      }
-
-      .history-table th {
-        color: #999;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.82em;
-        letter-spacing: 0.5px;
-      }
-
-      .history-table td:last-child,
-      .history-table th:last-child {
-        text-align: right;
-        font-weight: 600;
-        color: #4a90e2;
-      }
-
       .hidden {
         display: none;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 1ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 1ms !important;
+        }
       }
     </style>
   </head>
   <body>
+    <div class="awning" aria-hidden="true"></div>
+
+    <!-- Dégradés partagés : la confiture des tartes, le papier doré du chocolat,
+         les rayures des boîtes à gâteaux. -->
+    <svg id="shared-defs" width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <radialGradient id="jam" cx="40%" cy="35%" r="75%">
+          <stop offset="0" stop-color="#f4707f" />
+          <stop offset="1" stop-color="#c62a42" />
+        </radialGradient>
+        <linearGradient id="foil" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f6dc8c" />
+          <stop offset="0.45" stop-color="#d6ad4b" />
+          <stop offset="0.55" stop-color="#f3d77f" />
+          <stop offset="1" stop-color="#c49a3c" />
+        </linearGradient>
+        <pattern
+          id="box-stripes"
+          width="14"
+          height="14"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)"
+        >
+          <rect width="7" height="14" fill="rgba(214, 69, 106, 0.16)" />
+        </pattern>
+      </defs>
+    </svg>
+
     <div id="menu" class="screen active">
-      <div class="menu-header">
-        <h1>🎯 Fracto Dingo</h1>
-        <p>Deviens un champion des fractions !</p>
-      </div>
+      <header class="shop-sign">
+        <p class="sign-small">Pâtisserie des fractions</p>
+        <h1>Fracto Dingo</h1>
+        <p class="sign-tagline">Tartes, chocolats et macarons à partager</p>
+      </header>
 
       <div class="section-title">Choisis ton jeu</div>
 
-      <button class="mode-btn" onclick="startGame('match')">
-        <span class="mode-icon">🔗</span>
+      <button class="mode-btn label-card" onclick="startGame('match')">
+        <span class="mode-icon" id="icon-match"></span>
         <div>
           <span class="mode-name">Trouve l'équivalence</span>
-          <span class="mode-desc">Associe les fractions identiques</span>
+          <span class="mode-desc">Associe les parts identiques</span>
         </div>
       </button>
 
-      <button class="mode-btn" onclick="startGame('compare')">
-        <span class="mode-icon">⚖️</span>
+      <button class="mode-btn label-card" onclick="startGame('compare')">
+        <span class="mode-icon" id="icon-compare"></span>
         <div>
-          <span class="mode-name">Qui est le plus grand ?</span>
+          <span class="mode-name">La plus grosse part</span>
           <span class="mode-desc">Compare deux fractions</span>
         </div>
       </button>
 
-      <button class="mode-btn" onclick="startGame('memory')">
-        <span class="mode-icon">🧠</span>
+      <button class="mode-btn label-card" onclick="startGame('memory')">
+        <span class="mode-icon" id="icon-memory"></span>
         <div>
           <span class="mode-name">Mémory</span>
-          <span class="mode-desc">Retrouve les paires équivalentes</span>
+          <span class="mode-desc">Ouvre les boîtes, retrouve les paires</span>
         </div>
       </button>
 
       <div class="section-title">Niveau</div>
       <div class="level-buttons">
-        <button
-          class="level-btn easy active"
-          onclick="selectLevel('easy')"
-        >
+        <button class="level-btn easy active" onclick="selectLevel('easy')">
           Facile
         </button>
         <button class="level-btn medium" onclick="selectLevel('medium')">
@@ -713,8 +833,12 @@
         </button>
       </div>
 
-      <div class="history">
-        <div class="section-title">Historique des parties</div>
+      <div class="section-title">Tes dernières parties</div>
+      <div class="receipt-wrap">
+        <div class="receipt">
+        <div class="receipt-head">
+          FRACTO DINGO<br />Pâtisserie des fractions
+        </div>
         <table class="history-table" id="historyTable">
           <thead>
             <tr>
@@ -729,67 +853,54 @@
         <p class="history-empty hidden" id="historyEmpty">
           Aucune partie pour l'instant. À toi de jouer !
         </p>
+        </div>
       </div>
     </div>
 
     <div id="game-match" class="screen">
       <div class="game-header">
-        <button class="back-btn" onclick="goToMenu()">←</button>
-        <div class="game-info">
-          <span>Q. <span id="match-progress">1/10</span></span>
-          <span class="score">✓ <span id="match-score">0</span></span>
-          <span class="streak" id="match-streak"></span>
-        </div>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="match-bar" style="width: 0%"></div>
+        <button class="back-btn paper-btn" onclick="goToMenu()" aria-label="Retour au menu">←</button>
+        <div class="macarons" id="match-macarons"></div>
+        <span class="streak" id="match-streak"></span>
       </div>
       <div class="question-label">Trouve l'équivalence !</div>
-      <div class="question-card" id="match-question"></div>
+      <div class="question-card label-card" id="match-question"></div>
       <div class="options-grid" id="match-options"></div>
       <div class="feedback-msg" id="match-feedback"></div>
     </div>
 
     <div id="game-compare" class="screen">
       <div class="game-header">
-        <button class="back-btn" onclick="goToMenu()">←</button>
-        <div class="game-info">
-          <span>Q. <span id="compare-progress">1/10</span></span>
-          <span class="score">✓ <span id="compare-score">0</span></span>
-          <span class="streak" id="compare-streak"></span>
-        </div>
+        <button class="back-btn paper-btn" onclick="goToMenu()" aria-label="Retour au menu">←</button>
+        <div class="macarons" id="compare-macarons"></div>
+        <span class="streak" id="compare-streak"></span>
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="compare-bar" style="width: 0%"></div>
-      </div>
-      <div class="question-label">Tape sur la plus grande !</div>
+      <div class="question-label">Quelle part est la plus grosse ?</div>
       <div class="compare-cards">
         <div
-          class="compare-card"
+          class="compare-card label-card"
           id="compare-left"
           onclick="handleCompare('left')"
         ></div>
         <span class="compare-vs">ou</span>
         <div
-          class="compare-card"
+          class="compare-card label-card"
           id="compare-right"
           onclick="handleCompare('right')"
         ></div>
       </div>
-      <button class="equal-btn" id="equal-btn" onclick="handleCompare('equal')">
-        = Elles sont égales
+      <button class="equal-btn paper-btn" id="equal-btn" onclick="handleCompare('equal')">
+        = C'est pareil !
       </button>
       <div class="feedback-msg" id="compare-feedback"></div>
     </div>
 
     <div id="game-memory" class="screen">
       <div class="game-header">
-        <button class="back-btn" onclick="goToMenu()">←</button>
+        <button class="back-btn paper-btn" onclick="goToMenu()" aria-label="Retour au menu">←</button>
         <div class="game-info">
           <span>Coups : <span id="memory-moves">0</span></span>
-          <span class="score"
-            >Paires : <span id="memory-pairs">0/0</span></span
-          >
+          <span class="score">Paires : <span id="memory-pairs">0/0</span></span>
         </div>
       </div>
       <div class="memory-grid" id="memory-grid"></div>
@@ -797,17 +908,13 @@
     </div>
 
     <div id="results" class="screen">
-      <div class="results-container">
-        <div class="results-emoji" id="results-emoji">🎉</div>
+      <div class="results-container label-card">
+        <div class="results-visual" id="results-visual"></div>
         <div class="results-title" id="results-title">Bravo !</div>
         <div class="results-subtitle" id="results-subtitle"></div>
         <div class="results-stats" id="results-stats"></div>
-        <button class="results-btn btn-replay" id="btn-replay">
-          Rejouer
-        </button>
-        <button class="results-btn btn-menu" onclick="goToMenu()">
-          Menu
-        </button>
+        <button class="results-btn btn-replay" id="btn-replay">Rejouer</button>
+        <button class="results-btn paper-btn" onclick="goToMenu()">Menu</button>
       </div>
     </div>
 
@@ -942,7 +1049,6 @@
           ],
           types: ["fraction", "visual", "text"],
           memoryPairs: 4,
-          memoryCols: 4,
         },
         medium: {
           fractionIds: [
@@ -958,13 +1064,11 @@
           ],
           types: ["fraction", "visual", "text", "decimal"],
           memoryPairs: 6,
-          memoryCols: 4,
         },
         hard: {
           fractionIds: FRACTIONS.map((f) => f.id),
           types: ["fraction", "visual", "text", "decimal", "percent"],
           memoryPairs: 8,
-          memoryCols: 4,
         },
       }
 
@@ -1002,36 +1106,155 @@
         })
       }
 
-      function createPieSVG(num, den, size) {
-        const r = size / 2 - 2
-        const cx = size / 2
-        const cy = size / 2
-        const value = num / den
+      // ===== LES GOURMANDISES =====
 
-        let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`
-        svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.5"/>`
+      const fmt = (n) => n.toFixed(2)
 
-        if (value > 0 && value < 1) {
-          const angle = value * 2 * Math.PI
-          const endX = cx + r * Math.sin(angle)
-          const endY = cy - r * Math.cos(angle)
-          const largeArc = value > 0.5 ? 1 : 0
-          svg += `<path d="M${cx},${cy} L${cx},${(cy - r).toFixed(2)} A${r},${r} 0 ${largeArc},1 ${endX.toFixed(2)},${endY.toFixed(2)} Z" fill="#4a90e2"/>`
-        } else if (value >= 1) {
-          svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#4a90e2"/>`
+      // Le napperon en dentelle, dessiné une fois et réutilisé par chaque tarte.
+      function defineDoily() {
+        let lace = ""
+        for (let k = 0; k < 24; k++) {
+          const a = (k / 24) * 2 * Math.PI
+          lace += `<circle cx="${fmt(50 + 44 * Math.cos(a))}" cy="${fmt(50 + 44 * Math.sin(a))}" r="4.5" fill="#fff" stroke="#efe2d0" stroke-width="1"/>`
         }
+        document.querySelector("#shared-defs defs").insertAdjacentHTML(
+          "beforeend",
+          `<symbol id="doily" viewBox="0 0 100 100">
+            <circle cx="50" cy="52" r="47" fill="rgba(90, 54, 36, 0.12)"/>
+            ${lace}
+            <circle cx="50" cy="50" r="44" fill="#fff"/>
+            <circle cx="50" cy="50" r="41.5" fill="none" stroke="#f0e4d4" stroke-width="1.2" stroke-dasharray="1.5 3"/>
+          </symbol>`,
+        )
+      }
 
+      // Une tarte aux fraises vue de dessus, coupée en `den` parts sur son
+      // napperon : il en reste `num`, les autres ont été mangées (on voit
+      // leur trace et quelques miettes).
+      function tartSVG(num, den, size) {
+        const c = 50
+        const angle = (i) => (i / den) * 2 * Math.PI - Math.PI / 2
+        const at = (radius, a) => [
+          fmt(c + radius * Math.cos(a)),
+          fmt(c + radius * Math.sin(a)),
+        ]
+        const wedge = (radius, i) =>
+          `M${c},${c} L${at(radius, angle(i))} A${radius},${radius} 0 0,1 ${at(radius, angle(i + 1))} Z`
+
+        let svg = `<svg width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true"><use href="#doily" width="100" height="100"/>`
         for (let i = 0; i < den; i++) {
-          const a = (i / den) * 2 * Math.PI - Math.PI / 2
-          const lx = cx + r * Math.cos(a)
-          const ly = cy + r * Math.sin(a)
-          svg += `<line x1="${cx}" y1="${cy}" x2="${lx.toFixed(2)}" y2="${ly.toFixed(2)}" stroke="#94a3b8" stroke-width="1"/>`
+          const mid = angle(i + 0.5)
+          if (i >= num) {
+            // Part mangée : sa trace en pointillé et des miettes.
+            svg += `<path d="${wedge(37, i)}" fill="none" stroke="#e2cfb6" stroke-width="1.2" stroke-dasharray="3 3"/>`
+            for (const [d, da] of [
+              [18, -0.15],
+              [25, 0.12],
+              [30, -0.05],
+            ]) {
+              const [x, y] = at(d, mid + da)
+              svg += `<circle cx="${x}" cy="${y}" r="1.4" fill="#d9a55f"/>`
+            }
+            continue
+          }
+          // Part restante : la pâte dorée, la confiture et une fraise.
+          svg += `<path d="${wedge(37, i)}" fill="#e3ad62" stroke="#b97a35" stroke-width="1.3" stroke-linejoin="round"/>`
+          svg += `<path d="${wedge(30, i)}" fill="url(#jam)"/>`
+          const s = den > 6 ? 3.2 : 4.6
+          const [fx, fy] = at(20, mid)
+          const rot = (mid * 180) / Math.PI + 90
+          svg += `<g transform="translate(${fx} ${fy}) rotate(${fmt(rot)})">`
+          svg += `<ellipse rx="${s}" ry="${s * 1.3}" fill="#e8364f" stroke="#a51d33" stroke-width="0.8"/>`
+          svg += `<circle cx="${-s * 0.3}" cy="${-s * 0.4}" r="${s * 0.22}" fill="#ffd56b"/>`
+          svg += `<circle cx="${s * 0.35}" cy="${s * 0.1}" r="${s * 0.2}" fill="#ffd56b"/>`
+          svg += `<path d="M${-s * 0.6},${-s * 1.2} Q0,${-s * 1.9} ${s * 0.6},${-s * 1.2}" fill="#6fae4f"/>`
+          svg += `</g>`
         }
-
-        svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>`
         svg += `</svg>`
         return svg
       }
+
+      // Les quarts et les dixièmes sont en chocolat (en carrés), le reste en
+      // tartes : les enfants voient des fractions de ronds et de rectangles.
+      const BAR_GRID = { 4: [2, 2], 10: [5, 2] }
+
+      // Une tablette de `den` carrés sur son papier doré : il en reste `num`,
+      // les carrés mangés laissent voir le papier.
+      function barSVG(num, den, width) {
+        const [cols, rows] = BAR_GRID[den]
+        const cell = 20
+        const pad = 5
+        const w = cols * cell + pad * 2
+        const h = rows * cell + pad * 2
+        let svg = `<svg width="${width}" height="${Math.round((width * (h + 3)) / w)}" viewBox="0 0 ${w} ${h + 3}" aria-hidden="true">`
+        svg += `<rect x="1.5" y="3" width="${w - 2}" height="${h}" rx="3" fill="rgba(90, 54, 36, 0.18)"/>`
+        svg += `<rect x="0" y="0" width="${w - 1}" height="${h}" rx="3" fill="url(#foil)"/>`
+        for (let k = 0; k < den; k++) {
+          const x = pad + (k % cols) * cell
+          const y = pad + Math.floor(k / cols) * cell
+          if (k >= num) {
+            svg += `<rect x="${x + 2}" y="${y + 2}" width="${cell - 4}" height="${cell - 4}" rx="2" fill="none" stroke="#b08a35" stroke-width="1" stroke-dasharray="2 2"/>`
+            continue
+          }
+          svg += `<rect x="${x + 0.5}" y="${y + 0.5}" width="${cell - 1}" height="${cell - 1}" rx="2" fill="#5e3820"/>`
+          svg += `<rect x="${x + 3}" y="${y + 3}" width="${cell - 6}" height="${cell - 6}" rx="1.5" fill="#7a4a2c"/>`
+          svg += `<path d="M${x + 3},${y + cell - 3} V${y + 3} H${x + cell - 3}" fill="none" stroke="#9c6a44" stroke-width="1.2"/>`
+          svg += `<path d="M${x + cell - 3},${y + 3} V${y + cell - 3} H${x + 3}" fill="none" stroke="#45281a" stroke-width="1.2"/>`
+        }
+        svg += `</svg>`
+        return svg
+      }
+
+      function visualSVG(frac, sc) {
+        return BAR_GRID[frac.den]
+          ? barSVG(frac.num, frac.den, { large: 130, small: 92, tiny: 58 }[sc])
+          : tartSVG(frac.num, frac.den, { large: 104, small: 80, tiny: 54 }[sc])
+      }
+
+      // Le dessus d'une boîte à gâteaux, rayée, avec son ruban et son nœud.
+      const BOX_SVG = `<svg viewBox="0 0 100 100" aria-hidden="true">
+        <rect x="4" y="6" width="94" height="94" rx="12" fill="rgba(90, 54, 36, 0.18)"/>
+        <rect x="2" y="2" width="94" height="94" rx="12" style="fill: var(--box-pink)"/>
+        <rect x="2" y="2" width="94" height="94" rx="12" fill="url(#box-stripes)"/>
+        <rect x="42" y="2" width="14" height="94" style="fill: var(--raspberry)"/>
+        <rect x="2" y="42" width="94" height="14" style="fill: var(--raspberry)"/>
+        <path d="M49,49 C39,29 21,33 27,47 C21,61 39,65 49,49 Z" style="fill: var(--raspberry-dark)"/>
+        <path d="M49,49 C59,29 77,33 71,47 C77,61 59,65 49,49 Z" style="fill: var(--raspberry-dark)"/>
+        <circle cx="49" cy="49" r="7" style="fill: var(--raspberry-dark)"/>
+      </svg>`
+
+      // Un macaron : deux coques et la crème au milieu.
+      const MACARON_COLORS = [
+        ["#f08aa0", "#fde3e8"],
+        ["#a9d18e", "#f1f8e9"],
+        ["#8a5a3a", "#ecdcc9"],
+        ["#f3e2b3", "#fffaf0"],
+        ["#f5d55c", "#fffbe0"],
+        ["#c4a1e0", "#f4ecfb"],
+      ]
+
+      function macaronSVG(i) {
+        const [shell, cream] = MACARON_COLORS[i % MACARON_COLORS.length]
+        const edge = 'stroke="rgba(90, 54, 36, 0.3)" stroke-width="0.8"'
+        return `<svg viewBox="0 0 24 22" aria-hidden="true">
+          <ellipse cx="12" cy="15.5" rx="10.5" ry="5" fill="${shell}" ${edge}/>
+          <rect x="2.5" y="9.5" width="19" height="4" rx="2" fill="${cream}"/>
+          <ellipse cx="12" cy="7" rx="10.5" ry="5.5" fill="${shell}" ${edge}/>
+          <ellipse cx="9" cy="5" rx="4" ry="1.6" fill="#fff" opacity="0.45"/>
+        </svg>`
+      }
+
+      const CRUMBS_SVG = `<svg viewBox="0 0 24 22" aria-hidden="true">
+        <circle cx="8" cy="14" r="1.8" fill="#d9a55f"/>
+        <circle cx="14" cy="11" r="1.3" fill="#c98f4a"/>
+        <circle cx="16" cy="16" r="1.6" fill="#d9a55f"/>
+      </svg>`
+
+      // Ce qu'on met dans la case d'une réponse : un macaron si elle était
+      // juste, des miettes sinon.
+      const slotContent = (i) => (game.results[i] ? macaronSVG(i) : CRUMBS_SVG)
+
+      const correctCount = () => game.results.filter(Boolean).length
 
       function renderRepr(frac, type, sizeClass) {
         const sc = sizeClass || "large"
@@ -1042,16 +1265,18 @@
             return `<div class="repr-number ${sc}">${frac.decimal}</div>`
           case "percent":
             return `<div class="repr-number ${sc}">${frac.percent} %</div>`
-          case "visual": {
-            const pxSize = sc === "large" ? 80 : sc === "small" ? 60 : 42
-            return createPieSVG(frac.num, frac.den, pxSize)
-          }
+          case "visual":
+            return visualSVG(frac, sc)
           case "text":
             return `<div class="repr-text ${sc}">${frac.text}</div>`
           default:
             return ""
         }
       }
+
+      // Une représentation qui arrive en glissant (un nouvel élément, pour
+      // que l'animation rejoue à chaque question).
+      const arriving = (html) => `<div class="animate-in">${html}</div>`
 
       // La partie ne compte comme engagée qu'à la première réponse : afficher
       // le plateau ne suffit pas, sinon on demande « une partie est en cours ? »
@@ -1078,9 +1303,7 @@
         document.querySelectorAll(".level-btn").forEach((b) => {
           b.classList.remove("active")
         })
-        document
-          .querySelector(`.level-btn.${level}`)
-          .classList.add("active")
+        document.querySelector(`.level-btn.${level}`).classList.add("active")
       }
 
       // ===== START GAME =====
@@ -1088,28 +1311,79 @@
         game = {
           mode,
           level: currentLevel,
-          score: 0,
           streak: 0,
           bestStreak: 0,
           round: 0,
           rounds: [],
+          results: [],
           startTime: Date.now(),
         }
 
-        if (mode === "match") initMatch()
-        else if (mode === "compare") initCompare()
+        if (mode === "match") startRounds(generateMatchRounds(), showMatchRound)
+        else if (mode === "compare")
+          startRounds(generateCompareRounds(), showCompareRound)
         else if (mode === "memory") initMemory()
       }
 
-      // ===== MATCH GAME =====
-      function initMatch() {
-        game.rounds = generateMatchRounds()
-        game.round = 0
+      // ===== LES DEUX JEUX EN DIX QUESTIONS =====
+
+      const slots = () =>
+        document.getElementById(`${game.mode}-macarons`).children
+
+      // La boîte de macarons de l'en-tête est construite une fois par partie,
+      // puis remplie case par case.
+      function startRounds(rounds, showRound) {
+        game.rounds = rounds
         game.locked = false
-        showScreen("game-match")
-        showMatchRound()
+        game.showRound = showRound
+        document.getElementById(`${game.mode}-macarons`).innerHTML =
+          '<span class="slot"></span>'.repeat(TOTAL_ROUNDS)
+        document.getElementById(`${game.mode}-streak`).textContent = ""
+        showScreen(`game-${game.mode}`)
+        nextQuestion()
       }
 
+      function nextQuestion() {
+        ;[...slots()].forEach((slot, i) =>
+          slot.classList.toggle("current", i === game.round),
+        )
+        game.showRound(game.rounds[game.round])
+      }
+
+      const CHEERS = ["Miam !", "Délicieux !", "Bravo !", "Bien vu !", "Parfait !"]
+
+      // Une réponse donnée : message, série, un macaron (ou des miettes) dans
+      // la boîte, puis la question suivante.
+      function finishRound(isCorrect, feedbackEl, wrongText) {
+        markPlaying()
+        game.locked = true
+        game.results.push(isCorrect)
+        game.streak = isCorrect ? game.streak + 1 : 0
+        game.bestStreak = Math.max(game.bestStreak, game.streak)
+
+        feedbackEl.textContent = isCorrect ? pickRandom(CHEERS) : wrongText
+        feedbackEl.className = `feedback-msg ${isCorrect ? "correct" : "wrong"}`
+        const slot = slots()[game.round]
+        slot.classList.remove("current")
+        slot.innerHTML = slotContent(game.round)
+        document.getElementById(`${game.mode}-streak`).textContent =
+          game.streak >= 2 ? `🔥${game.streak}` : ""
+
+        setTimeout(
+          () => {
+            game.round++
+            if (game.round >= TOTAL_ROUNDS) {
+              endGame()
+            } else {
+              game.locked = false
+              nextQuestion()
+            }
+          },
+          isCorrect ? 800 : 1400,
+        )
+      }
+
+      // ===== MATCH GAME =====
       function generateMatchRounds() {
         const fracs = getLevelFractions(game.level)
         const rounds = []
@@ -1133,9 +1407,7 @@
         const target = pickRandom(fracs)
         const targetTypes = getAvailableTypes(target, game.level)
         const questionType = pickRandom(targetTypes)
-        const answerCandidates = targetTypes.filter(
-          (t) => t !== questionType,
-        )
+        const answerCandidates = targetTypes.filter((t) => t !== questionType)
         const answerType = pickRandom(answerCandidates)
 
         const wrongCandidates = fracs.filter(
@@ -1156,98 +1428,41 @@
         return { target, questionType, answerType, options }
       }
 
-      function showMatchRound() {
-        const r = game.rounds[game.round]
-        const questionEl = document.getElementById("match-question")
-        const optionsEl = document.getElementById("match-options")
+      function showMatchRound(r) {
+        document.getElementById("match-question").innerHTML = arriving(
+          renderRepr(r.target, r.questionType, "large"),
+        )
         const feedbackEl = document.getElementById("match-feedback")
-
-        document.getElementById("match-progress").textContent =
-          `${game.round + 1}/${TOTAL_ROUNDS}`
-        document.getElementById("match-score").textContent = game.score
-        document.getElementById("match-streak").textContent =
-          game.streak >= 2 ? `🔥${game.streak}` : ""
-        document.getElementById("match-bar").style.width =
-          `${(game.round / TOTAL_ROUNDS) * 100}%`
-
-        questionEl.innerHTML = renderRepr(r.target, r.questionType, "large")
-        questionEl.classList.add("animate-in")
-
         feedbackEl.textContent = ""
         feedbackEl.className = "feedback-msg"
 
-        optionsEl.innerHTML = ""
-        r.options.forEach((opt, idx) => {
-          const card = document.createElement("div")
-          card.className = "option-card animate-in"
-          card.style.animationDelay = `${idx * 0.05}s`
-          card.innerHTML = renderRepr(opt.fraction, r.answerType, "small")
-          card.onclick = () => handleMatch(idx)
-          optionsEl.appendChild(card)
-        })
+        document.getElementById("match-options").innerHTML = r.options
+          .map(
+            (opt, idx) =>
+              `<div class="option-card label-card animate-in" style="animation-delay: ${idx * 0.05}s" onclick="handleMatch(${idx})">${renderRepr(opt.fraction, r.answerType, "small")}</div>`,
+          )
+          .join("")
       }
 
       function handleMatch(idx) {
         if (game.locked) return
-        markPlaying()
-        game.locked = true
-
         const r = game.rounds[game.round]
         const cards = document.querySelectorAll(".option-card")
-        const feedbackEl = document.getElementById("match-feedback")
         const isCorrect = r.options[idx].isCorrect
 
-        if (isCorrect) {
-          cards[idx].classList.add("correct")
-          game.score++
-          game.streak++
-          if (game.streak > game.bestStreak)
-            game.bestStreak = game.streak
-          feedbackEl.textContent = pickRandom([
-            "Bravo !",
-            "Correct !",
-            "Bien joué !",
-            "Super !",
-            "Exactement !",
-          ])
-          feedbackEl.className = "feedback-msg correct"
-        } else {
-          cards[idx].classList.add("wrong")
-          game.streak = 0
-          const correctIdx = r.options.findIndex((o) => o.isCorrect)
-          cards[correctIdx].classList.add("reveal")
-          feedbackEl.textContent = "Pas tout à fait…"
-          feedbackEl.className = "feedback-msg wrong"
-        }
-
-        cards.forEach((c) => c.classList.add("disabled"))
-        document.getElementById("match-score").textContent = game.score
-        document.getElementById("match-streak").textContent =
-          game.streak >= 2 ? `🔥${game.streak}` : ""
-
-        setTimeout(
-          () => {
-            game.round++
-            if (game.round >= TOTAL_ROUNDS) {
-              endGame()
-            } else {
-              game.locked = false
-              showMatchRound()
-            }
-          },
-          isCorrect ? 800 : 1400,
+        cards.forEach((card, i) => {
+          if (i === idx) card.classList.add(isCorrect ? "correct" : "wrong")
+          else if (r.options[i].isCorrect) card.classList.add("reveal")
+          else card.classList.add("faded")
+        })
+        finishRound(
+          isCorrect,
+          document.getElementById("match-feedback"),
+          "Pas tout à fait…",
         )
       }
 
       // ===== COMPARE GAME =====
-      function initCompare() {
-        game.rounds = generateCompareRounds()
-        game.round = 0
-        game.locked = false
-        showScreen("game-compare")
-        showCompareRound()
-      }
-
       function generateCompareRounds() {
         const fracs = getLevelFractions(game.level)
         const rounds = []
@@ -1268,17 +1483,12 @@
             )
           }
 
-          const leftType = pickRandom(
-            getAvailableTypes(left, game.level),
-          )
-          const rightType = pickRandom(
-            getAvailableTypes(right, game.level),
-          )
+          const leftType = pickRandom(getAvailableTypes(left, game.level))
+          const rightType = pickRandom(getAvailableTypes(right, game.level))
 
           let correctAnswer
           if (left.value > right.value + 0.001) correctAnswer = "left"
-          else if (right.value > left.value + 0.001)
-            correctAnswer = "right"
+          else if (right.value > left.value + 0.001) correctAnswer = "right"
           else correctAnswer = "equal"
 
           rounds.push({
@@ -1292,107 +1502,49 @@
         return rounds
       }
 
-      function showCompareRound() {
-        const r = game.rounds[game.round]
-        const leftEl = document.getElementById("compare-left")
-        const rightEl = document.getElementById("compare-right")
+      const compareEls = () => ({
+        left: document.getElementById("compare-left"),
+        right: document.getElementById("compare-right"),
+        equal: document.getElementById("equal-btn"),
+      })
+
+      function showCompareRound(r) {
+        const els = compareEls()
+        els.left.innerHTML = arriving(renderRepr(r.left, r.leftType, "small"))
+        els.right.innerHTML = arriving(renderRepr(r.right, r.rightType, "small"))
+        Object.values(els).forEach((el) =>
+          el.classList.remove("correct", "wrong", "reveal"),
+        )
         const feedbackEl = document.getElementById("compare-feedback")
-        const equalBtn = document.getElementById("equal-btn")
-
-        document.getElementById("compare-progress").textContent =
-          `${game.round + 1}/${TOTAL_ROUNDS}`
-        document.getElementById("compare-score").textContent = game.score
-        document.getElementById("compare-streak").textContent =
-          game.streak >= 2 ? `🔥${game.streak}` : ""
-        document.getElementById("compare-bar").style.width =
-          `${(game.round / TOTAL_ROUNDS) * 100}%`
-
-        leftEl.innerHTML = renderRepr(r.left, r.leftType, "small")
-        leftEl.className = "compare-card animate-in"
-        rightEl.innerHTML = renderRepr(r.right, r.rightType, "small")
-        rightEl.className = "compare-card animate-in"
-        equalBtn.className = "equal-btn"
         feedbackEl.textContent = ""
         feedbackEl.className = "feedback-msg"
       }
 
+      // Ce qu'on dit après une erreur, selon la bonne réponse.
+      const COMPARE_HINTS = {
+        left: "Non, c'est celle de gauche !",
+        right: "Non, c'est celle de droite !",
+        equal: "Non, elles sont égales !",
+      }
+
       function handleCompare(answer) {
         if (game.locked) return
-        markPlaying()
-        game.locked = true
-
         const r = game.rounds[game.round]
-        const leftEl = document.getElementById("compare-left")
-        const rightEl = document.getElementById("compare-right")
-        const equalBtn = document.getElementById("equal-btn")
-        const feedbackEl = document.getElementById("compare-feedback")
+        const els = compareEls()
         const isCorrect = answer === r.correctAnswer
 
-        if (isCorrect) {
-          game.score++
-          game.streak++
-          if (game.streak > game.bestStreak)
-            game.bestStreak = game.streak
-          feedbackEl.textContent = pickRandom([
-            "Bravo !",
-            "Correct !",
-            "Bien joué !",
-            "Super !",
-          ])
-          feedbackEl.className = "feedback-msg correct"
-
-          if (answer === "left") leftEl.classList.add("correct")
-          else if (answer === "right") rightEl.classList.add("correct")
-          else equalBtn.classList.add("correct")
-        } else {
-          game.streak = 0
-          feedbackEl.className = "feedback-msg wrong"
-
-          if (answer === "left") {
-            leftEl.classList.add("wrong")
-            feedbackEl.textContent =
-              r.correctAnswer === "right"
-                ? "Non, c'est la droite !"
-                : "Non, elles sont égales !"
-          } else if (answer === "right") {
-            rightEl.classList.add("wrong")
-            feedbackEl.textContent =
-              r.correctAnswer === "left"
-                ? "Non, c'est la gauche !"
-                : "Non, elles sont égales !"
-          } else {
-            equalBtn.classList.add("wrong")
-            feedbackEl.textContent =
-              r.correctAnswer === "left"
-                ? "Non, la gauche est plus grande !"
-                : "Non, la droite est plus grande !"
-          }
-
-          if (r.correctAnswer === "left") leftEl.classList.add("reveal")
-          else if (r.correctAnswer === "right")
-            rightEl.classList.add("reveal")
-          else equalBtn.classList.add("correct")
-        }
-
-        document.getElementById("compare-score").textContent = game.score
-        document.getElementById("compare-streak").textContent =
-          game.streak >= 2 ? `🔥${game.streak}` : ""
-
-        setTimeout(
-          () => {
-            game.round++
-            if (game.round >= TOTAL_ROUNDS) {
-              endGame()
-            } else {
-              game.locked = false
-              showCompareRound()
-            }
-          },
-          isCorrect ? 800 : 1400,
+        els[answer].classList.add(isCorrect ? "correct" : "wrong")
+        if (!isCorrect) els[r.correctAnswer].classList.add("reveal")
+        finishRound(
+          isCorrect,
+          document.getElementById("compare-feedback"),
+          COMPARE_HINTS[r.correctAnswer],
         )
       }
 
       // ===== MEMORY GAME =====
+      // La grille est construite une fois par partie ; retourner une boîte
+      // ne fait que changer ses classes, pour que l'animation se joue.
       function initMemory() {
         const config = LEVELS[game.level]
         const fracs = shuffle(getLevelFractions(game.level)).slice(
@@ -1427,33 +1579,32 @@
         game.totalPairs = config.memoryPairs
         game.locked = false
 
+        document.getElementById("memory-grid").innerHTML = game.cards
+          .map(
+            (card, idx) => `
+            <div class="memory-card" onclick="handleMemoryCard(${idx})">
+              <div class="card-inner">
+                <div class="card-back">${BOX_SVG}</div>
+                <div class="card-front label-card">${renderRepr(card.fraction, card.type, "tiny")}</div>
+              </div>
+            </div>`,
+          )
+          .join("")
+        updateMemoryInfo()
         showScreen("game-memory")
-        renderMemoryGrid()
       }
 
-      function renderMemoryGrid() {
-        const gridEl = document.getElementById("memory-grid")
-        const cols = LEVELS[game.level].memoryCols
-        gridEl.className = `memory-grid cols-${cols}`
-        gridEl.innerHTML = ""
+      function updateMemoryCard(idx) {
+        const card = game.cards[idx]
+        const el = document.getElementById("memory-grid").children[idx]
+        el.classList.toggle("flipped", card.flipped)
+        el.classList.toggle("matched", card.matched)
+      }
 
+      function updateMemoryInfo() {
         document.getElementById("memory-moves").textContent = game.moves
         document.getElementById("memory-pairs").textContent =
           `${game.matchedPairs}/${game.totalPairs}`
-
-        game.cards.forEach((card, idx) => {
-          const cardEl = document.createElement("div")
-          cardEl.className = "memory-card"
-          if (card.flipped) cardEl.classList.add("flipped")
-          if (card.matched) cardEl.classList.add("matched")
-
-          cardEl.innerHTML = `
-            <div class="card-back">?</div>
-            <div class="card-front">${renderRepr(card.fraction, card.type, "tiny")}</div>
-          `
-          cardEl.onclick = () => handleMemoryCard(idx)
-          gridEl.appendChild(cardEl)
-        })
       }
 
       function handleMemoryCard(idx) {
@@ -1464,13 +1615,12 @@
 
         card.flipped = true
         game.flippedIndices.push(idx)
-        renderMemoryGrid()
+        updateMemoryCard(idx)
 
         if (game.flippedIndices.length === 2) {
           game.moves++
           game.locked = true
-          document.getElementById("memory-moves").textContent =
-            game.moves
+          updateMemoryInfo()
 
           const [i1, i2] = game.flippedIndices
           const c1 = game.cards[i1]
@@ -1482,16 +1632,14 @@
             game.matchedPairs++
             game.flippedIndices = []
             game.locked = false
+            updateMemoryCard(i1)
+            updateMemoryCard(i2)
+            updateMemoryInfo()
 
-            document.getElementById("memory-pairs").textContent =
-              `${game.matchedPairs}/${game.totalPairs}`
-            renderMemoryGrid()
-
-            const feedbackEl =
-              document.getElementById("memory-feedback")
+            const feedbackEl = document.getElementById("memory-feedback")
             feedbackEl.textContent = pickRandom([
               "Paire trouvée !",
-              "Bravo !",
+              "Miam !",
               "Bien vu !",
             ])
             feedbackEl.className = "feedback-msg correct"
@@ -1509,8 +1657,9 @@
               c2.flipped = false
               game.flippedIndices = []
               game.locked = false
-              renderMemoryGrid()
-            }, 900)
+              updateMemoryCard(i1)
+              updateMemoryCard(i2)
+            }, 1000)
           }
         }
       }
@@ -1523,76 +1672,64 @@
         const seconds = Math.floor((elapsed % 60000) / 1000)
         const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`
 
-        let emoji, title, subtitle
-        const statsHtml = []
+        let title, subtitle, visual, stats
 
         if (game.mode === "memory") {
-          const efficiency = Math.round(
-            (game.totalPairs / game.moves) * 100,
-          )
+          // Une part de tarte par paire trouvée : la tarte est entière.
+          visual = tartSVG(game.totalPairs, game.totalPairs, 140)
+          const efficiency = Math.round((game.totalPairs / game.moves) * 100)
           if (game.moves <= game.totalPairs + 2) {
-            emoji = "🏆"
             title = "Incroyable !"
             subtitle = "Quelle mémoire !"
           } else if (game.moves <= game.totalPairs * 2) {
-            emoji = "🎉"
             title = "Très bien !"
             subtitle = "Tu as un bon œil !"
           } else {
-            emoji = "👏"
             title = "Bien joué !"
             subtitle = "Continue comme ça !"
           }
-          statsHtml.push(
-            `<div class="stat-box"><div class="stat-value">${game.totalPairs}</div><div class="stat-label">paires trouvées</div></div>`,
-          )
-          statsHtml.push(
-            `<div class="stat-box"><div class="stat-value">${game.moves}</div><div class="stat-label">coups joués</div></div>`,
-          )
-          statsHtml.push(
-            `<div class="stat-box"><div class="stat-value">${efficiency}%</div><div class="stat-label">efficacité</div></div>`,
-          )
-          statsHtml.push(
-            `<div class="stat-box"><div class="stat-value">${timeStr}</div><div class="stat-label">temps</div></div>`,
-          )
+          stats = [
+            [game.totalPairs, "paires trouvées"],
+            [game.moves, "coups joués"],
+            [`${efficiency}%`, "efficacité"],
+            [timeStr, "temps"],
+          ]
         } else {
-          const pct = Math.round((game.score / TOTAL_ROUNDS) * 100)
+          const score = correctCount()
+          visual = `<div class="macaron-box">${game.results
+            .map((_, i) => `<span class="slot">${slotContent(i)}</span>`)
+            .join("")}</div>`
+          const pct = Math.round((score / TOTAL_ROUNDS) * 100)
           if (pct === 100) {
-            emoji = "🏆"
             title = "Parfait !"
-            subtitle = "Sans aucune erreur !"
+            subtitle = "La boîte est pleine : dix macarons !"
           } else if (pct >= 80) {
-            emoji = "🎉"
             title = "Excellent !"
-            subtitle = "Tu maîtrises les fractions !"
+            subtitle = `${score} macarons dans ta boîte !`
           } else if (pct >= 60) {
-            emoji = "👏"
             title = "Bien joué !"
-            subtitle = "Continue pour t'améliorer !"
+            subtitle = `${score} macarons dans ta boîte !`
           } else {
-            emoji = "💪"
             title = "Courage !"
-            subtitle = "Tu vas y arriver !"
+            subtitle = "Rejoue pour remplir ta boîte !"
           }
-          statsHtml.push(
-            `<div class="stat-box"><div class="stat-value">${game.score}/${TOTAL_ROUNDS}</div><div class="stat-label">bonnes réponses</div></div>`,
-          )
-          statsHtml.push(
-            `<div class="stat-box"><div class="stat-value">${pct}%</div><div class="stat-label">réussite</div></div>`,
-          )
-          statsHtml.push(
-            `<div class="stat-box"><div class="stat-value">${game.bestStreak}</div><div class="stat-label">meilleure série</div></div>`,
-          )
-          statsHtml.push(
-            `<div class="stat-box"><div class="stat-value">${timeStr}</div><div class="stat-label">temps</div></div>`,
-          )
+          stats = [
+            [`${score}/${TOTAL_ROUNDS}`, "bonnes réponses"],
+            [`${pct}%`, "réussite"],
+            [game.bestStreak, "meilleure série"],
+            [timeStr, "temps"],
+          ]
         }
 
-        document.getElementById("results-emoji").textContent = emoji
+        document.getElementById("results-visual").innerHTML = visual
         document.getElementById("results-title").textContent = title
         document.getElementById("results-subtitle").textContent = subtitle
-        document.getElementById("results-stats").innerHTML =
-          statsHtml.join("")
+        document.getElementById("results-stats").innerHTML = stats
+          .map(
+            ([value, label]) =>
+              `<div class="stat-box"><div class="stat-value">${value}</div><div class="stat-label">${label}</div></div>`,
+          )
+          .join("")
 
         document.getElementById("btn-replay").onclick = () =>
           startGame(game.mode)
@@ -1601,9 +1738,8 @@
         showScreen("results")
 
         if (
-          (game.mode !== "memory" && game.score === TOTAL_ROUNDS) ||
-          (game.mode === "memory" &&
-            game.moves <= game.totalPairs + 2)
+          (game.mode !== "memory" && correctCount() === TOTAL_ROUNDS) ||
+          (game.mode === "memory" && game.moves <= game.totalPairs + 2)
         ) {
           if (typeof showConfetti === "function") showConfetti()
         }
@@ -1613,9 +1749,9 @@
       const HISTORY_KEY = "fracto-dingo-history"
 
       const MODE_LABELS = {
-        match: "🔗 Équivalence",
-        compare: "⚖️ Comparaison",
-        memory: "🧠 Mémory",
+        match: "Équivalence",
+        compare: "Comparaison",
+        memory: "Mémory",
       }
       const LEVEL_LABELS = {
         easy: "Facile",
@@ -1624,9 +1760,7 @@
       }
 
       function saveScore(timeStr) {
-        const history = JSON.parse(
-          localStorage.getItem(HISTORY_KEY) || "[]",
-        )
+        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]")
         const entry = {
           date: new Date().toLocaleString("fr-FR", {
             day: "2-digit",
@@ -1640,7 +1774,7 @@
           result:
             game.mode === "memory"
               ? `${game.moves} coups`
-              : `${game.score}/${TOTAL_ROUNDS}`,
+              : `${correctCount()}/${TOTAL_ROUNDS}`,
         }
         history.unshift(entry)
         history.splice(10) // On ne garde que les 10 dernières parties.
@@ -1649,9 +1783,7 @@
       }
 
       function updateHistory() {
-        const history = JSON.parse(
-          localStorage.getItem(HISTORY_KEY) || "[]",
-        )
+        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]")
         const tbody = document.getElementById("historyBody")
         const empty = document.getElementById("historyEmpty")
         tbody.innerHTML = history
@@ -1672,6 +1804,15 @@
           .classList.toggle("hidden", !hasGames)
         empty.classList.toggle("hidden", hasGames)
       }
+
+      defineDoily()
+
+      // Les vignettes des jeux, dans la vitrine.
+      document.getElementById("icon-match").innerHTML =
+        tartSVG(1, 2, 34) + "=" + barSVG(2, 4, 34)
+      document.getElementById("icon-compare").innerHTML =
+        tartSVG(1, 3, 34) + "?" + tartSVG(2, 3, 34)
+      document.getElementById("icon-memory").innerHTML = BOX_SVG
 
       updateHistory()
 
