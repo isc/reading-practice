@@ -577,6 +577,7 @@
         let timerInterval = null;
         let touchTimer = null;
         let touchTriggeredFlag = false;
+        let touchStartedAt = 0;
         let flagMode = false; // Quick Flagging: a single tap places/removes a flag
         let exploded = null; // {r, c} of the mine that blew up
         let cellEls = []; // cell elements, row by row
@@ -751,6 +752,15 @@
             cell.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 if (gameOver) return;
+                // Sur Android, l'appui long envoie aussi un « contextmenu »,
+                // avant ou après notre minuteur : à eux deux, un seul doit agir,
+                // sinon le drapeau est posé puis aussitôt retiré.
+                if (Date.now() - touchStartedAt < 1500) {
+                    clearTimeout(touchTimer);
+                    if (touchTriggeredFlag) return;
+                    touchTriggeredFlag = true;
+                    if (navigator.vibrate) navigator.vibrate(40);
+                }
                 secondaryAction(r, c);
             });
 
@@ -765,6 +775,7 @@
 
             cell.addEventListener('touchstart', (e) => {
                 if (gameOver) return;
+                touchStartedAt = Date.now();
                 touchTriggeredFlag = false;
                 clearTimeout(touchTimer);
                 touchTimer = setTimeout(() => {
