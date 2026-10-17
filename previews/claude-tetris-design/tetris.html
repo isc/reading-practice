@@ -785,7 +785,7 @@
         <button class="ctrl wide lacquer" id="btn-drop" aria-label="Chute">
           ⇊ Chute
         </button>
-        <button class="ctrl wide lacquer" onclick="goToMenu()">Menu</button>
+        <button class="ctrl wide lacquer" onclick="askQuit()">Menu</button>
       </div>
     </div>
 
@@ -1343,6 +1343,15 @@
         if (window.ExitGuard) ExitGuard.setActive(false)
         document.getElementById("menu-best").textContent = best
         showScreen("screen-menu")
+      }
+
+      // Le bouton Menu est sous le pouce : en partie, il met en pause et
+      // demande confirmation au lieu d'abandonner la partie d'un coup.
+      function askQuit() {
+        if (!playing) return goToMenu()
+        if (!paused) togglePause()
+        document.getElementById("overlay-text").textContent =
+          "Quitter la partie ?"
       }
 
       function replay() {
