@@ -163,7 +163,8 @@
         cursor: pointer;
       }
 
-      button.lacquer:active {
+      button.lacquer:active,
+      .round.pressed {
         transform: scale(0.97);
       }
 
@@ -258,49 +259,35 @@
         font-size: 0.85em;
       }
 
-      .best-card {
-        padding: 12px 16px;
-        text-align: center;
-      }
-
-      .best-card .label {
-        font-size: 0.85em;
-      }
-
-      .best-card .value {
-        font-size: 2em;
-        font-variant-numeric: tabular-nums;
-      }
-
-      /* Record et réglages du son côte à côte, pour que l'accueil tienne
-         sans défiler. */
-      .menu-row {
-        display: flex;
-        gap: 10px;
-      }
-
-      .menu-col {
+      /* Le texte prend la place, le record se range au bout du bouton. */
+      .speed-text {
         flex: 1;
-        display: flex;
-        flex-direction: column;
         min-width: 0;
       }
 
-      .menu-col .best-card {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+      .speed-record {
+        text-align: center;
       }
 
-      .menu-col .sound-col {
-        flex: 1;
+      .speed-record .rec-label {
+        display: block;
+        font-size: 0.7em;
+        color: var(--gold-light);
+      }
+
+      .speed-record .rec-value {
+        font-size: 1.2em;
+        font-variant-numeric: tabular-nums;
       }
 
       .sound-col {
         display: flex;
         flex-direction: column;
         gap: 6px;
+      }
+
+      .sound-col.row {
+        flex-direction: row;
       }
 
       .sound-btn {
@@ -496,27 +483,112 @@
 
       /* ===== Commandes tactiles ===== */
 
+      /* Une manette à la Game Boy : la croix sous le pouce gauche, les deux
+         boutons ronds sous le pouce droit, Menu en petit au milieu. */
       .controls {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         gap: 8px;
+        height: 128px;
         margin-top: 10px;
       }
 
-      .ctrl {
-        font-size: 1.5em;
-        padding: 12px 0;
-        color: var(--gold-light);
+      .dpad,
+      .ab {
         touch-action: none;
       }
 
-      .ctrl.wide {
-        grid-column: span 2;
-        font-size: 1.15em;
+      .dpad svg {
+        display: block;
+        width: min(128px, 100%);
+        height: 100%;
+        overflow: visible;
       }
 
-      .ctrl.red {
+      .cross {
+        fill: url(#dpad-lacquer);
+        stroke: var(--gold);
+        stroke-width: 1.5;
+        stroke-linejoin: round;
+      }
+
+      /* Une ombre dessinée plutôt qu'un filtre, qu'il faudrait recalculer à
+         chaque appui. */
+      .cross-shadow {
+        fill: rgba(0, 0, 0, 0.35);
+      }
+
+      .arm {
+        fill: transparent;
+      }
+
+      .arm.pressed {
+        fill: rgba(242, 200, 91, 0.3);
+      }
+
+      .arrow {
+        fill: var(--gold-light);
+      }
+
+      .hub {
+        fill: none;
+        stroke: rgba(217, 166, 48, 0.4);
+      }
+
+      .ab {
+        position: relative;
+        justify-self: end;
+        width: min(150px, 100%);
+      }
+
+      /* Les boutons ne sont qu'un dessin : c'est la zone entière qui écoute. */
+      .ab-btn {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        pointer-events: none;
+      }
+
+      .ab-btn.drop {
+        left: 0;
+        bottom: 0;
+      }
+
+      .ab-btn.rotate {
+        right: 0;
+        top: 0;
+      }
+
+      .round {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 1.6em;
+        color: var(--gold-light);
+      }
+
+      .round.red {
         color: var(--cream);
+      }
+
+      .caption {
+        font-size: 0.7em;
+      }
+
+      /* Petit et penché comme Select et Start : on ne l'enfonce pas par
+         mégarde. */
+      .pill {
+        align-self: end;
+        margin-bottom: 14px;
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 0.85em;
+        color: var(--gold-light);
+        transform: rotate(-20deg);
       }
 
       /* ===== Fin de partie ===== */
@@ -648,52 +720,53 @@
       <div class="section-title">Choisis ta vitesse</div>
       <button class="speed-btn lacquer" onclick="startGame('calme')">
         <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 24px"><use href="#matryoshka" /></svg></span>
-        <span>
+        <span class="speed-text">
           <span class="label">Tranquille</span><br />
           <span class="hint"
             >Les briques descendent lentement, et une ombre montre où elles vont
             se poser</span
           >
         </span>
+        <span class="speed-record">
+          <span class="rec-label">Record</span>
+          <span class="rec-value" data-record="calme">0</span>
+        </span>
       </button>
       <button class="speed-btn lacquer" onclick="startGame('normal')">
         <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 32px"><use href="#matryoshka" /></svg></span>
-        <span>
+        <span class="speed-text">
           <span class="label">Normal</span><br />
           <span class="hint">La vitesse classique</span>
+        </span>
+        <span class="speed-record">
+          <span class="rec-label">Record</span>
+          <span class="rec-value" data-record="normal">0</span>
         </span>
       </button>
       <button class="speed-btn lacquer" onclick="startGame('rapide')">
         <span class="doll-slot"><svg class="doll" viewBox="0 0 60 80" aria-hidden="true" style="width: 42px"><use href="#matryoshka" /></svg></span>
-        <span>
+        <span class="speed-text">
           <span class="label">Rapide</span><br />
           <span class="hint">Pour les pros de la brique</span>
         </span>
+        <span class="speed-record">
+          <span class="rec-label">Record</span>
+          <span class="rec-value" data-record="rapide">0</span>
+        </span>
       </button>
 
-      <div class="menu-row">
-        <div class="menu-col">
-          <div class="section-title">Meilleur score</div>
-          <div class="best-card lacquer">
-            <div class="label">Record</div>
-            <div class="value" id="menu-best">0</div>
-          </div>
-        </div>
-        <div class="menu-col">
-          <div class="section-title">Son</div>
-          <div class="sound-col">
-            <button
-              class="sound-btn lacquer"
-              data-sound="music"
-              onclick="toggleMusic()"
-            ></button>
-            <button
-              class="sound-btn lacquer"
-              data-sound="sfx"
-              onclick="toggleSfx()"
-            ></button>
-          </div>
-        </div>
+      <div class="section-title">Son</div>
+      <div class="sound-col row">
+        <button
+          class="sound-btn lacquer"
+          data-sound="music"
+          onclick="toggleMusic()"
+        ></button>
+        <button
+          class="sound-btn lacquer"
+          data-sound="sfx"
+          onclick="toggleSfx()"
+        ></button>
       </div>
 
       <p class="rules">
@@ -776,16 +849,41 @@
       </div>
 
       <div class="controls">
-        <button class="ctrl lacquer" id="btn-left" aria-label="Gauche">◀</button>
-        <button class="ctrl lacquer red" id="btn-rotate" aria-label="Tourner">
-          ⟳
-        </button>
-        <button class="ctrl lacquer" id="btn-right" aria-label="Droite">▶</button>
-        <button class="ctrl lacquer" id="btn-down" aria-label="Descendre">▼</button>
-        <button class="ctrl wide lacquer" id="btn-drop" aria-label="Chute">
-          ⇊ Chute
-        </button>
-        <button class="ctrl wide lacquer" onclick="askQuit()">Menu</button>
+        <div class="dpad" id="dpad" role="group" aria-label="Croix">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <defs>
+              <linearGradient id="dpad-lacquer" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#2b1e18" />
+                <stop offset="1" stop-color="#1a120e" />
+              </linearGradient>
+            </defs>
+            <path
+              class="cross-shadow"
+              d="M34 1H66V34H99V66H66V99H34V66H1V34H34Z"
+              transform="translate(0 4)"
+            />
+            <path class="cross" d="M34 1H66V34H99V66H66V99H34V66H1V34H34Z" />
+            <rect class="arm" data-key="up" x="36" y="3" width="28" height="31" />
+            <rect class="arm" data-key="left" x="3" y="36" width="31" height="28" />
+            <rect class="arm" data-key="right" x="66" y="36" width="31" height="28" />
+            <rect class="arm" data-key="down" x="36" y="66" width="28" height="31" />
+            <path class="arrow" d="M9 50L21 41V59Z" />
+            <path class="arrow" d="M91 50L79 41V59Z" />
+            <path class="arrow" d="M50 91L41 79H59Z" />
+            <circle class="hub" cx="50" cy="50" r="8" />
+          </svg>
+        </div>
+        <button class="pill lacquer" onclick="askQuit()">Menu</button>
+        <div class="ab" id="ab" role="group" aria-label="Boutons">
+          <div class="ab-btn drop">
+            <span class="round lacquer" data-key="drop">⇊</span>
+            <span class="label caption">Chute</span>
+          </div>
+          <div class="ab-btn rotate">
+            <span class="round lacquer red" data-key="rotate">⟳</span>
+            <span class="label caption">Tourner</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -890,7 +988,11 @@
       const CLEAR_ANIM = 260
       // La pile est en danger dès qu'elle touche ces rangées du haut.
       const DANGER_ROWS = 6
-      const BEST_KEY = "tetris-best"
+      // Un record par vitesse : les points ne dépendent que des lignes, alors
+      // en Rapide on en marque forcément moins qu'en Tranquille. L'ancien
+      // record, toutes vitesses confondues, ne dit pas d'où il vient : on ne
+      // le reprend pas.
+      const RECORDS_KEY = "tetris-records"
 
       // ===== État =====
 
@@ -914,7 +1016,8 @@
       let paused = false
       let lastFrame = 0
       let cell = 20
-      let best = parseInt(readStore(BEST_KEY), 10) || 0
+      const records = Object.fromEntries(Object.keys(SPEEDS).map((k) => [k, 0]))
+      Object.assign(records, readRecords())
 
       const boardCanvas = document.getElementById("board")
       let ctx = boardCanvas.getContext("2d")
@@ -1388,13 +1491,27 @@
         }
       }
 
+      function readRecords() {
+        try {
+          return JSON.parse(readStore(RECORDS_KEY)) || {}
+        } catch (e) {
+          return {} // illisibles : on repart de zéro
+        }
+      }
+
+      function renderRecords() {
+        document.querySelectorAll("[data-record]").forEach((el) => {
+          el.textContent = records[el.dataset.record]
+        })
+      }
+
       function goToMenu() {
-        releaseKeys()
+        releaseAll()
         playing = false
         paused = false
         syncAudio()
         if (window.ExitGuard) ExitGuard.setActive(false)
-        document.getElementById("menu-best").textContent = best
+        renderRecords()
         showScreen("screen-menu")
       }
 
@@ -1574,7 +1691,7 @@
 
       function togglePause() {
         if (!playing) return
-        releaseKeys()
+        releaseAll()
         paused = !paused
         document.getElementById("overlay").classList.toggle("show", paused)
         document.getElementById("overlay-text").textContent = "Pause"
@@ -1677,19 +1794,19 @@
         playing = false
         piece = null
         if (window.ExitGuard) ExitGuard.setActive(false)
-        const isRecord = score > best
-        const newRecord = isRecord && score > 0
+        const newRecord = score > records[currentSpeedKey]
         // Avant syncAudio, qui couperait la musique que windDown reprend.
         if (newRecord) sfx("record")
         else windDown()
         syncAudio()
-        if (isRecord) {
-          best = score
-          writeStore(BEST_KEY, String(best))
+        if (newRecord) {
+          records[currentSpeedKey] = score
+          writeStore(RECORDS_KEY, JSON.stringify(records))
         }
         document.getElementById("over-score").textContent = score
         document.getElementById("over-lines").textContent = lines
-        document.getElementById("over-best").textContent = best
+        document.getElementById("over-best").textContent =
+          records[currentSpeedKey]
         document
           .getElementById("over-record")
           .classList.toggle("show", newRecord)
@@ -2084,76 +2201,114 @@
         down: () => repeat(softDrop, 50, 50),
       }
 
-      function bindRepeat(id, start) {
-        const el = document.getElementById(id)
-        let stop = null
+      // Ce que fait chaque commande quand on l'enfonce ; celles qui se
+      // répètent renvoient de quoi s'arrêter.
+      const PRESS = { ...HOLD, rotate, drop: hardDrop }
 
-        el.addEventListener("pointerdown", (e) => {
+      // Les commandes enfoncées, par touche du clavier ou par doigt, avec la
+      // touche de la manette à éclairer.
+      const held = new Map()
+
+      function press(id, name, el) {
+        const action = PRESS[name]
+        if (el && action) el.classList.add("pressed")
+        held.set(id, { el, stop: action && action() })
+      }
+
+      function release(id) {
+        const hold = held.get(id)
+        if (!hold) return
+        if (hold.stop) hold.stop()
+        if (hold.el) hold.el.classList.remove("pressed")
+        held.delete(id)
+      }
+
+      function releaseAll() {
+        held.forEach((_, id) => release(id))
+      }
+
+      // Chaque zone de la manette écoute sur toute sa surface : un pouce qui
+      // tombe à côté compte pour la touche la plus proche. Sur la croix,
+      // rouler le pouce d'une direction à l'autre change de direction sans
+      // relever le doigt. Le haut de la croix ne fait rien, comme sur la
+      // Game Boy : mieux vaut un appui perdu qu'une pièce tournée par erreur.
+      function bindPad(id, follow = false) {
+        const pad = document.getElementById(id)
+        const keys = [...pad.querySelectorAll("[data-key]")]
+        let centers = []
+
+        const nearest = (e) => {
+          let closest = null
+          let distance = Infinity
+          for (const c of centers) {
+            const d = Math.hypot(e.clientX - c.x, e.clientY - c.y)
+            if (d < distance) {
+              closest = c.key
+              distance = d
+            }
+          }
+          return closest
+        }
+
+        pad.addEventListener("pointerdown", (e) => {
           e.preventDefault()
-          if (stop) stop()
-          stop = start()
-        })
-        ;["pointerup", "pointerleave", "pointercancel"].forEach((evt) => {
-          el.addEventListener(evt, () => {
-            if (stop) stop()
-            stop = null
+          pad.setPointerCapture(e.pointerId)
+          // Relevés à l'appui : rien ne bouge pendant le geste.
+          centers = keys.map((key) => {
+            const r = key.getBoundingClientRect()
+            return { key, x: r.left + r.width / 2, y: r.top + r.height / 2 }
           })
+          const key = nearest(e)
+          press(e.pointerId, key.dataset.key, key)
         })
+        if (follow) {
+          pad.addEventListener("pointermove", (e) => {
+            const hold = held.get(e.pointerId)
+            const key = hold && nearest(e)
+            if (key && key !== hold.el) {
+              release(e.pointerId)
+              press(e.pointerId, key.dataset.key, key)
+            }
+          })
+        }
+        const up = (e) => release(e.pointerId)
+        pad.addEventListener("pointerup", up)
+        pad.addEventListener("pointercancel", up)
       }
 
-      function bindTap(id, fn) {
-        document.getElementById(id).addEventListener("pointerdown", (e) => {
-          e.preventDefault()
-          fn()
-        })
-      }
+      bindPad("dpad", true)
+      bindPad("ab")
 
-      bindRepeat("btn-left", HOLD.left)
-      bindRepeat("btn-right", HOLD.right)
-      bindRepeat("btn-down", HOLD.down)
-      bindTap("btn-rotate", rotate)
-      bindTap("btn-drop", hardDrop)
-
-      // Les flèches maintenues se répètent d'elles-mêmes, sans compter sur la
-      // répétition du clavier : celle-ci s'arrête dès qu'on appuie sur une
-      // autre touche, ce qui empêchait de tourner la pièce en la déplaçant.
-      const HELD_ACTIONS = {
-        ArrowLeft: HOLD.left,
-        ArrowRight: HOLD.right,
-        ArrowDown: HOLD.down,
-      }
-      const heldKeys = new Map()
-
-      function releaseKeys() {
-        heldKeys.forEach((stop) => stop())
-        heldKeys.clear()
+      // Au clavier, les touches maintenues se répètent d'elles-mêmes, sans
+      // compter sur la répétition du clavier : celle-ci s'arrête dès qu'on
+      // appuie sur une autre touche, ce qui empêchait de tourner la pièce en
+      // la déplaçant.
+      const KEYS = {
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        ArrowDown: "down",
+        ArrowUp: "rotate",
+        " ": "drop",
       }
 
       document.addEventListener("keydown", (e) => {
         if (!playing) return
-        const keys = ["ArrowUp", " ", "p", "P", ...Object.keys(HELD_ACTIONS)]
-        if (keys.indexOf(e.key) === -1) return
+        const pause = e.key === "p" || e.key === "P"
+        if (!pause && !KEYS[e.key]) return
         e.preventDefault()
-        if (e.key === "p" || e.key === "P") return togglePause()
-        if (paused || e.repeat) return
-        if (HELD_ACTIONS[e.key]) {
-          if (!heldKeys.has(e.key)) heldKeys.set(e.key, HELD_ACTIONS[e.key]())
-        } else if (e.key === "ArrowUp") rotate()
-        else if (e.key === " ") hardDrop()
+        if (pause) return togglePause()
+        if (paused || e.repeat || held.has(e.key)) return
+        press(e.key, KEYS[e.key])
       })
 
-      document.addEventListener("keyup", (e) => {
-        const stop = heldKeys.get(e.key)
-        if (stop) stop()
-        heldKeys.delete(e.key)
-      })
+      document.addEventListener("keyup", (e) => release(e.key))
 
-      window.addEventListener("blur", releaseKeys)
+      window.addEventListener("blur", releaseAll)
 
       // Glissé sur le plateau : gauche/droite pour déplacer, bas pour la chute,
       // tap pour tourner. Chaque doigt a son propre geste : on peut glisser
-      // d'un doigt et tourner en tapant d'un autre. Les boutons restent là
-      // pour qui préfère.
+      // d'un doigt et tourner en tapant d'un autre. La manette reste là pour
+      // qui préfère.
       const touches = new Map()
 
       boardCanvas.addEventListener("pointerdown", (e) => {
@@ -2202,7 +2357,7 @@
 
       if (window.ExitGuard) ExitGuard.setActive(false)
       document.getElementById("skyline").style.backgroundImage = skylineSVG()
-      document.getElementById("menu-best").textContent = best
+      renderRecords()
       renderSoundButtons()
     </script>
   </body>
