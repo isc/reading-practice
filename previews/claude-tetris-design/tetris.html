@@ -331,6 +331,17 @@
         text-shadow: 0 1px 4px #0b1230;
       }
 
+      /* Les touches du clavier ne sont expliquées que là où il y en a un. */
+      .keys-help {
+        display: none;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        .keys-help {
+          display: inline;
+        }
+      }
+
       /* ===== Jeu ===== */
 
       .topbar {
@@ -690,6 +701,10 @@
         Quatre lignes d'un coup, c'est un Tetris !<br />
         Sur le plateau : glisse pour déplacer, tape pour tourner, glisse vers le
         bas pour lâcher la brique.
+        <span class="keys-help"
+          ><br />Au clavier : ← → pour déplacer, ↑ pour tourner, ↓ pour
+          descendre plus vite, espace pour lâcher, P pour la pause.</span
+        >
       </p>
     </div>
 
@@ -1985,26 +2000,34 @@
       // Appui maintenu = répétition, pour glisser une pièce sans tapoter :
       // une fois tout de suite, puis en continu après un court délai.
       // Renvoie de quoi l'arrêter.
-      function repeat(fn) {
+      function repeat(fn, delay = 200, interval = 70) {
         fn()
         let timer = null
-        const delay = setTimeout(() => {
-          timer = setInterval(fn, 70)
-        }, 200)
+        const wait = setTimeout(() => {
+          timer = setInterval(fn, interval)
+        }, delay)
         return () => {
-          clearTimeout(delay)
+          clearTimeout(wait)
           clearInterval(timer)
         }
       }
 
-      function bindRepeat(id, fn) {
+      // Ce que fait chaque commande tant qu'on appuie. La descente rapide
+      // démarre sans attendre et va bien plus vite que la chute normale.
+      const HOLD = {
+        left: () => repeat(() => move(-1)),
+        right: () => repeat(() => move(1)),
+        down: () => repeat(softDrop, 50, 50),
+      }
+
+      function bindRepeat(id, start) {
         const el = document.getElementById(id)
         let stop = null
 
         el.addEventListener("pointerdown", (e) => {
           e.preventDefault()
           if (stop) stop()
-          stop = repeat(fn)
+          stop = start()
         })
         ;["pointerup", "pointerleave", "pointercancel"].forEach((evt) => {
           el.addEventListener(evt, () => {
@@ -2021,9 +2044,9 @@
         })
       }
 
-      bindRepeat("btn-left", () => move(-1))
-      bindRepeat("btn-right", () => move(1))
-      bindRepeat("btn-down", softDrop)
+      bindRepeat("btn-left", HOLD.left)
+      bindRepeat("btn-right", HOLD.right)
+      bindRepeat("btn-down", HOLD.down)
       bindTap("btn-rotate", rotate)
       bindTap("btn-drop", hardDrop)
 
@@ -2031,9 +2054,9 @@
       // répétition du clavier : celle-ci s'arrête dès qu'on appuie sur une
       // autre touche, ce qui empêchait de tourner la pièce en la déplaçant.
       const HELD_ACTIONS = {
-        ArrowLeft: () => move(-1),
-        ArrowRight: () => move(1),
-        ArrowDown: softDrop,
+        ArrowLeft: HOLD.left,
+        ArrowRight: HOLD.right,
+        ArrowDown: HOLD.down,
       }
       const heldKeys = new Map()
 
@@ -2050,7 +2073,7 @@
         if (e.key === "p" || e.key === "P") return togglePause()
         if (paused || e.repeat) return
         if (HELD_ACTIONS[e.key]) {
-          if (!heldKeys.has(e.key)) heldKeys.set(e.key, repeat(HELD_ACTIONS[e.key]))
+          if (!heldKeys.has(e.key)) heldKeys.set(e.key, HELD_ACTIONS[e.key]())
         } else if (e.key === "ArrowUp") rotate()
         else if (e.key === " ") hardDrop()
       })
