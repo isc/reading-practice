@@ -92,15 +92,18 @@
         }
       }
 
-      /* Des coupoles à bulbe en silhouette, au pied de la page. */
+      /* Des coupoles à bulbe en silhouette, au pied de la page, répétées sur
+         toute la largeur sans être rognées. */
       .skyline {
         position: fixed;
         left: 0;
+        right: 0;
         bottom: 0;
-        /* Un SVG ne s'étire pas entre left et right : il faut sa largeur. */
-        width: 100%;
         height: 90px;
         pointer-events: none;
+        background-repeat: repeat-x;
+        background-position: center bottom;
+        background-size: auto 100%;
       }
 
       .screen {
@@ -421,10 +424,12 @@
         display: flex;
       }
 
-      /* Le bandeau des bonnes nouvelles, avec la matriochka qui danse. */
+      /* Le bandeau des bonnes nouvelles, avec la matriochka qui danse. Il
+         s'affiche en bas du plateau, sur la pile, pour ne pas cacher la
+         pièce qui tombe. */
       .toast {
         position: absolute;
-        top: 16%;
+        bottom: 12%;
         left: 50%;
         display: flex;
         align-items: center;
@@ -434,7 +439,7 @@
         font-size: 1.15em;
         opacity: 0;
         pointer-events: none;
-        transform: translateX(-50%) translateY(-8px);
+        transform: translateX(-50%) translateY(8px);
         transition:
           opacity 0.25s,
           transform 0.25s;
@@ -588,7 +593,7 @@
   <body>
     <div class="snow far" aria-hidden="true"></div>
     <div class="snow" aria-hidden="true"></div>
-    <svg class="skyline" id="skyline" viewBox="0 0 400 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
+    <div class="skyline" id="skyline" aria-hidden="true"></div>
     <canvas id="confetti"></canvas>
 
     <!-- La matriochka, en foulard rouge et tablier fleuri, dessinée une fois
@@ -868,6 +873,8 @@
       const LINE_POINTS = [0, 100, 300, 500, 800]
       const LOCK_DELAY = 500
       const CLEAR_ANIM = 260
+      // La pile est en danger dès qu'elle touche ces rangées du haut.
+      const DANGER_ROWS = 6
       const BEST_KEY = "tetris-best"
 
       // ===== État =====
@@ -887,6 +894,7 @@
       let lockTimer = 0
       let landed = false
       let clearing = null
+      let danger = false
       let playing = false
       let paused = false
       let lastFrame = 0
@@ -1177,9 +1185,11 @@
         if (sfxOn && audioCtx) SFX[name](audioCtx.currentTime + 0.01, arg)
       }
 
-      // Le tempo suit la vitesse choisie et accélère à chaque niveau.
+      // Le tempo suit la vitesse choisie, accélère nettement à chaque niveau,
+      // et s'emballe quand la pile approche du haut, comme sur la NES.
       function musicTempo() {
-        return Math.min(200, speed.tempo + (level - 1) * 6)
+        const tempo = Math.min(220, speed.tempo + (level - 1) * 12)
+        return danger ? tempo * 1.3 : tempo
       }
 
       function startMusic() {
@@ -1311,6 +1321,7 @@
       }
 
       function goToMenu() {
+        releaseKeys()
         playing = false
         paused = false
         syncAudio()
@@ -1340,6 +1351,7 @@
         lockTimer = 0
         landed = false
         clearing = null
+        danger = false
         paused = false
         bag = []
         nextType = takeFromBag()
@@ -1485,6 +1497,7 @@
 
       function togglePause() {
         if (!playing) return
+        releaseKeys()
         paused = !paused
         document.getElementById("overlay").classList.toggle("show", paused)
         document.getElementById("overlay-text").textContent = "Pause"
@@ -1512,6 +1525,7 @@
         for (let r = 0; r < ROWS; r++) {
           if (grid[r].every((v) => v !== null)) full.push(r)
         }
+        updateDanger()
 
         sfx("lock")
         if (full.length > 0) {
@@ -1535,6 +1549,7 @@
             grid.unshift(new Array(COLS).fill(null))
           })
 
+        updateDanger()
         lines += rows.length
         score += LINE_POINTS[rows.length] * level
         const newLevel = 1 + Math.floor(lines / 10)
@@ -1557,6 +1572,12 @@
       function setCounter(id, value) {
         const el = document.getElementById(id)
         if (el.textContent !== String(value)) el.textContent = value
+      }
+
+      function updateDanger() {
+        danger = grid
+          .slice(0, DANGER_ROWS)
+          .some((row) => row.some((v) => v !== null))
       }
 
       function updateStats() {
@@ -1835,7 +1856,8 @@
           shapes += `<rect x="${cx - 0.6}" y="${top - h - 7}" width="1.2" height="7"/>`
           windows += `<rect x="${cx - 1.6}" y="${top + 10}" width="3.2" height="5" rx="1.6"/>`
         }
-        return `<g fill="#0a1029">${shapes}</g><g fill="#f2c85b" opacity="0.7">${windows}</g>`
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100"><g fill="#0a1029">${shapes}</g><g fill="#f2c85b" opacity="0.7">${windows}</g></svg>`
+        return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
       }
 
       // ===== Dessin =====
@@ -1960,28 +1982,35 @@
 
       // ===== Commandes =====
 
-      // Appui maintenu = répétition, pour glisser une pièce sans tapoter.
-      function bindRepeat(id, fn) {
-        const el = document.getElementById(id)
-        let delay = null
+      // Appui maintenu = répétition, pour glisser une pièce sans tapoter :
+      // une fois tout de suite, puis en continu après un court délai.
+      // Renvoie de quoi l'arrêter.
+      function repeat(fn) {
+        fn()
         let timer = null
-
-        function stop() {
+        const delay = setTimeout(() => {
+          timer = setInterval(fn, 70)
+        }, 200)
+        return () => {
           clearTimeout(delay)
           clearInterval(timer)
-          delay = null
-          timer = null
         }
+      }
+
+      function bindRepeat(id, fn) {
+        const el = document.getElementById(id)
+        let stop = null
 
         el.addEventListener("pointerdown", (e) => {
           e.preventDefault()
-          fn()
-          delay = setTimeout(() => {
-            timer = setInterval(fn, 70)
-          }, 200)
+          if (stop) stop()
+          stop = repeat(fn)
         })
         ;["pointerup", "pointerleave", "pointercancel"].forEach((evt) => {
-          el.addEventListener(evt, stop)
+          el.addEventListener(evt, () => {
+            if (stop) stop()
+            stop = null
+          })
         })
       }
 
@@ -1998,60 +2027,77 @@
       bindTap("btn-rotate", rotate)
       bindTap("btn-drop", hardDrop)
 
+      // Les flèches maintenues se répètent d'elles-mêmes, sans compter sur la
+      // répétition du clavier : celle-ci s'arrête dès qu'on appuie sur une
+      // autre touche, ce qui empêchait de tourner la pièce en la déplaçant.
+      const HELD_ACTIONS = {
+        ArrowLeft: () => move(-1),
+        ArrowRight: () => move(1),
+        ArrowDown: softDrop,
+      }
+      const heldKeys = new Map()
+
+      function releaseKeys() {
+        heldKeys.forEach((stop) => stop())
+        heldKeys.clear()
+      }
+
       document.addEventListener("keydown", (e) => {
         if (!playing) return
-        const keys = [
-          "ArrowLeft",
-          "ArrowRight",
-          "ArrowDown",
-          "ArrowUp",
-          " ",
-          "p",
-          "P",
-        ]
+        const keys = ["ArrowUp", " ", "p", "P", ...Object.keys(HELD_ACTIONS)]
         if (keys.indexOf(e.key) === -1) return
         e.preventDefault()
         if (e.key === "p" || e.key === "P") return togglePause()
-        if (paused) return
-        if (e.key === "ArrowLeft") move(-1)
-        else if (e.key === "ArrowRight") move(1)
-        else if (e.key === "ArrowDown") softDrop()
-        else if (e.key === "ArrowUp") rotate()
+        if (paused || e.repeat) return
+        if (HELD_ACTIONS[e.key]) {
+          if (!heldKeys.has(e.key)) heldKeys.set(e.key, repeat(HELD_ACTIONS[e.key]))
+        } else if (e.key === "ArrowUp") rotate()
         else if (e.key === " ") hardDrop()
       })
 
+      document.addEventListener("keyup", (e) => {
+        const stop = heldKeys.get(e.key)
+        if (stop) stop()
+        heldKeys.delete(e.key)
+      })
+
+      window.addEventListener("blur", releaseKeys)
+
       // Glissé sur le plateau : gauche/droite pour déplacer, bas pour la chute,
-      // tap pour tourner. Les boutons restent là pour qui préfère.
-      let touchStart = null
+      // tap pour tourner. Chaque doigt a son propre geste : on peut glisser
+      // d'un doigt et tourner en tapant d'un autre. Les boutons restent là
+      // pour qui préfère.
+      const touches = new Map()
 
       boardCanvas.addEventListener("pointerdown", (e) => {
         if (!canPlay()) return
-        touchStart = { x: e.clientX, y: e.clientY, col: 0, moved: false }
+        touches.set(e.pointerId, { x: e.clientX, y: e.clientY, col: 0, moved: false })
       })
 
       boardCanvas.addEventListener("pointermove", (e) => {
-        if (!touchStart || !canPlay()) return
-        const dx = e.clientX - touchStart.x
-        const dy = e.clientY - touchStart.y
+        const touch = touches.get(e.pointerId)
+        if (!touch || !canPlay()) return
+        const dx = e.clientX - touch.x
+        const dy = e.clientY - touch.y
         const steps = Math.trunc(dx / Math.max(18, cell))
-        if (steps !== touchStart.col) {
-          move(steps > touchStart.col ? 1 : -1)
-          touchStart.col += steps > touchStart.col ? 1 : -1
-          touchStart.moved = true
+        if (steps !== touch.col) {
+          move(steps > touch.col ? 1 : -1)
+          touch.col += steps > touch.col ? 1 : -1
+          touch.moved = true
         } else if (dy > cell * 2 && Math.abs(dx) < cell) {
           hardDrop()
-          touchStart.moved = true
-          touchStart = null
+          touches.delete(e.pointerId)
         }
       })
 
-      boardCanvas.addEventListener("pointerup", () => {
-        if (touchStart && !touchStart.moved) rotate()
-        touchStart = null
+      boardCanvas.addEventListener("pointerup", (e) => {
+        const touch = touches.get(e.pointerId)
+        if (touch && !touch.moved) rotate()
+        touches.delete(e.pointerId)
       })
 
-      boardCanvas.addEventListener("pointercancel", () => {
-        touchStart = null
+      boardCanvas.addEventListener("pointercancel", (e) => {
+        touches.delete(e.pointerId)
       })
 
       // Écran mis de côté en pleine partie : on met en pause plutôt que de
@@ -2068,7 +2114,7 @@
       // ===== Départ =====
 
       if (window.ExitGuard) ExitGuard.setActive(false)
-      document.getElementById("skyline").innerHTML = skylineSVG()
+      document.getElementById("skyline").style.backgroundImage = skylineSVG()
       document.getElementById("menu-best").textContent = best
       renderSoundButtons()
     </script>
