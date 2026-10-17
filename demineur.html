@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Démineur</title>
     <style>
+        /* Esprit Bauhaus : formes géométriques, aplats de couleurs primaires,
+           typographie géométrique (Jost, licence SIL OFL) en minuscules.
+           Sous les cases se cache une affiche, différente à chaque partie. */
+        @font-face {
+            font-family: 'Jost';
+            src: url('Jost-Variable.woff2') format('woff2');
+            font-weight: 400 700;
+            font-display: swap;
+        }
+
+        :root {
+            --paper: #efe8d9;
+            --ink: #1d1d1b;
+            --red: #d6402c;
+            --yellow: #f2b91e;
+            --blue: #24539f;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,381 +30,508 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f2f5;
+            font-family: 'Jost', 'Futura', 'Century Gothic', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 20px;
+            padding: 20px 16px 40px;
         }
 
-        .container {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        .page {
             max-width: 560px;
-            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ===== Formes de base ===== */
+
+        .shape {
+            display: inline-block;
+            width: 0.8em;
+            height: 0.8em;
+            flex-shrink: 0;
+            background: currentColor;
+        }
+
+        .shape.circle { border-radius: 50%; }
+        .shape.triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+        .shape.pennant { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+        .shape.blue { color: var(--blue); }
+        .shape.red { color: var(--red); }
+        .shape.yellow { color: var(--yellow); }
+
+        /* ===== En-tête ===== */
+
+        .masthead {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            border-bottom: 6px solid var(--ink);
+            padding-bottom: 6px;
         }
 
         h1 {
-            text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 5px;
-            font-size: 1.6em;
+            font-size: 3.2em;
             font-weight: 700;
+            line-height: 0.9;
+            letter-spacing: -0.03em;
+        }
+
+        .triad {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .triad .shape {
+            width: 38px;
+            height: 38px;
         }
 
         .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 0.85em;
+            font-size: 1.05em;
+            margin: 8px 0 18px;
+            text-wrap: balance;
         }
+
+        /* ===== Commandes ===== */
 
         .difficulty {
             display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 14px;
+        }
+
+        .difficulty button,
+        .flag-toggle {
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--ink);
+            background: transparent;
+            border: 2px solid var(--ink);
+            cursor: pointer;
         }
 
         .difficulty button {
             flex: 1;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 10px;
-            font-size: 0.9em;
-            font-weight: 600;
-            cursor: pointer;
-            color: #555;
-            transition: all 0.2s ease;
-        }
-
-        .difficulty button:hover {
-            border-color: #999;
-        }
-
-        .difficulty button.active {
-            background: #1a1a1a;
-            color: white;
-            border-color: #1a1a1a;
-        }
-
-        .flag-toggle {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 10px;
-            font-size: 0.95em;
-            font-weight: 600;
-            cursor: pointer;
-            color: #555;
-            margin-bottom: 15px;
+            padding: 10px 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.2s ease;
         }
 
-        .flag-toggle:hover {
-            border-color: #999;
+        .difficulty button + button {
+            border-left: none;
         }
 
-        .flag-toggle.active {
-            background: #fef3c7;
-            border-color: #f59e0b;
-            color: #78350f;
+        .difficulty button.active {
+            background: var(--ink);
+            color: var(--paper);
         }
 
         .status-bar {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            font-weight: 600;
-            color: #555;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-top: 2px solid var(--ink);
+            border-bottom: 2px solid var(--ink);
+            margin-bottom: 14px;
         }
 
         .status-item {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.1em;
+            align-items: baseline;
+            gap: 10px;
+            padding: 8px 4px;
         }
 
-        .status-item .icon {
-            font-size: 1.2em;
+        .status-item + .status-item {
+            border-left: 2px solid var(--ink);
+            padding-left: 14px;
         }
 
-        .board-wrapper {
-            background: #cbd5e1;
-            border-radius: 12px;
-            padding: 6px;
-            margin-bottom: 15px;
-            overflow: hidden;
+        .status-item .shape {
+            align-self: center;
+            width: 1.1em;
+            height: 1.1em;
         }
 
-        .board {
+        .status-item .big {
+            font-size: 2em;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        .status-item .label {
+            font-size: 0.9em;
+        }
+
+        .flag-toggle {
+            width: 100%;
             display: grid;
-            gap: 2px;
+            grid-template-columns: 1fr 1fr;
+            margin-bottom: 14px;
         }
 
-        .cell {
-            aspect-ratio: 1 / 1;
-            background: #94a3b8;
-            border-radius: 4px;
+        .flag-toggle .half {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
+            gap: 8px;
+            padding: 11px 4px;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .flag-toggle[aria-pressed="false"] .dig {
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .flag-toggle[aria-pressed="true"] .flag {
+            background: var(--red);
+            color: var(--paper);
+        }
+
+        /* ===== Plateau ===== */
+
+        .board-frame {
+            position: relative;
+            border: 5px solid var(--ink);
+        }
+
+        .poster {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .board {
+            position: relative;
+            display: grid;
+            container-type: inline-size;
+        }
+
+        .cell {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: calc(100cqw / var(--cols) * 0.58);
+            line-height: 1;
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
-            transition: background 0.1s ease;
-            font-size: 1em;
-            line-height: 1;
-            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12), inset 0 2px 0 rgba(255, 255, 255, 0.18);
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .cell:hover:not(.revealed):not(.flagged) {
-            background: #a3b1c2;
+        /* Case cachée : on voit l'affiche à travers, découpée en carreaux. */
+        .cell[data-state="covered"],
+        .cell[data-state="flag"] {
+            box-shadow: inset 0 0 0 1px var(--paper);
+        }
+
+        .cell[data-state="covered"]:active {
+            background: rgba(29, 29, 27, 0.2);
+        }
+
+        @media (hover: hover) {
+            .cell[data-state="covered"]:hover {
+                background: rgba(255, 255, 255, 0.22);
+            }
         }
 
         .cell.revealed {
-            background: #f0f2f5;
+            background: var(--paper);
+            box-shadow: inset 0 0 0 0.5px rgba(29, 29, 27, 0.12);
             cursor: default;
-            box-shadow: none;
         }
 
-        .cell.revealed.mine {
-            background: #fed7d7;
+        /* Une case révélée s'ouvre en rond, puis devient carrée, en vague
+           depuis la case touchée. */
+        .cell.appear {
+            animation: appear 0.3s ease-out backwards;
         }
 
-        .cell.flagged {
-            background: #94a3b8;
+        @keyframes appear {
+            from { clip-path: circle(0% at 50% 50%); }
+            to { clip-path: circle(71% at 50% 50%); }
         }
 
-        .cell.exploded {
-            background: #dc2626;
+        .cell > span {
+            position: relative;
+            color: var(--fg);
         }
 
-        .cell.n1 { color: #2563eb; }
-        .cell.n2 { color: #16a34a; }
-        .cell.n3 { color: #dc2626; }
-        .cell.n4 { color: #1e3a8a; }
-        .cell.n5 { color: #7f1d1d; }
-        .cell.n6 { color: #0891b2; }
-        .cell.n7 { color: #1a1a1a; }
-        .cell.n8 { color: #6b7280; }
+        .cell svg {
+            width: 86%;
+            height: 86%;
+        }
 
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
+        .cell[data-state="flag"] svg {
+            animation: plant 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+        }
+
+        @keyframes plant {
+            from { transform: scale(0); }
+        }
+
+        /* Les chiffres : 1 à 3 en couleur (--fg), puis dans des pastilles
+           (--disc) de plus en plus sombres à mesure que le danger monte. */
+        .cell[data-state="n1"] { --fg: var(--blue); }
+        .cell[data-state="n2"] { --fg: var(--red); }
+        .cell[data-state="n3"] { --fg: var(--ink); }
+        .cell[data-state="n4"] { --fg: var(--paper); --disc: var(--blue); }
+        .cell[data-state="n5"] { --fg: var(--paper); --disc: var(--red); }
+        .cell[data-state="n6"] { --fg: var(--ink); --disc: var(--yellow); }
+        .cell[data-state="n7"] { --fg: var(--paper); --disc: var(--ink); }
+        .cell[data-state="n8"] { --fg: var(--yellow); --disc: var(--ink); --disc-radius: 0; }
+
+        .cell.revealed::before {
+            content: '';
+            position: absolute;
+            inset: 14%;
+            border-radius: var(--disc-radius, 50%);
+            background: var(--disc, transparent);
+        }
+
+        .cell[data-state="exploded"] {
+            background: var(--red);
+        }
+
+        /* Victoire : les cases s'effacent en diagonale et l'affiche apparaît
+           en entier. */
+        .board-frame.complete .cell {
+            opacity: 0;
+            transition: opacity 0.5s ease var(--w);
+        }
+
+        .fx {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        /* Défaite : des cercles concentriques partent de la mine. */
+        .ring {
+            position: absolute;
+            width: 12%;
+            aspect-ratio: 1 / 1;
+            border: 6px solid;
+            border-radius: 50%;
+            animation: ring 0.9s ease-out both;
+        }
+
+        @keyframes ring {
+            from { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            to { transform: translate(-50%, -50%) scale(9); opacity: 0; }
+        }
+
+        /* Le cartel, comme sous un tableau au musée. */
+        .cartel {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.9em;
+            margin-top: 6px;
+        }
+
+        .cartel strong {
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        }
-
-        .btn-new {
-            background: #1a1a1a;
-            color: white;
-        }
-
-        .btn-new:hover {
-            background: #333;
         }
 
         .message {
-            text-align: center;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            padding: 12px 16px;
+            margin-top: 14px;
+            font-size: 1.15em;
             font-weight: 600;
-            animation: slideIn 0.5s ease;
+            color: var(--paper);
+            animation: slide-in 0.4s ease;
         }
 
-        .message.win {
-            background: #c6f6d5;
-            color: #22543d;
+        .message.win { background: var(--blue); }
+        .message.lose { background: var(--red); }
+
+        @keyframes slide-in {
+            from { transform: translateX(-12px); opacity: 0; }
         }
 
-        .message.lose {
-            background: #fed7d7;
-            color: #742a2a;
+        .btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 14px;
+            font-family: inherit;
+            font-size: 1.15em;
+            font-weight: 600;
+            color: var(--paper);
+            background: var(--ink);
+            border: none;
+            cursor: pointer;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
+        @media (hover: hover) {
+            .btn:hover {
+                background: var(--red);
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
-        .scoreboard {
-            margin-top: 20px;
-        }
-
-        .scoreboard h3 {
-            color: #1a1a1a;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
-
-        .score-row {
-            display: flex;
-            justify-content: space-around;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .score-cell {
-            text-align: center;
-        }
-
-        .score-cell .label {
-            font-size: 0.8em;
-            color: #999;
-            margin-bottom: 4px;
-        }
-
-        .score-cell .value {
-            font-size: 1.4em;
-            font-weight: 700;
-            color: #1a1a1a;
-        }
+        /* ===== Règles et scores ===== */
 
         .rules {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 0.85em;
-            color: #666;
+            border-left: 6px solid var(--ink);
+            padding: 2px 0 2px 16px;
+            margin: 28px 0;
         }
 
-        .rules h3 {
-            color: #1a1a1a;
-            margin-bottom: 10px;
-            font-size: 0.95em;
+        .rules h3,
+        .scoreboard h3 {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 8px;
         }
 
         .rules ul {
-            margin-left: 20px;
+            list-style: none;
         }
 
         .rules li {
-            margin-bottom: 5px;
+            position: relative;
+            padding-left: 22px;
+            margin-bottom: 6px;
+            line-height: 1.35;
         }
 
-        canvas#confetti {
-            position: fixed;
-            top: 0;
+        .rules li .shape {
+            position: absolute;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 1000;
+            top: 0.38em;
+            width: 0.65em;
+            height: 0.65em;
         }
 
-        @media (max-width: 480px) {
-            .cell {
-                font-size: 0.85em;
+        .score-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-top: 2px solid var(--ink);
+        }
+
+        .score-cell {
+            padding: 10px 4px 0;
+        }
+
+        .score-cell + .score-cell {
+            border-left: 2px solid var(--ink);
+            padding-left: 12px;
+        }
+
+        .score-cell .value {
+            font-size: 1.8em;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .score-cell .label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 2.6em;
             }
-            .container {
-                padding: 16px;
+
+            .triad .shape {
+                width: 30px;
+                height: 30px;
             }
         }
     </style>
     <script src="exit-guard.js"></script>
 </head>
 <body>
-    <canvas id="confetti"></canvas>
-    <div class="container">
-        <h1>💣 Démineur</h1>
-        <p class="subtitle">Trouve toutes les cases sans tomber sur une mine</p>
+    <div class="page">
+        <header class="masthead">
+            <h1>démineur</h1>
+            <span class="triad" aria-hidden="true">
+                <span class="shape triangle yellow"></span>
+                <span class="shape red"></span>
+                <span class="shape circle blue"></span>
+            </span>
+        </header>
+        <p class="subtitle">trouve toutes les cases sans tomber sur une mine</p>
 
         <div class="difficulty" id="difficulty">
-            <button data-level="easy" class="active">Facile</button>
-            <button data-level="medium">Moyen</button>
-            <button data-level="hard">Difficile</button>
+            <button data-level="easy" class="active"><span class="shape circle blue"></span>facile</button>
+            <button data-level="medium"><span class="shape red"></span>moyen</button>
+            <button data-level="hard"><span class="shape triangle yellow"></span>difficile</button>
         </div>
-
-        <div id="message"></div>
 
         <div class="status-bar">
             <div class="status-item">
-                <span class="icon">🚩</span>
-                <span id="minesRemaining">10</span>
+                <span class="shape pennant red"></span>
+                <span class="big" id="minesRemaining">10</span>
+                <span class="label">mines</span>
             </div>
             <div class="status-item">
-                <span class="icon">⏱️</span>
-                <span id="timer">00:00</span>
+                <span class="shape circle blue"></span>
+                <span class="big" id="timer">00:00</span>
+                <span class="label">temps</span>
             </div>
         </div>
 
         <button class="flag-toggle" id="flagToggle" aria-pressed="false">
-            <span id="flagToggleIcon">⛏️</span>
-            <span id="flagToggleText">Mode : Révéler</span>
+            <span class="half dig"><span class="shape"></span>révéler</span>
+            <span class="half flag"><span class="shape pennant"></span>drapeau</span>
         </button>
 
-        <div class="board-wrapper">
+        <div class="board-frame" id="boardFrame">
+            <svg class="poster" id="poster" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
             <div class="board" id="board"></div>
+            <div class="fx" id="fx"></div>
         </div>
+        <p class="cartel"><strong id="compoName"></strong><span id="compoInfo"></span></p>
 
-        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
+        <div id="message"></div>
+        <button class="btn" id="newGameBtn" style="display: none;">nouvelle partie</button>
 
         <div class="rules">
-            <h3>Règles du jeu</h3>
+            <h3>règles du jeu</h3>
             <ul>
-                <li>Cliquez sur une case pour la révéler</li>
-                <li>Le chiffre indique le nombre de mines adjacentes (1 à 8)</li>
-                <li>Maintenez appuyé (ou clic droit) pour poser un drapeau 🚩</li>
-                <li>Activez le <strong>Mode Drapeau</strong> pour poser un drapeau d'un simple clic ; l'appui long révèle alors la case (et inversement en Mode Révéler)</li>
-                <li>Cliquez sur un chiffre avec le bon nombre de drapeaux autour pour révéler les voisins</li>
-                <li>Trouvez toutes les cases sans mine pour gagner</li>
+                <li><span class="shape circle blue"></span>Touche une case pour la révéler.</li>
+                <li><span class="shape red"></span>Le chiffre dit combien de mines touchent la case (de 1 à 8).</li>
+                <li><span class="shape triangle yellow"></span>Appuie longtemps (ou clic droit) pour poser un drapeau sur une mine.</li>
+                <li><span class="shape circle blue"></span>En <strong>mode drapeau</strong>, un simple appui pose le drapeau, et l'appui long révèle la case.</li>
+                <li><span class="shape red"></span>Touche un chiffre entouré du bon nombre de drapeaux pour révéler toutes ses voisines d'un coup.</li>
+                <li><span class="shape triangle yellow"></span>Révèle toutes les cases sans mine pour gagner&nbsp;: l'affiche cachée apparaît alors en entier.</li>
             </ul>
         </div>
 
         <div class="scoreboard">
-            <h3>Scores</h3>
+            <h3>scores</h3>
             <div class="score-row">
                 <div class="score-cell">
-                    <div class="label">Victoires</div>
                     <div class="value" id="scoreWins">0</div>
+                    <div class="label"><span class="shape circle blue"></span>victoires</div>
                 </div>
                 <div class="score-cell">
-                    <div class="label">Défaites</div>
                     <div class="value" id="scoreLosses">0</div>
+                    <div class="label"><span class="shape red"></span>défaites</div>
                 </div>
                 <div class="score-cell">
-                    <div class="label">Meilleur temps</div>
                     <div class="value" id="scoreBest">—</div>
+                    <div class="label"><span class="shape triangle yellow"></span>meilleur temps</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="confetti.js"></script>
     <script>
         const LEVELS = {
             easy:   { rows: 9,  cols: 9,  mines: 10 },
@@ -396,6 +541,27 @@
         const SCORES_KEY = 'demineur-scores';
         const DEFAULT_SCORES = { wins: 0, losses: 0, bestTime: null };
         const LONG_PRESS_MS = 400;
+
+        // La palette vit dans les variables CSS de :root.
+        const css = getComputedStyle(document.documentElement);
+        const [RED, YELLOW, BLUE, INK, PAPER] = ['--red', '--yellow', '--blue', '--ink', '--paper']
+            .map((name) => css.getPropertyValue(name).trim());
+        // Jamais la couleur du papier dans l'affiche : une case cachée ne doit
+        // jamais ressembler à une case révélée.
+        const POSTER_COLORS = [RED, YELLOW, BLUE, INK];
+
+        const FLAG_SVG = `<svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r="40" fill="${PAPER}"/>
+            <rect x="35" y="22" width="7" height="54" fill="${INK}"/>
+            <polygon points="42,22 76,35 42,48" fill="${RED}"/>
+            <rect x="26" y="72" width="26" height="6" fill="${INK}"/>
+        </svg>`;
+        const MINE_SVG = `<svg viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="46" y="12" width="8" height="76" fill="${INK}"/>
+            <rect x="12" y="46" width="76" height="8" fill="${INK}"/>
+            <circle cx="50" cy="50" r="25" fill="${INK}"/>
+            <circle cx="42" cy="42" r="6" fill="${PAPER}"/>
+        </svg>`;
 
         let level = 'easy';
         let rows, cols, totalMines;
@@ -412,6 +578,87 @@
         let touchTimer = null;
         let touchTriggeredFlag = false;
         let flagMode = false; // Quick Flagging: a single tap places/removes a flag
+        let exploded = null; // {r, c} of the mine that blew up
+        let cellEls = []; // cell elements, row by row
+
+        // ===== L'affiche =====
+
+        // Hasard reproductible : une composition = un numéro.
+        function seededRandom(seed) {
+            return function () {
+                seed = (seed + 0x6d2b79f5) | 0;
+                let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        // Une composition dans l'esprit du Bauhaus, sur 100 × 100 : un fond, un
+        // grand aplat, deux formes moyennes, des barres et un trait fin.
+        function posterSVG(seed) {
+            const rand = seededRandom(seed);
+            const between = (a, b) => +(a + rand() * (b - a)).toFixed(1);
+            const pick = (list) => list[Math.floor(rand() * list.length)];
+            const colorBut = (...avoid) => pick(POSTER_COLORS.filter((c) => !avoid.includes(c)));
+            const turn = (x, y) => `transform="rotate(${pick([0, 90, 180, 270])} ${x} ${y})"`;
+
+            const bg = pick(POSTER_COLORS);
+            const parts = [`<rect width="100" height="100" fill="${bg}"/>`];
+
+            // Le grand aplat : un demi-plan, un triangle, un grand disque ou un
+            // quart de disque dans un coin.
+            const big = colorBut(bg);
+            const cut = between(35, 65);
+            parts.push(pick([
+                `<rect x="${cut}" width="${100 - cut}" height="100" fill="${big}"/>`,
+                `<rect y="${cut}" width="100" height="${100 - cut}" fill="${big}"/>`,
+                `<polygon points="${pick(['0,0 100,0 0,100', '0,0 100,0 100,100', '100,0 100,100 0,100', '0,0 100,100 0,100'])}" fill="${big}"/>`,
+                `<circle cx="${between(30, 70)}" cy="${between(30, 70)}" r="${between(30, 40)}" fill="${big}"/>`,
+                `<circle cx="${pick([0, 100])}" cy="${pick([0, 100])}" r="${between(65, 90)}" fill="${big}"/>`,
+            ]));
+
+            // Deux formes moyennes, dans deux cases différentes d'une grille de
+            // trois sur trois, pour que la composition respire.
+            const spots = [];
+            for (const sx of [22, 50, 78]) for (const sy of [22, 50, 78]) spots.push([sx, sy]);
+            let previous = big;
+            for (let i = 0; i < 2; i++) {
+                const color = colorBut(bg, big, previous);
+                previous = color;
+                const [sx, sy] = spots.splice(Math.floor(rand() * spots.length), 1)[0];
+                const x = between(sx - 6, sx + 6), y = between(sy - 6, sy + 6), s = between(10, 17);
+                parts.push(pick([
+                    `<circle cx="${x}" cy="${y}" r="${s}" fill="${color}"/>`,
+                    `<rect x="${x - s}" y="${y - s}" width="${2 * s}" height="${2 * s}" fill="${color}" ${turn(x, y)}/>`,
+                    `<polygon points="${x},${y - s} ${x + s},${y + s} ${x - s},${y + s}" fill="${color}" ${turn(x, y)}/>`,
+                    `<path d="M${x - s},${y} A${s},${s} 0 0 1 ${x + s},${y} Z" fill="${color}" ${turn(x, y)}/>`,
+                    `<circle cx="${x}" cy="${y}" r="${s}" fill="none" stroke="${color}" stroke-width="${(s * 0.35).toFixed(1)}"/>`,
+                ]));
+            }
+
+            // Une barre, parfois deux.
+            for (let i = 0, n = rand() < 0.7 ? 1 : 2; i < n; i++) {
+                const len = between(50, 90), thick = between(3, 7);
+                const x = between(25, 75), y = between(25, 75);
+                parts.push(`<rect x="${x - len / 2}" y="${y - thick / 2}" width="${len}" height="${thick}" ` +
+                    `fill="${colorBut(bg)}" transform="rotate(${pick([0, 90, 45, -45])} ${x} ${y})"/>`);
+            }
+
+            // Un trait fin qui traverse toute l'affiche.
+            const p = between(10, 90);
+            const [x1, y1, x2, y2] = pick([[0, p, 100, p], [p, 0, p, 100], [0, p, 100, 100 - p]]);
+            parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${bg === INK ? YELLOW : INK}" stroke-width="${between(0.8, 1.4)}"/>`);
+
+            // Parfois, une rangée de petits ronds.
+            if (rand() < 0.35) {
+                const color = colorBut(bg), x = between(15, 55), y = between(15, 85);
+                for (let i = 0; i < 4; i++) parts.push(`<circle cx="${x + i * 9}" cy="${y}" r="2.6" fill="${color}"/>`);
+            }
+
+            return parts.join('');
+        }
+
+        // ===== Partie =====
 
         function getScores() {
             const stored = localStorage.getItem(SCORES_KEY);
@@ -455,6 +702,7 @@
             flagCount = 0;
             revealedCount = 0;
             startTime = null;
+            exploded = null;
 
             clearInterval(timerInterval);
             timerInterval = null;
@@ -465,6 +713,14 @@
             document.getElementById('newGameBtn').style.display = 'none';
             if (window.ExitGuard) ExitGuard.setActive(false);
 
+            // Une nouvelle affiche à chaque partie.
+            const composition = 1 + Math.floor(Math.random() * 999);
+            document.getElementById('poster').innerHTML = posterSVG(composition);
+            document.getElementById('boardFrame').classList.remove('complete');
+            document.getElementById('fx').innerHTML = '';
+            document.getElementById('compoName').textContent = `composition n° ${composition}`;
+            document.getElementById('compoInfo').textContent = `${cols} × ${rows} · ${totalMines} mines`;
+
             renderBoard();
         }
 
@@ -472,6 +728,8 @@
             const boardEl = document.getElementById('board');
             boardEl.innerHTML = '';
             boardEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+            boardEl.style.setProperty('--cols', cols);
+            cellEls = [];
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
@@ -479,8 +737,11 @@
                     cell.className = 'cell';
                     cell.dataset.r = r;
                     cell.dataset.c = c;
+                    // Délai de la vague diagonale qui dévoile l'affiche à la victoire.
+                    cell.style.setProperty('--w', `${300 + (r + c) * 35}ms`);
                     attachCellHandlers(cell, r, c);
                     boardEl.appendChild(cell);
+                    cellEls.push(cell);
                 }
             }
             updateBoardDisplay();
@@ -491,10 +752,6 @@
                 e.preventDefault();
                 if (gameOver) return;
                 secondaryAction(r, c);
-            });
-
-            cell.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
             });
 
             cell.addEventListener('click', (e) => {
@@ -620,7 +877,7 @@
             }
             revealCell(r, c);
             checkWin();
-            updateBoardDisplay();
+            updateBoardDisplay({ r, c });
         }
 
         function flagAction(r, c) {
@@ -690,14 +947,11 @@
                 if (gameOver) break;
             }
             checkWin();
-            updateBoardDisplay();
+            updateBoardDisplay({ r, c });
         }
 
         function toggleFlag(r, c) {
             if (revealed[r][c]) return;
-            if (!minesPlaced) {
-                // Allow flagging before first reveal but don't start timer
-            }
             flagged[r][c] = !flagged[r][c];
             flagCount += flagged[r][c] ? 1 : -1;
             document.getElementById('minesRemaining').textContent = totalMines - flagCount;
@@ -710,23 +964,37 @@
             clearInterval(timerInterval);
             if (window.ExitGuard) ExitGuard.setActive(false);
 
-            // Reveal all mines
+            // Reveal all mines, in a wave starting from the one that blew up.
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     if (board[r][c] === -1) revealed[r][c] = true;
                 }
             }
 
-            updateBoardDisplay();
-            const explodedEl = document.querySelector(`.cell[data-r="${explodedR}"][data-c="${explodedC}"]`);
-            if (explodedEl) explodedEl.classList.add('exploded');
+            exploded = { r: explodedR, c: explodedC };
+            updateBoardDisplay(exploded);
+            explode(explodedR, explodedC);
 
             const scores = getScores();
             scores.losses++;
             saveScores(scores);
             updateScoreboard();
-            showMessage('💥 Boum ! Mine touchée.', 'lose');
+            showMessage('boum\u00a0! tu as touché une mine.', 'lose');
             document.getElementById('newGameBtn').style.display = 'block';
+        }
+
+        function explode(r, c) {
+            const fx = document.getElementById('fx');
+            POSTER_COLORS.forEach((color, i) => {
+                const ring = document.createElement('div');
+                ring.className = 'ring';
+                ring.style.left = `${(c + 0.5) / cols * 100}%`;
+                ring.style.top = `${(r + 0.5) / rows * 100}%`;
+                ring.style.borderColor = color;
+                ring.style.animationDelay = `${i * 110}ms`;
+                ring.addEventListener('animationend', () => ring.remove());
+                fx.appendChild(ring);
+            });
         }
 
         function checkWin() {
@@ -757,35 +1025,45 @@
                 }
                 saveScores(scores);
                 updateScoreboard();
-                showMessage(`🎉 Gagné en ${formatTime(time)} !`, 'win');
-                if (typeof showConfetti === 'function') showConfetti();
+                // L'affiche apparaît en entier, et le cartel note le temps.
+                document.getElementById('boardFrame').classList.add('complete');
+                document.getElementById('compoInfo').textContent += ` · ${formatTime(time)}`;
+                showMessage(`bravo\u00a0! affiche dévoilée en ${formatTime(time)}`, 'win');
                 document.getElementById('newGameBtn').style.display = 'block';
             }
         }
 
-        function updateBoardDisplay() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                const r = parseInt(cell.dataset.r);
-                const c = parseInt(cell.dataset.c);
-                cell.className = 'cell';
-                cell.textContent = '';
+        function cellState(r, c) {
+            if (flagged[r][c]) return 'flag';
+            if (!revealed[r][c]) return 'covered';
+            if (exploded && exploded.r === r && exploded.c === c) return 'exploded';
+            return board[r][c] === -1 ? 'mine' : `n${board[r][c]}`;
+        }
 
-                if (flagged[r][c]) {
-                    cell.classList.add('flagged');
-                    cell.textContent = '🚩';
-                    return;
-                }
+        function cellContent(state, value) {
+            if (state === 'flag') return FLAG_SVG;
+            if (state === 'mine' || state === 'exploded') return MINE_SVG;
+            return value > 0 ? `<span>${value}</span>` : '';
+        }
 
-                if (revealed[r][c]) {
-                    cell.classList.add('revealed');
-                    if (board[r][c] === -1) {
-                        cell.classList.add('mine');
-                        cell.textContent = '💣';
-                    } else if (board[r][c] > 0) {
-                        cell.classList.add('n' + board[r][c]);
-                        cell.textContent = board[r][c];
-                    }
+        // Ne touche qu'aux cases qui ont changé. Celles qui viennent d'être
+        // révélées s'ouvrent en vague depuis `from`, la case touchée.
+        function updateBoardDisplay(from = null) {
+            cellEls.forEach((cell, i) => {
+                const r = Math.floor(i / cols);
+                const c = i % cols;
+                const state = cellState(r, c);
+                if (cell.dataset.state === state) return;
+
+                const isRevealed = state !== 'covered' && state !== 'flag';
+                cell.dataset.state = state;
+                cell.classList.toggle('revealed', isRevealed);
+                cell.innerHTML = cellContent(state, board[r][c]);
+
+                if (isRevealed && from) {
+                    const distance = Math.max(Math.abs(r - from.r), Math.abs(c - from.c));
+                    cell.style.animationDelay = `${Math.min(distance * 30, 600)}ms`;
+                    cell.classList.add('appear');
                 }
             });
         }
@@ -805,12 +1083,7 @@
         }
 
         function updateFlagToggle() {
-            const btn = document.getElementById('flagToggle');
-            btn.classList.toggle('active', flagMode);
-            btn.setAttribute('aria-pressed', flagMode ? 'true' : 'false');
-            document.getElementById('flagToggleIcon').textContent = flagMode ? '🚩' : '⛏️';
-            document.getElementById('flagToggleText').textContent =
-                flagMode ? 'Mode : Drapeau' : 'Mode : Révéler';
+            document.getElementById('flagToggle').setAttribute('aria-pressed', flagMode ? 'true' : 'false');
         }
 
         document.getElementById('flagToggle').addEventListener('click', () => {
