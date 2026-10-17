@@ -3,7 +3,11 @@
 // Stratégie volontairement simple, sans étape de build :
 //   - on précache la coquille de l'app (index + assets partagés) à l'install ;
 //   - en navigation (pages HTML), on tente le réseau puis on retombe sur le
-//     cache pour rester utilisable hors-ligne ;
+//     cache pour rester utilisable hors-ligne. Le réseau est interrogé à
+//     chaque fois, sans passer par le cache HTTP du navigateur : GitHub Pages
+//     y garde les pages 10 minutes, ce qui montrait l'ancienne version d'un
+//     jeu juste après un déploiement. Une page inchangée ne coûte qu'un
+//     « 304 Not Modified » ;
 //   - pour les autres ressources même-origine, on sert le cache en priorité et
 //     on rafraîchit en arrière-plan (stale-while-revalidate).
 //
@@ -69,10 +73,11 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
 
-  // Navigation (pages HTML) : réseau d'abord, cache en secours hors-ligne.
+  // Navigation (pages HTML) : réseau d'abord (revalidé, cf. en-tête), cache en
+  // secours hors-ligne.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-cache" })
         .then((response) => {
           const copy = response.clone()
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
