@@ -340,7 +340,6 @@
 
       .topbar {
         display: flex;
-        align-items: center;
         gap: 8px;
         margin-bottom: 10px;
       }
@@ -353,6 +352,9 @@
 
       .stat {
         flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         padding: 5px 4px;
         text-align: center;
         border-radius: 10px;
@@ -378,13 +380,6 @@
         display: block;
         width: 56px;
         height: 40px;
-      }
-
-      .icon-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 1em;
-        border-radius: 10px;
       }
 
       .board-wrap {
@@ -836,14 +831,6 @@
           <div class="label">Suite</div>
           <canvas id="next"></canvas>
         </div>
-        <button
-          class="icon-btn lacquer"
-          id="pause-btn"
-          onclick="togglePause()"
-          aria-label="Pause"
-        >
-          ❚❚
-        </button>
       </div>
 
       <div class="board-wrap" id="board-wrap">
@@ -1017,8 +1004,6 @@
 
       // Une ligne complète se change en feuille d'or avant de disparaître.
       const FLASH = { base: "#f6d36b", motif: "travka", ink: "#fffbe8" }
-
-      const PAUSE_ICON = "❚❚"
 
       // Intervalle de chute (ms) et tempo de la musique (noires par minute).
       const SPEEDS = {
@@ -1585,7 +1570,6 @@
         nextType = takeFromBag()
         updateStats()
         document.getElementById("overlay").classList.remove("show")
-        document.getElementById("pause-btn").textContent = PAUSE_ICON
         showScreen("screen-game")
         layout()
         spawn()
@@ -1728,7 +1712,6 @@
         releaseAll()
         paused = !paused
         document.getElementById("overlay").classList.toggle("show", paused)
-        document.getElementById("pause-btn").textContent = paused ? "▶" : PAUSE_ICON
         syncAudio()
         if (!paused) {
           lastFrame = performance.now()
