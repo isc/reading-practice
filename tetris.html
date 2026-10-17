@@ -990,7 +990,16 @@
       let musicOn = readStore(MUSIC_KEY) !== "off"
       let sfxOn = readStore(SFX_KEY) !== "off"
       let audioSleep = null
-      const music = { out: null, bass: null, step: 0, time: 0 }
+      // `ending` : la sortie de l'air qui se dérègle en fin de partie, qui
+      // s'arrête à `endsAt` (horloge audio).
+      const music = {
+        out: null,
+        bass: null,
+        step: 0,
+        time: 0,
+        ending: null,
+        endsAt: 0,
+      }
 
       function freq(name) {
         const m = /^([A-G])(#?)(\d)$/.exec(name)
@@ -1170,21 +1179,6 @@
           arpeggio(notes, t, 0.08, { ...o, type: "triangle", vol: 0.14 })
           arpeggio(notes, t, 0.08, { ...o, type: "square", vol: 0.03 })
         },
-        // « Wah wah wah waaah » : quatre notes qui retombent.
-        gameOver: (t) => {
-          ;[392, 370, 349, 330].forEach((f, i) => {
-            const last = i === 3
-            tone({
-              type: "square",
-              freq: f,
-              to: f * (last ? 0.94 : 0.97),
-              at: t + i * 0.3,
-              dur: last ? 0.8 : 0.26,
-              vol: 0.06,
-              sustain: 0.7,
-            })
-          })
-        },
         record: (t) => {
           const o = { type: "square", dur: 0.14, vol: 0.06, sustain: 0.6 }
           arpeggio(["G5", "G5", "G5"], t, 0.12, o)
@@ -1207,24 +1201,35 @@
         return danger ? tempo * 1.3 : tempo
       }
 
+      // Une voix pour jouer l'air : sa sortie, et un filtre qui arrondit la
+      // basse.
+      function musicVoice() {
+        const out = audioCtx.createGain()
+        out.connect(audioCtx.destination)
+        const bass = audioCtx.createBiquadFilter()
+        bass.type = "lowpass"
+        bass.frequency.value = 800
+        bass.connect(out)
+        return { out, bass }
+      }
+
       function startMusic() {
         if (!musicOn || !audioCtx) return
-        music.out = audioCtx.createGain()
-        music.out.connect(audioCtx.destination)
-        music.bass = audioCtx.createBiquadFilter()
-        music.bass.type = "lowpass"
-        music.bass.frequency.value = 800
-        music.bass.connect(music.out)
+        Object.assign(music, musicVoice())
         music.step = 0
         music.time = audioCtx.currentTime + 0.1
         scheduleMusic()
       }
 
-      function stopMusic() {
-        if (!music.out) return
-        const out = music.out
+      // Éteint une sortie en un éclair, puis la débranche.
+      function silence(out) {
         out.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03)
         setTimeout(() => out.disconnect(), 300)
+      }
+
+      function stopMusic() {
+        if (!music.out) return
+        silence(music.out)
         music.out = null
       }
 
@@ -1240,25 +1245,66 @@
         }
       }
 
-      function playStep(step, at, eighth) {
+      // `voice.glide`, s'il est là, donne à chaque instant de combien la
+      // hauteur a baissé : les notes glissent avec lui.
+      function playStep(step, at, eighth, voice = music) {
         const s = TUNE[step]
-        const out = music.out
+        const { out, bass, glide } = voice
+        const note = glide
+          ? (o, dest) => {
+              o.to = o.freq * glide(o.at + o.dur)
+              o.freq *= glide(o.at)
+              tone(o, dest)
+            }
+          : tone
         if (s.lead) {
           const lead = s.lead.freq
           const o = { at, dur: s.lead.len * eighth * 0.92, sustain: 0.7 }
-          tone({ ...o, type: "square", freq: lead, vol: 0.07 }, out)
+          note({ ...o, type: "square", freq: lead, vol: 0.07 }, out)
           if (s.lead.doubled) {
-            tone({ ...o, type: "triangle", freq: lead / 2, vol: 0.1 }, out)
+            note({ ...o, type: "triangle", freq: lead / 2, vol: 0.1 }, out)
           }
         }
         if (s.bass) {
           const o = { type: "square", at, dur: eighth * 1.8, sustain: 0.5 }
-          tone({ ...o, freq: s.bass, vol: 0.12 }, music.bass)
+          note({ ...o, freq: s.bass, vol: 0.12 }, bass)
         }
         if (s.stab) {
           const o = { type: "triangle", at, dur: eighth * 0.8, sustain: 0.2 }
-          s.stab.forEach((f) => tone({ ...o, freq: f, vol: 0.05 }, out))
+          s.stab.forEach((f) => note({ ...o, freq: f, vol: 0.05 }, out))
         }
+      }
+
+      // Fin de partie : l'air se dérègle, comme une boîte à musique dont le
+      // ressort lâche. Il continue là où il en était (ou part du début si la
+      // musique était coupée), ralentit, descend, et s'éteint.
+      // `slope` : de combien la croche s'allonge par seconde ; `bend` : à
+      // quel point la hauteur suit le ralenti (1 : comme un disque).
+      const WIND_DOWN = { length: 2.4, slope: 0.15, bend: 0.3 }
+
+      function windDown() {
+        const ongoing = music.out !== null
+        if (!ongoing && !(sfxOn && audioCtx)) return
+        const voice = ongoing
+          ? { out: music.out, bass: music.bass }
+          : musicVoice()
+        const start = ongoing ? music.time : audioCtx.currentTime + 0.05
+        let step = ongoing ? music.step : 0
+        music.out = null
+        const { length, slope, bend } = WIND_DOWN
+        const first = 30 / musicTempo()
+        const eighthAt = (time) => first + slope * (time - start)
+        voice.glide = (time) => Math.pow(first / eighthAt(time), bend)
+        let at = start
+        while (at < start + length) {
+          const eighth = eighthAt(at)
+          playStep(step, at, eighth, voice)
+          at += eighth
+          step = (step + 1) % TUNE.length
+        }
+        voice.out.gain.setTargetAtTime(0, at, 0.2)
+        music.ending = voice.out
+        music.endsAt = at + 1
       }
 
       // Le son suit l'état de la partie : la musique ne joue qu'en partie, la
@@ -1270,10 +1316,17 @@
         if (paused) {
           if (audioCtx) audioCtx.suspend()
         } else if (playing) {
+          // Une nouvelle partie coupe la fin de la précédente.
+          if (music.ending) silence(music.ending)
+          music.ending = null
           resumeAudio()
           if (!music.out) startMusic()
         } else if (audioCtx) {
-          audioSleep = setTimeout(() => audioCtx.suspend(), 2500)
+          const left = (music.endsAt - audioCtx.currentTime) * 1000
+          audioSleep = setTimeout(
+            () => audioCtx.suspend(),
+            Math.max(2500, left),
+          )
         }
       }
 
@@ -1624,10 +1677,12 @@
         playing = false
         piece = null
         if (window.ExitGuard) ExitGuard.setActive(false)
-        syncAudio()
         const isRecord = score > best
         const newRecord = isRecord && score > 0
-        sfx(newRecord ? "record" : "gameOver")
+        // Avant syncAudio, qui couperait la musique que windDown reprend.
+        if (newRecord) sfx("record")
+        else windDown()
+        syncAudio()
         if (isRecord) {
           best = score
           writeStore(BEST_KEY, String(best))
