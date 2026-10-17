@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Othello</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            max-width: 480px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+            font-size: 1.6em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+        }
+
+        .turn-indicator {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .turn-token {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.15);
+        }
+
+        .turn-token.black {
+            background: #1a1a1a;
+        }
+
+        .turn-token.white {
+            background: #ffffff;
+            border-color: #bbb;
+        }
+
+        .live-score {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+        }
+
+        .live-score-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .live-score-cell .turn-token {
+            width: 22px;
+            height: 22px;
+        }
+
+        .live-score-cell .count {
+            font-size: 1.2em;
+        }
+
+        .board-wrapper {
+            background: #1e6e3a;
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            gap: 3px;
+        }
+
+        .cell {
+            aspect-ratio: 1 / 1;
+            background: #2a8a4a;
+            border-radius: 4px;
+            position: relative;
+            cursor: default;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+        }
+
+        .cell.valid {
+            cursor: pointer;
+        }
+
+        .cell.valid::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24%;
+            height: 24%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.18);
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s ease;
+        }
+
+        .cell.valid.preview-current::after {
+            opacity: 0;
+        }
+
+        .disc {
+            position: absolute;
+            inset: 8%;
+            border-radius: 50%;
+            box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.3), inset 0 3px 6px rgba(255, 255, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.25);
+        }
+
+        .disc.black {
+            background: radial-gradient(circle at 35% 30%, #4a4a4a, #1a1a1a 70%);
+        }
+
+        .disc.white {
+            background: radial-gradient(circle at 35% 30%, #ffffff, #d8d8d8 70%);
+        }
+
+        .disc.place {
+            animation: place 0.35s ease-out;
+        }
+
+        .disc.flip-to-black {
+            animation: flipToBlack 0.5s ease-in-out;
+        }
+
+        .disc.flip-to-white {
+            animation: flipToWhite 0.5s ease-in-out;
+        }
+
+        .disc.preview {
+            opacity: 0.45;
+        }
+
+        .disc.preview-flip {
+            opacity: 0.55;
+            animation: pulsePreview 1.2s ease-in-out infinite;
+        }
+
+        @keyframes place {
+            0% {
+                transform: scale(0);
+            }
+            70% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes flipToBlack {
+            0% {
+                transform: rotateY(0deg);
+                background: radial-gradient(circle at 35% 30%, #ffffff, #d8d8d8 70%);
+            }
+            49.99% {
+                transform: rotateY(90deg);
+                background: radial-gradient(circle at 35% 30%, #ffffff, #d8d8d8 70%);
+            }
+            50% {
+                transform: rotateY(90deg);
+                background: radial-gradient(circle at 35% 30%, #4a4a4a, #1a1a1a 70%);
+            }
+            100% {
+                transform: rotateY(0deg);
+                background: radial-gradient(circle at 35% 30%, #4a4a4a, #1a1a1a 70%);
+            }
+        }
+
+        @keyframes flipToWhite {
+            0% {
+                transform: rotateY(0deg);
+                background: radial-gradient(circle at 35% 30%, #4a4a4a, #1a1a1a 70%);
+            }
+            49.99% {
+                transform: rotateY(90deg);
+                background: radial-gradient(circle at 35% 30%, #4a4a4a, #1a1a1a 70%);
+            }
+            50% {
+                transform: rotateY(90deg);
+                background: radial-gradient(circle at 35% 30%, #ffffff, #d8d8d8 70%);
+            }
+            100% {
+                transform: rotateY(0deg);
+                background: radial-gradient(circle at 35% 30%, #ffffff, #d8d8d8 70%);
+            }
+        }
+
+        @keyframes pulsePreview {
+            0%, 100% {
+                opacity: 0.35;
+            }
+            50% {
+                opacity: 0.65;
+            }
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-new {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .btn-new:hover {
+            background: #333;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            animation: slideIn 0.5s ease;
+        }
+
+        .message.win-black {
+            background: #e2e8f0;
+            color: #1a1a1a;
+        }
+
+        .message.win-white {
+            background: #fef9c3;
+            color: #713f12;
+        }
+
+        .message.draw {
+            background: #e2e8f0;
+            color: #1f2937;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .scoreboard {
+            margin-top: 20px;
+        }
+
+        .scoreboard h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .score-cell {
+            text-align: center;
+        }
+
+        .score-cell .label {
+            font-size: 0.8em;
+            color: #999;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .score-cell .label .turn-token {
+            width: 16px;
+            height: 16px;
+            border-width: 1px;
+        }
+
+        .score-cell .value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .rules {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .rules h3 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .rules ul {
+            margin-left: 20px;
+        }
+
+        .rules li {
+            margin-bottom: 5px;
+        }
+
+        canvas#confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1000;
+        }
+    </style>
+    <script src="exit-guard.js"></script>
+</head>
+<body>
+    <canvas id="confetti"></canvas>
+    <div class="container">
+        <h1>⚫⚪ Othello</h1>
+        <p class="subtitle">Retourne le plus de pions</p>
+
+        <div id="message"></div>
+
+        <div class="turn-indicator" id="turnIndicator">
+            <span>Au tour de</span>
+            <div class="turn-token black" id="turnToken"></div>
+            <span id="turnLabel">Noir</span>
+        </div>
+
+        <div class="live-score">
+            <div class="live-score-cell">
+                <div class="turn-token black"></div>
+                <span class="count" id="liveBlack">2</span>
+            </div>
+            <div class="live-score-cell">
+                <div class="turn-token white"></div>
+                <span class="count" id="liveWhite">2</span>
+            </div>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="board" id="board"></div>
+        </div>
+
+        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
+
+        <div class="rules">
+            <h3>Règles du jeu</h3>
+            <ul>
+                <li>Les noirs commencent. Cliquez sur une case valide pour poser votre pion.</li>
+                <li>Un coup doit <strong>encadrer</strong> au moins un pion adverse (en ligne, colonne ou diagonale).</li>
+                <li>Tous les pions encadrés sont retournés à votre couleur.</li>
+                <li>Si vous n'avez aucun coup possible, votre tour est passé.</li>
+                <li>La partie s'arrête quand aucun joueur ne peut jouer. Le vainqueur a le plus de pions.</li>
+            </ul>
+        </div>
+
+        <div class="scoreboard">
+            <h3>Parties gagnées</h3>
+            <div class="score-row">
+                <div class="score-cell">
+                    <div class="label">
+                        <div class="turn-token black"></div>
+                        Noir
+                    </div>
+                    <div class="value" id="scoreBlack">0</div>
+                </div>
+                <div class="score-cell">
+                    <div class="label">Nuls</div>
+                    <div class="value" id="scoreDraws">0</div>
+                </div>
+                <div class="score-cell">
+                    <div class="label">
+                        <div class="turn-token white"></div>
+                        Blanc
+                    </div>
+                    <div class="value" id="scoreWhite">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="confetti.js"></script>
+    <script>
+        const SIZE = 8;
+        const LABELS = { black: 'Noir', white: 'Blanc' };
+        const SCORES_KEY = 'othello-scores';
+        const DEFAULT_SCORES = { black: 0, white: 0, draws: 0 };
+        const SCORE_FIELD = { black: 'black', white: 'white', draw: 'draws' };
+        const DIRECTIONS = [
+            [-1, -1], [-1, 0], [-1, 1],
+            [0, -1],           [0, 1],
+            [1, -1],  [1, 0],  [1, 1],
+        ];
+
+        let board = [];
+        let currentPlayer = 'black';
+        let gameOver = false;
+        let validMoves = new Map(); // key "r,c" -> array of [r,c] flips
+        let hoverKey = null;
+
+        function opponent(p) {
+            return p === 'black' ? 'white' : 'black';
+        }
+
+        function initGame() {
+            board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+            const mid = SIZE / 2;
+            board[mid - 1][mid - 1] = 'white';
+            board[mid][mid] = 'white';
+            board[mid - 1][mid] = 'black';
+            board[mid][mid - 1] = 'black';
+            currentPlayer = 'black';
+            gameOver = false;
+            hoverKey = null;
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('message').className = '';
+            document.getElementById('newGameBtn').style.display = 'none';
+            if (window.ExitGuard) ExitGuard.setActive(false);
+            computeValidMoves();
+            renderBoard();
+            updateTurnIndicator();
+            updateLiveScore();
+        }
+
+        function computeValidMoves() {
+            validMoves = new Map();
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (board[r][c] !== null) continue;
+                    const flips = getFlipsForMove(r, c, currentPlayer);
+                    if (flips.length > 0) {
+                        validMoves.set(`${r},${c}`, flips);
+                    }
+                }
+            }
+        }
+
+        function getFlipsForMove(row, col, player) {
+            const opp = opponent(player);
+            const allFlips = [];
+            for (const [dr, dc] of DIRECTIONS) {
+                const lineFlips = [];
+                let r = row + dr;
+                let c = col + dc;
+                while (r >= 0 && r < SIZE && c >= 0 && c < SIZE && board[r][c] === opp) {
+                    lineFlips.push([r, c]);
+                    r += dr;
+                    c += dc;
+                }
+                if (lineFlips.length > 0 && r >= 0 && r < SIZE && c >= 0 && c < SIZE && board[r][c] === player) {
+                    allFlips.push(...lineFlips);
+                }
+            }
+            return allFlips;
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.className = 'cell';
+                    cellEl.dataset.r = r;
+                    cellEl.dataset.c = c;
+                    const key = `${r},${c}`;
+                    const value = board[r][c];
+                    if (value) {
+                        const disc = document.createElement('div');
+                        disc.className = `disc ${value}`;
+                        cellEl.appendChild(disc);
+                    } else if (!gameOver && validMoves.has(key)) {
+                        cellEl.classList.add('valid');
+                        cellEl.onclick = () => playMove(r, c);
+                        cellEl.onmouseenter = () => setHover(key);
+                        cellEl.onmouseleave = () => clearHover(key);
+                    }
+                    boardEl.appendChild(cellEl);
+                }
+            }
+            applyHoverPreview();
+        }
+
+        function setHover(key) {
+            hoverKey = key;
+            applyHoverPreview();
+        }
+
+        function clearHover(key) {
+            if (hoverKey === key) {
+                hoverKey = null;
+                applyHoverPreview();
+            }
+        }
+
+        function applyHoverPreview() {
+            // Remove existing previews
+            document.querySelectorAll('.disc.preview, .disc.preview-flip').forEach(el => el.remove());
+            document.querySelectorAll('.cell.preview-current').forEach(el => el.classList.remove('preview-current'));
+            if (!hoverKey || gameOver || !validMoves.has(hoverKey)) return;
+            const [hr, hc] = hoverKey.split(',').map(Number);
+            const flips = validMoves.get(hoverKey);
+            // Ghost disc on the hovered cell
+            const targetCell = document.querySelector(`.cell[data-r="${hr}"][data-c="${hc}"]`);
+            if (targetCell) {
+                targetCell.classList.add('preview-current');
+                const ghost = document.createElement('div');
+                ghost.className = `disc ${currentPlayer} preview`;
+                targetCell.appendChild(ghost);
+            }
+            // Ghost discs on cells that would flip
+            for (const [r, c] of flips) {
+                const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+                if (!cell) continue;
+                const existing = cell.querySelector('.disc');
+                if (existing) existing.style.opacity = '0';
+                const ghost = document.createElement('div');
+                ghost.className = `disc ${currentPlayer} preview-flip`;
+                cell.appendChild(ghost);
+            }
+        }
+
+        function playMove(row, col) {
+            if (gameOver) return;
+            const key = `${row},${col}`;
+            if (!validMoves.has(key)) return;
+            if (window.ExitGuard) ExitGuard.setActive(true);
+            const flips = validMoves.get(key);
+            const previousPlayer = currentPlayer;
+
+            board[row][col] = currentPlayer;
+            for (const [r, c] of flips) {
+                board[r][c] = currentPlayer;
+            }
+
+            hoverKey = null;
+            renderBoard();
+            animatePlacement(row, col);
+            animateFlips(flips, previousPlayer);
+            updateLiveScore();
+
+            // Switch player and check if they have moves
+            currentPlayer = opponent(currentPlayer);
+            computeValidMoves();
+            if (validMoves.size === 0) {
+                // Try the other player back
+                currentPlayer = opponent(currentPlayer);
+                computeValidMoves();
+                if (validMoves.size === 0) {
+                    endGame();
+                    return;
+                } else {
+                    showMessage(`${LABELS[opponent(currentPlayer)]} ne peut pas jouer. Tour passé.`, 'info');
+                }
+            } else {
+                document.getElementById('message').innerHTML = '';
+                document.getElementById('message').className = '';
+            }
+            renderBoard();
+            updateTurnIndicator();
+        }
+
+        function animatePlacement(row, col) {
+            const cell = document.querySelector(`.cell[data-r="${row}"][data-c="${col}"]`);
+            if (!cell) return;
+            const disc = cell.querySelector('.disc');
+            if (disc) disc.classList.add('place');
+        }
+
+        function animateFlips(flips, fromPlayer) {
+            const toPlayer = opponent(fromPlayer);
+            for (const [r, c] of flips) {
+                const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+                if (!cell) continue;
+                const disc = cell.querySelector('.disc');
+                if (disc) disc.classList.add(`flip-to-${toPlayer}`);
+            }
+        }
+
+        function countDiscs() {
+            let black = 0, white = 0;
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (board[r][c] === 'black') black++;
+                    else if (board[r][c] === 'white') white++;
+                }
+            }
+            return { black, white };
+        }
+
+        function updateLiveScore() {
+            const { black, white } = countDiscs();
+            document.getElementById('liveBlack').textContent = black;
+            document.getElementById('liveWhite').textContent = white;
+        }
+
+        function updateTurnIndicator() {
+            const token = document.getElementById('turnToken');
+            const label = document.getElementById('turnLabel');
+            token.className = `turn-token ${currentPlayer}`;
+            label.textContent = LABELS[currentPlayer];
+        }
+
+        function endGame() {
+            gameOver = true;
+            if (window.ExitGuard) ExitGuard.setActive(false);
+            validMoves = new Map();
+            const { black, white } = countDiscs();
+            renderBoard();
+            updateLiveScore();
+            if (black > white) {
+                showMessage(`🎉 Noir a gagné ! ${black} contre ${white}`, 'win-black');
+                saveScore('black');
+                if (typeof showConfetti === 'function') showConfetti();
+            } else if (white > black) {
+                showMessage(`🎉 Blanc a gagné ! ${white} contre ${black}`, 'win-white');
+                saveScore('white');
+                if (typeof showConfetti === 'function') showConfetti();
+            } else {
+                showMessage(`🤝 Match nul ! ${black} contre ${white}`, 'draw');
+                saveScore('draw');
+            }
+            document.getElementById('newGameBtn').style.display = 'block';
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+        }
+
+        function getScores() {
+            const stored = localStorage.getItem(SCORES_KEY);
+            return stored ? JSON.parse(stored) : { ...DEFAULT_SCORES };
+        }
+
+        function saveScore(result) {
+            const scores = getScores();
+            scores[SCORE_FIELD[result]]++;
+            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+            updateScoreboard(scores);
+        }
+
+        function updateScoreboard(scores = getScores()) {
+            document.getElementById('scoreBlack').textContent = scores.black;
+            document.getElementById('scoreWhite').textContent = scores.white;
+            document.getElementById('scoreDraws').textContent = scores.draws;
+        }
+
+        document.getElementById('newGameBtn').onclick = initGame;
+
+        updateScoreboard();
+        initGame();
+    </script>
+</body>
+</html>
