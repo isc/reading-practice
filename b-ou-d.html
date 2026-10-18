@@ -641,7 +641,7 @@
           <button
             class="stamp-btn inked"
             onclick="
-              wakeAudio(300)
+              Voice.wake(300)
               startGame()
             "
           >
@@ -724,6 +724,7 @@
     </main>
 
     <script src="confetti.js"></script>
+    <script src="voix.js"></script>
     <script>
       const words = [
         // D words
@@ -897,94 +898,11 @@
 
       // ===== Le son =====
 
-      // Un seul contexte audio, débloqué par les gestes de l'enfant : il peut
-      // alors parler plus tard (après le coup de tampon), ce qu'un <audio>
-      // refuse sur iPhone. Il se rendort une fois le son joué, pour ne pas
-      // garder l'audio du téléphone allumé.
-      let audioCtx = null
-      let audioSleep = null
-
-      function audio() {
-        const Ctx = window.AudioContext || window.webkitAudioContext
-        if (Ctx && !audioCtx) audioCtx = new Ctx()
-        return audioCtx
-      }
-
-      // Réveille l'audio pour au moins `ms` : un son bref n'écourte pas un
-      // réveil plus long déjà prévu.
-      let sleepAt = 0
-      function wakeAudio(ms) {
-        const ctx = audio()
-        if (!ctx) return null
-        ctx.resume()
-        if (Date.now() + ms > sleepAt) {
-          sleepAt = Date.now() + ms
-          clearTimeout(audioSleep)
-          audioSleep = setTimeout(() => ctx.suspend(), ms)
-        }
-        return ctx
-      }
-
-      // Les mots, dits par la voix de Pinson (outils/voix.py) : un MP3 par
-      // mot, nommé sans accents ni espaces.
-      const voices = new Map()
-      const audioFor = (word) =>
-        "audio/b-ou-d/" +
-        word.normalize("NFD").replace(/\p{M}/gu, "").replace(/ /g, "-") +
-        ".mp3"
-
-      // Le MP3 est chargé d'avance (quelques Ko), et décodé seulement s'il
-      // faut le dire.
-      function loadVoice(word) {
-        if (!voices.has(word)) {
-          voices.set(
-            word,
-            fetch(audioFor(word))
-              .then((r) => (r.ok ? r.arrayBuffer() : null))
-              .catch(() => null),
-          )
-        }
-        return voices.get(word)
-      }
-
-      // Dit un mot ; la synthèse du navigateur en secours si son fichier
-      // manque. La promesse est tenue quand le mot est dit.
-      async function say(word) {
-        const data = await loadVoice(word)
-        const ctx = audio()
-        // slice : le décodage vide le tampon, et le mot peut revenir.
-        const buffer =
-          data &&
-          ctx &&
-          (await ctx.decodeAudioData(data.slice(0)).catch(() => null))
-        if (!buffer) return speakWithBrowser(word)
-        wakeAudio(buffer.duration * 1000 + 500)
-        const source = ctx.createBufferSource()
-        source.buffer = buffer
-        source.connect(ctx.destination)
-        return new Promise((resolve) => {
-          source.onended = resolve
-          source.start()
-        })
-      }
-
-      function speakWithBrowser(word) {
-        if (!window.speechSynthesis) return Promise.resolve()
-        const utterance = new SpeechSynthesisUtterance(word)
-        utterance.lang = "fr-FR"
-        utterance.voice = window.speechSynthesis
-          .getVoices()
-          .find((voice) => voice.lang == "fr-FR" && voice.name == "Thomas")
-        return new Promise((resolve) => {
-          utterance.onend = utterance.onerror = resolve
-          setTimeout(resolve, 3000)
-          window.speechSynthesis.speak(utterance)
-        })
-      }
+      // Les mots, dits par Marie (voix.js, outils/voix.py).
+      Voice.folder = "audio/b-ou-d/"
 
       function speakWord() {
-        wakeAudio(300) // dans le geste : débloque l'audio
-        say(words[currentIndex].word)
+        Voice.say(words[currentIndex].word)
       }
 
       // Un petit « toc » de bois sur le papier, qu'on peut couper depuis
@@ -998,7 +916,7 @@
 
       function thump() {
         if (!soundOn) return
-        const ctx = wakeAudio(300)
+        const ctx = Voice.wake(300)
         if (!ctx) return
         const t = ctx.currentTime
         const osc = ctx.createOscillator()
@@ -1123,7 +1041,7 @@
         $("tray").style.flexDirection =
           Math.random() < 0.5 ? "row" : "row-reverse"
         // Prêt à être dit s'il le faut, sans attente.
-        loadVoice(word)
+        Voice.load(word)
       }
 
       // La case vide d'une lettre : pointillés, à la largeur de la lettre.
@@ -1160,7 +1078,7 @@
         results.push({ word, answer, choice })
         // Le toucher débloque le son ; après une erreur, il reste éveillé
         // jusqu'à ce que la voix ait dit le mot.
-        wakeAudio(isCorrect ? 300 : 6000)
+        Voice.wake(isCorrect ? 300 : 6000)
         const slot = $("word").querySelector(".slot")
 
         await pressStamp(stamp, slot, () => {
@@ -1184,7 +1102,7 @@
           let said
           await pressStamp(stampFor(answer), fix, () => {
             printLetter(fix, answer, false)
-            said = say(word)
+            said = Voice.say(word)
           })
           await said
           await wait(700)
