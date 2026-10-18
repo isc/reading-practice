@@ -1,6 +1,11 @@
-import { getPhonetic } from './data.js'
+import { getPhonetic } from "./data.js"
 
-export function handleTranscript(transcript, remainingWords, onWordCorrect, onSentenceComplete) {
+export function handleTranscript(
+  transcript,
+  remainingWords,
+  onWordCorrect,
+  onSentenceComplete,
+) {
   const transcriptWords = transcript.toLowerCase().split(" ")
 
   for (const transcriptWord of transcriptWords) {
@@ -20,24 +25,24 @@ export function handleTranscript(transcript, remainingWords, onWordCorrect, onSe
   }
 }
 
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
+
+export const canListen = () => Boolean(Recognition)
+
 export function startRecognition(onTranscript, onError, onEnd) {
-  const recognition = new (window.SpeechRecognition ||
-    window.webkitSpeechRecognition)()
+  const recognition = new Recognition()
   recognition.lang = "fr-FR"
   recognition.interimResults = true
   recognition.continuous = true
 
   recognition.onresult = (event) => {
-    console.log(event.results)
     const result = event.results[event.results.length - 1]
     onTranscript(result[0].transcript.toLowerCase())
   }
 
   recognition.onerror = onError
   recognition.onend = onEnd
-  
-  console.log("Speech recognition started")
   recognition.start()
-  
+
   return recognition
 }
