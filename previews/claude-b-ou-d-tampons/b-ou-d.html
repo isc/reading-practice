@@ -154,12 +154,6 @@
         max-width: 22em;
       }
 
-      .welcome-sheet .tip {
-        font-family: var(--hand);
-        color: var(--pencil);
-        font-size: 1.15rem;
-      }
-
       .sound-toggle {
         font-family: var(--hand);
         font-size: 1.1rem;
@@ -393,6 +387,13 @@
       .note.fix u {
         text-decoration-thickness: 2px;
         text-underline-offset: 3px;
+      }
+
+      .note .hint {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.8em;
+        color: var(--pencil);
       }
 
       /* ===== Les tampons ===== */
@@ -668,9 +669,6 @@
             Regarde l'image, puis prends le bon tampon pour imprimer la première
             lettre du mot.
           </p>
-          <p class="tip">
-            Psst… sous le tampon b, la lettre est à l'envers. On dirait un d !
-          </p>
           <button class="stamp-btn inked" onclick="startGame()">
             Commencer
           </button>
@@ -798,6 +796,12 @@
       // Une encre par mot, comme si on changeait de tampon encreur.
       const INKS = ["#c8372d", "#2f56a6", "#6b3fa0", "#2e7d4f", "#2b2420"]
       const PRAISE = ["Bravo !", "Oui !", "Super !", "Bien vu !"]
+      // Le repère donné après une erreur : en lisant de gauche à droite, on
+      // rencontre d'abord le bâton du b, et d'abord le rond du d.
+      const HINTS = {
+        b: "b : d'abord le bâton, puis le rond",
+        d: "d : d'abord le rond, puis le bâton",
+      }
       const SOUND_KEY = "b-ou-d-sound"
 
       let currentIndex = 0
@@ -1107,7 +1111,8 @@
             note.textContent = PRAISE[Math.floor(Math.random() * PRAISE.length)]
           } else {
             note.className = "note fix"
-            note.innerHTML = `C'est un ${answer} : <u>${answer}</u>${word.slice(1)}`
+            note.innerHTML = `C'est un ${answer} : <u>${answer}</u>${word.slice(1)}
+              <span class="hint">${HINTS[answer]}</span>`
           }
           updateStats()
         }).then(() => {
@@ -1118,7 +1123,7 @@
               if (currentIndex >= NUMBER_OF_WORDS) showGameEnd()
               else displayWord()
             },
-            isCorrect ? 250 : 1300,
+            isCorrect ? 250 : 2000,
           )
         })
       }
