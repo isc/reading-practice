@@ -27,7 +27,11 @@
       :root {
         --studio: #12051f;
         --studio-2: #2e0b4a;
-        --panel: #22103a;
+        --gold-plate: linear-gradient(
+          #fff3b0,
+          var(--gold) 55%,
+          var(--gold-deep)
+        );
         --panel-edge: #4b2a73;
         --gold: #ffc93c;
         --gold-deep: #ff9f1c;
@@ -265,15 +269,12 @@
         stroke-dasharray: 0 14;
       }
 
-      .bulbs .even {
-        stroke-dashoffset: 7;
-      }
-
       .bulbs .odd {
         animation: chase 0.9s steps(1) infinite;
       }
 
       .bulbs .even {
+        stroke-dashoffset: 7;
         animation: chase 0.9s steps(1) infinite reverse;
       }
 
@@ -459,6 +460,7 @@
       /* ===== Le tableau des scores (accueil et fin) ===== */
 
       .ledger {
+        width: 100%;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
@@ -558,9 +560,7 @@
 
       .clock circle.bulb {
         fill: var(--gold);
-        transition:
-          fill 0.3s ease,
-          opacity 0.3s ease;
+        transition: fill 0.3s ease;
       }
 
       .clock circle.bulb.out {
@@ -650,8 +650,20 @@
         opacity: 0;
       }
 
+      /* La plaque dorée, prête, qui s'allume au bon mot. */
+      .slot::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: var(--gold-plate);
+        box-shadow: 0 0 20px rgba(255, 201, 60, 0.9);
+        opacity: 0;
+      }
+
       .slot span {
         position: relative;
+        z-index: 1;
       }
 
       .slot.lit {
@@ -669,8 +681,9 @@
       }
 
       /* Bon mot : une vague d'or passe sur les cases. */
-      .slot.gold::before {
-        animation: to-gold 0.55s ease calc(var(--i) * 45ms) both;
+      .slot.gold::after {
+        opacity: 1;
+        animation: to-gold 0.2s ease calc(var(--i) * 45ms) backwards;
       }
 
       .slot.gold span {
@@ -678,18 +691,8 @@
       }
 
       @keyframes to-gold {
-        0% {
-          opacity: 1;
-        }
-        35%,
-        100% {
-          opacity: 1;
-          background: linear-gradient(
-            #fff3b0,
-            var(--gold) 55%,
-            var(--gold-deep)
-          );
-          box-shadow: 0 0 20px rgba(255, 201, 60, 0.9);
+        from {
+          opacity: 0;
         }
       }
 
@@ -1034,7 +1037,7 @@
 
       /* Ton mot, en or ; la réponse, en bleu. */
       .result.mine .slot.lit::before {
-        background: linear-gradient(#fff3b0, var(--gold) 55%, var(--gold-deep));
+        background: var(--gold-plate);
         box-shadow: 0 0 14px rgba(255, 201, 60, 0.6);
       }
 
@@ -1136,6 +1139,21 @@
         </ul>
 
         <button class="go" id="startBtn" disabled>…</button>
+
+        <div class="panel ledger">
+          <div>
+            <div class="label">Record</div>
+            <div class="value" data-score="bestLength">0</div>
+          </div>
+          <div>
+            <div class="label">Parties</div>
+            <div class="value" data-score="totalGames">0</div>
+          </div>
+          <div>
+            <div class="label">Lettres en tout</div>
+            <div class="value" data-score="totalLetters">0</div>
+          </div>
+        </div>
       </section>
 
       <section class="screen game hidden" id="game">
@@ -1226,23 +1244,23 @@
 
         <div class="panel found" id="endFound"></div>
 
+        <div class="panel ledger">
+          <div>
+            <div class="label">Record</div>
+            <div class="value" data-score="bestLength">0</div>
+          </div>
+          <div>
+            <div class="label">Parties</div>
+            <div class="value" data-score="totalGames">0</div>
+          </div>
+          <div>
+            <div class="label">Lettres en tout</div>
+            <div class="value" data-score="totalLetters">0</div>
+          </div>
+        </div>
+
         <button class="go" id="againBtn">Nouvelle partie</button>
       </section>
-
-      <div class="panel ledger" id="ledger">
-        <div>
-          <div class="label">Record</div>
-          <div class="value" id="scoreBest">0</div>
-        </div>
-        <div>
-          <div class="label">Parties</div>
-          <div class="value" id="scoreGames">0</div>
-        </div>
-        <div>
-          <div class="label">Lettres en tout</div>
-          <div class="value" id="scoreTotal">0</div>
-        </div>
-      </div>
     </main>
 
     <script src="voix.js"></script>
@@ -1290,13 +1308,14 @@
       let timerInterval = null
       let secondsLeft = ROUND_SECONDS
       let gameActive = false
-      let busy = false // le temps de l'animation d'un bon mot
+      let celebrating = null // la fête d'un bon mot, le temps qu'elle dure
 
       const $ = (id) => document.getElementById(id)
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-      const reducedMotion = () =>
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+      const reducedMotion = () => motionQuery.matches
       const tileUsed = (idx) => placedTiles.includes(idx)
+      const canPlay = () => gameActive && !celebrating
 
       // ===== Le dictionnaire et le tirage =====
 
@@ -1450,13 +1469,18 @@
         },
       }
 
-      const SPEAKER_ON =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>'
-      const SPEAKER_OFF =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>'
+      // Le haut-parleur, avec ses ondes ou barré.
+      const speaker = (end) =>
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="' +
+        end +
+        '"/></svg>'
 
       function renderSoundBtn() {
-        $("soundBtn").innerHTML = soundOn ? SPEAKER_ON : SPEAKER_OFF
+        $("soundBtn").innerHTML = speaker(
+          soundOn
+            ? "M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"
+            : "M17 9.5l5 5M22 9.5l-5 5",
+        )
         $("soundBtn").setAttribute(
           "aria-label",
           soundOn ? "Couper le son" : "Remettre le son",
@@ -1607,13 +1631,13 @@
           g.style.left = x + "%"
           g.style.top = y + "%"
           g.style.animationDelay = ((i * 0.73) % 3.2) + "s"
-          g.innerHTML =
-            '<svg><use href="#sparkle" /></svg>'
+          g.innerHTML = '<svg><use href="#sparkle" /></svg>'
           $("studio").appendChild(g)
         })
       }
 
       // Les soixante ampoules de l'horloge, la première en haut.
+      const bulbs = []
       function buildClock() {
         const svg = $("clockSvg")
         for (let i = 0; i < ROUND_SECONDS; i++) {
@@ -1627,6 +1651,7 @@
           c.setAttribute("cy", (62 + Math.sin(a) * 55).toFixed(2))
           c.setAttribute("r", 3.4)
           svg.appendChild(c)
+          bulbs.push(c)
         }
       }
 
@@ -1661,8 +1686,6 @@
         for (const screen of ["welcome", "game", "end"]) {
           $(screen).classList.toggle("hidden", screen !== id)
         }
-        $("ledger").classList.toggle("hidden", id === "game")
-        if (id === "end") $("end").insertBefore($("ledger"), $("againBtn"))
       }
 
       function renderTiles() {
@@ -1671,19 +1694,13 @@
         })
       }
 
-      function renderBoard(arrivingAt = -1) {
-        const slots = $("board").children
-        for (let i = 0; i < TILE_COUNT; i++) {
-          const lit = i < placedTiles.length
-          slots[i].className =
-            "slot" + (lit ? " lit" : "") + (i === arrivingAt ? " arrive" : "")
-          slots[i].firstChild.textContent = lit
-            ? drawnLetters[placedTiles[i]]
-            : ""
-        }
-        $("clearBtn").disabled = !gameActive || placedTiles.length === 0
-        $("validateBtn").disabled =
-          !gameActive || placedTiles.length < MIN_LENGTH
+      function renderBoard(arrivingAt) {
+        const word = placedTiles.map((i) => drawnLetters[i]).join("")
+        showOnBoard($("board"), word)
+        if (arrivingAt >= 0)
+          $("board").children[arrivingAt].classList.add("arrive")
+        $("clearBtn").disabled = !gameActive || word.length === 0
+        $("validateBtn").disabled = !gameActive || word.length < MIN_LENGTH
       }
 
       function render(arrivingAt) {
@@ -1692,7 +1709,7 @@
       }
 
       function placeLetter(idx) {
-        if (!gameActive || busy || tileUsed(idx)) return
+        if (!canPlay() || tileUsed(idx)) return
         // Première lettre posée : la partie est vraiment engagée.
         if (window.ExitGuard) ExitGuard.setActive(true)
         const pos = placedTiles.length
@@ -1707,14 +1724,14 @@
       }
 
       function removeAt(pos) {
-        if (!gameActive || busy || pos >= placedTiles.length) return
+        if (!canPlay() || pos >= placedTiles.length) return
         placedTiles.splice(pos, 1)
         sounds.remove()
         render()
       }
 
       function clearWord() {
-        if (!gameActive || busy || placedTiles.length === 0) return
+        if (!canPlay() || placedTiles.length === 0) return
         placedTiles = []
         sounds.remove()
         render()
@@ -1725,8 +1742,8 @@
         replay($("board"), "buzz", 600)
       }
 
-      async function validateWord() {
-        if (!gameActive || busy) return
+      function validateWord() {
+        if (!canPlay()) return
         const word = placedTiles.map((i) => drawnLetters[i]).join("")
         if (word.length < MIN_LENGTH || !validWordsSet.has(word)) {
           refuse()
@@ -1745,9 +1762,12 @@
           return
         }
 
-        // Bon mot : vague d'or, projecteurs, paillettes, puis il rejoint la
-        // liste.
-        busy = true
+        celebrating = celebrate(word).finally(() => (celebrating = null))
+      }
+
+      // Bon mot : vague d'or, projecteurs, paillettes, puis il rejoint la
+      // liste.
+      async function celebrate(word) {
         const entry = { word, length: word.length }
         foundWords.push(entry)
         const isNewBest = !bestFound || entry.length > bestFound.length
@@ -1763,7 +1783,6 @@
           sounds.fanfare()
         }
         await wait(reducedMotion() ? 200 : 420)
-        busy = false
         renderFound($("found"), word)
         if (isNewBest) renderBest(true)
         if (!gameActive) return
@@ -1802,7 +1821,6 @@
 
       function renderClock() {
         $("secs").textContent = secondsLeft
-        const bulbs = $("clockSvg").querySelectorAll(".bulb")
         const gone = ROUND_SECONDS - secondsLeft
         bulbs.forEach((b, i) => b.classList.toggle("out", i < gone))
         $("clock").classList.toggle("warning", secondsLeft <= 10)
@@ -1833,7 +1851,6 @@
         placedTiles = []
         foundWords = []
         bestFound = null
-        busy = false
         gameActive = true
 
         const tiles = $("tiles")
@@ -1860,9 +1877,10 @@
         const finalLength = bestFound ? bestFound.length : 0
         saveScore(finalLength)
 
-        // Le temps de voir l'horloge s'éteindre et le dernier mot rejoindre
-        // la liste.
-        await wait(reducedMotion() ? 300 : 1100)
+        // Le dernier mot rejoint la liste, puis on laisse voir l'horloge
+        // éteinte.
+        await celebrating
+        await wait(reducedMotion() ? 300 : 700)
         const longest = findLongestPossible() || ""
         const champion = bestFound && bestFound.length >= longest.length
 
@@ -1911,9 +1929,9 @@
       }
 
       function updateScoreboard(scores = getScores()) {
-        $("scoreBest").textContent = scores.bestLength
-        $("scoreGames").textContent = scores.totalGames
-        $("scoreTotal").textContent = scores.totalLetters
+        document.querySelectorAll("[data-score]").forEach((el) => {
+          el.textContent = scores[el.dataset.score]
+        })
       }
 
       // ===== Branchements =====
