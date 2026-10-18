@@ -23,7 +23,11 @@
         --muted: #9c96bf;
         --line: rgba(255, 255, 255, 0.14);
         --glass: rgba(255, 255, 255, 0.06);
-        --team: #ff5c8a;
+        --team-1: #ff5c8a;
+        --team-2: #3fe0c5;
+        --team-3: #ffc145;
+        --team-4: #a58bff;
+        --team: var(--team-1);
         --on-team: #170a1c;
         --font: "Unbounded", "Trebuchet MS", system-ui, sans-serif;
       }
@@ -363,10 +367,16 @@
         opacity: 0.5;
       }
 
-      /* Relève */
-      .handoff {
+      /* Relève et bilan */
+      .handoff,
+      .recap {
         text-align: center;
         align-items: center;
+      }
+
+      /* Le bilan attend que le dernier mot trouvé ait rejoint le score. */
+      .recap.shown {
+        transition-delay: 0.35s;
       }
 
       .rule {
@@ -459,20 +469,10 @@
         font-variant-numeric: tabular-nums;
       }
 
-      .turn-found[hidden] {
-        display: none;
-      }
-
       .actions {
         display: grid;
         grid-template-columns: 2fr 3fr;
         gap: 10px;
-      }
-
-      /* Bilan */
-      .recap {
-        text-align: center;
-        align-items: center;
       }
 
       .recap h2 {
@@ -541,16 +541,16 @@
       }
 
       .logo h1 span:nth-child(4n + 1) {
-        color: #ff5c8a;
+        color: var(--team-1);
       }
       .logo h1 span:nth-child(4n + 2) {
-        color: #3fe0c5;
+        color: var(--team-2);
       }
       .logo h1 span:nth-child(4n + 3) {
-        color: #ffc145;
+        color: var(--team-3);
       }
       .logo h1 span:nth-child(4n + 4) {
-        color: #a58bff;
+        color: var(--team-4);
       }
 
       .mini-glass {
@@ -574,12 +574,12 @@
 
       .mini-glass .grain:nth-of-type(2) {
         animation-delay: -0.47s;
-        fill: #ffc145;
+        fill: var(--team-3);
       }
 
       .mini-glass .grain:nth-of-type(3) {
         animation-delay: -0.94s;
-        fill: #3fe0c5;
+        fill: var(--team-2);
       }
 
       @keyframes fall {
@@ -865,22 +865,21 @@
   <body>
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <defs>
-        <symbol id="i-describe" viewBox="0 0 24 24">
+        <symbol id="i-bubble" viewBox="0 0 24 24">
           <path
             d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v7.5a2.5 2.5 0 0 1-2.5 2.5h-7l-5 4v-4H5a2.5 2.5 0 0 1-2.5-2.5V7A2.5 2.5 0 0 1 5 4.5z"
           />
+        </symbol>
+        <symbol id="i-describe" viewBox="0 0 24 24">
+          <use href="#i-bubble" />
           <path d="M7.5 9h9M7.5 12.5h6" />
         </symbol>
         <symbol id="i-one" viewBox="0 0 24 24">
-          <path
-            d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v7.5a2.5 2.5 0 0 1-2.5 2.5h-7l-5 4v-4H5a2.5 2.5 0 0 1-2.5-2.5V7A2.5 2.5 0 0 1 5 4.5z"
-          />
+          <use href="#i-bubble" />
           <path d="M10.5 9.2l2-1.4v6.4" />
         </symbol>
         <symbol id="i-mime" viewBox="0 0 24 24">
-          <path
-            d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v7.5a2.5 2.5 0 0 1-2.5 2.5h-7l-5 4v-4H5a2.5 2.5 0 0 1-2.5-2.5V7A2.5 2.5 0 0 1 5 4.5z"
-          />
+          <use href="#i-bubble" />
           <path d="M3 2.5l18 19" />
         </symbol>
         <symbol id="i-restart" viewBox="0 0 24 24">
@@ -905,8 +904,8 @@
     <canvas id="confetti"></canvas>
     <canvas id="fx"></canvas>
     <div class="aura" id="aura" aria-hidden="true">
-      <i style="--c: #ff5c8a"></i><i style="--c: #3fe0c5"></i
-      ><i style="--c: #ffc145"></i><i style="--c: #a58bff"></i>
+      <i style="--c: var(--team-1)"></i><i style="--c: var(--team-2)"></i
+      ><i style="--c: var(--team-3)"></i><i style="--c: var(--team-4)"></i>
     </div>
 
     <main class="app">
@@ -1062,7 +1061,12 @@
       const MAX_TEAMS = 4
       const MAX_NAME_LENGTH = 16
       const DEFAULT_NAMES = ["Équipe 1", "Équipe 2", "Équipe 3", "Équipe 4"]
-      const TEAM_COLORS = ["#ff5c8a", "#3fe0c5", "#ffc145", "#a58bff"]
+      // Les couleurs des équipes viennent du CSS (--team-1 à --team-4).
+      const TEAM_COLORS = [1, 2, 3, 4].map((i) =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue(`--team-${i}`)
+          .trim(),
+      )
       const ROUND_INFO = [
         {
           title: "Manche 1 · Décris le mot",
@@ -1131,9 +1135,24 @@
       let turnActive = false
       let timerId = null
       let gameEngaged = false
-      let gameOver = true
 
       const $ = (id) => document.getElementById(id)
+
+      // La partie est engagée du premier tour lancé jusqu'aux scores : on
+      // demande alors confirmation avant de la quitter.
+      function setEngaged(on) {
+        gameEngaged = on
+        if (window.ExitGuard) ExitGuard.setActive(on)
+      }
+
+      // Un écran plein (réglages, scores) ou aucun : le sablier, caché
+      // dessous, ne se dessine plus.
+      function showScreen(id) {
+        for (const screen of document.querySelectorAll(".screen")) {
+          screen.classList.toggle("visible", screen.id === id)
+        }
+        Hourglass.setPaused(Boolean(id))
+      }
 
       function hexToRgb(hex) {
         const n = parseInt(hex.slice(1), 16)
@@ -1157,6 +1176,24 @@
         return c
       }
 
+      // Les grains, gardés par couleur : pendant un retournement la couleur
+      // change à chaque image, on l'arrondit pour réutiliser les mêmes.
+      const sprites = new Map()
+      function spriteFor(rgb) {
+        const q = rgb.map((v) => Math.min(255, Math.round(v / 12) * 12))
+        const key = q.join()
+        if (!sprites.has(key)) sprites.set(key, makeSprite(q))
+        return sprites.get(key)
+      }
+
+      // Taille un canvas à sa place à l'écran, en pixels de l'appareil.
+      function sizeCanvas(canvas, ctx, w, h) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1)
+        canvas.width = Math.round(w * dpr)
+        canvas.height = Math.round(h * dpr)
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      }
+
       const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2)
       const clamp01 = (t) => Math.min(1, Math.max(0, t))
 
@@ -1172,7 +1209,7 @@
         const ctx = canvas.getContext("2d")
         let W = 0
         let H = 0
-        let g = null // géométrie
+        let g = null // géométrie, et le verre tracé une fois pour toutes
         let topRest = [] // grains du haut, dans l'ordre où ils partent
         let bottomFill = [] // places du bas, dans l'ordre où elles se remplissent
         let N = 0
@@ -1187,10 +1224,9 @@
         let colorFrom = [255, 255, 255]
         let colorTo = [255, 255, 255]
         let colorStart = 0
-        let rgb = [255, 255, 255]
-        let sprite = makeSprite(rgb)
         let flashAt = -1e9
         let lowTime = false
+        let paused = false
         const stream = []
         let lastSpawn = 0
         let lastFrame = 0
@@ -1199,45 +1235,44 @@
         const FLIP_TURN = 750
         const FLIP_SETTLE = 650
         const RUSH = 1100
+        const FLASH = 900
 
         function build() {
           const r = canvas.getBoundingClientRect()
           if (!r.width || !r.height) return
           W = r.width
           H = r.height
-          const dpr = Math.min(2, window.devicePixelRatio || 1)
-          canvas.width = Math.round(W * dpr)
-          canvas.height = Math.round(H * dpr)
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+          sizeCanvas(canvas, ctx, W, H)
 
           const gh = Math.min(H - 16, 330)
           const neck = 3
           const bulbH = gh / 2 - neck
           const maxW = Math.min(W * 0.3, gh * 0.3)
           const neckW = 3.5
+          const cx = W / 2
+          const cy = H / 2
           // Demi-largeur d'une ampoule, de son bord (u = 0) à son col (u = 1).
           const hw = (u) =>
             neckW +
             (maxW - neckW) *
               Math.sqrt(Math.max(0, 1 - u * u)) *
               (0.8 + 0.2 * Math.sin(Math.min(1, u / 0.22) * (Math.PI / 2)))
-          g = { cx: W / 2, cy: H / 2, neck, bulbH, maxW, hw }
-
-          // Les places possibles, en rangées alternées, depuis le fond d'une
-          // ampoule (d = distance au bord) ou depuis le col (pour le haut).
           const s = Math.max(3.6, maxW / 11)
-          g.s = s
-          const slots = []
-          for (let row = 0; ; row++) {
-            const d = s * 0.7 + row * s * 0.87
-            if (d > bulbH - s * 0.5) break
-            const w = hw(d / bulbH) - s * 0.8
-            for (let x = row % 2 ? s / 2 : 0; x <= w; x += s) {
-              slots.push({ dx: x, d })
-              if (x > 0) slots.push({ dx: -x, d })
+
+          // Les places possibles, en rangées alternées ; d est la distance de
+          // la rangée à son point de départ, uOf(d) sa position dans l'ampoule.
+          const rowSlots = (d0, uOf) => {
+            const slots = []
+            for (let row = 0; ; row++) {
+              const d = d0 + row * s * 0.87
+              if (d > bulbH - s * 0.5) return slots
+              const w = hw(uOf(d)) - s * 0.8
+              for (let x = row % 2 ? s / 2 : 0; x <= w; x += s) {
+                slots.push({ dx: x, d })
+                if (x > 0) slots.push({ dx: -x, d })
+              }
             }
           }
-          N = Math.round(slots.length * 0.64)
           const grain = (p) => ({
             ...p,
             ph: Math.random() * Math.PI * 2,
@@ -1245,53 +1280,74 @@
             sz: 0.85 + Math.random() * 0.4,
           })
 
-          // Le bas se remplit en dôme : le centre d'abord.
+          // Le bas se remplit depuis le fond, en dôme : le centre d'abord.
+          const slots = rowSlots(s * 0.7, (d) => d / bulbH)
+          N = Math.round(slots.length * 0.64)
+          const dome = (p) => p.d + Math.abs(p.dx) * 0.55
           bottomFill = slots
             .map(grain)
-            .sort(
-              (a, b) =>
-                a.d + Math.abs(a.dx) * 0.55 - (b.d + Math.abs(b.dx) * 0.55),
-            )
+            .sort((a, b) => dome(a) - dome(b))
             .slice(0, N)
-            .map((p) => ({
-              ...p,
-              x: g.cx + p.dx,
-              y: g.cy + neck + bulbH - p.d,
-            }))
+            .map((p) => ({ ...p, x: cx + p.dx, y: cy + neck + bulbH - p.d }))
 
-          // Le haut : les N places les plus proches du col (ici d se compte
-          // depuis le col, les rangées étroites d'abord, puis vers le bord).
-          const topSlots = []
-          for (let row = 0; ; row++) {
-            const d = s * 0.9 + row * s * 0.87
-            if (d > bulbH - s * 0.5) break
-            const w = hw(1 - d / bulbH) - s * 0.8
-            for (let x = row % 2 ? s / 2 : 0; x <= Math.max(0, w); x += s) {
-              topSlots.push({ dx: x, d })
-              if (x > 0) topSlots.push({ dx: -x, d })
-            }
-          }
-          // Il part d'abord par le haut, le centre en premier : un entonnoir.
-          topRest = topSlots
+          // Le haut : les N places les plus proches du col (d se compte depuis
+          // le col). Il part d'abord par le dessus, le centre en premier : un
+          // entonnoir.
+          const funnel = (p) => p.d + (maxW - Math.abs(p.dx)) * 0.3
+          topRest = rowSlots(s * 0.9, (d) => 1 - d / bulbH)
             .map(grain)
             .sort((a, b) => a.d - b.d)
             .slice(0, N)
-            .map((p) => ({ ...p, x: g.cx + p.dx, y: g.cy - neck - p.d }))
-            .sort(
-              (a, b) =>
-                b.d +
-                (maxW - Math.abs(b.dx)) * 0.3 -
-                (a.d + (maxW - Math.abs(a.dx)) * 0.3),
-            )
+            .map((p) => ({ ...p, x: cx + p.dx, y: cy - neck - p.d }))
+            .sort((a, b) => funnel(b) - funnel(a))
           N = Math.min(N, topRest.length)
+
+          // Le haut du tas du bas, pour chaque nombre de grains tombés : là
+          // où le filet s'arrête.
+          const surf = [cy + neck + bulbH]
+          for (let i = 0; i < N; i++) {
+            const p = bottomFill[i]
+            surf.push(Math.abs(p.dx) <= s ? Math.min(surf[i], p.y) : surf[i])
+          }
+
+          // Le verre, ses deux traits de lumière et ses reflets.
+          const pad = s * 0.35 + 2
+          const left = []
+          for (let i = 0; i <= 36; i++) {
+            const u = i / 36
+            left.push([cx - hw(u) - pad, cy - neck - bulbH * (1 - u)])
+          }
+          for (let i = 36; i >= 0; i--) {
+            const u = i / 36
+            left.push([cx - hw(u) - pad, cy + neck + bulbH * (1 - u)])
+          }
+          const outline = new Path2D()
+          left.forEach(([x, y], i) =>
+            i ? outline.lineTo(x, y) : outline.moveTo(x, y),
+          )
+          outline.moveTo(2 * cx - left[0][0], left[0][1])
+          left.forEach(([x, y], i) => i && outline.lineTo(2 * cx - x, y))
+
+          const caps = new Path2D()
+          const capW = maxW + pad + 6
+          for (const y of [cy - neck - bulbH - 5, cy + neck + bulbH + 5]) {
+            caps.moveTo(cx - capW, y)
+            caps.lineTo(cx + capW, y)
+          }
+
+          const shine = new Path2D()
+          for (const dir of [-1, 1]) {
+            for (let i = 0; i <= 10; i++) {
+              const u = 0.15 + (i / 10) * 0.5
+              const x = cx - hw(u) * 0.72
+              const y = cy + dir * (neck + bulbH * (1 - u))
+              i ? shine.lineTo(x, y) : shine.moveTo(x, y)
+            }
+          }
+
+          g = { cx, cy, neck, maxW, s, surf, outline, caps, shine }
           flipPairs = null
           draw(performance.now())
-        }
-
-        function setSpriteColor(c) {
-          if (c.every((v, i) => Math.abs(v - rgb[i]) < 2)) return
-          rgb = c
-          sprite = makeSprite(rgb)
         }
 
         function currentColor(now) {
@@ -1303,137 +1359,60 @@
           return c.map((v) => v + (255 - v) * k * 0.8)
         }
 
-        function setTarget(hex, now) {
-          colorFrom = currentColor(now)
-          colorTo = hexToRgb(hex)
-          colorStart = now
-        }
-
-        function bottomSurfaceY(count) {
-          let y = g.cy + g.neck + g.bulbH
-          for (let i = 0; i < count; i++) {
-            const p = bottomFill[i]
-            if (Math.abs(p.dx) <= g.s && p.y < y) y = p.y
-          }
-          return y - g.s * 0.4
-        }
-
-        function glassPath() {
-          const { cx, cy, neck, bulbH, hw } = g
-          const pad = g.s * 0.35 + 2
-          const left = []
-          const steps = 36
-          for (let i = 0; i <= steps; i++) {
-            const u = i / steps
-            left.push([cx - hw(u) - pad, cy - neck - bulbH * (1 - u)])
-          }
-          for (let i = steps; i >= 0; i--) {
-            const u = i / steps
-            left.push([cx - hw(u) - pad, cy + neck + bulbH * (1 - u)])
-          }
-          ctx.beginPath()
-          left.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)))
-          ctx.moveTo(2 * cx - left[0][0], left[0][1])
-          left.forEach(([x, y], i) => i && ctx.lineTo(2 * cx - x, y))
-        }
-
         function drawGlass(now, color) {
-          const { cx, cy, neck, bulbH, maxW } = g
           const col = color.map(Math.round).join(",")
           let pulse = 0
           if (lowTime && mode === "drain") {
-            const ms = (drainEnd - now) % 1000
-            pulse = Math.max(0, ms - 700) / 300
+            pulse = Math.max(0, ((drainEnd - now) % 1000) - 700) / 300
           }
-          const flash = Math.max(0, 1 - (now - flashAt) / 900)
+          const flash = Math.max(0, 1 - (now - flashAt) / FLASH)
           ctx.lineJoin = "round"
           ctx.lineCap = "round"
-          glassPath()
           ctx.strokeStyle = `rgba(${col},${0.14 + pulse * 0.3 + flash * 0.6})`
           ctx.lineWidth = 9
-          ctx.stroke()
+          ctx.stroke(g.outline)
           ctx.strokeStyle = `rgba(255,255,255,${0.32 + pulse * 0.4 + flash * 0.6})`
           ctx.lineWidth = 1.6
-          ctx.stroke()
+          ctx.stroke(g.outline)
 
-          // Deux traits de lumière : le haut et le bas du sablier.
-          const capW = maxW + g.s * 0.35 + 8
-          for (const y of [cy - neck - bulbH - 5, cy + neck + bulbH + 5]) {
-            ctx.beginPath()
-            ctx.moveTo(cx - capW, y)
-            ctx.lineTo(cx + capW, y)
-            ctx.strokeStyle = `rgba(${col},${0.35 + flash * 0.5})`
-            ctx.lineWidth = 8
-            ctx.stroke()
-            ctx.strokeStyle = "rgba(255,255,255,0.85)"
-            ctx.lineWidth = 2.5
-            ctx.stroke()
-          }
+          ctx.strokeStyle = `rgba(${col},${0.35 + flash * 0.5})`
+          ctx.lineWidth = 8
+          ctx.stroke(g.caps)
+          ctx.strokeStyle = "rgba(255,255,255,0.85)"
+          ctx.lineWidth = 2.5
+          ctx.stroke(g.caps)
 
-          // Un reflet sur le verre, à gauche de chaque ampoule.
           ctx.strokeStyle = "rgba(255,255,255,0.13)"
           ctx.lineWidth = 3
-          for (const dir of [-1, 1]) {
-            ctx.beginPath()
-            for (let i = 0; i <= 10; i++) {
-              const u = 0.15 + (i / 10) * 0.5
-              const x = cx - g.hw(u) * 0.72
-              const y = cy + dir * (neck + bulbH * (1 - u))
-              i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)
-            }
-            ctx.stroke()
-          }
-        }
-
-        function drawGrain(p, x, y, now, base) {
-          const tw = reducedMotion
-            ? 0.85
-            : base +
-              (1 - base) * (0.5 + 0.5 * Math.sin(now * 0.001 * p.sp + p.ph))
-          const size = g.s * 2.1 * p.sz
-          ctx.globalAlpha = tw
-          ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size)
+          ctx.stroke(g.shine)
         }
 
         function draw(now) {
           if (!g) return
           let angle = 0
-          let topCount = Math.round(frac * N)
-          let bottomCount = N - topCount
           let settle = -1
 
           if (mode === "drain") {
             frac = clamp01((drainEnd - now) / drainDur)
           } else if (mode === "rush") {
-            frac = rushFrom * (1 - ease(clamp01((now - rushStart) / RUSH)))
-            if (now - rushStart >= RUSH) {
-              frac = 0
-              mode = "idle"
-            }
-          }
-          if (mode !== "flip") {
-            topCount = Math.round(frac * N)
-            bottomCount = N - topCount
-          } else {
+            const t = clamp01((now - rushStart) / RUSH)
+            frac = rushFrom * (1 - ease(t))
+            if (t === 1) mode = "idle"
+          } else if (mode === "flip") {
             const t = now - flipStart
-            if (t < FLIP_TURN) {
-              angle = Math.PI * ease(t / FLIP_TURN)
-              topCount = 0
-              bottomCount = N
+            if (t < FLIP_TURN) angle = Math.PI * ease(t / FLIP_TURN)
+            else if (t < FLIP_TURN + FLIP_SETTLE) {
+              settle = ease((t - FLIP_TURN) / FLIP_SETTLE)
             } else {
-              settle = ease(clamp01((t - FLIP_TURN) / FLIP_SETTLE))
-              if (t >= FLIP_TURN + FLIP_SETTLE) {
-                mode = "idle"
-                frac = 1
-                settle = -1
-                topCount = N
-                bottomCount = 0
-              }
+              mode = "idle"
+              frac = 1
             }
           }
+          // Pendant qu'il tourne, tout le sable est encore en bas.
+          const topCount = angle ? 0 : Math.round(frac * N)
 
           const color = currentColor(now)
-          setSpriteColor(color)
+          const sprite = spriteFor(color)
 
           ctx.setTransform(1, 0, 0, 1, 0, 0)
           ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -1450,24 +1429,32 @@
           }
           drawGlass(now, color)
           ctx.globalCompositeOperation = "lighter"
-          const base = lowTime && mode === "drain" ? 0.25 : 0.55
 
+          const base = lowTime && mode === "drain" ? 0.25 : 0.55
+          const grain = (p, x, y) => {
+            ctx.globalAlpha = reducedMotion
+              ? 0.85
+              : base +
+                (1 - base) * (0.5 + 0.5 * Math.sin(now * 0.001 * p.sp + p.ph))
+            const size = g.s * 2.1 * p.sz
+            ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size)
+          }
           if (settle >= 0) {
             // Après le retournement : les grains, retombés tête en bas,
             // glissent se poser contre le col.
             for (const [from, to] of flipPairs) {
-              const x = from.x + (to.x - from.x) * settle
-              const y = from.y + (to.y - from.y) * settle
-              drawGrain(to, x, y, now, base)
+              grain(
+                to,
+                from.x + (to.x - from.x) * settle,
+                from.y + (to.y - from.y) * settle,
+              )
             }
           } else {
             for (let i = N - topCount; i < N; i++) {
-              const p = topRest[i]
-              drawGrain(p, p.x, p.y, now, base)
+              grain(topRest[i], topRest[i].x, topRest[i].y)
             }
-            for (let i = 0; i < bottomCount; i++) {
-              const p = bottomFill[i]
-              drawGrain(p, p.x, p.y, now, base)
+            for (let i = 0; i < N - topCount; i++) {
+              grain(bottomFill[i], bottomFill[i].x, bottomFill[i].y)
             }
           }
 
@@ -1479,39 +1466,42 @@
             ((mode === "drain" && frac > 0) || mode === "rush")
           if (flowing) {
             const every = mode === "rush" ? 8 : lowTime ? 22 : 34
-            while (now - lastSpawn > every) {
-              lastSpawn += every
-              if (now - lastSpawn > 200) lastSpawn = now
+            if (now - lastSpawn > 200) lastSpawn = now - every
+            for (; now - lastSpawn > every; lastSpawn += every) {
               stream.push({
                 x: g.cx + (Math.random() - 0.5) * 2.4,
                 y: g.cy - g.neck,
                 vy: 40 + Math.random() * 30,
                 vx: (Math.random() - 0.5) * 6,
-                sz: 0.6 + Math.random() * 0.4,
-                ph: 0,
-                sp: 0,
+                size: g.s * (1.1 + Math.random() * 0.7),
               })
             }
           } else {
             lastSpawn = now
           }
-          const floor = bottomSurfaceY(bottomCount)
+          const floor = g.surf[N - topCount] - g.s * 0.4
+          ctx.globalAlpha = 0.9
           for (let i = stream.length - 1; i >= 0; i--) {
             const p = stream[i]
             p.vy += 900 * dt
             p.y += p.vy * dt
             p.x += p.vx * dt
             if (p.y >= floor) {
-              stream.splice(i, 1)
+              stream[i] = stream[stream.length - 1]
+              stream.pop()
               continue
             }
-            const size = g.s * 1.8 * p.sz
-            ctx.globalAlpha = 0.9
-            ctx.drawImage(sprite, p.x - size / 2, p.y - size / 2, size, size)
+            ctx.drawImage(
+              sprite,
+              p.x - p.size / 2,
+              p.y - p.size / 2,
+              p.size,
+              p.size,
+            )
           }
 
           // Le temps est écoulé : un anneau de lumière part du col.
-          const f = (now - flashAt) / 900
+          const f = (now - flashAt) / FLASH
           if (f >= 0 && f < 1 && !reducedMotion) {
             ctx.globalAlpha = (1 - f) * 0.8
             const size = g.maxW * (1 + f * 3)
@@ -1524,15 +1514,17 @@
 
         function loop(now) {
           raf = 0
-          draw(now)
-          const busy = mode !== "idle" || stream.length || now - flashAt < 900
-          // Au repos, les grains scintillent quand même ; avec le réglage
-          // « réduire les animations », on ne redessine que s'il le faut.
+          if (paused) return
+          const busy = mode !== "idle" || stream.length || now - flashAt < FLASH
+          // Au repos, les grains scintillent lentement : 25 images par
+          // seconde suffisent. Avec le réglage « réduire les animations »,
+          // on ne redessine que s'il le faut.
+          if (busy || now - lastFrame >= 40) draw(now)
           if (!reducedMotion || busy) raf = requestAnimationFrame(loop)
         }
 
         function kick() {
-          if (!raf) raf = requestAnimationFrame(loop)
+          if (!raf && !paused) raf = requestAnimationFrame(loop)
         }
 
         new ResizeObserver(build).observe(canvas)
@@ -1540,37 +1532,34 @@
           if (!document.hidden) kick()
         })
 
+        // Plein, dans la couleur de l'équipe, sans retournement.
+        function fill(hex) {
+          colorTo = colorFrom = hexToRgb(hex)
+          colorStart = -1e9
+          mode = "idle"
+          frac = 1
+          stream.length = 0
+          kick()
+        }
+
         return {
-          // Plein, dans la couleur de l'équipe, sans retournement.
-          fill(hex) {
-            const now = performance.now()
-            colorTo = colorFrom = hexToRgb(hex)
-            colorStart = now - FLIP_TURN
-            mode = "idle"
-            frac = 1
-            lowTime = false
-            stream.length = 0
-            kick()
-          },
+          fill,
           // Se retourne (le bas plein passe en haut) en prenant la couleur
           // de l'équipe suivante.
           flip(hex) {
+            if (reducedMotion || !g) return fill(hex)
             const now = performance.now()
-            setTarget(hex, now)
-            lowTime = false
-            if (reducedMotion || !g) {
-              colorStart = now - FLIP_TURN
-              mode = "idle"
-              frac = 1
-              kick()
-              return
-            }
+            colorFrom = currentColor(now)
+            colorTo = hexToRgb(hex)
+            colorStart = now
             // Chaque grain du bas, une fois retourné, rejoint une place du
             // haut : on les apparie rangée par rangée.
+            const byRow = (a, b) => b.y - a.y || a.x - b.x
             const turned = bottomFill
+              .slice(0, N)
               .map((p) => ({ x: 2 * g.cx - p.x, y: 2 * g.cy - p.y }))
-              .sort((a, b) => b.y - a.y || a.x - b.x)
-            const rest = topRest.slice().sort((a, b) => b.y - a.y || a.x - b.x)
+              .sort(byRow)
+            const rest = topRest.slice().sort(byRow)
             flipPairs = turned.map((p, i) => [p, rest[i]])
             mode = "flip"
             flipStart = now
@@ -1589,18 +1578,22 @@
             rushFrom = frac
             rushStart = performance.now()
             mode = "rush"
-            lowTime = false
             kick()
           },
           timeUp() {
             frac = 0
             mode = "idle"
-            lowTime = false
             flashAt = performance.now()
             kick()
           },
           setLow(on) {
             lowTime = on
+          },
+          // Caché sous un écran plein (réglages, fin de partie) : il ne se
+          // dessine plus.
+          setPaused(on) {
+            paused = on
+            kick()
           },
         }
       })()
@@ -1612,17 +1605,6 @@
         const ctx = canvas.getContext("2d")
         const parts = []
         let raf = 0
-        let sprite = null
-        let spriteHex = ""
-
-        function resize() {
-          const dpr = Math.min(2, window.devicePixelRatio || 1)
-          canvas.width = Math.round(innerWidth * dpr)
-          canvas.height = Math.round(innerHeight * dpr)
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-        }
-        resize()
-        addEventListener("resize", resize)
 
         function frame(now) {
           ctx.clearRect(0, 0, innerWidth, innerHeight)
@@ -1632,8 +1614,8 @@
             const t = (now - p.start) / p.dur
             if (t < 0) continue
             if (t >= 1) {
-              parts.splice(i, 1)
-              if (p.onArrive) p.onArrive()
+              parts[i] = parts[parts.length - 1]
+              parts.pop()
               continue
             }
             // Trois positions sur la courbe : la tête et sa traînée.
@@ -1650,25 +1632,26 @@
           ctx.globalAlpha = 1
           if (parts.length) raf = requestAnimationFrame(frame)
           else {
+            // Plus rien ne vole : le canvas rend sa mémoire.
             raf = 0
-            ctx.clearRect(0, 0, innerWidth, innerHeight)
+            canvas.width = 0
           }
         }
 
         return {
-          burst(from, to, hex, onArrive) {
-            if (spriteHex !== hex) {
-              sprite = makeSprite(hexToRgb(hex))
-              spriteHex = hex
-            }
+          // Renvoie le délai, en millisecondes, avant que la première
+          // étincelle arrive.
+          burst(from, to, hex) {
+            if (!raf) sizeCanvas(canvas, ctx, innerWidth, innerHeight)
+            const sprite = spriteFor(hexToRgb(hex))
             const tx = to.left + to.width / 2
             const ty = to.top + to.height / 2
             const now = performance.now()
-            const count = 34
-            for (let i = 0; i < count; i++) {
+            let first = Infinity
+            for (let i = 0; i < 34; i++) {
               const x0 = from.left + Math.random() * from.width
               const y0 = from.top + (0.25 + Math.random() * 0.5) * from.height
-              parts.push({
+              const p = {
                 x0,
                 y0,
                 x1: x0 + (Math.random() - 0.5) * 220,
@@ -1679,15 +1662,12 @@
                 dur: 650 + Math.random() * 250,
                 size: 9 + Math.random() * 9,
                 sprite,
-              })
+              }
+              first = Math.min(first, p.start + p.dur - now)
+              parts.push(p)
             }
-            // Le score se met à jour quand la première étincelle arrive.
-            parts
-              .slice(-count)
-              .reduce((a, b) =>
-                a.start + a.dur < b.start + b.dur ? a : b,
-              ).onArrive = onArrive
             if (!raf) raf = requestAnimationFrame(frame)
+            return first
           },
         }
       })()
@@ -1888,11 +1868,8 @@
         })
       }
 
-      function renderNameFields() {
+      function renderNameFields(names) {
         const wrapper = $("nameFields")
-        const existingNames = Array.from(wrapper.querySelectorAll("input")).map(
-          (input) => input.value,
-        )
         wrapper.innerHTML = ""
         for (let i = 0; i < teamCount; i++) {
           const label = document.createElement("label")
@@ -1907,7 +1884,7 @@
           input.autocomplete = "off"
           input.placeholder = DEFAULT_NAMES[i]
           input.setAttribute("aria-label", `Nom de l'équipe ${i + 1}`)
-          input.value = existingNames[i] || ""
+          input.value = names[i] || ""
           label.appendChild(dot)
           label.appendChild(input)
           wrapper.appendChild(label)
@@ -1920,16 +1897,13 @@
         const settings = loadSettings()
         turnDuration = settings.duration
         wordCount = settings.words
-        $("nameFields").innerHTML = ""
-        renderNameFields()
-        savedNames.forEach((name, i) => {
-          const input = $(`teamName${i}`)
-          if (input) input.value = name === DEFAULT_NAMES[i] ? "" : name
-        })
+        renderNameFields(
+          savedNames.map((name, i) => (name === DEFAULT_NAMES[i] ? "" : name)),
+        )
         selectPill("teamPills", teamCount)
         selectPill("durationPills", turnDuration)
         selectPill("wordCountPills", wordCount)
-        $("setupOverlay").classList.add("visible")
+        showScreen("setupOverlay")
       }
 
       async function confirmSetup() {
@@ -1953,11 +1927,8 @@
         round = 1
         currentTeamIndex = 0
         remainingDeck = shuffle(masterDeck)
-        gameOver = false
-        gameEngaged = false
-        if (window.ExitGuard) ExitGuard.setActive(false)
-
-        $("setupOverlay").classList.remove("visible")
+        setEngaged(false)
+        showScreen(null)
         updateLiveScore()
         showHandoff(false)
       }
@@ -2026,8 +1997,7 @@
         // Le contexte audio reste éveillé tout le tour : la cloche de fin
         // sonne sans geste.
         Voice.wake((turnDuration + 4) * 1000)
-        gameEngaged = true
-        if (window.ExitGuard) ExitGuard.setActive(true)
+        setEngaged(true)
         turnFound = 0
         timeLeft = turnDuration
         turnActive = true
@@ -2065,11 +2035,11 @@
       // Le mot prend toute la largeur de la carte, sans jamais déborder.
       function fitWord(el) {
         el.style.fontSize = ""
-        const max = el.parentElement.clientWidth - 28
-        let size = 40
-        while (el.scrollWidth > max && size > 16) {
-          size -= 2
-          el.style.fontSize = `${size}px`
+        const card = el.parentElement
+        const pad = parseFloat(getComputedStyle(card).paddingLeft) * 2
+        const room = (card.clientWidth - pad) / el.scrollWidth
+        if (room < 1) {
+          el.style.fontSize = `${Math.floor(parseFloat(getComputedStyle(el).fontSize) * room)}px`
         }
       }
 
@@ -2121,22 +2091,23 @@
         team.score++
         turnFound++
         updateFoundCounter()
-        const chip = $("liveScore").children[currentTeamIndex]
-        const showScore = () => {
-          chip.querySelector(".count").textContent = team.score
+        // Le score change quand la première étincelle l'atteint.
+        const index = currentTeamIndex
+        const delay = reducedMotion
+          ? 0
+          : Sparks.burst(
+              $("wordDisplay").getBoundingClientRect(),
+              $("liveScore").children[index].getBoundingClientRect(),
+              TEAM_COLORS[index],
+            )
+        setTimeout(() => {
+          const chip = $("liveScore").children[index]
+          if (!chip) return
+          chip.querySelector(".count").textContent = teams[index].score
           chip.classList.remove("pulse")
           void chip.offsetWidth
           chip.classList.add("pulse")
-        }
-        if (reducedMotion) showScore()
-        else {
-          Sparks.burst(
-            $("wordDisplay").getBoundingClientRect(),
-            chip.getBoundingClientRect(),
-            TEAM_COLORS[currentTeamIndex],
-            showScore,
-          )
-        }
+        }, delay)
         ghostWord([
           { transform: "none", opacity: 1 },
           { transform: "scale(1.25)", opacity: 0 },
@@ -2177,40 +2148,38 @@
         $("recapGain").textContent = `+${turnFound}`
         $("recapDetail").textContent =
           `${team.name} a trouvé ${turnFound} mot${turnFound > 1 ? "s" : ""} ce tour. Score total : ${team.score}.`
-        $("continueBtn").textContent =
-          remainingDeck.length > 0
-            ? "Équipe suivante"
-            : round < 3
-              ? "Manche suivante"
-              : "Voir les scores"
-        // Le dernier mot trouvé arrive encore au score pendant la bascule.
-        setTimeout(() => {
-          if (!turnActive && !gameOver) showPanel("recapPanel")
-        }, 250)
+        $("continueBtn").textContent = {
+          team: "Équipe suivante",
+          round: "Manche suivante",
+          final: "Voir les scores",
+        }[nextStep()]
+        showPanel("recapPanel")
+      }
+
+      // Après un tour : l'équipe suivante dans la même manche, la manche
+      // suivante quand la pioche est vide, ou les scores après la 3e.
+      function nextStep() {
+        if (remainingDeck.length > 0) return "team"
+        return round < 3 ? "round" : "final"
       }
 
       function afterTurn() {
-        if (remainingDeck.length > 0) {
-          currentTeamIndex = (currentTeamIndex + 1) % teams.length
-          playFlipSound()
-          showHandoff(true)
+        const step = nextStep()
+        if (step === "final") {
+          finishGame()
           return
         }
-        if (round < 3) {
+        if (step === "round") {
           round++
           remainingDeck = shuffle(masterDeck)
-          currentTeamIndex = (currentTeamIndex + 1) % teams.length
-          playFlipSound()
-          showHandoff(true)
-        } else {
-          finishGame()
         }
+        currentTeamIndex = (currentTeamIndex + 1) % teams.length
+        playFlipSound()
+        showHandoff(true)
       }
 
       function finishGame() {
-        gameOver = true
-        gameEngaged = false
-        if (window.ExitGuard) ExitGuard.setActive(false)
+        setEngaged(false)
         const maxScore = Math.max(...teams.map((t) => t.score))
         const winners = teams.filter((t) => t.score === maxScore)
         const title = $("finalTitle")
@@ -2255,14 +2224,13 @@
           col.append(score, tube, name)
           scoresEl.appendChild(col)
         })
-        $("finalOverlay").classList.add("visible")
+        showScreen("finalOverlay")
         if (typeof showConfetti === "function") showConfetti()
       }
 
       function startNewGame() {
         if (
           gameEngaged &&
-          !gameOver &&
           !confirm(
             "Abandonner la partie en cours et en commencer une nouvelle ?",
           )
@@ -2271,10 +2239,7 @@
         }
         clearInterval(timerId)
         turnActive = false
-        gameEngaged = false
-        gameOver = true
-        if (window.ExitGuard) ExitGuard.setActive(false)
-        $("finalOverlay").classList.remove("visible")
+        setEngaged(false)
         showSetup()
       }
 
@@ -2282,7 +2247,9 @@
 
       onPill("teamPills", (n) => {
         teamCount = n
-        renderNameFields()
+        renderNameFields(
+          Array.from($("nameFields").querySelectorAll("input"), (i) => i.value),
+        )
       })
       onPill("durationPills", (n) => (turnDuration = n))
       onPill("wordCountPills", (n) => (wordCount = n))
