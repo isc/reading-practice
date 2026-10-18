@@ -22,9 +22,7 @@
         --text: #f4f3ff;
         --muted: #b9bde6;
         --gold: #ffcf4a;
-        --gold-deep: #ff8f1f;
         --silver: #dfe5ff;
-        --silver-deep: #9aa6d6;
         --glass: rgba(9, 12, 40, 0.62);
         --glass-edge: rgba(255, 255, 255, 0.16);
         --font: "Unbounded", "Trebuchet MS", system-ui, sans-serif;
@@ -173,7 +171,8 @@
         border: 1px solid var(--glass-edge);
       }
 
-      .icon-btn svg {
+      .icon-btn svg,
+      .glow-btn svg {
         width: 22px;
         height: 22px;
         display: block;
@@ -285,7 +284,6 @@
         text-align: center;
         font-size: 0.78rem;
         font-weight: 400;
-        color: var(--text);
         text-shadow: 0 1px 4px rgba(5, 8, 40, 0.7);
         opacity: 0;
         transition: opacity 0.4s ease;
@@ -352,7 +350,11 @@
         inset: 0;
         border-radius: 50%;
         overflow: hidden;
-        /* Sans son propre calque, WebKit oublie de découper l'ombre. */
+      }
+
+      /* Sans son propre calque, WebKit oublie de découper l'ombre : on ne le
+         donne qu'aux disques qui en ont une. */
+      .disk.clip {
         transform: translateZ(0);
       }
 
@@ -418,25 +420,21 @@
         inset: -18%;
         border-radius: 50%;
         opacity: 0;
+        --glow: 255, 236, 170;
+        --far: 255, 210, 120;
         background: radial-gradient(
           circle,
           transparent 40%,
           rgba(255, 255, 255, 0.95) 43%,
-          rgba(255, 236, 170, 0.55) 50%,
-          rgba(255, 210, 120, 0.15) 60%,
+          rgba(var(--glow), 0.55) 50%,
+          rgba(var(--far), 0.15) 60%,
           transparent 70%
         );
       }
 
       .corona.moon {
-        background: radial-gradient(
-          circle,
-          transparent 40%,
-          rgba(255, 255, 255, 0.95) 43%,
-          rgba(190, 210, 255, 0.55) 50%,
-          rgba(150, 170, 255, 0.15) 60%,
-          transparent 70%
-        );
+        --glow: 190, 210, 255;
+        --far: 150, 170, 255;
       }
 
       /* ===== Le plateau ===== */
@@ -560,7 +558,7 @@
         margin: 10px 0 4px;
       }
 
-      .end-orb .piece {
+      [data-orb] > .piece {
         inset: 0;
       }
 
@@ -620,12 +618,6 @@
         color: var(--ink);
         background: linear-gradient(90deg, var(--silver), var(--gold));
         box-shadow: 0 4px 18px rgba(255, 200, 100, 0.35);
-      }
-
-      .glow-btn svg {
-        width: 22px;
-        height: 22px;
-        display: block;
       }
 
       .glow-btn:active {
@@ -793,7 +785,7 @@
       </header>
 
       <div class="bar">
-        <div class="side moon" id="sideMoon" aria-label="Lunes">
+        <div class="side moon" id="side-moon" aria-label="Lunes">
           <div class="mini" data-orb="moon"></div>
           <span class="count" id="liveBlack">2</span>
         </div>
@@ -804,7 +796,7 @@
           </div>
           <div class="horizon"></div>
         </div>
-        <div class="side sun" id="sideSun" aria-label="Soleils">
+        <div class="side sun" id="side-sun" aria-label="Soleils">
           <span class="count" id="liveWhite">2</span>
           <div class="mini" data-orb="sun"></div>
         </div>
@@ -897,7 +889,7 @@
       const SIZE = 8
       // Les règles et les records gardent leurs noms d'origine : noir est la
       // lune, blanc est le soleil.
-      const ORB = { black: "moon", white: "sun" }
+      const ORB = { black: "moon", white: "sun", draw: "eclipse" }
       const LABELS = { black: "la lune", white: "le soleil" }
       const SCORES_KEY = "othello-scores"
       const SOUND_KEY = "othello-sound"
@@ -927,6 +919,7 @@
       let board = []
       let currentPlayer = "black"
       let gameOver = false
+      let winner = null // "black", "white" ou "draw", en fin de partie
       let busy = false
       let validMoves = new Map() // "r,c" -> cases retournées [[r, c], …]
       let hoverKey = null
@@ -958,18 +951,22 @@
       function makeEclipse() {
         const piece = makePiece("sun")
         el("corona", piece)
-        el("shadow", piece.querySelector(".disk"))
+        addShadow(piece.querySelector(".disk"))
         return piece
       }
 
-      function fillOrbs(root = document) {
-        root.querySelectorAll("[data-orb]").forEach((slot) => {
+      function addShadow(disk) {
+        disk.classList.add("clip")
+        return el("shadow", disk)
+      }
+
+      function fillOrbs(slots = document.querySelectorAll("[data-orb]")) {
+        for (const slot of slots) {
           const orb = slot.dataset.orb
           slot.replaceChildren(
-            orb === "eclipse" ? makeEclipse() : makePiece(orb, 0),
+            orb === "eclipse" ? makeEclipse() : makePiece(orb),
           )
-          slot.querySelector(".piece").style.inset = "0"
-        })
+        }
       }
 
       const turnOf = (r, c) => ((r * 3 + c * 5) % 8) * 45
@@ -984,10 +981,18 @@
       }
 
       // Les soleils sonnent clair et haut, les lunes rond et bas.
-      const NOTES = {
-        sun: [1046.5, 1174.7, 1318.5, 1568, 1760, 2093, 2349.3],
-        moon: [392, 440, 523.3, 587.3, 659.3, 784, 880],
+      // L'éclipse d'une égalité chante comme la lune.
+      const VOICES = {
+        sun: {
+          type: "triangle",
+          notes: [1046.5, 1174.7, 1318.5, 1568, 1760, 2093, 2349.3],
+        },
+        moon: {
+          type: "sine",
+          notes: [392, 440, 523.3, 587.3, 659.3, 784, 880],
+        },
       }
+      VOICES.eclipse = VOICES.moon
 
       function tone(ctx, freq, at, { type = "sine", dur = 0.6, vol = 0.1 }) {
         const t = ctx.currentTime + at
@@ -1011,8 +1016,7 @@
       function playMoveSound(orb, steps) {
         const ctx = sound(steps * WAVE_MS + 2000)
         if (!ctx) return
-        const type = orb === "sun" ? "triangle" : "sine"
-        const notes = NOTES[orb]
+        const { type, notes } = VOICES[orb]
         tone(ctx, notes[0] / 2, 0, { type, dur: 0.5, vol: 0.12 })
         for (let s = 0; s < steps; s++) {
           tone(
@@ -1042,13 +1046,9 @@
       function playEndSound(orb) {
         const ctx = sound(3000)
         if (!ctx) return
-        const notes = orb === "draw" ? NOTES.moon : NOTES[orb]
+        const { type, notes } = VOICES[orb]
         notes.forEach((f, i) =>
-          tone(ctx, f, i * 0.11, {
-            type: orb === "sun" ? "triangle" : "sine",
-            dur: 0.9,
-            vol: 0.08,
-          }),
+          tone(ctx, f, i * 0.11, { type, dur: 0.9, vol: 0.08 }),
         )
       }
 
@@ -1066,7 +1066,7 @@
           // navigation privée : le réglage n'est pas gardé
         }
         renderSoundBtn()
-        if (soundOn) tone(Voice.wake(800), 1318.5, 0, { vol: 0.08 })
+        if (soundOn) tone(sound(800), 1318.5, 0, { vol: 0.08 })
       }
 
       // ===== Le plateau =====
@@ -1139,25 +1139,12 @@
           const lineFlips = []
           let r = row + dr
           let c = col + dc
-          while (
-            r >= 0 &&
-            r < SIZE &&
-            c >= 0 &&
-            c < SIZE &&
-            board[r][c] === opp
-          ) {
+          while (board[r]?.[c] === opp) {
             lineFlips.push([r, c])
             r += dr
             c += dc
           }
-          if (
-            lineFlips.length > 0 &&
-            r >= 0 &&
-            r < SIZE &&
-            c >= 0 &&
-            c < SIZE &&
-            board[r][c] === player
-          ) {
+          if (lineFlips.length > 0 && board[r]?.[c] === player) {
             allFlips.push(...lineFlips)
           }
         }
@@ -1252,7 +1239,6 @@
 
         hoverKey = null
         applyHoverPreview()
-        cells[row][col].classList.remove("valid")
         animatePlacement(setPiece(row, col, player), ORB[player])
         let steps = 0
         for (const [r, c] of flips) {
@@ -1330,7 +1316,7 @@
         const newAura = piece.querySelector(`.aura.${to}`)
         const oldFace = el(`face ${from}`, disk)
         oldFace.style.setProperty("--turn", `${turnOf(r, c)}deg`)
-        const shadow = el("shadow", disk)
+        const shadow = addShadow(disk)
         const corona = el(`corona ${to}`, piece)
 
         const timing = {
@@ -1391,6 +1377,7 @@
           oldFace.remove()
           shadow.remove()
           corona.remove()
+          disk.classList.remove("clip")
         }
       }
 
@@ -1398,15 +1385,17 @@
 
       // La roue tourne d'un demi-tour à chaque coup : l'astre dont c'est le
       // tour se lève au-dessus de l'horizon. Quand quelqu'un passe, elle fait
-      // un tour complet.
+      // un tour complet. En fin de partie, c'est le gagnant qui se lève.
       function updateTurn(extraTurns = 0) {
-        const wantMoon = ORB[currentPlayer] === "moon"
-        const moonUp = wheelTurn % 2 === 0
-        if (wantMoon !== moonUp) wheelTurn++
+        const orb = ORB[gameOver ? winner : currentPlayer]
+        if (orb !== "eclipse") {
+          const moonUp = wheelTurn % 2 === 0
+          if ((orb === "moon") !== moonUp) wheelTurn++
+        }
         wheelTurn += extraTurns * 2
         $("wheel").style.transform = `rotate(${wheelTurn * 180}deg)`
-        $("sideMoon").classList.toggle("active", !gameOver && wantMoon)
-        $("sideSun").classList.toggle("active", !gameOver && !wantMoon)
+        $("side-moon").classList.toggle("active", orb === "moon")
+        $("side-sun").classList.toggle("active", orb === "sun")
       }
 
       function announcePass(stuck) {
@@ -1416,7 +1405,7 @@
         showNote(
           `${capitalize(LABELS[stuck])} ne peut pas jouer : ${LABELS[currentPlayer]} rejoue.`,
         )
-        const side = $(ORB[stuck] === "moon" ? "sideMoon" : "sideSun")
+        const side = $("side-" + ORB[stuck])
         if (reducedMotion) return
         side.animate(
           [
@@ -1449,13 +1438,17 @@
       }
 
       // Le ciel penche vers la nuit quand les lunes mènent, vers le jour
-      // quand ce sont les soleils, sans jamais basculer tout à fait.
+      // quand ce sont les soleils, sans jamais basculer tout à fait ; en fin
+      // de partie, il bascule tout entier du côté du gagnant.
+      const END_NIGHT = { moon: 1, sun: 0, eclipse: 0.5 }
+
       function updateLiveScore() {
         const { black, white } = countDiscs()
         $("liveBlack").textContent = black
         $("liveWhite").textContent = white
-        const share = black / (black + white)
-        $("night").style.opacity = 0.12 + share * 0.76
+        $("night").style.opacity = gameOver
+          ? END_NIGHT[ORB[winner]]
+          : 0.12 + (black / (black + white)) * 0.76
       }
 
       // ===== Fin de partie =====
@@ -1465,38 +1458,28 @@
         if (window.ExitGuard) ExitGuard.setActive(false)
         validMoves = new Map()
         updateHints()
-        updateTurn()
+        showNote("")
         const { black, white } = countDiscs()
-        const result =
-          black > white ? "black" : white > black ? "white" : "draw"
-        saveScore(result)
-        setTimeout(() => showEnd(result, black, white), settle + 250)
+        winner = black > white ? "black" : white > black ? "white" : "draw"
+        saveScore(winner)
+        setTimeout(() => showEnd(black, white), settle + 250)
       }
 
-      function showEnd(result, black, white) {
-        const orb = result === "draw" ? "eclipse" : ORB[result]
+      function showEnd(black, white) {
+        const orb = ORB[winner]
         $("endOrb").dataset.orb = orb
-        fillOrbs($("endOrb").parentNode)
+        fillOrbs([$("endOrb")])
         $("endTitle").textContent =
-          result === "draw"
+          orb === "eclipse"
             ? "Égalité : éclipse !"
-            : `${capitalize(LABELS[result])} gagne !`
+            : `${capitalize(LABELS[winner])} gagne !`
         $("endMoon").textContent = black
         $("endSun").textContent = white
         $("end").classList.remove("hidden")
-        // Le gagnant se lève sur la roue, et le ciel bascule tout entier de
-        // son côté.
-        if (result !== "draw") {
-          currentPlayer = result
-          updateTurn()
-          $(ORB[result] === "moon" ? "sideMoon" : "sideSun").classList.add(
-            "active",
-          )
-        }
-        $("night").style.opacity =
-          result === "draw" ? 0.5 : result === "black" ? 1 : 0
-        playEndSound(result === "draw" ? "draw" : ORB[result])
-        if (result !== "draw" && typeof showConfetti === "function") {
+        updateTurn()
+        updateLiveScore()
+        playEndSound(orb)
+        if (orb !== "eclipse" && typeof showConfetti === "function") {
           showConfetti()
         }
         if (!reducedMotion) {
