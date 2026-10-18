@@ -1,346 +1,756 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>b ou d ?</title>
     <style>
+      /* L'atelier de tampons : du papier kraft sur l'établi, une feuille
+         crème où l'on tamponne la première lettre de chaque mot, deux
+         tampons en bois et un tampon encreur. */
+
+      @font-face {
+        font-family: "OpenDyslexicRegular";
+        src: url("OpenDyslexic-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Alfa Slab One";
+        src: url("AlfaSlabOne-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Patrick Hand";
+        src: url("PatrickHand-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      :root {
+        --kraft: #c69c66;
+        --paper: #f8f2e4;
+        --ink: #2b2420;
+        --pencil: #6b625a;
+        --red: #c8372d;
+        --brown: #3d2a17;
+        --rubber: #7d3a31;
+        --read: "OpenDyslexicRegular", Arial, sans-serif;
+        --slab: "Alfa Slab One", Georgia, serif;
+        --hand: "Patrick Hand", "Comic Sans MS", cursive;
+        /* Le grain d'un coup de tampon : l'encre manque par endroits. */
+        --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -7 0 0 0 4.6'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
 
+      /* Le kraft de l'établi, avec ses fibres. */
       body {
-        font-family: "Arial", sans-serif;
-        background-color: #f0f2f5;
-      }
-
-      .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-
-      .game-container {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-
-      .welcome-screen {
-        text-align: center;
-        padding: 40px 20px;
-      }
-
-      .welcome-screen h1 {
-        color: #4a90e2;
-        margin-bottom: 20px;
-        font-size: 2.5rem;
-      }
-
-      .welcome-screen p {
-        color: #666;
-        margin-bottom: 30px;
-        font-size: 1.2rem;
-      }
-
-      .start-btn {
-        padding: 15px 40px;
-        font-size: 1.3rem;
-        background-color: #4a90e2;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      .start-btn:hover {
-        background-color: #357abd;
-      }
-
-      .stats-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 10px;
-        margin-bottom: 8px;
-        color: #333;
-        font-size: 1.3rem;
-      }
-
-      .progress-count strong {
-        font-size: 1.6rem;
-        color: #4a90e2;
-      }
-
-      .accuracy {
-        display: flex;
-        gap: 12px;
-        white-space: nowrap;
-      }
-
-      .accuracy .good {
-        color: #28a745;
-      }
-
-      .accuracy .bad {
-        color: #dc3545;
-      }
-
-      .progress-track {
-        height: 12px;
-        border-radius: 6px;
-        background-color: #e9ecef;
-        overflow: hidden;
-        margin-bottom: 20px;
-      }
-
-      .progress-fill {
-        height: 100%;
-        width: 0;
-        border-radius: 6px;
-        background-color: #4a90e2;
-        transition: width 0.3s;
-      }
-
-      .emoji-section {
-        width: 100%;
-        aspect-ratio: 1;
-        margin-bottom: 20px;
-        border-radius: 10px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 16rem;
-        background-color: #f8f9fa;
-        position: relative;
-      }
-
-      .audio-btn {
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
-        width: 50px;
-        height: 50px;
-        border: none;
-        border-radius: 50%;
-        background-color: #4a90e2;
-        color: white;
-        cursor: pointer;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        transition: background-color 0.2s;
-      }
-
-      .audio-btn:hover {
-        background-color: #357abd;
-      }
-
-      .interaction-container {
-        height: 120px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
-      }
-
-      .buttons-container {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-      }
-
-      .choice-btn {
-        width: 100px;
-        height: 100px;
-        font-size: 2.5rem;
-        border: none;
-        border-radius: 15px;
-        cursor: pointer;
-        background-color: #e9ecef;
-        color: #333;
-        transition: transform 0.2s, background-color 0.2s;
-        touch-action: manipulation;
+        font-family: var(--read);
+        color: var(--ink);
+        background-color: var(--kraft);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6 0.05' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0 0.08 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23f)'/%3E%3C/svg%3E");
+        min-height: 100vh;
+        min-height: 100dvh;
         -webkit-tap-highlight-color: transparent;
       }
 
-      @media (hover: hover) {
-        .choice-btn:hover {
-          transform: scale(1.05);
-          background-color: #dee2e6;
-        }
+      .desk {
+        max-width: 520px;
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
       }
 
-      .feedback {
-        font-size: 2rem;
-        text-align: center;
+      .screen {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
       }
 
-      .correct {
-        color: #28a745;
-      }
-
-      .incorrect {
-        color: #dc3545;
-      }
-
-      .game-end {
-        text-align: center;
-      }
-
-      .game-end h2 {
-        color: #4a90e2;
-        margin-bottom: 20px;
-        font-size: 2rem;
-      }
-
-      .game-end p {
-        margin: 10px 0;
-        font-size: 1.25rem;
-        color: #333;
-      }
-
-      .restart-btn {
-        margin-top: 20px;
-        padding: 15px 30px;
-        font-size: 1.2rem;
-        background-color: #4a90e2;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      .restart-btn:hover {
-        background-color: #357abd;
-      }
-
-      @media (max-width: 480px) {
-        .container {
-          padding: 10px;
-        }
-
-        .emoji-section {
-          font-size: 12rem;
-        }
-
-        .stats-container {
-          font-size: 1.05rem;
-        }
-
-        .progress-count strong {
-          font-size: 1.3rem;
-        }
-
-        .choice-btn {
-          width: 80px;
-          height: 80px;
-          font-size: 2rem;
-        }
-      }
-
-      .scoreboard {
-        margin-top: 20px;
-        padding: 20px;
-      }
-
-      .scoreboard h3 {
-        color: #4a90e2;
-        margin-bottom: 10px;
-      }
-
-      .scoreboard-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .scoreboard-table th,
-      .scoreboard-table td {
-        padding: 8px;
-        text-align: left;
-        border-bottom: 1px solid #dee2e6;
-      }
-
-      .scoreboard-table th {
-        color: #666;
-        font-weight: bold;
-      }
-
-      .scoreboard-table tr.current-score td {
-        background-color: #eaf4fd;
-        color: #4a90e2;
-        font-weight: bold;
-      }
-
-      .scoreboard-table tr.current-score td:first-child {
-        border-left: 4px solid #4a90e2;
+      #game {
+        flex: 1;
       }
 
       .hidden {
         display: none;
       }
+
+      /* Une feuille crème posée un peu de travers. */
+      .sheet {
+        position: relative;
+        background: var(--paper);
+        border-radius: 3px;
+        padding: 18px;
+        box-shadow:
+          0 1px 0 rgba(0, 0, 0, 0.08),
+          0 8px 18px rgba(60, 35, 10, 0.28);
+        transform: rotate(-0.6deg);
+      }
+
+      /* Ce qui sort d'un tampon : couleur d'encre, grain, léger flou. */
+      .inked {
+        -webkit-mask-image: var(--grain);
+        mask-image: var(--grain);
+        -webkit-mask-size: 140px;
+        mask-size: 140px;
+      }
+
+      /* ===== Accueil ===== */
+
+      .welcome-sheet {
+        text-align: center;
+        padding: 26px 18px 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .title {
+        font-family: var(--slab);
+        font-weight: 400;
+        font-size: 4.2rem;
+        line-height: 1;
+        display: flex;
+        align-items: baseline;
+        gap: 0.18em;
+      }
+
+      .title .b {
+        color: var(--red);
+        transform: rotate(-6deg);
+      }
+
+      .title .d {
+        color: #2f56a6;
+        transform: rotate(5deg);
+      }
+
+      .title .b,
+      .title .d {
+        display: inline-block;
+        font-size: 1.2em;
+      }
+
+      .title .ou {
+        font-size: 0.45em;
+      }
+
+      .title .q {
+        font-size: 0.7em;
+      }
+
+      .welcome-sheet p {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        max-width: 22em;
+      }
+
+      .welcome-sheet .tip {
+        font-family: var(--hand);
+        color: var(--pencil);
+        font-size: 1.15rem;
+      }
+
+      .sound-toggle {
+        font-family: var(--hand);
+        font-size: 1.1rem;
+        color: var(--pencil);
+        background: none;
+        border: none;
+        border-bottom: 1.5px dotted currentColor;
+        cursor: pointer;
+      }
+
+      /* Les gros boutons : un coup de tampon rouge, encadré, comme
+         « APPROUVÉ ». */
+      .stamp-btn {
+        font-family: var(--slab);
+        font-size: 1.35rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--red);
+        background: transparent;
+        border: 4px solid var(--red);
+        border-radius: 6px;
+        padding: 10px 22px;
+        cursor: pointer;
+        transform: rotate(-2deg);
+        touch-action: manipulation;
+      }
+
+      .stamp-btn:active {
+        transform: rotate(-2deg) scale(0.96);
+      }
+
+      /* ===== Partie ===== */
+
+      .stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        font-family: var(--slab);
+        font-size: 1.05rem;
+        color: var(--brown);
+      }
+
+      .stats b {
+        font-weight: 400;
+        font-size: 1.3em;
+      }
+
+      .tally {
+        display: flex;
+        gap: 12px;
+      }
+
+      .tally .good {
+        color: #2e7d4f;
+      }
+
+      .tally .bad {
+        color: var(--red);
+      }
+
+      #timer {
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Vingt cases, une par mot, qu'on tamponne au fil de la partie. */
+      .track {
+        display: grid;
+        grid-template-columns: repeat(20, 1fr);
+        gap: 3px;
+      }
+
+      .track span {
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 1.5px dashed rgba(61, 42, 23, 0.45);
+      }
+
+      .track span.done {
+        border: none;
+        background: var(--ink-color);
+      }
+
+      .track span.miss {
+        border: none;
+        background: var(--paper);
+        position: relative;
+      }
+
+      .track span.miss::after {
+        content: "✗";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-family: var(--hand);
+        color: var(--red);
+        font-size: 0.8rem;
+        line-height: 1;
+      }
+
+      .word-sheet {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 0;
+      }
+
+      .listen {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        border: 2px solid rgba(61, 42, 23, 0.35);
+        background: transparent;
+        color: var(--brown);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+      }
+
+      .listen svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .picture {
+        font-size: min(9rem, 22vh);
+        line-height: 1.15;
+        text-shadow: 0 3px 2px rgba(60, 35, 10, 0.18);
+      }
+
+      .word {
+        font-size: clamp(1.7rem, 9vw, 2.6rem);
+        line-height: 1.5;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+
+      /* La case de la première lettre : pointillés tant qu'elle est vide,
+         puis la lettre tamponnée, posée un peu de travers. */
+      .slot {
+        position: relative;
+        display: inline-block;
+        min-width: 0.75em;
+        text-align: center;
+      }
+
+      .slot::before {
+        content: "";
+        position: absolute;
+        left: -0.06em;
+        right: -0.06em;
+        top: 0.18em;
+        bottom: 0.08em;
+        border: 2px dashed rgba(61, 42, 23, 0.4);
+        border-radius: 4px;
+      }
+
+      .slot.filled::before {
+        display: none;
+      }
+
+      .slot .placeholder {
+        visibility: hidden;
+      }
+
+      .print {
+        position: absolute;
+        left: 0;
+        right: 0;
+      }
+
+      /* Ce qu'imprime un tampon, à l'encre du mot. Une erreur est pâlie, et
+         barrée d'un coup de crayon rouge. */
+      .print,
+      .plate-words .first {
+        color: var(--print-color, var(--ink-color));
+        text-shadow: 0 0 0.5px currentColor;
+      }
+
+      .faded {
+        --print-color: color-mix(in srgb, var(--ink-color) 45%, transparent);
+      }
+
+      .crossed {
+        position: relative;
+      }
+
+      .crossed::after {
+        content: "";
+        position: absolute;
+        left: -0.1em;
+        right: -0.1em;
+        top: 55%;
+        height: max(2px, 0.09em);
+        border-radius: 1em;
+        background: var(--red);
+        transform: rotate(-18deg);
+        transform-origin: left;
+        animation: strike 0.25s ease-out;
+      }
+
+      @keyframes strike {
+        from {
+          transform: rotate(-18deg) scaleX(0);
+        }
+      }
+
+      .note {
+        min-height: 1.6em;
+        font-family: var(--hand);
+        font-size: 1.45rem;
+        line-height: 1.2;
+        text-align: center;
+      }
+
+      .note.praise {
+        color: #2e7d4f;
+      }
+
+      .note.fix {
+        color: var(--red);
+      }
+
+      .note.fix u {
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+
+      /* ===== Les tampons ===== */
+
+      .tray {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 14px;
+        padding-top: 6px;
+      }
+
+      .stamp {
+        position: relative;
+        width: min(29vw, 112px);
+        border: none;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+        transform-origin: 50% 100%;
+        touch-action: manipulation;
+      }
+
+      .stamp svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+        transform-origin: 50% 100%;
+      }
+
+      .stamp.flying {
+        z-index: 10;
+      }
+
+      /* Le dessous du tampon : le caoutchouc, avec la lettre gravée à
+         l'envers. Il se déplie quand le tampon bascule (en 2D : Safari
+         aplatit la 3D et ne le montrerait pas). */
+      .rubber-face {
+        position: absolute;
+        left: 9%;
+        width: 82%;
+        top: calc(100% - 2px);
+        height: 52px;
+        transform-origin: 50% 0;
+        transform: scaleY(0);
+        background: var(--rubber);
+        border-radius: 3px;
+        display: grid;
+        place-items: center;
+        font-size: 2.3rem;
+        line-height: 1;
+        color: #5a2620;
+        text-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.18),
+          0 -1px 0 rgba(0, 0, 0, 0.35);
+      }
+
+      .rubber-face span {
+        display: inline-block;
+        transform: scaleX(-1);
+      }
+
+      /* Le tampon encreur : une boîte en fer et son feutre imbibé. */
+      .pad {
+        width: min(20vw, 78px);
+        height: min(13vw, 50px);
+        margin-bottom: 4px;
+        border-radius: 8px;
+        padding: 5px;
+        background: linear-gradient(180deg, #b9bec4, #7d848c);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.6),
+          0 4px 5px rgba(60, 35, 10, 0.3);
+      }
+
+      .felt {
+        width: 100%;
+        height: 100%;
+        border-radius: 4px;
+        background: var(--ink-color);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+        transition: background-color 0.4s;
+      }
+
+      /* ===== Fin de partie : la planche ===== */
+
+      .plate {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding-top: 22px;
+      }
+
+      .plate h2 {
+        font-family: var(--slab);
+        font-weight: 400;
+        font-size: 1.6rem;
+        color: var(--brown);
+      }
+
+      /* Le grand cachet rond du score. */
+      .seal {
+        width: 164px;
+        height: 164px;
+        border-radius: 50%;
+        border: 5px solid var(--seal-color);
+        outline: 2px solid var(--seal-color);
+        outline-offset: -13px;
+        color: var(--seal-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transform: rotate(-12deg);
+        font-family: var(--slab);
+        text-align: center;
+      }
+
+      .seal .score {
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .seal .verdict {
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      .seal .time {
+        font-size: 0.75rem;
+        margin-top: 2px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .plate-words {
+        list-style: none;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 16px;
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      .plate-words li {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .plate-words .first {
+        display: inline-block;
+        font-size: 1.2em;
+      }
+
+      .plate-words .fix {
+        font-family: var(--hand);
+        color: var(--red);
+        font-size: 1.2em;
+        margin-left: 2px;
+      }
+
+      /* ===== Le registre des scores ===== */
+
+      .ledger {
+        padding: 16px 18px 20px;
+        transform: rotate(0.5deg);
+      }
+
+      .ledger h3 {
+        font-family: var(--slab);
+        font-weight: 400;
+        font-size: 1.1rem;
+        color: var(--brown);
+        margin-bottom: 4px;
+      }
+
+      .ledger table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--hand);
+        font-size: 1.2rem;
+        color: #2c3e70;
+      }
+
+      .ledger th {
+        font-family: var(--read);
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--pencil);
+        text-align: left;
+      }
+
+      /* Les lignes bleues d'un cahier de comptes. */
+      .ledger td,
+      .ledger th {
+        height: 34px;
+        padding: 0 4px;
+        border-bottom: 1px solid rgba(47, 86, 166, 0.25);
+      }
+
+      .ledger .current td {
+        color: var(--red);
+      }
+
+      .ledger .empty {
+        color: var(--pencil);
+      }
+
+      #confetti {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 20;
+      }
+
+      @media (hover: hover) {
+        .stamp-btn:hover {
+          background: rgba(200, 55, 45, 0.06);
+        }
+
+        .stamp:hover:not(.flying) {
+          transform: translateY(-3px);
+        }
+      }
+
+      @media (max-height: 640px) {
+        .picture {
+          font-size: 18vh;
+        }
+      }
     </style>
     <script src="exit-guard.js"></script>
   </head>
   <body>
-    <div class="container">
-      <div class="game-container">
-        <div class="welcome-screen">
-          <h1>b ou d ?</h1>
-          <p>Choisis la bonne lettre pour chaque mot !</p>
-          <button class="start-btn" onclick="startGame()">Commencer</button>
-        </div>
-        <div class="game-screen hidden">
-          <div class="stats-container">
-            <div class="progress-count">
-              Mot <strong id="currentWordNumber">1</strong> /
-              <span id="numberOfWords"></span>
-            </div>
-            <div class="accuracy">
-              <span class="good">✅ <span id="correctCount">0</span></span>
-              <span class="bad">❌ <span id="wrongCount">0</span></span>
-            </div>
-            <div class="timer">⏱ <span id="timerValue">00:00</span></div>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-          <div class="emoji-section">
-            <div id="emojiDisplay"></div>
-            <button
-              class="audio-btn"
-              onclick="speakWord()"
-              title="Écouter le mot"
-            >
-              🔊
-            </button>
-          </div>
-          <div class="interaction-container">
-            <div id="buttonsOrFeedback" class="buttons-container"></div>
-          </div>
-        </div>
-        <div class="game-end hidden"></div>
-        <div class="scoreboard">
-          <h3>Meilleurs scores</h3>
-          <table class="scoreboard-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Score</th>
-                <th>Temps</th>
-              </tr>
-            </thead>
-            <tbody id="scoreboardBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <canvas id="confetti"></canvas>
 
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#a86a35" />
+          <stop offset="0.35" stop-color="#d9a466" />
+          <stop offset="0.7" stop-color="#c48848" />
+          <stop offset="1" stop-color="#93592a" />
+        </linearGradient>
+        <radialGradient id="shadow">
+          <stop offset="0" stop-color="rgba(60, 35, 10, 0.4)" />
+          <stop offset="1" stop-color="rgba(60, 35, 10, 0)" />
+        </radialGradient>
+        <radialGradient id="knob" cx="0.38" cy="0.32" r="0.75">
+          <stop offset="0" stop-color="#ecc28a" />
+          <stop offset="0.6" stop-color="#c0803f" />
+          <stop offset="1" stop-color="#8a5226" />
+        </radialGradient>
+      </defs>
+    </svg>
+
+    <main class="desk">
+      <!-- ===== Accueil ===== -->
+      <section class="screen" id="welcome">
+        <div class="sheet welcome-sheet">
+          <h1 class="title" aria-label="b ou d ?">
+            <span class="b inked">b</span><span class="ou">ou</span
+            ><span class="d inked">d</span><span class="q">?</span>
+          </h1>
+          <p>
+            Regarde l'image, puis prends le bon tampon pour imprimer la première
+            lettre du mot.
+          </p>
+          <p class="tip">
+            Psst… sous le tampon b, la lettre est à l'envers. On dirait un d !
+          </p>
+          <button class="stamp-btn inked" onclick="startGame()">
+            Commencer
+          </button>
+          <button
+            class="sound-toggle"
+            id="soundToggle"
+            onclick="toggleSound()"
+          ></button>
+        </div>
+      </section>
+
+      <!-- ===== Partie ===== -->
+      <section class="screen hidden" id="game">
+        <div class="stats">
+          <span
+            >Mot <b id="wordNumber">1</b> / <span id="wordTotal"></span
+          ></span>
+          <span class="tally">
+            <span class="good">✓ <b id="goodCount">0</b></span>
+            <span class="bad">✗ <b id="badCount">0</b></span>
+          </span>
+          <span id="timer">00:00</span>
+        </div>
+        <div class="track" id="track"></div>
+
+        <div class="sheet word-sheet">
+          <button
+            class="listen"
+            onclick="speakWord()"
+            aria-label="Écouter le mot"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 9H8L13 5V19L8 15H4Z" fill="currentColor" />
+              <path
+                d="M16.5 8.5A5 5 0 0 1 16.5 15.5M19 6A8.5 8.5 0 0 1 19 18"
+              />
+            </svg>
+          </button>
+          <div class="picture" id="picture"></div>
+          <div class="word" id="word"></div>
+          <div class="note" id="note"></div>
+        </div>
+
+        <div class="tray" id="tray"></div>
+      </section>
+
+      <!-- ===== Fin de partie ===== -->
+      <section class="screen hidden" id="end">
+        <div class="sheet plate">
+          <h2>Ta planche</h2>
+          <div class="seal inked" id="seal"></div>
+          <ol class="plate-words" id="plateWords"></ol>
+          <button class="stamp-btn inked" onclick="startGame()">Rejouer</button>
+        </div>
+      </section>
+
+      <div class="sheet ledger" id="ledger">
+        <h3>Meilleurs scores</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Score</th>
+              <th>Temps</th>
+            </tr>
+          </thead>
+          <tbody id="scoreboardBody"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script src="confetti.js"></script>
     <script>
       const words = [
         // D words
@@ -360,7 +770,6 @@
         { word: "dynamite", emoji: "🧨", answer: "d" },
         { word: "disque", emoji: "💿", answer: "d" },
         { word: "drapeau", emoji: "🏁", answer: "d" },
-
         // B words
         { word: "banane", emoji: "🍌", answer: "b" },
         { word: "ballon", emoji: "🎈", answer: "b" },
@@ -385,23 +794,33 @@
         { word: "batterie", emoji: "🔋", answer: "b" },
       ]
 
-      let score = 0
+      const NUMBER_OF_WORDS = 20
+      // Une encre par mot, comme si on changeait de tampon encreur.
+      const INKS = ["#c8372d", "#2f56a6", "#6b3fa0", "#2e7d4f", "#2b2420"]
+      const PRAISE = ["Bravo !", "Oui !", "Super !", "Bien vu !"]
+      const SOUND_KEY = "b-ou-d-sound"
+
       let currentIndex = 0
+      // Une réponse par mot joué : { word, answer, choice }.
+      let results = []
+      let busy = false
       let startTime
       let timerInterval
-      const NUMBER_OF_WORDS = 20
 
-      function show(selector) {
-        document
-          .querySelectorAll(selector)
-          .forEach((e) => e.classList.remove("hidden"))
+      const $ = (id) => document.getElementById(id)
+      const random = (min, max) => min + Math.random() * (max - min)
+      const inkFor = (index) => INKS[index % INKS.length]
+      const countRight = () =>
+        results.filter((r) => r.choice === r.answer).length
+
+      function showScreen(id) {
+        for (const screen of ["welcome", "game", "end"]) {
+          $(screen).classList.toggle("hidden", screen !== id)
+        }
+        $("ledger").classList.toggle("hidden", id === "game")
       }
 
-      function hide(selector) {
-        document
-          .querySelectorAll(selector)
-          .forEach((e) => e.classList.add("hidden"))
-      }
+      // ===== Chrono et scores =====
 
       function formatTime(ms) {
         const minutes = Math.floor(ms / 60000)
@@ -412,105 +831,208 @@
       }
 
       function updateTime() {
-        const elapsed = Date.now() - startTime
-        document.getElementById("timerValue").textContent = formatTime(elapsed)
+        $("timer").textContent = formatTime(Date.now() - startTime)
       }
 
       function startTimer() {
         startTime = Date.now()
+        clearInterval(timerInterval)
         timerInterval = setInterval(updateTime, 1000)
         updateTime()
       }
 
+      function readScores() {
+        try {
+          return JSON.parse(localStorage.getItem("scores") || "[]")
+        } catch (e) {
+          return []
+        }
+      }
+
       function saveScore(score, time) {
-        const scores = JSON.parse(localStorage.getItem("scores") || "[]")
+        const scores = readScores()
         // Identifiant unique pour retrouver la partie qu'on vient de jouer
         // dans le tableau et la mettre en évidence.
         const id = Date.now()
         scores.push({
           id: id,
-          date: new Date().toLocaleDateString(),
+          date: new Date().toLocaleDateString("fr-FR"),
           score: score,
           time: time,
         })
         scores.sort((a, b) => b.score - a.score || a.time.localeCompare(b.time))
         scores.splice(10) // Keep only top 10 scores
-        localStorage.setItem("scores", JSON.stringify(scores))
+        try {
+          localStorage.setItem("scores", JSON.stringify(scores))
+        } catch (e) {
+          // navigation privée : le score ne sera pas gardé
+        }
         updateScoreboard(id)
-        return id
       }
 
       function updateScoreboard(highlightId) {
-        const scores = JSON.parse(localStorage.getItem("scores") || "[]")
-        const tbody = document.getElementById("scoreboardBody")
-        tbody.innerHTML = scores
-          .map((score) => {
-            const isCurrent = highlightId && score.id === highlightId
-            return `
-          <tr class="${isCurrent ? "current-score" : ""}">
-            <td>${isCurrent ? "👉 " : ""}${score.date}</td>
-            <td>${score.score} / ${NUMBER_OF_WORDS}</td>
-            <td>${score.time}</td>
-          </tr>
-        `
-          })
-          .join("")
+        const scores = readScores()
+        $("scoreboardBody").innerHTML = scores.length
+          ? scores
+              .map((s) => {
+                const isCurrent = highlightId && s.id === highlightId
+                return `<tr class="${isCurrent ? "current" : ""}">
+                  <td>${isCurrent ? "→ " : ""}${s.date}</td>
+                  <td>${s.score} / ${NUMBER_OF_WORDS}</td>
+                  <td>${s.time}</td>
+                </tr>`
+              })
+              .join("")
+          : `<tr><td class="empty" colspan="3">Pas encore de partie.</td></tr>`
       }
 
-      function updateStats() {
-        const answered = currentIndex
-        document.getElementById("currentWordNumber").textContent = Math.min(
-          currentIndex + 1,
-          NUMBER_OF_WORDS,
+      // ===== Les tampons =====
+
+      // Un tampon vu de face : son ombre sur l'établi (dessinée : un filtre
+      // serait recalculé à chaque image du coup de tampon), la poignée, le
+      // bloc de bois avec son étiquette, la semelle de caoutchouc. Dessous, le
+      // caoutchouc et sa lettre gravée à l'envers.
+      function stampHTML(letter) {
+        return `<button class="stamp" data-letter="${letter}" aria-label="Tampon ${letter}">
+          <svg viewBox="0 0 100 128" aria-hidden="true">
+            <ellipse cx="50" cy="125" rx="50" ry="7" fill="url(#shadow)" />
+            <path d="M42 33 Q50 37 58 33 L61 57 H39 Z" fill="url(#wood)" />
+            <ellipse cx="50" cy="19" rx="17" ry="16" fill="url(#knob)" />
+            <rect x="33" y="55" width="34" height="7" rx="2" fill="#8a5226" />
+            <rect x="8" y="60" width="84" height="48" rx="4" fill="url(#wood)" />
+            <path d="M14 70 Q40 66 86 71 M12 88 Q50 84 88 90 M16 100 Q46 97 84 101"
+              stroke="rgba(70,35,10,0.18)" stroke-width="1.2" fill="none" />
+            <rect x="25" y="66" width="50" height="36" rx="2" fill="#f6efdc" />
+            <text x="50" y="94" text-anchor="middle" font-size="31"
+              font-family="OpenDyslexicRegular, Arial" fill="#2b2420">${letter}</text>
+            <rect x="6" y="107" width="88" height="7" rx="2" fill="#7c4a22" />
+            <rect x="9" y="114" width="82" height="10" rx="1.5" fill="#7d3a31" />
+          </svg>
+          <span class="rubber-face" aria-hidden="true"><span>${letter}</span></span>
+        </button>`
+      }
+
+      function buildTray() {
+        $("tray").innerHTML =
+          stampHTML("b") +
+          `<div class="pad" aria-hidden="true"><div class="felt"></div></div>` +
+          stampHTML("d")
+        $("tray")
+          .querySelectorAll(".stamp")
+          .forEach((stamp) =>
+            stamp.addEventListener("click", () => checkAnswer(stamp)),
+          )
+      }
+
+      // Un petit « toc » de bois sur le papier, qu'on peut couper depuis
+      // l'accueil. L'audio se rendort aussitôt après, pour ne pas garder
+      // celui du téléphone allumé.
+      let soundOn = true
+      try {
+        soundOn = localStorage.getItem(SOUND_KEY) !== "off"
+      } catch (e) {
+        // navigation privée : le son reste allumé
+      }
+      let audioCtx = null
+      let audioSleep = null
+
+      function thump() {
+        const Ctx = window.AudioContext || window.webkitAudioContext
+        if (!soundOn || !Ctx) return
+        if (!audioCtx) audioCtx = new Ctx()
+        audioCtx.resume()
+        clearTimeout(audioSleep)
+        audioSleep = setTimeout(() => audioCtx.suspend(), 1000)
+        const t = audioCtx.currentTime
+        const osc = audioCtx.createOscillator()
+        const gain = audioCtx.createGain()
+        osc.type = "triangle"
+        osc.frequency.setValueAtTime(150, t)
+        osc.frequency.exponentialRampToValueAtTime(60, t + 0.09)
+        gain.gain.setValueAtTime(0.25, t)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12)
+        osc.connect(gain)
+        gain.connect(audioCtx.destination)
+        osc.start(t)
+        osc.stop(t + 0.15)
+      }
+
+      function renderSoundToggle() {
+        $("soundToggle").textContent =
+          "Bruit du tampon : " + (soundOn ? "oui" : "non")
+        $("soundToggle").setAttribute("aria-pressed", soundOn)
+      }
+
+      function toggleSound() {
+        soundOn = !soundOn
+        try {
+          localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off")
+        } catch (e) {
+          // navigation privée : le réglage ne sera pas gardé
+        }
+        renderSoundToggle()
+        thump()
+      }
+
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
+
+      // Le tampon monte jusqu'à la case, appuie, puis se relève en basculant :
+      // sa face s'écrase et son caoutchouc se déplie dessous, avec la lettre
+      // gravée à l'envers. `onPress` est appelé quand il touche le papier.
+      const PRESS_MS = 1100
+      const TILT = (62 * Math.PI) / 180
+      // Les étapes du coup de tampon, en fraction de PRESS_MS.
+      const CONTACT = 0.42 // il touche le papier
+      const LIFT = 0.5 // il commence à se relever
+      const TILTED = 0.68 // il est basculé…
+      const HOLD = 0.8 // …et le reste jusque-là
+
+      function pressStamp(stamp, onPress) {
+        if (reducedMotion) {
+          onPress()
+          return Promise.resolve()
+        }
+        const from = stamp.getBoundingClientRect()
+        const to = $("slot").getBoundingClientRect()
+        const dx = to.left + to.width / 2 - (from.left + from.width / 2)
+        const dy = to.top + to.height * 0.75 - from.bottom
+        const at = (x, y, extra = "") => `translate(${x}px, ${y}px) ${extra}`
+        const timing = { duration: PRESS_MS, easing: "ease-in-out" }
+        // Une bascule vue de face : de `upright` à `tilted`, aller-retour.
+        const tilt = (el, upright, tilted) =>
+          el.animate(
+            [
+              { transform: `scaleY(${upright})`, offset: 0 },
+              { transform: `scaleY(${upright})`, offset: LIFT },
+              { transform: `scaleY(${tilted})`, offset: TILTED },
+              { transform: `scaleY(${tilted})`, offset: HOLD },
+              { transform: `scaleY(${upright})`, offset: 1 },
+            ],
+            timing,
+          )
+
+        stamp.classList.add("flying")
+        const anim = stamp.animate(
+          [
+            { transform: at(0, 0), offset: 0 },
+            { transform: at(dx, dy - 40), offset: 0.3 },
+            { transform: at(dx, dy), offset: CONTACT },
+            { transform: at(dx, dy, "scale(1, 0.95)"), offset: LIFT },
+            { transform: at(dx, dy - 60), offset: TILTED },
+            { transform: at(dx, dy - 60), offset: HOLD },
+            { transform: at(0, 0), offset: 1 },
+          ],
+          timing,
         )
-        document.getElementById("correctCount").textContent = score
-        document.getElementById("wrongCount").textContent = answered - score
-        document.getElementById("progressFill").style.width = `${
-          (answered / NUMBER_OF_WORDS) * 100
-        }%`
+        tilt(stamp.querySelector("svg"), 1, Math.cos(TILT))
+        tilt(stamp.querySelector(".rubber-face"), 0, Math.sin(TILT))
+        setTimeout(onPress, PRESS_MS * CONTACT)
+        return anim.finished.then(() => stamp.classList.remove("flying"))
       }
 
-      function showGameEnd() {
-        const finalTime = document.getElementById("timerValue").textContent
-        clearInterval(timerInterval)
-        if (window.ExitGuard) ExitGuard.setActive(false)
-
-        saveScore(score, finalTime)
-
-        document.querySelector(".game-end").innerHTML = `
-            <h2>Félicitations ! 🎉</h2>
-            <p>Vous avez terminé le jeu avec :</p>
-            <p>Bonnes réponses : ${score} / ${NUMBER_OF_WORDS}</p>
-            <p>Temps : ${finalTime}</p>
-            <button class="restart-btn" onclick="startGame()">Rejouer</button>
-        `
-        hide(".game-screen")
-        show(".game-end, .scoreboard")
-      }
-
-      function startGame() {
-        score = 0
-        currentIndex = 0
-        hide(".welcome-screen, .scoreboard, .game-end")
-        show(".game-screen")
-        document.getElementById("numberOfWords").textContent = NUMBER_OF_WORDS
-        updateStats()
-        updateScoreboard()
-        if (window.ExitGuard) ExitGuard.setActive(true)
-        shuffleWords()
-        displayWord()
-        startTimer()
-      }
-
-      function speakWord(w) {
-        const currentWord = w || words[currentIndex].word
-        const utterance = new SpeechSynthesisUtterance(currentWord)
-        utterance.lang = "fr-FR"
-        utterance.voice = window.speechSynthesis
-          .getVoices()
-          .find((voice) => voice.lang == "fr-FR" && voice.name == "Thomas")
-        window.speechSynthesis.speak(utterance)
-      }
+      // ===== Partie =====
 
       function shuffleWords() {
         for (let i = words.length - 1; i > 0; i--) {
@@ -519,52 +1041,154 @@
         }
       }
 
-      function createButtons() {
-        const container = document.getElementById("buttonsOrFeedback")
-        container.className = "buttons-container"
-
-        const isReversed = Math.random() < 0.5
-        const firstButton = isReversed ? "b" : "d"
-        const secondButton = isReversed ? "d" : "b"
-
-        container.innerHTML = `
-                <button class="choice-btn" onclick="checkAnswer('${firstButton}')">${firstButton}</button>
-                <button class="choice-btn" onclick="checkAnswer('${secondButton}')">${secondButton}</button>
-            `
+      function speakWord() {
+        const utterance = new SpeechSynthesisUtterance(words[currentIndex].word)
+        utterance.lang = "fr-FR"
+        utterance.voice = window.speechSynthesis
+          .getVoices()
+          .find((voice) => voice.lang == "fr-FR" && voice.name == "Thomas")
+        window.speechSynthesis.speak(utterance)
       }
 
-      function showFeedback(isCorrect) {
-        const container = document.getElementById("buttonsOrFeedback")
-        container.className = "feedback"
-        container.innerHTML = isCorrect
-          ? '<div class="correct">Bravo ! 🎉</div>'
-          : '<div class="incorrect">Essaie encore ! 😊</div>'
+      function updateStats() {
+        const right = countRight()
+        $("goodCount").textContent = right
+        $("badCount").textContent = results.length - right
       }
 
       function displayWord() {
-        const currentWord = words[currentIndex]
-        document.getElementById("emojiDisplay").textContent = currentWord.emoji
-        createButtons()
+        const { word, emoji } = words[currentIndex]
+        $("game").style.setProperty("--ink-color", inkFor(currentIndex))
+        $("wordNumber").textContent = currentIndex + 1
+        $("picture").textContent = emoji
+        $("word").innerHTML =
+          `<span class="slot" id="slot"><span class="placeholder">${word[0]}</span></span>` +
+          word.slice(1)
+        $("note").textContent = ""
+        $("note").className = "note"
+        // Les tampons changent de côté d'un mot à l'autre : on lit la
+        // lettre, pas sa place.
+        $("tray").style.flexDirection =
+          Math.random() < 0.5 ? "row" : "row-reverse"
       }
 
-      function checkAnswer(choice) {
-        const currentWord = words[currentIndex]
-        const isCorrect = choice === currentWord.answer
+      // La lettre imprimée : à l'encre du mot, un peu de travers, avec le
+      // grain du tampon placé au hasard. Une erreur est pâlie et barrée.
+      function printLetter(letter, wrong) {
+        const slot = $("slot")
+        const print = document.createElement("span")
+        print.className = "print inked" + (wrong ? " faded" : "")
+        print.textContent = letter
+        print.style.transform = `rotate(${random(-6, 6)}deg) translate(${random(-2, 2)}px, ${random(-2, 2)}px)`
+        print.style.webkitMaskPosition =
+          print.style.maskPosition = `${random(0, 140)}px ${random(0, 140)}px`
+        slot.appendChild(print)
+        slot.classList.add("filled")
+        slot.classList.toggle("crossed", wrong)
+        thump()
+      }
 
-        if (isCorrect) score++
+      function checkAnswer(stamp) {
+        if (busy) return
+        busy = true
+        // La partie est engagée dès la première réponse.
+        if (window.ExitGuard) ExitGuard.setActive(true)
+        const { word, answer } = words[currentIndex]
+        const choice = stamp.dataset.letter
+        const isCorrect = choice === answer
+        results.push({ word, answer, choice })
 
-        showFeedback(isCorrect)
-
-        setTimeout(() => {
-          currentIndex++
-          if (currentIndex >= NUMBER_OF_WORDS) showGameEnd()
-          else {
-            updateStats()
-            displayWord()
+        pressStamp(stamp, () => {
+          printLetter(choice, !isCorrect)
+          markTrack(currentIndex, isCorrect)
+          const note = $("note")
+          if (isCorrect) {
+            note.className = "note praise"
+            note.textContent = PRAISE[Math.floor(Math.random() * PRAISE.length)]
+          } else {
+            note.className = "note fix"
+            note.innerHTML = `C'est un ${answer} : <u>${answer}</u>${word.slice(1)}`
           }
-        }, 1500)
+          updateStats()
+        }).then(() => {
+          setTimeout(
+            () => {
+              busy = false
+              currentIndex++
+              if (currentIndex >= NUMBER_OF_WORDS) showGameEnd()
+              else displayWord()
+            },
+            isCorrect ? 250 : 1300,
+          )
+        })
       }
 
+      function markTrack(index, isCorrect) {
+        const cell = $("track").children[index]
+        cell.className = isCorrect ? "done" : "miss"
+        cell.style.setProperty("--ink-color", inkFor(index))
+      }
+
+      function startGame() {
+        currentIndex = 0
+        results = []
+        busy = false
+        $("wordTotal").textContent = NUMBER_OF_WORDS
+        $("track").innerHTML = "<span></span>".repeat(NUMBER_OF_WORDS)
+        // Une nouvelle partie n'est engagée qu'à la première réponse.
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        showScreen("game")
+        shuffleWords()
+        updateStats()
+        displayWord()
+        startTimer()
+      }
+
+      // ===== Fin de partie =====
+
+      function showGameEnd() {
+        const finalTime = $("timer").textContent
+        const score = countRight()
+        clearInterval(timerInterval)
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        saveScore(score, finalTime)
+
+        const verdict =
+          score === NUMBER_OF_WORDS
+            ? "Parfait !"
+            : score >= NUMBER_OF_WORDS - 3
+              ? "Bravo !"
+              : score >= NUMBER_OF_WORDS / 2
+                ? "Bien joué"
+                : "Continue !"
+        const seal = $("seal")
+        seal.style.setProperty(
+          "--seal-color",
+          score >= NUMBER_OF_WORDS / 2 ? "#c8372d" : "#2f56a6",
+        )
+        seal.innerHTML = `<span class="score">${score}/${NUMBER_OF_WORDS}</span>
+          <span class="verdict">${verdict}</span>
+          <span class="time">en ${finalTime}</span>`
+
+        // Chaque mot, avec sa première lettre tamponnée ; une erreur est
+        // barrée, et la bonne lettre écrite au crayon rouge.
+        $("plateWords").innerHTML = results
+          .map(({ word, answer, choice }, i) => {
+            const miss = choice !== answer
+            return `<li style="--ink-color: ${inkFor(i)}">
+              <span class="first inked${miss ? " faded crossed" : ""}">${choice}</span>${
+                miss ? `<span class="fix">${answer}</span>` : ""
+              }${word.slice(1)}</li>`
+          })
+          .join("")
+
+        showScreen("end")
+        window.scrollTo(0, 0)
+        if (score === NUMBER_OF_WORDS) showConfetti()
+      }
+
+      buildTray()
+      renderSoundToggle()
       updateScoreboard()
       // Écran d'accueil : aucune partie en cours.
       if (window.ExitGuard) ExitGuard.setActive(false)
