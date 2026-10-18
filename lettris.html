@@ -107,21 +107,29 @@
         cursor: pointer;
       }
 
-      /* Un tube de néon : le texte est le cœur, l'ombre portée le halo. */
-      .neon-pink {
-        color: #ffd6f5;
+      /* Un tube de néon : le texte est le cœur, l'ombre portée le halo.
+         Chaque élément choisit seulement sa couleur de halo (--glow). */
+      .neon-pink,
+      .neon-cyan,
+      .timer,
+      .banner,
+      .tile,
+      .record,
+      .points {
         text-shadow:
           0 0 3px #fff,
-          0 0 8px var(--pink),
-          0 0 18px var(--pink);
+          0 0 9px var(--glow),
+          0 0 20px var(--glow-2, var(--glow));
+      }
+
+      .neon-pink {
+        color: #ffd6f5;
+        --glow: var(--pink);
       }
 
       .neon-cyan {
         color: #e8ffff;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 8px var(--cyan),
-          0 0 18px var(--cyan);
+        --glow: var(--cyan);
       }
 
       /* ===== Boutons ===== */
@@ -455,10 +463,8 @@
         font-size: 44px;
         line-height: 1;
         color: #fff6c8;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 10px var(--sun),
-          0 0 22px #ff9f43;
+        --glow: var(--sun);
+        --glow-2: #ff9f43;
       }
 
       .timer span {
@@ -474,10 +480,8 @@
       .timer.warning {
         border-color: var(--bad);
         color: #ffd6e0;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 10px var(--bad),
-          0 0 22px var(--bad);
+        --glow: var(--bad);
+        --glow-2: var(--bad);
         animation: pulse 1s ease-in-out infinite;
       }
 
@@ -521,6 +525,8 @@
         background: rgba(5, 10, 35, 0.85);
         font-size: 38px;
         letter-spacing: 0.14em;
+        color: #e8ffff;
+        --glow: var(--cyan);
         overflow: hidden;
         white-space: nowrap;
       }
@@ -554,10 +560,7 @@
       .banner.good {
         border-color: var(--good);
         color: #eafff5;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 10px var(--good),
-          0 0 20px var(--good);
+        --glow: var(--good);
         animation: bannerBump 0.35s ease-out;
       }
 
@@ -570,20 +573,14 @@
       .banner.bad {
         border-color: var(--bad);
         color: #ffd6e0;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 10px var(--bad),
-          0 0 20px var(--bad);
+        --glow: var(--bad);
         animation: glitch 0.42s steps(1) both;
       }
 
       .banner.dup {
         border-color: var(--sun);
         color: #fff6c8;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 10px var(--sun),
-          0 0 20px var(--sun);
+        --glow: var(--sun);
         animation: blink 0.5s steps(1) both;
       }
 
@@ -670,10 +667,7 @@
         font-size: clamp(30px, 10vw, 46px);
         line-height: 1;
         color: #ffd6f5;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 8px var(--pink),
-          0 0 16px var(--pink);
+        --glow: var(--pink);
         cursor: pointer;
         transition:
           transform 0.12s ease,
@@ -704,19 +698,14 @@
           rgba(10, 30, 80, 0.3)
         );
         color: #f0ffff;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 8px var(--cyan),
-          0 0 18px var(--cyan);
+        --glow: var(--cyan);
       }
 
       .tile.selected.last {
         border-color: var(--sun);
         color: #fffbe0;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 8px var(--sun),
-          0 0 18px #ff9f43;
+        --glow: var(--sun);
+        --glow-2: #ff9f43;
       }
 
       .tile.zap::after {
@@ -961,11 +950,7 @@
         top: 0;
         font-size: 40px;
         color: #eafff5;
-        text-shadow:
-          0 0 4px #fff,
-          0 0 12px var(--good),
-          0 0 24px var(--good);
-        transform: translate(-50%, -50%);
+        --glow: var(--good);
         white-space: nowrap;
       }
 
@@ -1006,10 +991,8 @@
         font-size: 24px;
         letter-spacing: 0.08em;
         color: #fff6c8;
-        text-shadow:
-          0 0 3px #fff,
-          0 0 10px var(--sun),
-          0 0 22px #ff9f43;
+        --glow: var(--sun);
+        --glow-2: #ff9f43;
         animation: blink 1.2s steps(1) infinite;
       }
 
@@ -1337,9 +1320,11 @@
       let timeLeft = GAME_DURATION
       let timerInterval = null
       let gameOver = true
-      let gameStarted = false
       let dragging = false
+      let tiles = [] // les cases, dans l'ordre de la grille
       let centers = [] // centre de chaque case, en px dans la grille
+      let gridBox = null // position de la grille, relevée au début du geste
+      let shownScreen = "welcome"
       let tileSize = 0
       let bannerHold = null // { word, cls } : le mot jugé reste affiché un instant
       let bannerHoldTimer = null
@@ -1390,29 +1375,74 @@
           return c
         }
 
+        // Ciel, soleil et sol ne changent qu'avec l'horizon et le soleil :
+        // ils sont peints à part et reposés d'un bloc à chaque image.
+        const backdrop = document.createElement("canvas")
+        const bg = backdrop.getContext("2d")
+        let painted = null
+
         function resize() {
           const dpr = Math.min(2, window.devicePixelRatio || 1)
           W = window.innerWidth
           H = window.innerHeight
-          canvas.width = Math.round(W * dpr)
-          canvas.height = Math.round(H * dpr)
+          for (const c of [canvas, backdrop]) {
+            c.width = Math.round(W * dpr)
+            c.height = Math.round(H * dpr)
+          }
           g.setTransform(dpr, 0, 0, dpr, 0, 0)
+          bg.setTransform(dpr, 0, 0, dpr, 0, 0)
           if (!sunImg) sunImg = makeSun()
+          painted = null
           draw(performance.now())
         }
 
-        function draw(now) {
-          const hy = Math.round(H * horizon)
-          const t = now / 1000
-
-          // Le ciel
-          const sky = g.createLinearGradient(0, 0, 0, hy)
+        function paintBackdrop(hy) {
+          const sky = bg.createLinearGradient(0, 0, 0, hy)
           sky.addColorStop(0, "#0b0221")
           sky.addColorStop(0.55, "#2a0a52")
           sky.addColorStop(0.88, "#7a1a78")
           sky.addColorStop(1, "#ff4f9a")
-          g.fillStyle = sky
-          g.fillRect(0, 0, W, hy)
+          bg.fillStyle = sky
+          bg.fillRect(0, 0, W, hy)
+
+          // Le soleil, qui descend avec le temps qui passe
+          const r = Math.min(W * 0.36, SUN_R, hy * 0.62)
+          const cx = W / 2
+          const cy = hy - r * (-0.55 + 1.45 * sun)
+          const glow = bg.createRadialGradient(cx, cy, r * 0.6, cx, cy, r * 2)
+          glow.addColorStop(0, "rgba(255, 90, 160, 0.45)")
+          glow.addColorStop(1, "rgba(255, 90, 160, 0)")
+          bg.save()
+          bg.beginPath()
+          bg.rect(0, 0, W, hy)
+          bg.clip()
+          bg.fillStyle = glow
+          bg.fillRect(0, 0, W, hy)
+          bg.drawImage(sunImg, cx - r, cy - r, r * 2, r * 2)
+          bg.restore()
+
+          const floor = bg.createLinearGradient(0, hy, 0, H)
+          floor.addColorStop(0, "#2a0640")
+          floor.addColorStop(1, "#06010f")
+          bg.fillStyle = floor
+          bg.fillRect(0, hy, W, H - hy)
+
+          const band = bg.createLinearGradient(0, hy - 24, 0, hy + 14)
+          band.addColorStop(0, "rgba(255, 79, 216, 0)")
+          band.addColorStop(0.6, "rgba(255, 79, 216, 0.55)")
+          band.addColorStop(1, "rgba(255, 79, 216, 0)")
+          bg.fillStyle = band
+          bg.fillRect(0, hy - 24, W, 38)
+        }
+
+        function draw(now) {
+          const hy = Math.round(H * horizon)
+          const key = `${hy} ${sun.toFixed(3)}`
+          if (painted !== key) {
+            paintBackdrop(hy)
+            painted = key
+          }
+          g.drawImage(backdrop, 0, 0, W, H)
 
           g.fillStyle = "#fff"
           for (const s of stars) {
@@ -1420,43 +1450,14 @@
             if (y > hy - 30) continue
             g.globalAlpha = reducedMotion
               ? 0.6
-              : 0.35 + 0.35 * Math.sin(t * 1.6 + s.p)
+              : 0.35 + 0.35 * Math.sin((now / 1000) * 1.6 + s.p)
             g.fillRect(s.x * W, y, s.r, s.r)
           }
           g.globalAlpha = 1
 
-          // Le soleil, qui descend avec le temps qui passe
-          const r = Math.min(W * 0.36, SUN_R, hy * 0.62)
-          const cx = W / 2
-          const cy = hy - r * (-0.55 + 1.45 * sun)
-          const glow = g.createRadialGradient(cx, cy, r * 0.6, cx, cy, r * 2)
-          glow.addColorStop(0, "rgba(255, 90, 160, 0.45)")
-          glow.addColorStop(1, "rgba(255, 90, 160, 0)")
-          g.save()
-          g.beginPath()
-          g.rect(0, 0, W, hy)
-          g.clip()
-          g.fillStyle = glow
-          g.fillRect(0, 0, W, hy)
-          g.drawImage(sunImg, cx - r, cy - r, r * 2, r * 2)
-          g.restore()
-
-          // Le sol
-          const floor = g.createLinearGradient(0, hy, 0, H)
-          floor.addColorStop(0, "#2a0640")
-          floor.addColorStop(1, "#06010f")
-          g.fillStyle = floor
-          g.fillRect(0, hy, W, H - hy)
-
-          const band = g.createLinearGradient(0, hy - 24, 0, hy + 14)
-          band.addColorStop(0, "rgba(255, 79, 216, 0)")
-          band.addColorStop(0.6, "rgba(255, 79, 216, 0.55)")
-          band.addColorStop(1, "rgba(255, 79, 216, 0)")
-          g.fillStyle = band
-          g.fillRect(0, hy - 24, W, 38)
-
           // La grille : des rayons vers le point de fuite, et des
           // traverses qui avancent vers nous.
+          const cx = W / 2
           g.beginPath()
           for (let i = -14; i <= 14; i++) {
             g.moveTo(cx + i * W * 0.012, hy)
@@ -1464,8 +1465,7 @@
           }
           const depth = H - hy
           for (let k = 0; k < 22; k++) {
-            const z = 1 + k - phase
-            const y = hy + depth / z
+            const y = hy + depth / (1 + k - phase)
             if (y < hy + 2) continue
             g.moveTo(0, y)
             g.lineTo(W, y)
@@ -1481,26 +1481,26 @@
           g.fillRect(0, hy - 1, W, 2)
         }
 
+        // Trente images par seconde suffisent au décor, et ménagent la
+        // batterie.
         function frame(now) {
-          const dt = Math.min(0.05, (now - (last || now)) / 1000)
+          requestAnimationFrame(frame)
+          if (last && now - last < 30) return
+          const dt = Math.min(0.1, (now - (last || now)) / 1000)
           last = now
           horizon += (horizonTo - horizon) * Math.min(1, dt * 4)
           sun += (sunTo - sun) * Math.min(1, dt * 2)
           boost *= Math.pow(0.15, dt)
           phase = (phase + dt * (0.45 + boost * 3)) % 1
           draw(now)
-          requestAnimationFrame(frame)
         }
 
         // Sans animation, on redessine seulement quand quelque chose change.
-        function set(h, s) {
-          horizonTo = h
-          sunTo = s
-          if (reducedMotion) {
-            horizon = h
-            sun = s
-            draw(0)
-          }
+        function jump() {
+          if (!reducedMotion) return
+          horizon = horizonTo
+          sun = sunTo
+          draw(0)
         }
 
         window.addEventListener("resize", resize)
@@ -1508,7 +1508,14 @@
         if (!reducedMotion) requestAnimationFrame(frame)
 
         return {
-          set,
+          setHorizon(h) {
+            horizonTo = h
+            jump()
+          },
+          setSun(v) {
+            sunTo = v
+            jump()
+          },
           boost() {
             boost = 1
           },
@@ -1525,9 +1532,8 @@
           1318.51, 1567.98, 1760, 2093,
         ]
 
-        function ctx() {
-          if (!on || !window.Voice) return null
-          return Voice.wake(1500)
+        function wake(ms) {
+          return on && window.Voice ? Voice.wake(ms) : null
         }
 
         function tone(c, o) {
@@ -1622,12 +1628,13 @@
         }
 
         function play(name, arg) {
-          const c = ctx()
+          const c = wake(1500)
           if (c) SFX[name](c, arg)
         }
 
         return {
           play,
+          wake,
           get on() {
             return on
           },
@@ -1666,68 +1673,40 @@
           .replace(/Æ/g, "AE")
       }
 
-      function isValidWord(word) {
-        return /^[A-Z]+$/.test(word)
-      }
-
       async function loadWords() {
         const res = await fetch("fr_FR.txt")
         const text = await res.text()
         const set = new Set()
         text.split("\n").forEach((line) => {
-          if (!line) return
-          const word = line.split("\t")[0]
-          if (!word) return
-          const norm = normalize(word.trim())
-          if (!isValidWord(norm)) return
-          if (norm.length < 3) return
-          set.add(norm)
+          const norm = normalize(line.split("\t")[0].trim())
+          if (/^[A-Z]{3,}$/.test(norm)) set.add(norm)
         })
         validWordsSet = set
       }
 
-      function buildWeightedTable() {
-        const entries = Object.entries(LETTER_WEIGHTS)
-        const total = entries.reduce((s, [, w]) => s + w, 0)
-        return { entries, total }
-      }
+      const LETTER_TABLE = Object.entries(LETTER_WEIGHTS)
+      const LETTER_TOTAL = LETTER_TABLE.reduce((s, [, w]) => s + w, 0)
 
-      function pickLetter(table) {
-        let r = Math.random() * table.total
-        for (const [letter, weight] of table.entries) {
+      function pickLetter() {
+        let r = Math.random() * LETTER_TOTAL
+        for (const [letter, weight] of LETTER_TABLE) {
           r -= weight
           if (r <= 0) return letter
         }
-        return table.entries[table.entries.length - 1][0]
+        return LETTER_TABLE[LETTER_TABLE.length - 1][0]
       }
 
+      // Au moins 3 voyelles ; après 50 essais, on les force en diagonale.
       function generateGrid() {
-        const table = buildWeightedTable()
+        let newGrid
         for (let attempt = 0; attempt < 50; attempt++) {
-          const newGrid = []
-          let vowelCount = 0
-          for (let r = 0; r < GRID_SIZE; r++) {
-            const row = []
-            for (let c = 0; c < GRID_SIZE; c++) {
-              const letter = pickLetter(table)
-              if (VOWELS.has(letter)) vowelCount++
-              row.push(letter)
-            }
-            newGrid.push(row)
-          }
-          if (vowelCount >= 3) return newGrid
+          newGrid = Array.from({ length: GRID_SIZE }, () =>
+            Array.from({ length: GRID_SIZE }, pickLetter),
+          )
+          if (newGrid.flat().filter((l) => VOWELS.has(l)).length >= 3)
+            return newGrid
         }
-        // En dernier recours : on force des voyelles
-        const newGrid = []
-        for (let r = 0; r < GRID_SIZE; r++) {
-          const row = []
-          for (let c = 0; c < GRID_SIZE; c++) row.push(pickLetter(table))
-          newGrid.push(row)
-        }
-        const vowelArr = ["A", "E", "I", "O", "U"]
-        for (let i = 0; i < 3; i++) {
-          newGrid[i][i] = vowelArr[i]
-        }
+        ;["A", "E", "I"].forEach((v, i) => (newGrid[i][i] = v))
         return newGrid
       }
 
@@ -1748,21 +1727,25 @@
             gridEl.appendChild(tile)
           }
         }
+        tiles = [...gridEl.querySelectorAll(".tile")]
         measure()
         updatePathDisplay()
       }
 
       // Les centres des cases, pour le rayon et pour savoir quelle case est
       // sous le doigt.
-      function measure() {
-        const gridEl = $("grid")
-        const tiles = gridEl.querySelectorAll(".tile")
-        if (!tiles.length || !gridEl.offsetWidth) return
-        tileSize = tiles[0].offsetWidth
-        centers = [...tiles].map((t) => ({
+      function tileCenter(t) {
+        return {
           x: t.offsetLeft + t.offsetWidth / 2,
           y: t.offsetTop + t.offsetHeight / 2,
-        }))
+        }
+      }
+
+      function measure() {
+        const gridEl = $("grid")
+        if (!tiles.length || !gridEl.offsetWidth) return
+        tileSize = tiles[0].offsetWidth
+        centers = tiles.map(tileCenter)
         $("beam").setAttribute(
           "viewBox",
           `0 0 ${gridEl.offsetWidth} ${gridEl.offsetHeight}`,
@@ -1770,8 +1753,8 @@
         drawBeam()
       }
 
-      function getTile(r, c) {
-        return document.querySelector(`.tile[data-r="${r}"][data-c="${c}"]`)
+      function getTile(p) {
+        return tiles[p.r * GRID_SIZE + p.c]
       }
 
       function centerOf(p) {
@@ -1812,7 +1795,7 @@
         if (path.length > 0 && !isAdjacent(path[path.length - 1], { r, c }))
           return false
         path.push({ r, c })
-        if (!gameStarted) startGame()
+        if (!timerInterval) startGame()
         Sound.play("blip", path.length - 1)
         updatePathDisplay(true)
         return true
@@ -1867,7 +1850,8 @@
           tileSize * 0.2,
         )
         $("beam").prepend(g)
-        setTimeout(() => g.remove(), 650)
+        g.addEventListener("animationend", () => g.remove())
+        if (reducedMotion) setTimeout(() => g.remove(), 650)
       }
 
       // ===== Le mot en cours =====
@@ -1885,7 +1869,7 @@
           return
         }
         const word = currentWord()
-        banner.className = "banner neon-cyan"
+        banner.className = "banner"
         if (!word) {
           banner.innerHTML = HINT
           return
@@ -1909,15 +1893,11 @@
       }
 
       function updatePathDisplay(grew) {
-        document.querySelectorAll("#grid .tile").forEach((t) => {
-          t.classList.remove("selected", "last")
-        })
+        tiles.forEach((t) => t.classList.remove("selected", "last"))
         path.forEach((p, i) => {
-          const tile = getTile(p.r, p.c)
-          if (tile) {
-            tile.classList.add("selected")
-            if (i === path.length - 1) tile.classList.add("last")
-          }
+          const tile = getTile(p)
+          tile.classList.add("selected")
+          if (i === path.length - 1) tile.classList.add("last")
         })
         if (path.length) bannerHold = null
         renderBanner(grew)
@@ -1936,12 +1916,11 @@
       // suivant pendant que le verdict s'affiche.
       function judge(cls) {
         const traced = path
-        const word = currentWord()
+        holdBanner(currentWord(), cls)
         ghostBeam(traced, cls)
         path = []
-        holdBanner(word, cls)
         updatePathDisplay()
-        return { traced, word }
+        return traced
       }
 
       function submitWord() {
@@ -1958,7 +1937,7 @@
           blinkFound(word)
           return
         }
-        const { traced } = judge("good")
+        const traced = judge("good")
         foundWords.add(word)
         const pts = wordScore(word.length)
         score += pts
@@ -1967,45 +1946,47 @@
         celebrate(traced, pts)
         addFoundPill(word)
         $("wordCount").textContent = foundWords.size
-        bump($("wordCount"))
+        replay($("wordCount"), "bump")
       }
 
-      function bump(el) {
-        el.classList.remove("bump")
+      // Relance l'animation CSS portée par une classe.
+      function replay(el, cls) {
+        el.classList.remove(cls)
         void el.offsetWidth
-        el.classList.add("bump")
+        el.classList.add(cls)
       }
 
       // Les cases s'allument en vague, des étincelles filent vers le score,
       // et les points s'envolent de la dernière lettre.
       function celebrate(traced, pts) {
-        traced.forEach((p, i) => {
-          const tile = getTile(p.r, p.c)
+        const box = $("grid").getBoundingClientRect()
+        const target = $("score").getBoundingClientRect()
+        const lit = traced.map(getTile)
+        lit.forEach((tile, i) => {
           tile.style.setProperty("--d", `${i * 0.05}s`)
           tile.classList.remove("zap", "on")
-          void tile.offsetWidth
-          tile.classList.add("zap")
         })
+        void $("grid").offsetWidth
+        lit.forEach((tile) => tile.classList.add("zap"))
         const showScore = () => {
           $("score").textContent = score
-          bump($("score"))
+          replay($("score"), "bump")
         }
         if (reducedMotion) return showScore()
 
         const fx = $("fx")
-        const gridBox = $("grid").getBoundingClientRect()
-        const target = $("score").getBoundingClientRect()
         const tx = target.left + target.width / 2
         const ty = target.top + target.height / 2
-        traced.forEach((p, i) => {
+        // Le score monte quand les étincelles arrivent.
+        const flights = traced.map((p, i) => {
           const c = centerOf(p)
-          const x = gridBox.left + c.x
-          const y = gridBox.top + c.y
+          const x = box.left + c.x
+          const y = box.top + c.y
           const spark = document.createElement("div")
           spark.className = "spark"
           fx.appendChild(spark)
           const bend = (Math.random() - 0.5) * 120
-          spark
+          return spark
             .animate(
               [
                 { transform: `translate(${x}px, ${y}px) scale(1.4)` },
@@ -2027,15 +2008,15 @@
             )
             .finished.then(() => spark.remove())
         })
-        setTimeout(showScore, 640 + traced.length * 45)
+        Promise.all(flights).then(showScore)
 
         const end = centerOf(traced[traced.length - 1])
         const label = document.createElement("div")
         label.className = "points"
         label.textContent = `+${pts}`
         fx.appendChild(label)
-        const lx = gridBox.left + end.x
-        const ly = gridBox.top + end.y
+        const lx = box.left + end.x
+        const ly = box.top + end.y
         label
           .animate(
             [
@@ -2081,9 +2062,7 @@
         const el = $("foundList").querySelector(`[data-word="${word}"]`)
         if (!el) return
         el.parentNode.scrollTop = el.offsetTop - el.parentNode.offsetTop - 4
-        el.classList.remove("blink")
-        void el.offsetWidth
-        el.classList.add("blink")
+        replay(el, "blink")
       }
 
       // ===== Le temps =====
@@ -2098,17 +2077,14 @@
         $("timebar").classList.toggle("warning", warning)
         $("timebar").firstChild.style.transform =
           `scaleX(${timeLeft / GAME_DURATION})`
-        if (!$("game").classList.contains("hidden"))
-          Scene.set(horizonFor("game"), timeLeft / GAME_DURATION)
+        if (shownScreen === "game") Scene.setSun(timeLeft / GAME_DURATION)
       }
 
       function startGame() {
-        if (gameStarted) return
-        gameStarted = true
         if (window.ExitGuard) ExitGuard.setActive(true)
         // Le son reste éveillé pendant toute la partie, pour le compte à
         // rebours.
-        if (Sound.on && window.Voice) Voice.wake((GAME_DURATION + 5) * 1000)
+        Sound.wake((GAME_DURATION + 5) * 1000)
         timerInterval = setInterval(() => {
           timeLeft--
           updateTimerDisplay()
@@ -2135,7 +2111,7 @@
 
         // Les néons de la grille s'éteignent, puis le tableau final.
         Sound.play("end")
-        document.querySelectorAll("#grid .tile").forEach((t) => {
+        tiles.forEach((t) => {
           t.classList.remove("on", "zap")
           t.style.setProperty("--d", `${Math.random() * 0.4}s`)
           t.classList.add("off")
@@ -2176,23 +2152,27 @@
 
       // ===== Écrans =====
 
-      function horizonFor(name) {
-        if (name === "game") {
-          // L'horizon passe juste au-dessus du plateau.
-          const top = $("board").getBoundingClientRect().top
-          return Math.max(0.12, (top - 6) / window.innerHeight)
+      // L'horizon : juste au-dessus du plateau pendant la partie.
+      function placeHorizon() {
+        if (shownScreen !== "game") {
+          Scene.setHorizon(shownScreen === "end" ? 0.5 : 0.58)
+          return
         }
-        return name === "end" ? 0.5 : 0.58
+        const top = $("board").getBoundingClientRect().top
+        Scene.setHorizon(Math.max(0.12, (top - 6) / window.innerHeight))
       }
 
+      // Le soleil se couche pendant la partie, et a disparu à la fin.
       function showScreen(name) {
+        shownScreen = name
         for (const id of ["welcome", "game", "end"])
           $(id).classList.toggle("hidden", id !== name)
         if (name === "game") measure()
-        Scene.set(
-          horizonFor(name),
-          name === "game" ? timeLeft / GAME_DURATION : name === "end" ? 0 : 1,
+        placeHorizon()
+        Scene.setSun(
+          { welcome: 1, game: timeLeft / GAME_DURATION, end: 0 }[name],
         )
+        if (name === "welcome") playDemo()
       }
 
       function initGame() {
@@ -2206,7 +2186,6 @@
         score = 0
         timeLeft = GAME_DURATION
         gameOver = false
-        gameStarted = false
         bannerHold = null
         $("score").textContent = 0
         $("wordCount").textContent = 0
@@ -2235,9 +2214,8 @@
       // passer en diagonale près d'un coin n'attrape pas la voisine.
       function tileFromPoint(x, y, strict) {
         if (!centers.length) return null
-        const box = $("grid").getBoundingClientRect()
-        const px = x - box.left
-        const py = y - box.top
+        const px = x - gridBox.left
+        const py = y - gridBox.top
         let best = null
         let bestDist = Infinity
         centers.forEach((c, i) => {
@@ -2252,35 +2230,31 @@
         return { r: Math.floor(best / GRID_SIZE), c: best % GRID_SIZE }
       }
 
-      let lastPointerX = null
-      let lastPointerY = null
+      let lastPointerX = 0
+      let lastPointerY = 0
 
       function onPointerDown(e) {
         if (gameOver) return
         const point = e.touches ? e.touches[0] : e
+        gridBox = $("grid").getBoundingClientRect()
         const cell = tileFromPoint(point.clientX, point.clientY, false)
         if (!cell) return
-        if (window.Voice && Sound.on) Voice.wake(1500)
+        const last = path.at(-1)
         // Toucher à nouveau la dernière case valide le mot
-        if (path.length > 0) {
-          const last = path[path.length - 1]
-          if (last.r === cell.r && last.c === cell.c) {
-            submitWord()
-            e.preventDefault()
-            return
-          }
+        if (last && last.r === cell.r && last.c === cell.c) {
+          submitWord()
+          e.preventDefault()
+          return
         }
         // En touchant case par case : on prolonge si c'est une voisine,
         // sinon on recommence depuis cette case.
-        if (!dragging && path.length > 0 && !pathContains(cell.r, cell.c)) {
-          const last = path[path.length - 1]
+        if (!dragging && last && !pathContains(cell.r, cell.c)) {
           if (isAdjacent(last, cell)) {
             tryAddCell(cell.r, cell.c)
             e.preventDefault()
             return
-          } else {
-            clearPath()
           }
+          clearPath()
         }
         dragging = true
         lastPointerX = point.clientX
@@ -2317,7 +2291,6 @@
       function onPointerUp() {
         if (!dragging) return
         dragging = false
-        lastPointerX = lastPointerY = null
         if (path.length >= 3) submitWord()
       }
 
@@ -2366,35 +2339,36 @@
 
       window.addEventListener("resize", () => {
         measure()
-        if (!$("game").classList.contains("hidden"))
-          Scene.set(horizonFor("game"), timeLeft / GAME_DURATION)
+        placeHorizon()
       })
 
       // ===== La démo de l'accueil : CHAT se trace tout seul =====
 
+      // Tourne tant que l'accueil est affiché ; showScreen la relance.
+      let demoTimer = null
+
       function playDemo() {
         const demo = $("demo")
-        const tiles = [...demo.querySelectorAll(".tile")]
+        const demoTiles = [...demo.querySelectorAll(".tile")]
         const beam = $("demoBeam")
-        const steps = [0, 1, 2, 4] // C, H, A, puis T en diagonale
-        const at = (i) => ({
-          x: tiles[i].offsetLeft + tiles[i].offsetWidth / 2,
-          y: tiles[i].offsetTop + tiles[i].offsetHeight / 2,
-        })
+        const steps = [0, 1, 2, 4].map((i) => demoTiles[i]) // C, H, A, T
         const show = (n) => {
           beam.setAttribute(
             "viewBox",
             `0 0 ${demo.clientWidth} ${demo.clientHeight}`,
           )
           beam.innerHTML = ""
-          tiles.forEach((t) => t.classList.remove("selected", "last", "zap"))
+          demoTiles.forEach((t) =>
+            t.classList.remove("selected", "last", "zap"),
+          )
           if (!n) return
-          steps.slice(0, n).forEach((i, k) => {
-            tiles[i].classList.add("selected")
-            if (k === n - 1) tiles[i].classList.add("last")
+          steps.slice(0, n).forEach((t, k) => {
+            t.classList.add("selected")
+            if (k === n - 1) t.classList.add("last")
           })
-          beam.appendChild(beamGroup(steps.slice(0, n).map(at), "", 9))
+          beam.appendChild(beamGroup(steps.slice(0, n).map(tileCenter), "", 9))
         }
+        clearTimeout(demoTimer)
         if (reducedMotion) {
           show(steps.length)
           $("demoPoints").classList.add("show")
@@ -2402,26 +2376,19 @@
         }
         let t = 0
         const tick = () => {
-          // L'accueil caché, la démo attend.
-          if (!$("welcome").classList.contains("hidden")) {
-            const step = t % 10
-            if (step < 5) show(step)
-            if (step === 6) {
-              const pts = steps.map(at)
-              show(0)
-              const g = beamGroup(pts, "ghost good", 9)
-              beam.appendChild(g)
-              steps.forEach((i, k) => {
-                tiles[i].style.setProperty("--d", `${k * 0.05}s`)
-                tiles[i].classList.add("zap")
-              })
-              $("demoPoints").classList.remove("show")
-              void $("demoPoints").offsetWidth
-              $("demoPoints").classList.add("show")
-            }
-            t++
+          if (shownScreen !== "welcome") return
+          const step = t++ % 10
+          if (step < 5) show(step)
+          if (step === 6) {
+            show(0)
+            beam.appendChild(beamGroup(steps.map(tileCenter), "ghost good", 9))
+            steps.forEach((tile, k) => {
+              tile.style.setProperty("--d", `${k * 0.05}s`)
+              tile.classList.add("zap")
+            })
+            replay($("demoPoints"), "show")
           }
-          setTimeout(tick, 420)
+          demoTimer = setTimeout(tick, 420)
         }
         tick()
       }
