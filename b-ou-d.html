@@ -36,7 +36,6 @@
         /* L'encre des tampons : une seule pour toute la partie. */
         --ink-color: #2f56a6;
         --brown: #3d2a17;
-        --rubber: #7d3a31;
         --read: "OpenDyslexicRegular", Arial, sans-serif;
         --slab: "Alfa Slab One", Georgia, serif;
         --hand: "Patrick Hand", "Comic Sans MS", cursive;
@@ -390,76 +389,60 @@
 
       /* ===== Les tampons ===== */
 
+      /* L'établi vu de dessus, comme la feuille : deux tampons et le tampon
+         encreur entre eux. */
       .tray {
         display: flex;
         justify-content: center;
-        align-items: flex-end;
-        gap: 14px;
-        padding-top: 6px;
+        align-items: center;
+        gap: 18px;
+        padding: 8px 0 4px;
       }
 
       .stamp {
         position: relative;
-        width: min(29vw, 112px);
+        width: min(25vw, 96px);
+        aspect-ratio: 1;
         border: none;
         background: none;
         padding: 0;
         cursor: pointer;
-        transform-origin: 50% 100%;
         touch-action: manipulation;
       }
 
+      /* L'ombre portée sur la table : plus le tampon est haut, plus elle
+         s'écarte et pâlit. Floue une fois pour toutes ; seuls sa place et son
+         opacité s'animent. */
+      .stamp .shadow {
+        position: absolute;
+        inset: 6%;
+        border-radius: 16%;
+        background: rgba(50, 28, 8, 0.55);
+        filter: blur(4px);
+        transform: translate(4px, 6px);
+      }
+
       .stamp svg {
+        position: relative;
         display: block;
         width: 100%;
-        height: auto;
-        overflow: visible;
-        transform-origin: 50% 100%;
+        height: 100%;
       }
 
       .stamp.flying {
         z-index: 10;
       }
 
-      /* Le dessous du tampon : le caoutchouc, avec la lettre gravée à
-         l'envers. Il se déplie quand le tampon bascule (en 2D : Safari
-         aplatit la 3D et ne le montrerait pas). */
-      .rubber-face {
-        position: absolute;
-        left: 9%;
-        width: 82%;
-        top: calc(100% - 2px);
-        height: 52px;
-        transform-origin: 50% 0;
-        transform: scaleY(0);
-        background: var(--rubber);
-        border-radius: 3px;
-        display: grid;
-        place-items: center;
-        font-size: 2.3rem;
-        line-height: 1;
-        color: #5a2620;
-        text-shadow:
-          0 1px 0 rgba(255, 255, 255, 0.18),
-          0 -1px 0 rgba(0, 0, 0, 0.35);
-      }
-
-      .rubber-face span {
-        display: inline-block;
-        transform: scaleX(-1);
-      }
-
       /* Le tampon encreur : une boîte en fer et son feutre imbibé. */
       .pad {
-        width: min(20vw, 78px);
-        height: min(13vw, 50px);
-        margin-bottom: 4px;
-        border-radius: 8px;
-        padding: 5px;
+        width: min(21vw, 80px);
+        height: min(17vw, 64px);
+        border-radius: 10px;
+        padding: 6px;
         background: linear-gradient(180deg, #b9bec4, #7d848c);
         box-shadow:
           inset 0 1px 0 rgba(255, 255, 255, 0.6),
-          0 4px 5px rgba(60, 35, 10, 0.3);
+          4px 6px 6px rgba(50, 28, 8, 0.4);
       }
 
       .felt {
@@ -630,20 +613,15 @@
 
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <defs>
-        <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#a86a35" />
-          <stop offset="0.35" stop-color="#d9a466" />
-          <stop offset="0.7" stop-color="#c48848" />
-          <stop offset="1" stop-color="#93592a" />
+        <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e2b277" />
+          <stop offset="0.5" stop-color="#c88d4e" />
+          <stop offset="1" stop-color="#9c6331" />
         </linearGradient>
-        <radialGradient id="shadow">
-          <stop offset="0" stop-color="rgba(60, 35, 10, 0.4)" />
-          <stop offset="1" stop-color="rgba(60, 35, 10, 0)" />
-        </radialGradient>
-        <radialGradient id="knob" cx="0.38" cy="0.32" r="0.75">
-          <stop offset="0" stop-color="#ecc28a" />
-          <stop offset="0.6" stop-color="#c0803f" />
-          <stop offset="1" stop-color="#8a5226" />
+        <radialGradient id="knob" cx="0.36" cy="0.32" r="0.8">
+          <stop offset="0" stop-color="#e8695a" />
+          <stop offset="0.55" stop-color="#b3301f" />
+          <stop offset="1" stop-color="#701810" />
         </radialGradient>
       </defs>
     </svg>
@@ -880,27 +858,28 @@
 
       // ===== Les tampons =====
 
-      // Un tampon vu de face : son ombre sur l'établi (dessinée : un filtre
-      // serait recalculé à chaque image du coup de tampon), la poignée, le
-      // bloc de bois avec son étiquette, la semelle de caoutchouc. Dessous, le
-      // caoutchouc et sa lettre gravée à l'envers.
+      // Un tampon vu de dessus, comme la feuille : un bloc de bois carré, la
+      // poignée laquée au milieu, et sur elle l'étiquette de la lettre. Son
+      // ombre est à part, pour qu'elle reste sur la table quand il se lève.
       function stampHTML(letter) {
         return `<button class="stamp" data-letter="${letter}" aria-label="Tampon ${letter}">
-          <svg viewBox="0 0 100 128" aria-hidden="true">
-            <ellipse cx="50" cy="125" rx="50" ry="7" fill="url(#shadow)" />
-            <path d="M42 33 Q50 37 58 33 L61 57 H39 Z" fill="url(#wood)" />
-            <ellipse cx="50" cy="19" rx="17" ry="16" fill="url(#knob)" />
-            <rect x="33" y="55" width="34" height="7" rx="2" fill="#8a5226" />
-            <rect x="8" y="60" width="84" height="48" rx="4" fill="url(#wood)" />
-            <path d="M14 70 Q40 66 86 71 M12 88 Q50 84 88 90 M16 100 Q46 97 84 101"
-              stroke="rgba(70,35,10,0.18)" stroke-width="1.2" fill="none" />
-            <rect x="25" y="66" width="50" height="36" rx="2" fill="#f6efdc" />
-            <text x="50" y="94" text-anchor="middle" font-size="31"
+          <span class="shadow" aria-hidden="true"></span>
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="4" y="4" width="92" height="92" rx="13" fill="url(#wood)" />
+            <path d="M10 22 Q40 18 90 24 M8 44 Q46 40 92 46 M10 66 Q50 61 90 68 M12 84 Q44 81 88 86"
+              stroke="rgba(90,50,18,0.2)" stroke-width="1.3" fill="none" />
+            <rect x="5" y="5" width="90" height="90" rx="12" fill="none"
+              stroke="rgba(255,236,205,0.55)" stroke-width="1.5" />
+            <rect x="4" y="4" width="92" height="92" rx="13" fill="none"
+              stroke="rgba(70,35,10,0.6)" stroke-width="1.5" />
+            <circle cx="52.5" cy="53.5" r="27" fill="rgba(60,28,8,0.35)" />
+            <circle cx="50" cy="50" r="26" fill="url(#knob)" />
+            <circle cx="50" cy="50" r="16.5" fill="#f6efdc" stroke="rgba(0,0,0,0.15)" />
+            <text x="50" y="57" text-anchor="middle" font-size="21"
               font-family="OpenDyslexicRegular, Arial" fill="#2b2420">${letter}</text>
-            <rect x="6" y="107" width="88" height="7" rx="2" fill="#7c4a22" />
-            <rect x="9" y="114" width="82" height="10" rx="1.5" fill="#7d3a31" />
+            <path d="M33 36 A24 24 0 0 1 46 27" stroke="rgba(255,255,255,0.55)"
+              stroke-width="3" stroke-linecap="round" fill="none" />
           </svg>
-          <span class="rubber-face" aria-hidden="true"><span>${letter}</span></span>
         </button>`
       }
 
@@ -1056,56 +1035,64 @@
         "(prefers-reduced-motion: reduce)",
       ).matches
 
-      // Le tampon monte jusqu'à la case, appuie, puis se relève en basculant :
-      // sa face s'écrase et son caoutchouc se déplie dessous, avec la lettre
-      // gravée à l'envers. `onPress` est appelé quand il touche le papier.
-      const PRESS_MS = 1100
-      const TILT = (62 * Math.PI) / 180
-      // Les étapes du coup de tampon, en fraction de PRESS_MS.
-      const CONTACT = 0.42 // il touche le papier
-      const LIFT = 0.5 // il commence à se relever
-      const TILTED = 0.68 // il est basculé…
-      const HOLD = 0.8 // …et le reste jusque-là
+      // Un vrai coup de tampon, vu de dessus : on le lève, on l'encre sur le
+      // tampon encreur, on vise la case, on appuie, et on le relève : la
+      // lettre apparaît dessous. `onPress` est appelé quand il touche la
+      // feuille ; la lettre, imprimée sous lui, ne se voit qu'une fois levé.
+      const PRESS_MS = 1300
+      const CONTACT = 0.72
 
       function pressStamp(stamp, slot, onPress) {
         if (reducedMotion) {
           onPress()
           return Promise.resolve()
         }
-        const from = stamp.getBoundingClientRect()
-        const to = slot.getBoundingClientRect()
-        const dx = to.left + to.width / 2 - (from.left + from.width / 2)
-        const dy = to.top + to.height * 0.75 - from.bottom
-        const at = (x, y, extra = "") => `translate(${x}px, ${y}px) ${extra}`
-        const timing = { duration: PRESS_MS, easing: "ease-in-out" }
-        // Une bascule vue de face : de `upright` à `tilted`, aller-retour.
-        const tilt = (el, upright, tilted) =>
-          el.animate(
-            [
-              { transform: `scaleY(${upright})`, offset: 0 },
-              { transform: `scaleY(${upright})`, offset: LIFT },
-              { transform: `scaleY(${tilted})`, offset: TILTED },
-              { transform: `scaleY(${tilted})`, offset: HOLD },
-              { transform: `scaleY(${upright})`, offset: 1 },
-            ],
-            timing,
-          )
+        const center = (el) => {
+          const r = el.getBoundingClientRect()
+          return [r.left + r.width / 2, r.top + r.height / 2]
+        }
+        const [x0, y0] = center(stamp)
+        const [px, py] = center($("tray").querySelector(".pad"))
+        const [sx, sy] = center(slot)
+        // [moment, décalage depuis sa place, hauteur : 0 posé, 1 levé, < 0 appuyé]
+        const steps = [
+          [0, 0, 0, 0],
+          [0.12, 0, 0, 1],
+          [0.28, px - x0, py - y0, 0.6],
+          [0.35, px - x0, py - y0, -0.05],
+          [0.44, px - x0, py - y0, 0.8],
+          [0.62, sx - x0, sy - y0, 0.8],
+          [CONTACT, sx - x0, sy - y0, -0.08],
+          [0.8, sx - x0, sy - y0, -0.08],
+          // Il se relève en s'écartant : la lettre apparaît.
+          [0.88, sx - x0 - 10, sy - y0 - 85, 1],
+          [1, 0, 0, 0],
+        ]
+        // Plus haut, plus près de l'œil : le tampon grandit, son ombre
+        // s'écarte et pâlit (sans grandir avec lui : elle reste sur la table).
+        const lift = (h) => 1 + 0.2 * h
+        const frames = (style) =>
+          steps.map(([offset, x, y, h]) => ({
+            offset,
+            easing: "ease-in-out",
+            ...style(x, y, h),
+          }))
+        const timing = { duration: PRESS_MS }
 
         stamp.classList.add("flying")
         const anim = stamp.animate(
-          [
-            { transform: at(0, 0), offset: 0 },
-            { transform: at(dx, dy - 40), offset: 0.3 },
-            { transform: at(dx, dy), offset: CONTACT },
-            { transform: at(dx, dy, "scale(1, 0.95)"), offset: LIFT },
-            { transform: at(dx, dy - 60), offset: TILTED },
-            { transform: at(dx, dy - 60), offset: HOLD },
-            { transform: at(0, 0), offset: 1 },
-          ],
+          frames((x, y, h) => ({
+            transform: `translate(${x}px, ${y}px) scale(${lift(h)})`,
+          })),
           timing,
         )
-        tilt(stamp.querySelector("svg"), 1, Math.cos(TILT))
-        tilt(stamp.querySelector(".rubber-face"), 0, Math.sin(TILT))
+        stamp.querySelector(".shadow").animate(
+          frames((x, y, h) => ({
+            transform: `translate(${4 + 14 * h}px, ${6 + 18 * h}px) scale(${(1 + 0.06 * h) / lift(h)})`,
+            opacity: 1 - 0.5 * h,
+          })),
+          timing,
+        )
         setTimeout(onPress, PRESS_MS * CONTACT)
         return anim.finished.then(() => stamp.classList.remove("flying"))
       }
