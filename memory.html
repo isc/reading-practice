@@ -91,8 +91,8 @@
       #sparks {
         position: fixed;
         inset: 0;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         pointer-events: none;
         z-index: 10;
       }
@@ -247,7 +247,8 @@
         align-items: center;
       }
 
-      .title span {
+      .title span,
+      .bravo {
         background: linear-gradient(180deg, #fff, var(--gold) 55%, var(--pink));
         -webkit-background-clip: text;
         background-clip: text;
@@ -258,7 +259,6 @@
       .title .portal {
         width: 0.78em;
         margin: 0.06em 0.04em 0;
-        pointer-events: none;
       }
 
       .tagline {
@@ -387,6 +387,11 @@
         justify-self: end;
       }
 
+      #soundBtn[aria-pressed="true"] .off,
+      #soundBtn[aria-pressed="false"] .on {
+        display: none;
+      }
+
       #timer {
         font-family: var(--title);
         font-weight: 600;
@@ -414,6 +419,7 @@
       /* La collection : une place par paire, où chaque paire envolée
          vient se poser. */
       .tray {
+        width: 100%;
         display: grid;
         grid-template-columns: repeat(var(--pairs), minmax(0, 34px));
         justify-content: center;
@@ -463,10 +469,6 @@
         gap: 16px;
       }
 
-      .tray {
-        width: 100%;
-      }
-
       /* Le cadre a exactement la taille du plateau : la fin de partie
          s'y cale. */
       .frame {
@@ -511,10 +513,6 @@
         font-family: var(--title);
         font-weight: 800;
         font-size: clamp(1.8rem, 9vw, 2.6rem);
-        background: linear-gradient(180deg, #fff, var(--gold) 55%, var(--pink));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
       }
 
       /* Deux tuiles côte à côte, de même hauteur. */
@@ -565,17 +563,11 @@
         background: var(--gold);
         color: var(--deep);
         display: none;
-        place-items: center;
         animation: land 0.5s 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) backwards;
       }
 
       .tile.record .trophy {
-        display: grid;
-      }
-
-      .trophy svg {
-        width: 20px;
-        height: 20px;
+        display: block;
       }
 
       .glow-btn {
@@ -633,6 +625,12 @@
           <stop offset="0.45" stop-color="#3a1052" />
           <stop offset="1" stop-color="#14061f" />
         </radialGradient>
+        <symbol id="trophy" viewBox="-6 -6 36 36">
+          <path
+            fill="currentColor"
+            d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.5A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.5 12H8a4 4 0 0 1-4-4V5h3zm0 4H6v1a2 2 0 0 0 1.2 1.8A5 5 0 0 1 7 9zm10 0v2c0 .3 0 .5-.2.8A2 2 0 0 0 18 8V7z"
+          />
+        </symbol>
         <symbol id="swirl" viewBox="-50 -50 100 100">
           <circle r="44" fill="url(#void)" />
           <g id="arms" fill="none" stroke-linecap="round"></g>
@@ -640,7 +638,7 @@
       </defs>
     </svg>
 
-    <canvas id="sparks"></canvas>
+    <canvas id="sparks" hidden></canvas>
 
     <div class="app">
       <section class="screen" id="home">
@@ -710,29 +708,11 @@
               <div class="tiles">
                 <div class="tile" id="movesTile">
                   <b id="endMoves">0</b><span>coups</span>
-                  <i class="trophy"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.5A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.5 12H8a4 4 0 0 1-4-4V5h3zm0 4H6v1a2 2 0 0 0 1.2 1.8A5 5 0 0 1 7 9zm10 0v2c0 .3 0 .5-.2.8A2 2 0 0 0 18 8V7z"
-                      /></svg
-                  ></i>
+                  <svg class="trophy"><use href="#trophy" /></svg>
                 </div>
                 <div class="tile" id="timeTile">
                   <b id="endTime">00:00</b><span>temps</span>
-                  <i class="trophy"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.5A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.5 12H8a4 4 0 0 1-4-4V5h3zm0 4H6v1a2 2 0 0 0 1.2 1.8A5 5 0 0 1 7 9zm10 0v2c0 .3 0 .5-.2.8A2 2 0 0 0 18 8V7z"
-                      /></svg
-                  ></i>
+                  <svg class="trophy"><use href="#trophy" /></svg>
                 </div>
               </div>
               <button class="glow-btn" id="againBtn">
@@ -812,8 +792,8 @@
       const hueOf = (symbol) => Math.round(EMOJIS.indexOf(symbol) * 137.5) % 360
 
       const $ = (id) => document.getElementById(id)
-      const reducedMotion = () =>
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+      const reducedMotion = () => motionQuery.matches
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
       let level = "moyen"
@@ -965,6 +945,20 @@
         layoutBoard()
       }
 
+      // Une animation ponctuelle, sautée si l'enfant a demandé moins de
+      // mouvement ; on peut toujours l'attendre.
+      function animate(el, keyframes, options) {
+        if (reducedMotion()) return Promise.resolve()
+        return el.animate(keyframes, options).finished
+      }
+
+      const animateWorlds = (els, keyframes, options) =>
+        Promise.all(
+          els.map((el) =>
+            animate(el.querySelector(".world"), keyframes, options),
+          ),
+        )
+
       // Les portails prennent toute la place libre, sans jamais dépasser :
       // le plateau tient sans défiler.
       function layoutBoard() {
@@ -976,7 +970,7 @@
             (stage.clientWidth - gap * (cols - 1)) / cols,
             (stage.clientHeight -
               $("tray").offsetHeight -
-              16 -
+              parseFloat(getComputedStyle(stage).rowGap) -
               gap * (rows - 1)) /
               rows,
             120,
@@ -997,7 +991,7 @@
 
         if (!startTime) {
           startTime = Date.now()
-          timerInterval = setInterval(updateStats, 1000)
+          timerInterval = setInterval(updateTimer, 1000)
           // Premier portail ouvert : la partie est engagée.
           if (window.ExitGuard) ExitGuard.setActive(true)
         }
@@ -1012,7 +1006,6 @@
 
         secondCard = card
         moves++
-        updateStats()
 
         if (firstCard.symbol === secondCard.symbol) {
           firstCard.matched = true
@@ -1022,30 +1015,31 @@
           pairFound(firstCard, secondCard, matched - 1, won)
           firstCard = null
           secondCard = null
-          updateStats()
           if (won) handleWin()
         } else {
           lockBoard = true
           const a = firstCard
           const b = secondCard
           const r = round
-          setTimeout(() => {
+          setTimeout(async () => {
             if (r !== round) return
             a.revealed = false
             b.revealed = false
-            closePortals(getCardEl(a.id), getCardEl(b.id))
+            await closePortals(getCardEl(a.id), getCardEl(b.id))
+            if (r !== round) return
             firstCard = null
             secondCard = null
             lockBoard = false
           }, 750)
         }
+        updateStats()
       }
 
       function openPortal(el) {
         el.classList.add("open")
         play(openSound, 600)
-        if (reducedMotion()) return
-        el.querySelector(".flash").animate(
+        animate(
+          el.querySelector(".flash"),
           [
             { transform: "scale(0.7)", opacity: 0.9 },
             { transform: "scale(1.3)", opacity: 0 },
@@ -1058,28 +1052,18 @@
       // reprend.
       async function closePortals(...els) {
         play(missSound, 800)
-        if (!reducedMotion()) {
-          await Promise.all(
-            els.map(
-              (el) =>
-                el
-                  .querySelector(".world")
-                  .animate(
-                    [
-                      { transform: "rotate(0)" },
-                      { transform: "rotate(-12deg)" },
-                      { transform: "rotate(10deg)" },
-                      { transform: "rotate(-6deg)" },
-                      { transform: "rotate(0)" },
-                    ],
-                    { duration: 320, easing: "ease-in-out" },
-                  ).finished,
-            ),
-          )
-        }
-        els.forEach((el) => {
-          if (!cards[el.dataset.id].revealed) el.classList.remove("open")
-        })
+        await animateWorlds(
+          els,
+          [
+            { transform: "rotate(0)" },
+            { transform: "rotate(-12deg)" },
+            { transform: "rotate(10deg)" },
+            { transform: "rotate(-6deg)" },
+            { transform: "rotate(0)" },
+          ],
+          { duration: 320, easing: "ease-in-out" },
+        )
+        els.forEach((el) => el.classList.remove("open"))
       }
 
       // Une paire : les deux mondes brillent, puis s'envolent en étincelles
@@ -1092,25 +1076,17 @@
         play(matchSound, won ? 4000 : 2500)
         els.forEach((el) => el.classList.add("found"))
 
-        if (!reducedMotion()) {
-          await Promise.all(
-            els.map(
-              (el) =>
-                el
-                  .querySelector(".world")
-                  .animate(
-                    [
-                      { transform: "scale(1)" },
-                      { transform: "scale(1.14)" },
-                      { transform: "scale(1)" },
-                    ],
-                    { duration: 380, easing: "ease-out" },
-                  ).finished,
-            ),
-          )
-          if (r !== round) return
-          els.forEach((el) => flyFrom(el, slot, hue))
-        }
+        await animateWorlds(
+          els,
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.14)" },
+            { transform: "scale(1)" },
+          ],
+          { duration: 380, easing: "ease-out" },
+        )
+        if (r !== round) return
+        if (!reducedMotion()) els.forEach((el) => flyFrom(el, slot, hue))
         els.forEach((el) => el.classList.add("gone"))
         await wait(reducedMotion() ? 200 : 900)
         if (r !== round) return
@@ -1132,16 +1108,21 @@
         clearInterval(timerInterval)
         if (window.ExitGuard) ExitGuard.setActive(false)
         const elapsed = Date.now() - startTime
-        const improved = saveScore(moves, elapsed)
+        const record = saveScore(moves, elapsed)
         $("endMoves").textContent = moves
         $("endTime").textContent = formatTime(elapsed)
-        $("movesTile").classList.toggle("record", improved.includes("coups"))
-        $("timeTile").classList.toggle("record", improved.includes("temps"))
+        $("movesTile").classList.toggle("record", record.moves)
+        $("timeTile").classList.toggle("record", record.time)
+      }
+
+      function updateTimer() {
+        $("timer").textContent = formatTime(
+          startTime ? Date.now() - startTime : 0,
+        )
       }
 
       function updateStats() {
-        const elapsed = startTime ? Date.now() - startTime : 0
-        $("timer").textContent = formatTime(elapsed)
+        updateTimer()
         $("moves").textContent = moves
         $("movesLabel").textContent = moves > 1 ? "coups" : "coup"
         $("pairs").textContent = matched
@@ -1171,24 +1152,24 @@
 
       function saveScore(movesCount, elapsedMs) {
         const scores = getScores()
-        const improved = []
+        const record = { moves: false, time: false }
         if (
           scores.bestMoves[level] === null ||
           movesCount < scores.bestMoves[level]
         ) {
           scores.bestMoves[level] = movesCount
-          improved.push("coups")
+          record.moves = true
         }
         if (
           scores.bestTime[level] === null ||
           elapsedMs < scores.bestTime[level]
         ) {
           scores.bestTime[level] = elapsedMs
-          improved.push("temps")
+          record.time = true
         }
         scores.gamesWon++
         localStorage.setItem(SCORES_KEY, JSON.stringify(scores))
-        return improved
+        return record
       }
 
       // ===== Les étincelles =====
@@ -1313,27 +1294,32 @@
           const fade = s.flight ? Math.min(1, (1 - p) * 5) : 1 - p
           ctx2d.fillStyle = s.color
           // Une traînée : la même étincelle un peu plus tôt, plus pâle.
+          let x, y
           for (let k = 3; k >= 0; k--) {
-            const { x, y } = sparkAt(s, p - k * 0.035)
+            ;({ x, y } = sparkAt(s, p - k * 0.035))
             ctx2d.globalAlpha = fade * (1 - k * 0.25) * 0.8
             ctx2d.beginPath()
             ctx2d.arc(x, y, s.size * (1 - k * 0.15), 0, 2 * Math.PI)
             ctx2d.fill()
           }
-          const { x, y } = sparkAt(s, p)
           ctx2d.globalAlpha = fade * 0.2
           ctx2d.beginPath()
           ctx2d.arc(x, y, s.size * 3.2, 0, 2 * Math.PI)
           ctx2d.fill()
         }
         ctx2d.globalAlpha = 1
-        if (sparks.length) requestAnimationFrame(drawSparks)
-        else sparksRunning = false
+        if (sparks.length) return requestAnimationFrame(drawSparks)
+        sparksRunning = false
+        canvas.hidden = true
       }
 
+      // Le canevas n'existe que le temps d'un envol : il ne pèse rien sur
+      // le plateau le reste du temps.
       function runSparks() {
         if (sparksRunning) return
         sparksRunning = true
+        sizeCanvas()
+        canvas.hidden = false
         requestAnimationFrame(drawSparks)
       }
 
@@ -1430,10 +1416,7 @@
       }
 
       function renderSoundBtn() {
-        const btn = $("soundBtn")
-        btn.setAttribute("aria-pressed", soundOn)
-        btn.querySelector(".on").style.display = soundOn ? "" : "none"
-        btn.querySelector(".off").style.display = soundOn ? "none" : ""
+        $("soundBtn").setAttribute("aria-pressed", soundOn)
       }
 
       function toggleSound() {
@@ -1464,11 +1447,10 @@
       $("againBtn").onclick = initGame
       $("soundBtn").onclick = toggleSound
       addEventListener("resize", () => {
-        sizeCanvas()
+        if (sparksRunning) sizeCanvas()
         if (!$("game").classList.contains("hidden")) layoutBoard()
       })
 
-      sizeCanvas()
       renderSoundBtn()
       showHome()
     </script>
