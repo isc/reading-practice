@@ -6,361 +6,994 @@
     <title>Tabou</title>
     <script src="exit-guard.js"></script>
     <style>
+      /* Pop art, case de BD : du papier crème couvert de trames de points,
+         des couleurs franches cernées de noir, et des onomatopées qui
+         éclatent à chaque coup. Les points sont vivants : une onde les gonfle
+         quand on trouve un mot, et une carte se change en une autre en se
+         dissolvant dans sa trame. */
+
+      @font-face {
+        font-family: "Bangers";
+        src: url("Bangers-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Luckiest Guy";
+        src: url("LuckiestGuy-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Lexend";
+        src: url("Lexend-Variable.woff2") format("woff2");
+        font-weight: 300 700;
+        font-display: swap;
+      }
+
+      :root {
+        --ink: #15131a;
+        --paper: #fff6e0;
+        --yellow: #ffd60a;
+        --red: #ff2d3f;
+        --blue: #2365ff;
+        --green: #22c76a;
+        --cyan: #18b6ee;
+        --team: var(--red);
+        --pop: "Bangers", "Impact", sans-serif;
+        --bold: "Luckiest Guy", "Arial Black", sans-serif;
+        --text: "Lexend", "Arial", sans-serif;
+        --line: 3px solid var(--ink);
+        --shadow: 5px 5px 0 var(--ink);
+        --dots: radial-gradient(rgba(21, 19, 26, 0.16) 28%, transparent 31%);
+      }
+
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
 
+      html,
       body {
-        font-family: "Arial", sans-serif;
-        background-color: #f0f2f5;
-        min-height: 100vh;
+        height: 100%;
       }
 
-      .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--text);
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
       }
 
-      .card-panel {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      body.team-2 {
+        --team: var(--blue);
       }
 
       .hidden {
-        display: none;
+        display: none !important;
       }
 
-      h1 {
-        color: #4a90e2;
-        font-size: 2.5rem;
-        text-align: center;
-        margin-bottom: 16px;
+      /* La trame de fond, dessinée sur un canevas (voir HalftoneField). */
+      #field {
+        height: 100%;
+        inset: 0;
+        pointer-events: none;
+        position: fixed;
+        width: 100%;
+        z-index: 0;
       }
 
-      h2 {
-        color: #4a90e2;
-        font-size: 1.8rem;
-        text-align: center;
-        margin-bottom: 12px;
+      #confetti {
+        height: 100%;
+        inset: 0;
+        pointer-events: none;
+        position: fixed;
+        width: 100%;
+        z-index: 40;
       }
 
-      .rules {
-        color: #666;
-        font-size: 1.1rem;
-        line-height: 1.6;
-        margin: 0 auto 20px;
-        max-width: 26rem;
-        padding-left: 1.2rem;
-      }
-
-      .setting {
-        margin-bottom: 18px;
-        text-align: center;
-      }
-
-      .setting-label {
-        color: #666;
-        display: block;
-        font-size: 1rem;
-        margin-bottom: 8px;
-      }
-
-      .choices {
+      .screen {
         display: flex;
-        gap: 8px;
-        justify-content: center;
-        flex-wrap: wrap;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        margin: 0 auto;
+        max-width: 520px;
+        padding: max(14px, env(safe-area-inset-top)) 14px
+          max(14px, env(safe-area-inset-bottom));
+        position: relative;
+        z-index: 1;
       }
 
-      .choice {
-        background: #eef3fa;
-        border: 2px solid transparent;
-        border-radius: 8px;
-        color: #4a90e2;
-        cursor: pointer;
-        font-size: 1.1rem;
-        min-width: 72px;
-        padding: 12px 16px;
-        touch-action: manipulation;
+      /* --- Éléments communs ------------------------------------------- */
+      .panel {
+        background: #fff;
+        border: var(--line);
+        border-radius: 6px;
+        box-shadow: var(--shadow);
+        position: relative;
       }
 
-      .choice.selected {
-        background: #4a90e2;
-        color: white;
+      .caption {
+        background: var(--yellow);
+        border: var(--line);
+        display: inline-block;
+        font-family: var(--pop);
+        font-size: 1.15rem;
+        letter-spacing: 0.06em;
+        line-height: 1;
+        padding: 5px 9px 3px;
       }
 
       .btn {
-        background-color: #4a90e2;
-        border: none;
+        align-items: center;
+        background: var(--yellow);
+        border: var(--line);
         border-radius: 8px;
-        color: white;
+        box-shadow: 4px 4px 0 var(--ink);
+        color: var(--ink);
         cursor: pointer;
-        display: block;
-        font-size: 1.3rem;
-        margin: 20px auto 0;
-        padding: 15px 40px;
+        display: flex;
+        font-family: var(--bold);
+        font-size: 1.35rem;
+        gap: 10px;
+        justify-content: center;
+        line-height: 1;
+        min-height: 60px;
+        text-transform: uppercase;
+        padding: 14px 16px 10px;
         touch-action: manipulation;
-        transition: background-color 0.2s;
+        transition:
+          transform 0.08s,
+          box-shadow 0.08s;
+      }
+
+      .btn svg {
+        flex: none;
+        height: 1.4em;
+        margin-top: -4px;
+        width: 1.4em;
+      }
+
+      .btn:active:not(:disabled) {
+        box-shadow: 1px 1px 0 var(--ink);
+        transform: translate(3px, 3px);
+      }
+
+      .btn:disabled {
+        cursor: default;
+        opacity: 0.45;
       }
 
       @media (hover: hover) {
-        .btn:hover {
-          background-color: #357abd;
-        }
-
-        .choice:hover {
-          border-color: #4a90e2;
+        .btn:hover:not(:disabled) {
+          box-shadow: 6px 6px 0 var(--ink);
+          transform: translate(-2px, -2px);
         }
       }
 
       .home-link {
-        color: #4a90e2;
-        display: block;
-        font-size: 1rem;
-        margin-top: 20px;
+        align-self: center;
+        color: var(--ink);
+        font-family: var(--pop);
+        font-size: 1.25rem;
+        letter-spacing: 0.05em;
+        padding: 10px 16px;
+        text-decoration: none;
+      }
+
+      .burst-shape {
+        stroke: var(--ink);
+        stroke-linejoin: round;
+      }
+
+      /* --- Accueil ---------------------------------------------------- */
+      .welcome {
+        gap: 14px;
+        justify-content: center;
+      }
+
+      .cover {
+        align-self: center;
+        height: 150px;
+        position: relative;
+        width: 300px;
+      }
+
+      .cover svg {
+        height: 100%;
+        left: 0;
+        overflow: visible;
+        position: absolute;
+        top: 0;
+        width: 100%;
+      }
+
+      .title-text {
+        fill: var(--yellow);
+        font-family: var(--bold);
+        font-size: 74px;
+        paint-order: stroke;
+        stroke: var(--ink);
+        stroke-linejoin: round;
+        stroke-width: 10px;
+      }
+
+      .title-shadow {
+        fill: var(--ink);
+        font-family: var(--bold);
+        font-size: 74px;
+      }
+
+      .rules {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+        list-style: none;
+      }
+
+      .rules li {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        font-size: 0.95rem;
+        font-weight: 600;
+        gap: 6px;
+        line-height: 1.25;
+        padding: 10px 8px;
         text-align: center;
       }
 
-      /* Barre de score + chrono */
+      .rules li:nth-child(1) {
+        transform: rotate(-1.2deg);
+      }
+
+      .rules li:nth-child(4) {
+        transform: rotate(1deg);
+      }
+
+      .rules svg {
+        height: 34px;
+        width: 34px;
+      }
+
+      .settings {
+        display: grid;
+        gap: 12px;
+        padding: 10px 12px 14px;
+      }
+
+      .setting {
+        display: grid;
+        gap: 6px;
+      }
+
+      .setting-label {
+        font-family: var(--pop);
+        font-size: 1.2rem;
+        letter-spacing: 0.04em;
+        line-height: 1;
+      }
+
+      .choices {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .choice {
+        background: #fff;
+        border: var(--line);
+        border-radius: 6px;
+        color: var(--ink);
+        cursor: pointer;
+        font-family: var(--bold);
+        font-size: 1.15rem;
+        line-height: 1;
+        min-height: 50px;
+        padding: 8px 4px 4px;
+        text-transform: uppercase;
+        touch-action: manipulation;
+        transition: transform 0.12s;
+      }
+
+      .choice.selected {
+        background-color: var(--yellow);
+        background-image: var(--dots);
+        background-size: 7px 7px;
+        box-shadow: 3px 3px 0 var(--ink);
+        transform: translate(-2px, -2px) rotate(-2deg);
+      }
+
+      .start {
+        font-size: 1.6rem;
+        min-height: 70px;
+      }
+
+      /* --- Partie ----------------------------------------------------- */
+      .game {
+        gap: 12px;
+      }
+
       .top-bar {
         align-items: center;
-        display: flex;
+        display: grid;
         gap: 8px;
-        justify-content: space-between;
-        margin-bottom: 16px;
+        grid-template-columns: 1fr auto 1fr;
       }
 
       .team-score {
-        background: white;
-        border: 3px solid transparent;
-        border-radius: 12px;
-        flex: 1;
-        padding: 10px 6px;
-        text-align: center;
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        padding: 6px 4px 4px;
+        transition:
+          transform 0.25s,
+          box-shadow 0.25s;
       }
 
-      .team-score .points {
-        font-size: 1.8rem;
-        font-weight: bold;
+      .team-score:not(.active) {
+        box-shadow: 2px 2px 0 var(--ink);
+        color: #8a8794;
       }
 
       .team-score .name {
-        color: #666;
-        font-size: 0.9rem;
+        font-family: var(--pop);
+        font-size: 1.1rem;
+        letter-spacing: 0.05em;
+        line-height: 1;
+      }
+
+      .team-score .points {
+        font-family: var(--bold);
+        font-size: 2.3rem;
+        line-height: 1;
+        margin-top: 4px;
       }
 
       .team-score.team1 .points {
-        color: #e24a4a;
+        color: var(--red);
       }
 
       .team-score.team2 .points {
-        color: #4a90e2;
+        color: var(--blue);
+      }
+
+      .team-score.active {
+        transform: rotate(-2deg) scale(1.04);
+      }
+
+      .team-score.team2.active {
+        transform: rotate(2deg) scale(1.04);
       }
 
       .team-score.active.team1 {
-        border-color: #e24a4a;
+        background: #ffe1e3;
       }
 
       .team-score.active.team2 {
-        border-color: #4a90e2;
+        background: #dfe8ff;
+      }
+
+      .float-point {
+        font-family: var(--bold);
+        font-size: 1.6rem;
+        left: 78%;
+        pointer-events: none;
+        position: absolute;
+        top: 46%;
       }
 
       .timer {
-        font-size: 2.2rem;
-        font-weight: bold;
-        min-width: 5rem;
-        text-align: center;
+        height: 88px;
+        position: relative;
+        width: 88px;
       }
 
-      .timer.urgent {
-        color: #e24a4a;
+      .timer svg {
+        height: 100%;
+        inset: 0;
+        overflow: visible;
+        position: absolute;
+        width: 100%;
       }
 
-      /* Carte de jeu */
+      .timer .burst-shape {
+        fill: var(--yellow);
+        transition: fill 0.2s;
+      }
+
+      .timer-value {
+        align-items: center;
+        display: flex;
+        font-family: var(--bold);
+        font-size: 2rem;
+        font-variant-numeric: tabular-nums;
+        inset: 0;
+        justify-content: center;
+        line-height: 1;
+        padding-top: 6px;
+        position: absolute;
+      }
+
+      .timer.urgent .burst-shape {
+        fill: var(--red);
+      }
+
+      .timer.urgent .timer-value {
+        color: #fff;
+      }
+
+      .card-wrap {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .card-top {
+        align-items: center;
+        background-color: var(--yellow);
+        background-image: var(--dots);
+        background-size: 9px 9px;
+        border-bottom: var(--line);
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 0;
+        padding: 30px 12px 14px;
+        position: relative;
+      }
+
+      .card-top .caption {
+        background: #fff;
+        border-width: 0 3px 3px 0;
+        left: 0;
+        position: absolute;
+        top: 0;
+      }
+
       .word {
-        color: #4a90e2;
-        font-size: 2.6rem;
-        font-weight: bold;
-        margin: 10px 0 20px;
+        font-family: var(--bold);
+        font-size: 3.2rem;
+        line-height: 1.05;
+        padding-top: 0.12em;
         text-align: center;
-        word-break: break-word;
+        text-shadow: 3px 3px 0 #fff;
+        white-space: nowrap;
       }
 
-      .taboo-title {
-        border-top: 2px dashed #f0d0d0;
-        color: #e24a4a;
-        font-size: 1rem;
-        letter-spacing: 0.05em;
-        padding-top: 14px;
-        text-align: center;
+      .card-bottom {
+        background-color: var(--red);
+        background-image: radial-gradient(
+          rgba(255, 255, 255, 0.22) 28%,
+          transparent 31%
+        );
+        background-size: 9px 9px;
+        padding: 10px 14px 14px;
+      }
+
+      .forbidden {
+        align-items: center;
+        background: var(--ink);
+        color: #fff;
+        display: flex;
+        gap: 6px;
+        margin: 0 auto 10px;
+        width: fit-content;
+      }
+
+      .forbidden svg {
+        height: 1.1em;
+        margin-top: -3px;
+        width: 1.1em;
       }
 
       .taboo-list {
         display: flex;
         flex-direction: column;
         gap: 6px;
-        margin-top: 12px;
+        list-style: none;
       }
 
       .taboo-list li {
-        background: #fdeeee;
-        border-radius: 8px;
-        color: #c23b3b;
-        font-size: 1.3rem;
-        list-style: none;
-        padding: 10px;
+        background: #fff;
+        border: var(--line);
+        border-radius: 4px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        line-height: 1.2;
+        padding: 6px 8px;
         text-align: center;
+      }
+
+      .taboo-list li:nth-child(odd) {
+        transform: rotate(-0.8deg);
+      }
+
+      .taboo-list li:nth-child(even) {
+        transform: rotate(0.7deg);
+      }
+
+      /* Le fondu en trame, et les onomatopées : par-dessus la carte. */
+      .wipe {
+        border-radius: 3px;
+        height: calc(100% - 6px);
+        left: 3px;
+        pointer-events: none;
+        position: absolute;
+        top: 3px;
+        width: calc(100% - 6px);
+      }
+
+      .pause-cover {
+        align-items: center;
+        background-color: #fff;
+        background-image: var(--dots);
+        background-size: 9px 9px;
+        border: var(--line);
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        inset: 0;
+        justify-content: center;
+        position: absolute;
+      }
+
+      .pause-cover svg {
+        height: 96px;
+        width: 96px;
+      }
+
+      .pause-cover .caption {
+        font-size: 2rem;
+      }
+
+      .sfx-layer {
+        inset: -20px;
+        pointer-events: none;
+        position: absolute;
+        z-index: 5;
+      }
+
+      .sfx {
+        left: 50%;
+        position: absolute;
+        top: 38%;
+        width: 270px;
+      }
+
+      .sfx svg {
+        display: block;
+        overflow: visible;
+        width: 100%;
+      }
+
+      .sfx-text {
+        font-family: var(--pop);
+        letter-spacing: 2px;
+        paint-order: stroke;
+        stroke: var(--ink);
+        stroke-linejoin: round;
+        stroke-width: 9px;
       }
 
       .actions {
         display: grid;
         gap: 10px;
         grid-template-columns: 1fr 1fr;
-        margin-top: 18px;
       }
 
       .action {
-        border: none;
-        border-radius: 10px;
-        color: white;
-        cursor: pointer;
-        font-size: 1.2rem;
-        padding: 18px 10px;
-        touch-action: manipulation;
+        font-size: 1.3rem;
+      }
+
+      .action.found,
+      .action.taboo {
+        min-height: 74px;
       }
 
       .action.found {
-        background-color: #4caf50;
+        background: var(--green);
       }
 
       .action.taboo {
-        background-color: #e24a4a;
+        background: var(--red);
+        color: #fff;
       }
 
       .action.skip {
-        background-color: #f0a500;
+        background: var(--cyan);
       }
 
       .action.pause {
-        background-color: #8a94a6;
+        background: #fff;
       }
 
-      .action:disabled {
-        opacity: 0.5;
+      .action .pts {
+        font-size: 0.85em;
+        opacity: 0.85;
       }
 
-      .paused-note {
-        color: #666;
-        font-size: 1.1rem;
-        margin-top: 14px;
+      /* --- Fin de tour, fin de partie ---------------------------------- */
+      .result {
+        gap: 18px;
+        justify-content: center;
+      }
+
+      .result-burst {
+        align-self: center;
+        width: 300px;
+      }
+
+      .result-burst svg {
+        display: block;
+        overflow: visible;
+        width: 100%;
+      }
+
+      .result-panel {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 18px 14px 20px;
+      }
+
+      .result-title {
+        font-family: var(--bold);
+        font-size: 1.7rem;
+        line-height: 1.1;
+        padding-top: 4px;
         text-align: center;
+        text-transform: uppercase;
       }
 
-      .recap {
-        color: #666;
-        font-size: 1.2rem;
-        line-height: 1.6;
-        text-align: center;
+      .result-title .team-chip {
+        padding: 4px 10px 0;
       }
 
-      .recap strong {
-        color: #4a90e2;
+      .team-chip {
+        border: var(--line);
+        border-radius: 6px;
+        color: #fff;
+        display: inline-block;
+        text-shadow: 2px 2px 0 var(--ink);
+      }
+
+      .team-chip.t1 {
+        background: var(--red);
+      }
+
+      .team-chip.t2 {
+        background: var(--blue);
+      }
+
+      .round-points {
+        font-family: var(--bold);
+        font-size: 3.4rem;
+        line-height: 1;
+        padding-top: 6px;
+      }
+
+      .scoreboard {
+        align-items: center;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr auto 1fr;
+        width: 100%;
+      }
+
+      .scoreboard .side {
+        align-items: center;
+        border: var(--line);
+        border-radius: 6px;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        padding: 8px 4px 4px;
+      }
+
+      .scoreboard .side.t1 {
+        background: var(--red);
+      }
+
+      .scoreboard .side.t2 {
+        background: var(--blue);
+      }
+
+      .scoreboard .side span {
+        font-family: var(--pop);
+        font-size: 1.05rem;
+        letter-spacing: 0.05em;
+      }
+
+      .scoreboard .side strong {
+        font-family: var(--bold);
+        font-size: 2.6rem;
+        font-weight: normal;
+        line-height: 1;
+        padding-top: 4px;
+        text-shadow: 3px 3px 0 var(--ink);
+      }
+
+      .scoreboard .vs {
+        font-family: var(--pop);
+        font-size: 1.6rem;
+      }
+
+      .next-team.t1 {
+        background: var(--red);
+        color: #fff;
+      }
+
+      .next-team.t2 {
+        background: var(--blue);
+        color: #fff;
+      }
+
+      .next-team,
+      .replay {
+        align-self: stretch;
+        font-size: 1.5rem;
+        min-height: 70px;
+      }
+
+      @media (max-height: 700px) {
+        .cover {
+          height: 120px;
+        }
+
+        .rules li {
+          font-size: 0.85rem;
+          padding: 8px 6px;
+        }
+
+        .rules svg {
+          height: 26px;
+          width: 26px;
+        }
+
+        .timer {
+          height: 76px;
+          width: 76px;
+        }
+
+        .action.found,
+        .action.taboo {
+          min-height: 64px;
+        }
+
+        .btn {
+          min-height: 54px;
+        }
+
+        .taboo-list li {
+          font-size: 1.05rem;
+          padding: 4px 8px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn,
+        .choice,
+        .team-score {
+          transition: none;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <!-- Accueil -->
-      <div class="card-panel welcome-screen">
-        <h1>🎭 Tabou</h1>
-        <ul class="rules">
-          <li>Un joueur fait deviner le mot à son équipe.</li>
-          <li>Interdit de dire les mots de la liste rouge !</li>
-          <li>Mot trouvé : +1 point. Mot interdit dit : −1 point.</li>
-          <li>Les équipes jouent chacune leur tour.</li>
-        </ul>
+    <canvas id="field" aria-hidden="true"></canvas>
 
+    <!-- Accueil -->
+    <main class="screen welcome welcome-screen">
+      <h1 class="cover" aria-label="Tabou !">
+        <svg viewBox="0 0 300 150" aria-hidden="true">
+          <polygon class="burst-shape" id="coverBurst" fill="#ff2d3f" stroke-width="4" />
+          <text class="title-shadow" x="156" y="108" text-anchor="middle" transform="rotate(-5 150 75)">TABOU !</text>
+          <text class="title-text" x="150" y="102" text-anchor="middle" transform="rotate(-5 150 75)">TABOU !</text>
+        </svg>
+      </h1>
+
+      <ul class="rules">
+        <li class="panel">
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <path d="M6 8h28a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H17l-8 7v-7H6a3 3 0 0 1-3-3V11a3 3 0 0 1 3-3z" fill="#ffd60a" stroke="#15131a" stroke-width="3" stroke-linejoin="round" />
+            <circle cx="13" cy="18" r="2.4" fill="#15131a" />
+            <circle cx="20" cy="18" r="2.4" fill="#15131a" />
+            <circle cx="27" cy="18" r="2.4" fill="#15131a" />
+          </svg>
+          Fais deviner le mot à ton équipe.
+        </li>
+        <li class="panel">
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <circle cx="20" cy="20" r="15" fill="#fff" stroke="#ff2d3f" stroke-width="6" />
+            <path d="M9.5 9.5l21 21" stroke="#ff2d3f" stroke-width="6" />
+          </svg>
+          Sans dire les mots interdits !
+        </li>
+        <li class="panel">
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <rect x="3" y="7" width="34" height="26" rx="4" fill="#22c76a" stroke="#15131a" stroke-width="3" />
+            <path d="M11 20.5l6 6 12-13" fill="none" stroke="#15131a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Mot trouvé : +1<br />Mot interdit dit : −1
+        </li>
+        <li class="panel">
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <circle cx="13" cy="20" r="10" fill="#ff2d3f" stroke="#15131a" stroke-width="3" />
+            <circle cx="27" cy="20" r="10" fill="#2365ff" stroke="#15131a" stroke-width="3" />
+          </svg>
+          Les équipes jouent chacune leur tour.
+        </li>
+      </ul>
+
+      <div class="panel settings">
         <div class="setting">
           <span class="setting-label">Durée d'un tour</span>
           <div class="choices" id="durationChoices"></div>
         </div>
-
         <div class="setting">
           <span class="setting-label">Points pour gagner</span>
           <div class="choices" id="targetChoices"></div>
         </div>
-
-        <button class="btn" id="startBtn" disabled>⏳ Chargement…</button>
-        <a class="home-link" href="index.html">← Retour aux jeux</a>
       </div>
 
-      <!-- Partie -->
-      <div class="game-screen hidden">
-        <div class="top-bar">
-          <div class="team-score team1" id="scoreTeam1">
-            <div class="points">0</div>
-            <div class="name">🔴 Équipe 1</div>
+      <button class="btn start" id="startBtn" disabled>Chargement…</button>
+      <a class="home-link" href="index.html">← Retour aux jeux</a>
+    </main>
+
+    <!-- Partie -->
+    <main class="screen game game-screen hidden">
+      <div class="top-bar">
+        <div class="panel team-score team1" id="scoreTeam1">
+          <div class="name">Équipe 1</div>
+          <div class="points">0</div>
+        </div>
+        <div class="timer" id="timer">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <polygon class="burst-shape" id="timerBurst" stroke-width="3.5" />
+          </svg>
+          <div class="timer-value" id="timerValue">60</div>
+        </div>
+        <div class="panel team-score team2" id="scoreTeam2">
+          <div class="name">Équipe 2</div>
+          <div class="points">0</div>
+        </div>
+      </div>
+
+      <div class="card-wrap" id="cardWrap">
+        <article class="panel card" id="card">
+          <div class="card-top">
+            <span class="caption">Fais deviner</span>
+            <div class="word" id="word"></div>
           </div>
-          <div class="timer" id="timer">60</div>
-          <div class="team-score team2" id="scoreTeam2">
-            <div class="points">0</div>
-            <div class="name">🔵 Équipe 2</div>
+          <div class="card-bottom">
+            <div class="caption forbidden">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="10" r="7.5" fill="none" stroke="#ff2d3f" stroke-width="3" />
+                <path d="M4.7 4.7l10.6 10.6" stroke="#ff2d3f" stroke-width="3" />
+              </svg>
+              Mots interdits
+            </div>
+            <ul class="taboo-list" id="tabooList"></ul>
           </div>
+        </article>
+        <canvas class="wipe" id="wipe" aria-hidden="true"></canvas>
+        <div class="pause-cover hidden" id="pauseCover">
+          <svg viewBox="0 0 96 96" aria-hidden="true">
+            <circle cx="48" cy="48" r="42" fill="#ffd60a" stroke="#15131a" stroke-width="5" />
+            <rect x="32" y="28" width="11" height="40" rx="2" fill="#15131a" />
+            <rect x="53" y="28" width="11" height="40" rx="2" fill="#15131a" />
+          </svg>
+          <span class="caption">Pause</span>
         </div>
-
-        <div class="card-panel">
-          <div class="word" id="word"></div>
-          <div class="taboo-title">🚫 MOTS INTERDITS</div>
-          <ul class="taboo-list" id="tabooList"></ul>
-        </div>
-
-        <div class="actions">
-          <button class="action found" id="foundBtn">✅ Trouvé (+1)</button>
-          <button class="action taboo" id="tabooBtn">🚫 Tabou (−1)</button>
-          <button class="action skip" id="skipBtn">⏭️ Passer</button>
-          <button class="action pause" id="pauseBtn">⏸️ Pause</button>
-        </div>
-        <p class="paused-note hidden" id="pausedNote">
-          Partie en pause — la carte est masquée.
-        </p>
+        <div class="sfx-layer" id="sfxLayer" aria-hidden="true"></div>
       </div>
 
-      <!-- Fin de tour -->
-      <div class="card-panel round-end hidden">
-        <h2 id="roundEndTitle">Fin du tour !</h2>
-        <p class="recap" id="roundRecap"></p>
-        <button class="btn" id="nextRoundBtn">▶️ Tour suivant</button>
+      <div class="actions">
+        <button class="btn action found" id="foundBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 12.5l5.5 5.5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Trouvé <span class="pts">+1</span>
+        </button>
+        <button class="btn action taboo" id="tabooBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="3.2" />
+            <path d="M6 6l12 12" stroke="currentColor" stroke-width="3.2" />
+          </svg>
+          Tabou <span class="pts">−1</span>
+        </button>
+        <button class="btn action skip" id="skipBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6l7 6-7 6zM12 6l7 6-7 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+          </svg>
+          Passer
+        </button>
+        <button class="btn action pause" id="pauseBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true" id="pauseIcon">
+            <rect x="6" y="5" width="4.2" height="14" rx="1" fill="currentColor" />
+            <rect x="13.8" y="5" width="4.2" height="14" rx="1" fill="currentColor" />
+          </svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true" id="playIcon" class="hidden">
+            <path d="M7 4.5l12 7.5-12 7.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+          </svg>
+          <span id="pauseLabel">Pause</span>
+        </button>
       </div>
+    </main>
 
-      <!-- Fin de partie -->
-      <div class="card-panel game-end hidden">
-        <h2 id="winnerTitle"></h2>
-        <p class="recap" id="finalRecap"></p>
-        <button class="btn" id="replayBtn">🔁 Rejouer</button>
-        <a class="home-link" href="index.html">← Retour aux jeux</a>
+    <!-- Fin de tour -->
+    <main class="screen result round-end hidden">
+      <div class="result-burst" id="roundBurst" aria-hidden="true"></div>
+      <div class="panel result-panel">
+        <div class="result-title" id="roundEndTitle"></div>
+        <div class="round-points" id="roundPoints"></div>
+        <div class="scoreboard" id="roundScoreboard"></div>
       </div>
-    </div>
+      <button class="btn next-team" id="nextRoundBtn"></button>
+    </main>
 
-    <canvas
-      id="confetti"
-      style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-      "
-    ></canvas>
+    <!-- Fin de partie -->
+    <main class="screen result game-end hidden">
+      <div class="result-burst" id="winBurst" aria-hidden="true"></div>
+      <div class="panel result-panel">
+        <div class="result-title" id="winnerTitle"></div>
+        <div class="scoreboard" id="finalScoreboard"></div>
+      </div>
+      <button class="btn replay" id="replayBtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12a7 7 0 1 1-2.1-5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" />
+          <path d="M18.5 2.5v5h-5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Rejouer
+      </button>
+      <a class="home-link" href="index.html">← Retour aux jeux</a>
+    </main>
 
+    <canvas id="confetti"></canvas>
+
+    <script src="voix.js"></script>
     <script>
       const DURATIONS = [30, 60, 90]
       const TARGETS = [5, 10, 15]
+
+      const INK = "#15131a"
+      const COLORS = {
+        red: "#ff2d3f",
+        blue: "#2365ff",
+        yellow: "#ffd60a",
+        green: "#22c76a",
+        cyan: "#18b6ee",
+      }
+      const TEAM_COLORS = [COLORS.red, COLORS.blue]
+
+      // Les onomatopées : on pioche au hasard, sans redire la même deux fois
+      // de suite.
+      const SFX = {
+        found: ["BING !", "YES !", "TCHAC !", "WOUAH !", "SUPER !", "BRAVO !"],
+        taboo: ["BZZZT !", "OUPS !", "AÏE !", "PAF !"],
+        skip: ["ZIOU !", "HOP !", "FIOUU !"],
+      }
+
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
 
       let cards = []
       let deck = [] // indices restants, mélangés
@@ -381,7 +1014,9 @@
       const roundEndScreen = document.querySelector(".round-end")
       const gameEndScreen = document.querySelector(".game-end")
 
-      const teamName = (team) => (team === 0 ? "🔴 Équipe 1" : "🔵 Équipe 2")
+      const teamName = (team) => (team === 0 ? "Équipe 1" : "Équipe 2")
+      const teamChip = (team) =>
+        `<span class="team-chip t${team + 1}">${teamName(team)}</span>`
 
       function show(screen) {
         for (const s of [
@@ -392,26 +1027,359 @@
         ]) {
           s.classList.toggle("hidden", s !== screen)
         }
+        field.resize()
       }
 
-      // --- Son -------------------------------------------------------------
-      // L'AudioContext n'est créé qu'au premier geste du joueur : les
-      // navigateurs refusent de le démarrer avant.
-      let audioContext = null
+      function pick(list) {
+        let word
+        do word = list[Math.floor(Math.random() * list.length)]
+        while (list.length > 1 && word === pick.last)
+        pick.last = word
+        return word
+      }
 
-      function beep(duration, frequency) {
+      // --- Éclats (étoiles à pointes irrégulières) ------------------------
+      // Une étoile dans un ovale de centre (cx, cy) et de rayons (rx, ry),
+      // pointes plus ou moins longues comme dans une case de BD.
+      function burstPoints(cx, cy, rx, ry, spikes, depth = 0.72) {
+        const points = []
+        for (let i = 0; i < spikes * 2; i++) {
+          const angle = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2
+          const r =
+            i % 2 ? depth * (0.92 + Math.random() * 0.12) : 0.86 + Math.random() * 0.22
+          points.push(
+            (cx + Math.cos(angle) * rx * r).toFixed(1) +
+              "," +
+              (cy + Math.sin(angle) * ry * r).toFixed(1),
+          )
+        }
+        return points.join(" ")
+      }
+
+      // Un éclat avec son texte, en SVG : contour noir, ombre décalée.
+      function burstSvg(text, color) {
+        const size = Math.min(64, 480 / text.length)
+        const shape = burstPoints(150, 95, 140, 88, 13, 0.7)
+        const inner = burstPoints(150, 95, 108, 64, 13, 0.78)
+        const tilt = (Math.random() * 10 - 5).toFixed(1)
+        return `<svg viewBox="0 0 300 190">
+          <polygon points="${shape}" fill="${INK}" transform="translate(7 7)" />
+          <polygon class="burst-shape" points="${shape}" fill="${color}" stroke-width="5" />
+          <polygon points="${inner}" fill="${COLORS.yellow}" opacity="0.9" />
+          <text class="sfx-text" x="150" y="${95 + size * 0.36}" text-anchor="middle"
+            font-size="${size}" fill="#fff"
+            transform="rotate(${tilt} 150 95)">${text}</text>
+        </svg>`
+      }
+
+      $("coverBurst").setAttribute(
+        "points",
+        burstPoints(150, 75, 140, 68, 15, 0.74),
+      )
+      $("timerBurst").setAttribute("points", burstPoints(50, 50, 48, 48, 12, 0.8))
+
+      // Une onomatopée qui éclate par-dessus la carte puis s'efface.
+      function popSfx(text, color, duration = 720) {
+        const layer = $("sfxLayer")
+        const el = document.createElement("div")
+        el.className = "sfx"
+        el.innerHTML = burstSvg(text, color)
+        layer.replaceChildren(el)
+        const tilt = Math.random() * 16 - 8
+        const frames = reduceMotion
+          ? [
+              { opacity: 0, transform: "translate(-50%, -50%)" },
+              { opacity: 1, offset: 0.15 },
+              { opacity: 1, offset: 0.75 },
+              { opacity: 0, transform: "translate(-50%, -50%)" },
+            ]
+          : [
+              {
+                opacity: 0,
+                transform: `translate(-50%, -50%) scale(0.2) rotate(${tilt - 25}deg)`,
+              },
+              {
+                opacity: 1,
+                transform: `translate(-50%, -50%) scale(1.15) rotate(${tilt}deg)`,
+                offset: 0.18,
+              },
+              {
+                opacity: 1,
+                transform: `translate(-50%, -50%) scale(1) rotate(${tilt}deg)`,
+                offset: 0.32,
+              },
+              {
+                opacity: 1,
+                transform: `translate(-50%, -50%) scale(1.02) rotate(${tilt}deg)`,
+                offset: 0.75,
+              },
+              {
+                opacity: 0,
+                transform: `translate(-50%, -50%) scale(1.25) rotate(${tilt + 4}deg)`,
+              },
+            ]
+        el.animate(frames, {
+          duration,
+          easing: "ease-out",
+          fill: "forwards",
+        }).onfinish = () => el.remove()
+      }
+
+      // --- La trame de fond : des points qui réagissent -----------------
+      // Une trame de points comme sur une page de BD imprimée, plus gros en
+      // bas. Une onde peut la traverser (trouvé, tabou, passer) : les points
+      // gonflent et prennent la couleur du coup au passage de l'onde. Le
+      // dessin ne tourne que pendant une onde.
+      const field = (() => {
+        const canvas = $("field")
+        const ctx = canvas.getContext("2d")
+        const STEP = 16
+        let width = 0
+        let height = 0
+        let dots = []
+        let tint = "rgba(255, 45, 63, 0.22)"
+        let waves = []
+        let frame = null
+
+        function resize() {
+          const dpr = Math.min(2, window.devicePixelRatio || 1)
+          width = window.innerWidth
+          height = window.innerHeight
+          canvas.width = width * dpr
+          canvas.height = height * dpr
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+          dots = []
+          // Trame inclinée à 45° : une rangée sur deux est décalée.
+          for (let row = 0, y = 0; y < height + STEP; row++, y += STEP * 0.5) {
+            for (
+              let x = row % 2 ? STEP / 2 : 0;
+              x < width + STEP;
+              x += STEP
+            ) {
+              const gradient = Math.min(1, Math.max(0, y / height))
+              const base = 0.6 + gradient * gradient * 4.4
+              dots.push({ x, y, base })
+            }
+          }
+          draw(performance.now())
+        }
+
+        function draw(now) {
+          ctx.clearRect(0, 0, width, height)
+          waves = waves.filter((w) => now - w.start < w.life)
+          ctx.fillStyle = tint
+          ctx.beginPath()
+          const lit = []
+          for (const d of dots) {
+            let bump = 0
+            for (const w of waves) {
+              const radius = ((now - w.start) / w.life) * w.reach
+              const dist = Math.hypot(d.x - w.x, d.y - w.y)
+              const near = 1 - Math.abs(dist - radius) / 60
+              if (near > 0) {
+                const fade = 1 - (now - w.start) / w.life
+                bump = Math.max(bump, near * near * fade)
+              }
+            }
+            const r = d.base + bump * 5
+            if (bump > 0.12) lit.push(d, r, bump)
+            else {
+              ctx.moveTo(d.x + r, d.y)
+              ctx.arc(d.x, d.y, r, 0, Math.PI * 2)
+            }
+          }
+          ctx.fill()
+          if (waves.length) {
+            ctx.fillStyle = waves[waves.length - 1].color
+            ctx.beginPath()
+            for (let i = 0; i < lit.length; i += 3) {
+              const d = lit[i]
+              ctx.moveTo(d.x + lit[i + 1], d.y)
+              ctx.arc(d.x, d.y, lit[i + 1], 0, Math.PI * 2)
+            }
+            ctx.fill()
+          }
+          frame = waves.length ? requestAnimationFrame(draw) : null
+        }
+
+        function wave(x, y, color) {
+          if (reduceMotion) return
+          waves.push({
+            x,
+            y,
+            color,
+            start: performance.now(),
+            life: 1100,
+            reach: Math.hypot(width, height),
+          })
+          if (!frame) frame = requestAnimationFrame(draw)
+        }
+
+        function setTint(color) {
+          tint = color
+          if (!frame) draw(performance.now())
+        }
+
+        window.addEventListener("resize", resize)
+        resize()
+        return { resize, wave, setTint }
+      })()
+
+      // Une onde qui part du centre d'un élément (le bouton touché).
+      function waveFrom(el, color) {
+        const box = el.getBoundingClientRect()
+        field.wave(box.left + box.width / 2, box.top + box.height / 2, color)
+      }
+
+      // --- Le fondu en trame de la carte ---------------------------------
+      // Des points grossissent en diagonale jusqu'à couvrir la carte, la
+      // carte change dessous, puis les points rapetissent et la découvrent.
+      const wipe = (() => {
+        const canvas = $("wipe")
+        const ctx = canvas.getContext("2d")
+        const STEP = 18
+        const HALF = 260 // ms par moitié
+        let frame = null
+        let pending = null
+
+        function finish() {
+          if (frame) cancelAnimationFrame(frame)
+          frame = null
+          if (pending) pending()
+          pending = null
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+        }
+
+        function run(color, swap) {
+          finish()
+          if (reduceMotion) {
+            swap()
+            return
+          }
+          const dpr = Math.min(2, window.devicePixelRatio || 1)
+          const w = canvas.clientWidth
+          const h = canvas.clientHeight
+          canvas.width = w * dpr
+          canvas.height = h * dpr
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+          pending = swap
+          const start = performance.now()
+          const maxR = STEP * 0.78
+          const ease = (t) => t * t * (3 - 2 * t)
+
+          function step(now) {
+            const t = (now - start) / HALF
+            const covering = t < 1
+            if (!covering && pending) {
+              pending()
+              pending = null
+            }
+            if (t >= 2) {
+              finish()
+              return
+            }
+            const local = covering ? t : t - 1
+            ctx.clearRect(0, 0, w, h)
+            ctx.fillStyle = color
+            ctx.beginPath()
+            for (let y = 0; y < h + STEP; y += STEP) {
+              for (let x = 0; x < w + STEP; x += STEP) {
+                // Le long de la diagonale, du coin en bas à gauche.
+                const diag = (x + (h - y)) / (w + h)
+                const p = ease(Math.min(1, Math.max(0, (local - diag * 0.45) / 0.55)))
+                const r = maxR * (covering ? p : 1 - p)
+                if (r <= 0.2) continue
+                ctx.moveTo(x + r, y)
+                ctx.arc(x, y, r, 0, Math.PI * 2)
+              }
+            }
+            ctx.fill()
+            frame = requestAnimationFrame(step)
+          }
+          frame = requestAnimationFrame(step)
+        }
+
+        return { run, finish }
+      })()
+
+      // --- Son -------------------------------------------------------------
+      // Des sons de BD synthétisés, joués par le contexte de voix.js : il est
+      // réveillé au toucher (obligatoire sur iPhone) et tenu éveillé le temps
+      // d'un tour pour le tic-tac de la fin.
+      function tone(type, freq, start, length, volume, endFreq) {
+        const ctx = Voice.context()
+        if (!ctx) return
+        const t = ctx.currentTime + start
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = type
+        osc.frequency.setValueAtTime(freq, t)
+        if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, t + length)
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(volume, t + 0.01)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + length)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + length + 0.02)
+      }
+
+      function whoosh() {
+        const ctx = Voice.context()
+        if (!ctx) return
+        const length = 0.35
+        const buffer = ctx.createBuffer(1, ctx.sampleRate * length, ctx.sampleRate)
+        const data = buffer.getChannelData(0)
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+        const noise = ctx.createBufferSource()
+        noise.buffer = buffer
+        const filter = ctx.createBiquadFilter()
+        filter.type = "bandpass"
+        filter.Q.value = 1.4
+        const t = ctx.currentTime
+        filter.frequency.setValueAtTime(500, t)
+        filter.frequency.exponentialRampToValueAtTime(3500, t + length)
+        const gain = ctx.createGain()
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(0.35, t + 0.08)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + length)
+        noise.connect(filter)
+        filter.connect(gain)
+        gain.connect(ctx.destination)
+        noise.start(t)
+      }
+
+      const sounds = {
+        found() {
+          tone("square", 660, 0, 0.09, 0.08)
+          tone("square", 990, 0.08, 0.22, 0.08)
+          tone("triangle", 1320, 0.08, 0.3, 0.12)
+        },
+        taboo() {
+          tone("sawtooth", 110, 0, 0.45, 0.12)
+          tone("sawtooth", 117, 0, 0.45, 0.12)
+        },
+        skip: whoosh,
+        tick() {
+          tone("triangle", 1250, 0, 0.06, 0.18)
+        },
+        // La sonnerie de fin de tour : deux notes qui alternent très vite.
+        ring() {
+          for (let i = 0; i < 14; i++) {
+            tone("square", i % 2 ? 1480 : 1320, i * 0.05, 0.06, 0.05)
+          }
+        },
+        win() {
+          ;[523, 659, 784, 1047].forEach((f, i) =>
+            tone("square", f, i * 0.12, i === 3 ? 0.5 : 0.14, 0.07),
+          )
+        },
+      }
+
+      function play(name, wakeMs = 1500) {
         try {
-          if (!audioContext) audioContext = new AudioContext()
-          if (audioContext.state === "suspended") audioContext.resume()
-          const oscillator = audioContext.createOscillator()
-          const gain = audioContext.createGain()
-          oscillator.connect(gain)
-          gain.connect(audioContext.destination)
-          oscillator.frequency.value = frequency
-          oscillator.type = "square"
-          gain.gain.value = 0.15
-          oscillator.start(audioContext.currentTime)
-          oscillator.stop(audioContext.currentTime + duration / 1000)
+          Voice.wake(wakeMs)
+          sounds[name]()
         } catch (e) {
           // Pas de son disponible : le jeu reste jouable.
         }
@@ -469,7 +1437,8 @@
           ]
         }
         $("startBtn").disabled = false
-        $("startBtn").textContent = "▶️ Commencer la partie"
+        $("startBtn").innerHTML =
+          `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>C'est parti !`
       }
 
       function shuffleDeck() {
@@ -480,21 +1449,36 @@
         }
       }
 
-      function drawCard() {
+      // Tire une carte ; avec une couleur, elle arrive par le fondu en trame.
+      function drawCard(color) {
         if (deck.length === 0) shuffleDeck()
         currentCard = cards[deck.pop()]
-        displayCard()
+        if (color) wipe.run(color, displayCard)
+        else displayCard()
       }
 
       function displayCard() {
-        $("word").textContent = running ? currentCard.word : "…"
+        const word = $("word")
+        word.textContent = running ? currentCard.word : "…"
+        fitWord(word)
         const list = $("tabooList")
         list.innerHTML = ""
         if (!running) return
-        for (const word of currentCard.taboo) {
+        for (const taboo of currentCard.taboo) {
           const li = document.createElement("li")
-          li.textContent = word
+          li.textContent = taboo
           list.appendChild(li)
+        }
+      }
+
+      // Le mot à deviner, le plus gros possible sur une seule ligne.
+      function fitWord(el) {
+        el.style.fontSize = ""
+        const room = el.parentElement.clientWidth - 24
+        const width = el.scrollWidth
+        if (width > room) {
+          const size = parseFloat(getComputedStyle(el).fontSize)
+          el.style.fontSize = Math.floor((size * room) / width) + "px"
         }
       }
 
@@ -511,13 +1495,21 @@
         roundPoints = 0
         timeLeft = duration
         running = true
+        document.body.classList.toggle("team-2", currentTeam === 1)
+        field.setTint(
+          currentTeam === 0
+            ? "rgba(255, 45, 63, 0.2)"
+            : "rgba(35, 101, 255, 0.2)",
+        )
         updateTimer()
         updateScores()
         setActionsEnabled(true)
-        $("pauseBtn").textContent = "⏸️ Pause"
-        $("pausedNote").classList.add("hidden")
-        drawCard()
+        $("pauseBtn").disabled = false
+        setPauseLook(false)
         show(gameScreen)
+        drawCard()
+        // Le contexte audio reste éveillé tout le tour, pour le tic-tac.
+        Voice.wake((duration + 3) * 1000)
         if (window.ExitGuard) ExitGuard.setActive(true)
         startTimer()
       }
@@ -527,7 +1519,18 @@
         timer = setInterval(() => {
           timeLeft--
           updateTimer()
-          if (timeLeft <= 5 && timeLeft > 0) beep(80, 660)
+          if (timeLeft <= 5 && timeLeft > 0) {
+            play("tick", (timeLeft + 3) * 1000)
+            if (!reduceMotion) {
+              $("timer").animate(
+                [
+                  { transform: "scale(1.2) rotate(-6deg)" },
+                  { transform: "scale(1) rotate(0)" },
+                ],
+                { duration: 350, easing: "ease-out" },
+              )
+            }
+          }
           if (timeLeft <= 0) endRound()
         }, 1000)
       }
@@ -539,14 +1542,23 @@
         }
       }
 
+      function setPauseLook(paused) {
+        $("pauseLabel").textContent = paused ? "Reprendre" : "Pause"
+        $("pauseIcon").classList.toggle("hidden", paused)
+        $("playIcon").classList.toggle("hidden", !paused)
+        $("pauseCover").classList.toggle("hidden", !paused)
+      }
+
       function togglePause() {
         running = !running
-        $("pauseBtn").textContent = running ? "⏸️ Pause" : "▶️ Reprendre"
-        $("pausedNote").classList.toggle("hidden", running)
+        wipe.finish()
+        setPauseLook(!running)
         setActionsEnabled(running)
         displayCard()
-        if (running) startTimer()
-        else clearTimer()
+        if (running) {
+          Voice.wake((timeLeft + 3) * 1000)
+          startTimer()
+        } else clearTimer()
       }
 
       function setActionsEnabled(enabled) {
@@ -555,20 +1567,72 @@
         }
       }
 
-      function score(delta) {
+      const FEEDBACK = {
+        found: COLORS.green,
+        taboo: COLORS.red,
+        skip: COLORS.cyan,
+      }
+
+      // Un coup joué : le son, l'onde dans la trame, l'onomatopée.
+      function feedback(kind, button) {
+        const color = FEEDBACK[kind]
+        play(kind)
+        waveFrom(button, color)
+        popSfx(pick(SFX[kind]), color)
+        if (kind === "taboo" && !reduceMotion) {
+          $("card").animate(
+            [
+              { transform: "translateX(0)" },
+              { transform: "translateX(-12px) rotate(-1.5deg)" },
+              { transform: "translateX(10px) rotate(1deg)" },
+              { transform: "translateX(-6px)" },
+              { transform: "translateX(0)" },
+            ],
+            { duration: 380, easing: "ease-out" },
+          )
+        }
+      }
+
+      function score(delta, button) {
         if (!running) return
         scores[currentTeam] = Math.max(0, scores[currentTeam] + delta)
         roundPoints += delta
         updateScores()
-        beep(120, delta > 0 ? 880 : 220)
+        floatPoint(delta)
+        feedback(delta > 0 ? "found" : "taboo", button)
         if (scores[currentTeam] >= target) {
           clearTimer()
           running = false
           setActionsEnabled(false)
-          endGame(currentTeam)
+          $("pauseBtn").disabled = true
+          // Le temps de voir l'onomatopée avant la victoire.
+          setTimeout(() => endGame(currentTeam), 700)
           return
         }
-        drawCard()
+        drawCard(FEEDBACK[delta > 0 ? "found" : "taboo"])
+      }
+
+      // « +1 » ou « −1 » qui s'envole de la case de l'équipe.
+      function floatPoint(delta) {
+        const box = $(currentTeam === 0 ? "scoreTeam1" : "scoreTeam2")
+        const points = box.querySelector(".points")
+        if (reduceMotion) return
+        points.animate(
+          [{ transform: "scale(1.5)" }, { transform: "scale(1)" }],
+          { duration: 350, easing: "ease-out" },
+        )
+        const tag = document.createElement("span")
+        tag.className = "float-point"
+        tag.textContent = delta > 0 ? "+1" : "−1"
+        tag.style.color = delta > 0 ? COLORS.green : COLORS.red
+        box.appendChild(tag)
+        tag.animate(
+          [
+            { transform: "translate(-50%, 0) scale(0.6)", opacity: 1 },
+            { transform: "translate(-50%, -34px) scale(1.3)", opacity: 0 },
+          ],
+          { duration: 800, easing: "ease-out" },
+        ).onfinish = () => tag.remove()
       }
 
       function updateScores() {
@@ -579,36 +1643,72 @@
       }
 
       function updateTimer() {
-        $("timer").textContent = Math.max(0, timeLeft)
+        $("timerValue").textContent = Math.max(0, timeLeft)
         $("timer").classList.toggle("urgent", timeLeft <= 10)
+      }
+
+      function scoreboardHtml() {
+        return (
+          `<div class="side t1"><span>Équipe 1</span><strong>${scores[0]}</strong></div>` +
+          `<div class="vs">contre</div>` +
+          `<div class="side t2"><span>Équipe 2</span><strong>${scores[1]}</strong></div>`
+        )
+      }
+
+      // Un grand éclat en haut d'un écran de résultat, qui claque en entrant.
+      function slamBurst(el, text, color) {
+        el.innerHTML = burstSvg(text, color)
+        if (reduceMotion) return
+        el.animate(
+          [
+            { transform: "scale(0.3) rotate(-18deg)", opacity: 0 },
+            { transform: "scale(1.12) rotate(3deg)", opacity: 1, offset: 0.6 },
+            { transform: "scale(1) rotate(0)", opacity: 1 },
+          ],
+          { duration: 500, easing: "ease-out" },
+        )
       }
 
       function endRound() {
         clearTimer()
         running = false
         setActionsEnabled(false)
-        beep(700, 440)
+        $("pauseBtn").disabled = true
+        wipe.finish()
+        play("ring")
+        popSfx("DRIIING !", TEAM_COLORS[currentTeam], 1200)
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        // La sonnerie éclate sur la carte, puis on passe au bilan.
+        setTimeout(showRoundEnd, 1150)
+      }
 
-        const played = teamName(currentTeam)
+      function showRoundEnd() {
+        const played = currentTeam
         currentTeam = currentTeam === 0 ? 1 : 0
         updateScores()
 
-        $("roundEndTitle").textContent = "⏰ Fin du tour !"
-        $("roundRecap").innerHTML =
-          `${played} marque <strong>${roundPoints >= 0 ? "+" : ""}${roundPoints}</strong> point(s) ce tour.<br />` +
-          `Score : <strong>${scores[0]} – ${scores[1]}</strong><br />` +
-          `Au tour de ${teamName(currentTeam)} !`
-        $("nextRoundBtn").textContent = `▶️ Tour de ${teamName(currentTeam)}`
+        $("roundEndTitle").innerHTML = `${teamChip(played)} marque`
+        $("roundPoints").textContent =
+          (roundPoints > 0 ? "+" : roundPoints < 0 ? "−" : "") +
+          Math.abs(roundPoints)
+        $("roundPoints").style.color = roundPoints < 0 ? COLORS.red : INK
+        $("roundScoreboard").innerHTML = scoreboardHtml()
+        const next = $("nextRoundBtn")
+        next.className = `btn next-team t${currentTeam + 1}`
+        next.innerHTML =
+          `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>` +
+          `Au tour de l'${teamName(currentTeam).toLowerCase()}`
         show(roundEndScreen)
-        if (window.ExitGuard) ExitGuard.setActive(false)
+        slamBurst($("roundBurst"), "FIN DU TOUR !", COLORS.yellow)
       }
 
       function endGame(winner) {
         if (window.ExitGuard) ExitGuard.setActive(false)
-        $("winnerTitle").textContent = `🏆 ${teamName(winner)} gagne !`
-        $("finalRecap").innerHTML =
-          `Score final : <strong>${scores[0]} – ${scores[1]}</strong>`
+        $("winnerTitle").innerHTML = `${teamChip(winner)}<br />gagne la partie !`
+        $("finalScoreboard").innerHTML = scoreboardHtml()
         show(gameEndScreen)
+        slamBurst($("winBurst"), "KAPOW !", TEAM_COLORS[winner])
+        play("win")
         showConfetti()
       }
 
@@ -616,10 +1716,16 @@
       $("startBtn").addEventListener("click", startGame)
       $("replayBtn").addEventListener("click", startGame)
       $("nextRoundBtn").addEventListener("click", startRound)
-      $("foundBtn").addEventListener("click", () => score(1))
-      $("tabooBtn").addEventListener("click", () => score(-1))
-      $("skipBtn").addEventListener("click", () => {
-        if (running) drawCard()
+      $("foundBtn").addEventListener("click", (e) =>
+        score(1, e.currentTarget),
+      )
+      $("tabooBtn").addEventListener("click", (e) =>
+        score(-1, e.currentTarget),
+      )
+      $("skipBtn").addEventListener("click", (e) => {
+        if (!running) return
+        feedback("skip", e.currentTarget)
+        drawCard(COLORS.cyan)
       })
       $("pauseBtn").addEventListener("click", togglePause)
 
