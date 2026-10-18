@@ -23,9 +23,7 @@
         --paper: #fff6e6;
         --dots: #ffc9d8;
         --ou: #3557e0;
-        --ou-tint: #dfe6ff;
         --on: #f2620f;
-        --on-tint: #ffe4c7;
         --muted: #7a6a8e;
         --font: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
       }
@@ -131,12 +129,37 @@
         white-space: nowrap;
       }
 
-      .bubble.ou .say {
-        color: var(--ou);
+      /* La couleur du son, pour tout ce qui porte sa classe : bulle,
+         pastille, onde, croche, goutte, rayons. */
+      .ou {
+        --c: var(--ou);
       }
 
-      .bubble.on .say {
-        color: var(--on);
+      .on {
+        --c: var(--on);
+      }
+
+      .bubble .say {
+        color: var(--c);
+      }
+
+      /* Dans un mot, le son en couleur, les autres lettres à l'encre. */
+      .bubble .say span {
+        display: inline-block;
+        color: var(--ink);
+      }
+
+      .bubble .say .snd {
+        color: inherit;
+      }
+
+      button.bubble {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        touch-action: manipulation;
+        font-family: var(--font);
       }
 
       /* ===== Accueil ===== */
@@ -162,11 +185,6 @@
       .title .bubble {
         width: 118px;
         height: 92px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        touch-action: manipulation;
-        font-family: var(--font);
       }
 
       .title .bubble .say {
@@ -266,22 +284,13 @@
         background: var(--ink);
       }
 
-      .track .ok-ou {
-        background: var(--ou);
+      .track .ok {
+        background: var(--c);
       }
 
-      .track .ok-on {
-        background: var(--on);
-      }
-
-      .track .ko-ou {
+      .track .ko {
         background: none;
-        box-shadow: inset 0 0 0 2.5px var(--ou);
-      }
-
-      .track .ko-on {
-        background: none;
-        box-shadow: inset 0 0 0 2.5px var(--on);
+        box-shadow: inset 0 0 0 2.5px var(--c);
       }
 
       .stage {
@@ -306,7 +315,7 @@
         margin: 0 0 -280px -280px;
         border-radius: 50%;
         background: repeating-conic-gradient(
-          var(--burst, var(--ou)) 0deg 7deg,
+          var(--c) 0deg 7deg,
           transparent 7deg 20deg
         );
         -webkit-mask-image: radial-gradient(
@@ -323,6 +332,7 @@
         );
         opacity: 0;
         pointer-events: none;
+        will-change: transform, opacity;
       }
 
       .slot {
@@ -387,15 +397,6 @@
         font-size: calc(var(--fit, 1) * 3.4rem);
       }
 
-      .answer .say > span {
-        display: inline-block;
-        color: var(--ink);
-      }
-
-      .answer .say > .snd {
-        color: inherit;
-      }
-
       /* Une onde : le contour de la bulle, qui s'élargit et s'efface. */
       .ring {
         position: absolute;
@@ -404,6 +405,7 @@
         height: 100%;
         overflow: visible;
         fill: none;
+        stroke: var(--c);
         stroke-width: 4;
         transform-origin: 50% 43%;
         opacity: 0;
@@ -457,12 +459,6 @@
         flex: 1;
         max-width: 180px;
         aspect-ratio: 220 / 170;
-        background: none;
-        border: none;
-        padding: 0;
-        cursor: pointer;
-        touch-action: manipulation;
-        font-family: var(--font);
         animation: breathe 2.6s ease-in-out infinite;
       }
 
@@ -503,6 +499,7 @@
       .note {
         width: 30px;
         height: 30px;
+        fill: var(--c);
         stroke: var(--ink);
         stroke-width: 1.5;
       }
@@ -512,6 +509,7 @@
         height: 16px;
         border-radius: 50%;
         border: 2.5px solid var(--ink);
+        background: var(--c);
       }
 
       /* ===== Fin de partie ===== */
@@ -558,12 +556,7 @@
         font-weight: 700;
       }
 
-      .strip .say span {
-        color: var(--ink);
-      }
-
       .strip .say .snd {
-        color: inherit;
         font-weight: 800;
       }
 
@@ -829,12 +822,8 @@
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
       const countRight = () =>
         results.filter((r) => r.choice === r.answer).length
-      const reducedMotion = () =>
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      const color = (sound) =>
-        getComputedStyle(document.body)
-          .getPropertyValue("--" + sound)
-          .trim()
+      const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+      const reducedMotion = () => motionQuery.matches
 
       Voice.folder = "audio/ou-ou-on/"
 
@@ -854,8 +843,8 @@
       const OVAL =
         "M110 8 C168 8 206 38 206 74 C206 110 168 138 110 138 C52 138 14 110 14 74 C14 38 52 8 110 8 Z"
 
-      function cloudPath(n = 11) {
-        const [cx, cy, rx, ry] = [110, 73, 84, 50]
+      function cloudPath() {
+        const [cx, cy, rx, ry, n] = [110, 73, 84, 50, 11]
         const points = Array.from({ length: n + 1 }, (_, i) => {
           const a = -Math.PI / 2 + (i / n) * Math.PI * 2
           return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)]
@@ -887,10 +876,19 @@
         </svg>`
       }
 
-      function fillBubble(el, sound, html = sound) {
+      // La bulle qui parle, dans la case.
+      function speechBubble(sound) {
+        const bubble = document.createElement("div")
+        bubble.className = "bubble answer"
+        bubble.dataset.sound = sound
+        fillBubble(bubble, sound)
+        return bubble
+      }
+
+      function fillBubble(el, sound) {
         el.classList.remove("ou", "on")
         el.classList.add(sound)
-        el.innerHTML = bubbleSVG(sound) + `<span class="say">${html}</span>`
+        el.innerHTML = bubbleSVG(sound) + `<span class="say">${sound}</span>`
       }
 
       // Le mot lettre à lettre, le son regroupé dans un seul morceau
@@ -908,7 +906,7 @@
       }
 
       // Les mots longs rapetissent pour tenir dans la bulle.
-      const fit = (word) => Math.min(1, 7 / word.length).toFixed(2)
+      const fit = (word) => Math.min(1, 6.5 / word.length).toFixed(2)
 
       // ===== Les petits sons =====
 
@@ -1009,16 +1007,18 @@
 
       // La bulle choisie quitte sa place et vole jusqu'à la case, en arc.
       function flight(choice, slot) {
-        choice.classList.add("flown")
-        if (reducedMotion()) return Promise.resolve()
+        if (reducedMotion()) {
+          choice.classList.add("flown")
+          return Promise.resolve()
+        }
         const from = choice.getBoundingClientRect()
         const to = slot.getBoundingClientRect()
-        const ghost = document.createElement("div")
-        ghost.className = "bubble " + choice.dataset.sound
-        ghost.innerHTML = choice.innerHTML
-        ghost.querySelector(".say").style.fontSize = getComputedStyle(
-          choice.querySelector(".say"),
-        ).fontSize
+        const fontSize = getComputedStyle(choice.querySelector(".say")).fontSize
+        const ghost = choice.cloneNode(true)
+        ghost.classList.remove("gone")
+        ghost.style.animation = "none"
+        ghost.querySelector(".say").style.fontSize = fontSize
+        choice.classList.add("flown")
         ghost.style.width = from.width + "px"
         ghost.style.height = from.height + "px"
         const s = to.width / from.width
@@ -1119,7 +1119,7 @@
           for (let i = 0; i < 3; i++) {
             bubble.insertAdjacentHTML(
               "beforeend",
-              `<svg class="ring" viewBox="0 0 220 170" stroke="${color(sound)}"><path d="${SHAPES[sound]}" /></svg>`,
+              `<svg class="ring" viewBox="0 0 220 170"><path d="${SHAPES[sound]}" /></svg>`,
             )
             const ring = bubble.lastElementChild
             ring
@@ -1138,7 +1138,7 @@
               .finished.then(() => ring.remove())
           }
           notes(bubble, sound)
-          $("burst").style.setProperty("--burst", color(sound))
+          $("burst").className = "burst " + sound
           $("burst").animate(
             [
               { transform: "scale(0.6) rotate(0deg)", opacity: 0 },
@@ -1175,8 +1175,7 @@
             "svg",
           )
           note.setAttribute("viewBox", "0 0 24 24")
-          note.setAttribute("class", "note")
-          note.style.fill = color(sound)
+          note.setAttribute("class", "note " + sound)
           note.innerHTML =
             i % 2
               ? `<path d="M7 20.5a3.6 2.8-20 1 1 0-.1ZM9.9 18.6V5l9-2v13M18.9 16.6a3.6 2.8-20 1 1 0-.1Z" />`
@@ -1207,30 +1206,30 @@
       }
 
       // La mauvaise bulle secoue la tête, puis éclate en gouttes.
-      async function popBubble(bubble, sound) {
+      async function popBubble(bubble) {
         sfx.wrong()
-        if (!reducedMotion()) {
-          await bubble.animate(
-            [
-              { transform: "none" },
-              { transform: "translateX(-12px) rotate(-5deg)" },
-              { transform: "translateX(11px) rotate(4deg)" },
-              { transform: "translateX(-8px) rotate(-3deg)" },
-              { transform: "translateX(5px) rotate(2deg)" },
-              { transform: "none" },
-            ],
-            { duration: 520, easing: "ease-in-out" },
-          ).finished
-          await wait(120)
+        if (reducedMotion()) {
+          sfx.pop()
+          return
         }
+        await bubble.animate(
+          [
+            { transform: "none" },
+            { transform: "translateX(-12px) rotate(-5deg)" },
+            { transform: "translateX(11px) rotate(4deg)" },
+            { transform: "translateX(-8px) rotate(-3deg)" },
+            { transform: "translateX(5px) rotate(2deg)" },
+            { transform: "none" },
+          ],
+          { duration: 520, easing: "ease-in-out" },
+        ).finished
+        await wait(120)
         sfx.pop()
-        if (reducedMotion()) return
         const [cx, cy] = center(bubble)
         const r = bubble.getBoundingClientRect()
         for (let i = 0; i < 14; i++) {
           const drop = document.createElement("span")
-          drop.className = "drop"
-          drop.style.background = color(sound)
+          drop.className = "drop " + bubble.dataset.sound
           const a = ((i + Math.random() * 0.6) / 14) * Math.PI * 2
           const x0 = cx + Math.cos(a) * r.width * 0.42 - 8
           const y0 = cy - 14 + Math.sin(a) * r.height * 0.36 - 8
@@ -1252,12 +1251,14 @@
             { transform: "scale(1)", opacity: 1 },
             { transform: "scale(1.18)", opacity: 0 },
           ],
-          { duration: 140, easing: "ease-out", fill: "forwards" },
+          { duration: 140, easing: "ease-out" },
         ).finished
+        bubble.remove()
       }
 
       // La bonne bulle se gonfle à la place, avec un rebond.
       function inflate(bubble) {
+        $("slot").replaceChildren(bubble)
         sfx.inflate()
         if (reducedMotion()) return Promise.resolve()
         return bubble.animate(
@@ -1401,25 +1402,22 @@
         sfx.blop()
         await flight(choice, $("slot"))
 
-        const answerBubble = document.createElement("div")
-        answerBubble.className = "bubble answer"
-        fillBubble(answerBubble, sound)
+        let answerBubble = speechBubble(sound)
         $("slot").replaceChildren(answerBubble)
         await settle(answerBubble)
 
         if (isCorrect) {
           await formWord(answerBubble, word, sound)
         } else {
-          await popBubble(answerBubble, sound)
-          fillBubble(answerBubble, answer)
-          answerBubble.getAnimations().forEach((a) => a.cancel())
+          await popBubble(answerBubble)
+          answerBubble = speechBubble(answer)
           other.classList.remove("gone")
           nudge(other)
           await inflate(answerBubble)
           await formWord(answerBubble, word, answer)
         }
         $("track").children[currentIndex].className =
-          (isCorrect ? "ok-" : "ko-") + answer
+          `${isCorrect ? "ok" : "ko"} ${answer}`
         $("goodCount").textContent = countRight()
         await sing(answerBubble, word, answer)
         await wait(isCorrect ? 250 : 600)
