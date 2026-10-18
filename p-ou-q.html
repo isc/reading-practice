@@ -23,7 +23,7 @@
         --warm: #ffb46b;
         --text: #eef0ff;
         --muted: #a3abdc;
-        --glass: rgba(255, 255, 255, 0.08);
+        --glass: rgba(255, 255, 255, 0.1);
         --glass-edge: rgba(255, 255, 255, 0.22);
         --font: "Lexend", "Trebuchet MS", system-ui, sans-serif;
       }
@@ -37,12 +37,6 @@
       body {
         font-family: var(--font);
         color: var(--text);
-        background: radial-gradient(
-            ellipse at 50% 120%,
-            var(--night-2),
-            var(--night) 70%
-          )
-          fixed;
         background-color: var(--night);
         min-height: 100vh;
         min-height: 100dvh;
@@ -63,17 +57,18 @@
           radial-gradient(1px 1px at 28% 52%, #fff7 50%, transparent),
           radial-gradient(1px 1px at 88% 64%, #fff6 50%, transparent),
           radial-gradient(1.5px 1.5px at 8% 80%, #fff5 50%, transparent),
-          radial-gradient(1px 1px at 46% 88%, #fff6 50%, transparent);
+          radial-gradient(1px 1px at 46% 88%, #fff6 50%, transparent),
+          radial-gradient(ellipse at 50% 120%, var(--night-2), var(--night) 70%);
       }
 
       .sky::before {
         content: "";
         position: absolute;
-        inset: -30%;
+        inset: -15%;
         background:
           radial-gradient(
             40% 30% at 30% 40%,
-            rgba(143, 246, 255, 0.16),
+            color-mix(in srgb, var(--glow) 16%, transparent),
             transparent 70%
           ),
           radial-gradient(
@@ -86,7 +81,7 @@
 
       @keyframes aurora {
         to {
-          transform: translate(8%, -6%) rotate(8deg);
+          transform: translate(8%, -6%);
         }
       }
 
@@ -122,8 +117,6 @@
         border: 1px solid var(--glass-edge);
         border-radius: 22px;
         padding: 22px 18px;
-        -webkit-backdrop-filter: blur(6px);
-        backdrop-filter: blur(6px);
       }
 
       /* ===== Les lettres de lumière ===== */
@@ -214,7 +207,7 @@
         padding: 14px 34px;
         cursor: pointer;
         box-shadow:
-          0 0 24px rgba(143, 246, 255, 0.55),
+          0 0 24px color-mix(in srgb, var(--glow) 55%, transparent),
           0 0 2px #fff inset;
         touch-action: manipulation;
       }
@@ -334,7 +327,7 @@
         border-radius: 50%;
         background: radial-gradient(
           circle,
-          rgba(143, 246, 255, 0.14),
+          color-mix(in srgb, var(--glow) 14%, transparent),
           transparent 68%
         );
       }
@@ -352,7 +345,7 @@
         position: absolute;
         inset: 12% 4% 2%;
         border-radius: 18px;
-        border: 2px dashed rgba(143, 246, 255, 0.35);
+        border: 2px dashed color-mix(in srgb, var(--glow) 35%, transparent);
         animation: waiting 1.8s ease-in-out infinite;
       }
 
@@ -420,11 +413,11 @@
           ),
           radial-gradient(
             circle,
-            rgba(143, 246, 255, 0.1),
-            rgba(143, 246, 255, 0.02) 70%
+            color-mix(in srgb, var(--glow) 10%, transparent),
+            color-mix(in srgb, var(--glow) 2%, transparent) 70%
           );
         box-shadow:
-          inset 0 0 22px rgba(143, 246, 255, 0.25),
+          inset 0 0 22px color-mix(in srgb, var(--glow) 25%, transparent),
           0 8px 26px rgba(0, 0, 0, 0.35);
         display: grid;
         place-items: center;
@@ -444,8 +437,8 @@
 
       .orb.chosen {
         box-shadow:
-          inset 0 0 30px rgba(143, 246, 255, 0.55),
-          0 0 30px rgba(143, 246, 255, 0.5);
+          inset 0 0 30px color-mix(in srgb, var(--glow) 55%, transparent),
+          0 0 30px color-mix(in srgb, var(--glow) 50%, transparent);
       }
 
       @keyframes float {
@@ -469,7 +462,8 @@
           var(--glow) 60%,
           transparent 72%
         );
-        box-shadow: 0 0 18px 6px rgba(143, 246, 255, 0.6);
+        box-shadow: 0 0 18px 6px
+          color-mix(in srgb, var(--glow) 60%, transparent);
         pointer-events: none;
         z-index: 20;
       }
@@ -508,8 +502,22 @@
         overflow: visible;
       }
 
+      #constellation .star {
+        fill: #fff;
+      }
+
+      #constellation .halo-star {
+        fill: var(--glow);
+        opacity: 0.2;
+      }
+
+      #constellation .missed-star {
+        fill: var(--warm);
+        opacity: 0.6;
+      }
+
       #constellation line {
-        stroke: rgba(143, 246, 255, 0.45);
+        stroke: color-mix(in srgb, var(--glow) 45%, transparent);
         stroke-width: 1.2;
       }
 
@@ -517,7 +525,7 @@
         font-size: 2.6rem;
         font-weight: 600;
         line-height: 1.1;
-        text-shadow: 0 0 18px rgba(143, 246, 255, 0.6);
+        text-shadow: 0 0 18px color-mix(in srgb, var(--glow) 60%, transparent);
       }
 
       .score small {
@@ -603,7 +611,8 @@
       @media (prefers-reduced-motion: reduce) {
         .sky::before,
         .orb,
-        .slot::before {
+        .slot::before,
+        .word span {
           animation: none;
         }
       }
@@ -636,9 +645,7 @@
       <!-- ===== Partie ===== -->
       <section class="screen hidden" id="game">
         <div class="stats">
-          <span
-            >Mot <b id="wordNumber">1</b> / <span id="wordTotal"></span
-          ></span>
+          <span>Mot <b id="wordNumber">1</b> / <span>20</span></span>
           <span class="tally">
             <span class="good">✓ <b id="goodCount">0</b></span>
             <span class="bad">✗ <b id="badCount">0</b></span>
@@ -766,9 +773,8 @@
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
       const countRight = () =>
         results.filter((r) => r.choice === r.answer).length
-      const reducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-      ).matches
+      const reducedMotion = () =>
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
       Voice.folder = "audio/p-ou-q/"
 
@@ -818,8 +824,8 @@
 
       // La lettre s'écrit trait après trait, une pointe de lumière en tête.
       async function traceLetter(svg, letter) {
-        drawLetter(svg, letter, reducedMotion)
-        if (reducedMotion) return
+        drawLetter(svg, letter, reducedMotion())
+        if (reducedMotion()) return
         const [tipGlow, tip] = svg.querySelectorAll("circle")
         for (const core of svg.querySelectorAll(".core path")) {
           const paths = svg.querySelectorAll(
@@ -832,8 +838,8 @@
             const frame = (now) => {
               const t = Math.min(1, (now - start) / duration)
               const k = easeInOut(t)
-              paths.forEach((p) => p.setAttribute("stroke-dashoffset", 1 - k))
               const point = core.getPointAtLength(k * length)
+              paths.forEach((p) => p.setAttribute("stroke-dashoffset", 1 - k))
               for (const [circle, r] of [
                 [tipGlow, 13],
                 [tip, 5],
@@ -850,30 +856,27 @@
         }
       }
 
-      // Le p fautif se retourne comme dans un miroir : à mi-chemin, vu par la
-      // tranche, il change de couleur ; à l'arrivée, c'est un q.
-      async function mirror(svg) {
-        if (reducedMotion) {
-          svg.classList.remove("warm")
-          svg.style.transform = "scaleX(-1)"
-          return
-        }
-        const half = (from, to, easing) =>
+      // La lettre fautive se retourne comme dans un miroir : à mi-chemin, vue
+      // par la tranche, elle devient la bonne (le q est le p dans un miroir)
+      // et change de couleur.
+      async function mirror(svg, answer) {
+        const turn = (from, to, easing) =>
           svg.animate(
             [
               { transform: `perspective(500px) rotateY(${from}deg)` },
               { transform: `perspective(500px) rotateY(${to}deg)` },
             ],
-            { duration: 320, easing, fill: "forwards" },
+            { duration: 320, easing },
           ).finished
-        await half(0, 90, "ease-in")
+        if (!reducedMotion()) await turn(0, 90, "ease-in")
         svg.classList.remove("warm")
-        await half(90, 180, "ease-out")
+        drawLetter(svg, answer)
+        if (!reducedMotion()) await turn(-90, 0, "ease-out")
       }
 
       // La comète part de la bulle et file vers la case, en arc.
       function comet(from, to) {
-        if (reducedMotion) return Promise.resolve()
+        if (reducedMotion()) return Promise.resolve()
         const center = (el) => {
           const r = el.getBoundingClientRect()
           return [r.left + r.width / 2, r.top + r.height / 2]
@@ -900,7 +903,7 @@
 
       // Une gerbe d'étincelles autour de la case.
       function sparkle(around) {
-        if (reducedMotion) return
+        if (reducedMotion()) return
         for (let i = 0; i < 12; i++) {
           const spark = document.createElement("span")
           spark.className = "spark"
@@ -1055,11 +1058,7 @@
         $("wordNumber").textContent = currentIndex + 1
         $("picture").textContent = emoji
         $("word").innerHTML = ""
-        const letter = $("slotLetter")
-        letter.innerHTML = ""
-        letter.getAnimations().forEach((a) => a.cancel())
-        letter.style.transform = ""
-        letter.classList.remove("warm")
+        $("slotLetter").innerHTML = ""
         $("slot").classList.remove("filled")
         // Les bulles changent de côté d'un mot à l'autre : on lit la lettre,
         // pas sa place.
@@ -1077,11 +1076,6 @@
               `<span class="${i ? "" : "first"}" style="animation-delay: ${i * 45}ms">${c}</span>`,
           )
           .join("")
-      }
-
-      function speakWord() {
-        Voice.wake(300) // dans le geste : débloque l'audio
-        Voice.say(words[currentIndex].word)
       }
 
       async function checkAnswer(orb) {
@@ -1104,7 +1098,7 @@
         slot.classList.add("filled")
         letter.classList.toggle("warm", !isCorrect)
         await traceLetter(letter, choice)
-        markTrack(currentIndex, isCorrect)
+        $("track").children[currentIndex].className = isCorrect ? "ok" : "ko"
         updateStats()
 
         if (isCorrect) {
@@ -1117,7 +1111,7 @@
           // voix dit le mot.
           await wait(300)
           chime([523], 2)
-          await mirror(letter)
+          await mirror(letter, answer)
           revealWord(word)
           await Voice.say(word)
           await wait(700)
@@ -1130,15 +1124,9 @@
         else displayWord()
       }
 
-      function markTrack(index, isCorrect) {
-        $("track").children[index].className = isCorrect ? "ok" : "ko"
-      }
-
       function startGame() {
         currentIndex = 0
         results = []
-        busy = false
-        $("wordTotal").textContent = NUMBER_OF_WORDS
         $("track").innerHTML = "<span></span>".repeat(NUMBER_OF_WORDS)
         // Une nouvelle partie n'est engagée qu'à la première réponse.
         if (window.ExitGuard) ExitGuard.setActive(false)
@@ -1169,8 +1157,8 @@
           )
         const dots = stars.map((s) =>
           s.ok
-            ? `<circle cx="${s.x}" cy="${s.y}" r="9" fill="#8ff6ff" opacity="0.2" /><circle cx="${s.x}" cy="${s.y}" r="3.5" fill="#fff" />`
-            : `<circle cx="${s.x}" cy="${s.y}" r="2.2" fill="#ffb46b" opacity="0.6" />`,
+            ? `<circle class="halo-star" cx="${s.x}" cy="${s.y}" r="9" /><circle class="star" cx="${s.x}" cy="${s.y}" r="3.5" />`
+            : `<circle class="missed-star" cx="${s.x}" cy="${s.y}" r="2.2" />`,
         )
         $("constellation").innerHTML = lines.join("") + dots.join("")
       }
@@ -1214,7 +1202,9 @@
         drawLetter(orb.querySelector("svg"), orb.dataset.letter)
         orb.addEventListener("click", () => checkAnswer(orb))
       })
-      $("listen").addEventListener("click", speakWord)
+      $("listen").addEventListener("click", () =>
+        Voice.say(words[currentIndex].word),
+      )
       $("soundToggle").addEventListener("click", toggleSound)
       for (const id of ["startBtn", "replayBtn"]) {
         $(id).addEventListener("click", () => {

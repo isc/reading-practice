@@ -10,13 +10,15 @@
 //   Voice.folder = "audio/p-ou-q/"  // une fois, au chargement du jeu
 //   Voice.wake(300)                 // dans un geste de l'enfant : débloque l'audio
 //   Voice.load(word)                // à l'affichage du mot, pour qu'il soit prêt
-//   await Voice.say(word)           // tenue quand le mot est dit
+//   await Voice.say(word)           // tenue quand le mot est dit ; appelée
+//                                   // dans un geste, débloque aussi l'audio
 //   Voice.context()                 // pour jouer d'autres sons
 window.Voice = (function () {
   let ctx = null
   let sleepTimer = null
   let sleepAt = 0
   const files = new Map()
+  const decoded = new Map()
 
   function context() {
     const Ctx = window.AudioContext || window.webkitAudioContext
@@ -59,11 +61,15 @@ window.Voice = (function () {
   }
 
   async function say(word) {
-    const data = await load(word)
-    const c = context()
-    // slice : le décodage vide le tampon, et le mot peut revenir.
-    const buffer =
-      data && c && (await c.decodeAudioData(data.slice(0)).catch(() => null))
+    const c = wake(300) // avant toute attente : encore dans le geste
+    if (!decoded.has(word)) {
+      const data = await load(word)
+      decoded.set(
+        word,
+        data && c && (await c.decodeAudioData(data).catch(() => null)),
+      )
+    }
+    const buffer = decoded.get(word)
     if (!buffer) return speakWithBrowser(word)
     wake(buffer.duration * 1000 + 500)
     const source = c.createBufferSource()
