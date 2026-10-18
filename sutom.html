@@ -41,6 +41,7 @@
         --absent: #19173f;
         --absent-ink: #514f8a;
         --gap: 5px;
+        --vh: 100vh;
         --dock: 180px;
       }
 
@@ -79,10 +80,25 @@
         -webkit-tap-highlight-color: transparent;
       }
 
+      /* Un dessin en pixels mesure --px par point. */
+      .art {
+        width: calc(var(--w) * var(--px));
+        height: calc(var(--h) * var(--px));
+      }
+
       svg {
         display: block;
         fill: currentColor;
         shape-rendering: crispEdges;
+      }
+
+      /* Un bloc en relief : lumière en haut à gauche, ombre en bas à droite,
+         d'une épaisseur --b. Chaque sorte de bloc ne règle que ses couleurs. */
+      .bevel {
+        background: var(--bg);
+        box-shadow:
+          inset var(--b) var(--b) 0 var(--hi),
+          inset calc(-1 * var(--b)) calc(-1 * var(--b)) 0 var(--lo);
       }
 
       /* Les coins crantés d'un bloc, d'un point de --u de côté. */
@@ -175,15 +191,22 @@
         height: 44px;
         display: grid;
         place-items: center;
-        background: var(--key);
-        box-shadow:
-          inset 3px 3px 0 var(--key-hi),
-          inset -3px -3px 0 var(--key-lo);
+        --px: 3px;
+      }
+
+      .icon-btn,
+      .key {
+        --b: 3px;
+        --bg: var(--key);
+        --hi: var(--key-hi);
+        --lo: var(--key-lo);
+        color: var(--white);
       }
 
       .icon-btn:active,
       .key:active,
-      .key.pressed {
+      .key.pressed,
+      .btn:active {
         transform: translateY(2px);
       }
 
@@ -199,19 +222,6 @@
       .logo .cell {
         --cell: 30px;
         animation: hop 5s steps(1) infinite;
-      }
-
-      .logo .cell:nth-child(2) {
-        animation-delay: 0.1s;
-      }
-      .logo .cell:nth-child(3) {
-        animation-delay: 0.2s;
-      }
-      .logo .cell:nth-child(4) {
-        animation-delay: 0.3s;
-      }
-      .logo .cell:nth-child(5) {
-        animation-delay: 0.4s;
       }
 
       @keyframes hop {
@@ -243,9 +253,8 @@
         background: var(--board);
       }
 
-      .stat svg {
-        height: 18px;
-        width: auto;
+      .stat {
+        --px: 2px;
       }
 
       .stat .value {
@@ -296,7 +305,7 @@
           calc(
             (min(100vw, 480px) - 46px - (var(--n) - 1) * var(--gap)) / var(--n)
           ),
-          calc((100vh - 360px - 5 * var(--gap)) / 6),
+          calc((var(--vh) - 360px - 5 * var(--gap)) / 6),
           60px
         );
         position: relative;
@@ -309,15 +318,8 @@
       }
 
       @supports (height: 100dvh) {
-        .board {
-          --cell: min(
-            calc(
-              (min(100vw, 480px) - 46px - (var(--n) - 1) * var(--gap)) /
-                var(--n)
-            ),
-            calc((100dvh - 360px - 5 * var(--gap)) / 6),
-            60px
-          );
+        :root {
+          --vh: 100dvh;
         }
       }
 
@@ -337,12 +339,12 @@
         position: relative;
         width: var(--cell);
         height: var(--cell);
-        background: var(--tile);
         color: var(--white);
         /* Une case vide est un creux : ombre en haut, lumière en bas. */
-        box-shadow:
-          inset var(--u) var(--u) 0 var(--tile-lo),
-          inset calc(-1 * var(--u)) calc(-1 * var(--u)) 0 var(--tile-hi);
+        --b: var(--u);
+        --bg: var(--tile);
+        --hi: var(--tile-lo);
+        --lo: var(--tile-hi);
       }
 
       .cell svg {
@@ -357,8 +359,8 @@
         opacity: 0;
       }
 
-      .row.current .cell {
-        background: var(--row);
+      .row.current {
+        --tile: var(--row);
       }
 
       /* Le curseur clignote sous la prochaine case à remplir. */
@@ -380,20 +382,14 @@
       }
 
       /* Une lettre bien placée est un bloc en relief. */
-      .row .cell.correct,
-      .row .cell.revealed,
       .cell.correct,
       .cell.revealed {
-        background: var(--red);
-        color: var(--white);
-        box-shadow:
-          inset var(--u) var(--u) 0 var(--red-hi),
-          inset calc(-1 * var(--u)) calc(-1 * var(--u)) 0 var(--red-lo);
+        --bg: var(--red);
+        --hi: var(--red-hi);
+        --lo: var(--red-lo);
       }
 
-      .row .cell.present,
       .cell.present {
-        background: var(--tile);
         color: var(--yellow);
       }
 
@@ -410,33 +406,13 @@
           opacity: 0;
         }
       }
-      .cell.present .ring path:nth-child(2) {
-        animation-delay: 0.035s;
-      }
-      .cell.present .ring path:nth-child(3) {
-        animation-delay: 0.07s;
-      }
-      .cell.present .ring path:nth-child(4) {
-        animation-delay: 0.105s;
-      }
-      .cell.present .ring path:nth-child(5) {
-        animation-delay: 0.14s;
-      }
-      .cell.present .ring path:nth-child(6) {
-        animation-delay: 0.175s;
-      }
-      .cell.present .ring path:nth-child(7) {
-        animation-delay: 0.21s;
-      }
-      .cell.present .ring path:nth-child(8) {
-        animation-delay: 0.245s;
-      }
 
-      .row .cell.absent,
-      .cell.absent {
-        background: var(--absent);
+      .cell.absent,
+      .key.absent {
+        --bg: var(--absent);
+        --hi: var(--absent);
+        --lo: var(--absent);
         color: var(--absent-ink);
-        box-shadow: none;
       }
 
       .cell.typed svg {
@@ -627,22 +603,13 @@
 
       .key {
         --u: 3px;
+        --px: 3px;
         flex: 1 1 0;
         min-width: 0;
         max-width: 42px;
         height: 54px;
         display: grid;
         place-items: center;
-        background: var(--key);
-        color: var(--white);
-        box-shadow:
-          inset 3px 3px 0 var(--key-hi),
-          inset -3px -4px 0 var(--key-lo);
-      }
-
-      .key svg {
-        width: 15px;
-        height: 21px;
       }
 
       .key.wide {
@@ -650,37 +617,23 @@
         max-width: 68px;
       }
 
-      .key.wide svg {
-        height: 21px;
-        width: auto;
-      }
-
       .key.enter {
-        background: var(--green);
-        box-shadow:
-          inset 3px 3px 0 var(--green-hi),
-          inset -3px -4px 0 var(--green-lo);
+        --bg: var(--green);
+        --hi: var(--green-hi);
+        --lo: var(--green-lo);
       }
 
       .key.correct {
-        background: var(--red);
-        box-shadow:
-          inset 3px 3px 0 var(--red-hi),
-          inset -3px -4px 0 var(--red-lo);
+        --bg: var(--red);
+        --hi: var(--red-hi);
+        --lo: var(--red-lo);
       }
 
       .key.present {
-        background: var(--yellow);
+        --bg: var(--yellow);
+        --hi: #fff6a8;
+        --lo: var(--orange);
         color: #4a2a00;
-        box-shadow:
-          inset 3px 3px 0 #fff6a8,
-          inset -3px -4px 0 var(--orange);
-      }
-
-      .key.absent {
-        background: var(--absent);
-        color: var(--absent-ink);
-        box-shadow: none;
       }
 
       .end {
@@ -741,10 +694,7 @@
 
       .end .word .cell {
         --cell: 32px;
-      }
-
-      .end .word .cell.drop {
-        animation-name: fall;
+        animation: fall 0.36s steps(3) backwards;
       }
 
       @keyframes fall {
@@ -765,15 +715,11 @@
         padding: 0 24px;
         font-size: 22px;
         font-weight: 700;
-        background: var(--blue);
         color: #04203a;
-        box-shadow:
-          inset 4px 4px 0 var(--blue-hi),
-          inset -4px -5px 0 var(--blue-lo);
-      }
-
-      .btn:active {
-        transform: translateY(2px);
+        --b: 4px;
+        --bg: var(--blue);
+        --hi: var(--blue-hi);
+        --lo: var(--blue-lo);
       }
 
       .end .error {
@@ -792,19 +738,15 @@
         background: rgba(8, 7, 26, 0.86);
       }
 
-      .overlay[hidden] {
-        display: none;
-      }
-
       .panel {
         --u: 4px;
         width: 100%;
         max-width: 380px;
         padding: 22px 20px 20px;
-        background: var(--board);
-        box-shadow:
-          inset 4px 4px 0 var(--tile-hi),
-          inset -4px -4px 0 var(--tile-lo);
+        --b: 4px;
+        --bg: var(--board);
+        --hi: var(--tile-hi);
+        --lo: var(--tile-lo);
         display: grid;
         gap: 16px;
         justify-items: center;
@@ -853,25 +795,22 @@
         height: 100vh;
         pointer-events: none;
         z-index: 10;
+        image-rendering: pixelated;
       }
 
       @media (prefers-reduced-motion: reduce) {
         .star.twinkle,
         .logo .cell,
         .cell.cursor::after,
-        .loading {
-          animation: none;
-        }
+        .loading,
         .cell.typed svg,
         .cell.present .ring path,
-        .cell.bump,
         .cell.drop,
         .cell.glitch,
-        .cell.jump,
         .cell.blink-in,
         .stat.up,
         .end .title,
-        .end .word .cell.drop,
+        .end .word .cell,
         .panel {
           animation: none;
         }
@@ -887,12 +826,12 @@
     <main class="app">
       <header class="topbar">
         <button
-          class="icon-btn notch help"
+          class="icon-btn bevel notch help"
           id="helpBtn"
           aria-label="Comment jouer"
         ></button>
         <h1 class="logo" id="logo" aria-label="Sutom"></h1>
-        <button class="icon-btn notch sound" id="soundBtn"></button>
+        <button class="icon-btn bevel notch sound" id="soundBtn"></button>
       </header>
 
       <section class="stats" aria-label="Scores">
@@ -932,11 +871,14 @@
     </main>
 
     <div class="overlay" id="help" hidden>
-      <div class="panel notch" role="dialog" aria-labelledby="helpTitle">
+      <div class="panel bevel notch" role="dialog" aria-labelledby="helpTitle">
         <h2 id="helpTitle">Comment jouer</h2>
         <ul class="rules">
           <li>
-            <span class="tiles" data-tiles="S:revealed:small,:,:,:,:"></span>
+            <span
+              class="tiles"
+              data-tiles="S:revealed:small,::small,::small,::small,::small"
+            ></span>
             <span
               >Trouve le mot en <strong>6 essais</strong>. La première lettre
               est donnée.</span
@@ -962,7 +904,7 @@
             >
           </li>
         </ul>
-        <button class="btn notch" id="helpClose">J'ai compris</button>
+        <button class="btn bevel notch" id="helpClose">J'ai compris</button>
       </div>
     </div>
 
@@ -1058,7 +1000,9 @@
 
       function pixelSvg(art) {
         const lines = art.split("/")
-        return `<svg viewBox="0 0 ${lines[0].length} ${lines.length}" aria-hidden="true"><path d="${pixelPath(art)}"/></svg>`
+        const w = lines[0].length
+        const h = lines.length
+        return `<svg class="art" style="--w:${w};--h:${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${pixelPath(art)}"/></svg>`
       }
 
       // Une case fait 13 × 13 points : la lettre au milieu, et autour un
@@ -1074,7 +1018,12 @@
             arcs[Math.floor(turn * 8)].push(`M${x} ${y}h1v1h-1z`)
           }
         }
-        return arcs.map((arc) => `<path d="${arc.join("")}"/>`).join("")
+        return arcs
+          .map(
+            (arc, i) =>
+              `<path style="animation-delay:${i * 0.035}s" d="${arc.join("")}"/>`,
+          )
+          .join("")
       })()
 
       const cellPaths = {}
@@ -1083,7 +1032,7 @@
 
       function makeCell(letter = "", state = "") {
         const cell = document.createElement("div")
-        cell.className = "cell notch"
+        cell.className = "cell bevel notch"
         if (state) cell.classList.add(state)
         cell.innerHTML = `<svg viewBox="0 0 13 13" aria-hidden="true"><g class="ring">${RING}</g><path class="glyph" d="${letterPath(letter)}"/></svg>`
         return cell
@@ -1261,7 +1210,7 @@
         // Nouveau mot : rien n'est encore joué, on ne garde pas la sortie.
         if (window.ExitGuard) ExitGuard.setActive(false)
         renderGrid()
-        renderKeyboard()
+        updateKeys()
         rowCells(0)[0].classList.add("blink-in")
       }
 
@@ -1303,16 +1252,17 @@
         updateCurrentRowDisplay()
       }
 
-      function renderKeyboard() {
+      const keyButtons = {}
+
+      function buildKeyboard() {
         const kbEl = $("keyboard")
-        kbEl.innerHTML = ""
         KEYBOARD_LAYOUT.forEach((row) => {
           const rowEl = document.createElement("div")
           rowEl.className = "keyboard-row"
           row.forEach((key) => {
             const btn = document.createElement("button")
-            btn.className = "key notch"
-            btn.dataset.key = key
+            btn.className = "key bevel notch"
+            keyButtons[key] = btn
             if (key === "ENTER") {
               btn.classList.add("wide", "enter")
               btn.setAttribute("aria-label", "Valider")
@@ -1327,13 +1277,19 @@
               btn.setAttribute("aria-label", key)
               btn.innerHTML = pixelSvg(GLYPHS[key])
               btn.onclick = () => typeLetter(key)
-              const state = keyboardState[key]
-              if (state) btn.classList.add(state)
             }
             rowEl.appendChild(btn)
           })
           kbEl.appendChild(rowEl)
         })
+      }
+
+      // Les touches prennent la couleur de ce qu'on sait de leur lettre.
+      function updateKeys() {
+        for (const [key, btn] of Object.entries(keyButtons)) {
+          btn.classList.remove("correct", "present", "absent")
+          if (keyboardState[key]) btn.classList.add(keyboardState[key])
+        }
       }
 
       function typeLetter(letter) {
@@ -1412,10 +1368,8 @@
         wakeAudio(revealTime + 3000)
 
         if (won) {
-          gameOver = true
-          if (window.ExitGuard) ExitGuard.setActive(false)
-          saveResult(true)
-          later(() => winSequence(cells), revealTime)
+          const record = endGame(true)
+          later(() => winSequence(cells, record), revealTime)
           return
         }
 
@@ -1427,11 +1381,9 @@
         $("grid").children[currentRow].classList.remove("current")
         currentRow++
         if (currentRow >= MAX_ATTEMPTS) {
-          gameOver = true
-          if (window.ExitGuard) ExitGuard.setActive(false)
-          saveResult(false)
+          endGame(false)
           later(() => {
-            renderKeyboard()
+            updateKeys()
             showEnd(false)
             SFX.lose()
           }, revealTime)
@@ -1441,7 +1393,7 @@
         // Les lettres trouvées tombent dans la rangée suivante.
         currentGuess = buildPrefilledGuess()
         later(() => {
-          renderKeyboard()
+          updateKeys()
           prepareRow(!reduceMotion)
           SFX.drop()
           busy = false
@@ -1491,7 +1443,16 @@
         })
       }
 
-      function winSequence(cells) {
+      // La partie est jouée : le score est gardé tout de suite, même si
+      // l'enfant quitte avant la fin des animations. Renvoie true pour un
+      // nouveau record.
+      function endGame(won) {
+        gameOver = true
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        return saveResult(won)
+      }
+
+      function winSequence(cells, record) {
         const step = reduceMotion ? 0 : 80
         cells.forEach((cell, i) => {
           later(() => {
@@ -1499,17 +1460,17 @@
           }, i * step)
         })
         SFX.win()
-        renderKeyboard()
+        updateKeys()
         later(
           () => {
-            showEnd(true)
+            showEnd(true, record)
             fireworks()
           },
           cells.length * step + 200,
         )
       }
 
-      function showEnd(won) {
+      function showEnd(won, record = false) {
         const end = $("end")
         end.className = won ? "end win" : "end lose"
         end.innerHTML = ""
@@ -1522,7 +1483,7 @@
           detail.className = "detail"
           const tries = currentRow + 1
           detail.textContent = `Trouvé en ${tries} essai${tries > 1 ? "s" : ""}`
-          if (newRecord) {
+          if (record) {
             const badge = document.createElement("span")
             badge.className = "badge"
             badge.textContent = "Record !"
@@ -1535,19 +1496,15 @@
           word.setAttribute("aria-label", secretWord)
           ;[...secretWord].forEach((letter, i) => {
             const cell = makeCell(letter, "correct")
-            cell.classList.add("drop")
             cell.style.animationDelay = `${0.2 + i * 0.09}s`
             word.appendChild(cell)
           })
           end.appendChild(word)
         }
         const again = document.createElement("button")
-        again.className = "btn notch"
+        again.className = "btn bevel notch"
         again.textContent = "Rejouer"
-        again.onclick = () => {
-          if (candidateWords.length === 0) return
-          initGame()
-        }
+        again.onclick = initGame
         end.appendChild(again)
         $("keyboard").hidden = true
         end.hidden = false
@@ -1592,13 +1549,19 @@
       }
 
       // ===== Scores =====
-      let newRecord = false
-
       function readStore(key) {
         try {
           return localStorage.getItem(key)
         } catch (e) {
           return null
+        }
+      }
+
+      function writeStore(key, value) {
+        try {
+          localStorage.setItem(key, value)
+        } catch (e) {
+          // navigation privée : rien ne sera gardé après la visite
         }
       }
 
@@ -1612,7 +1575,7 @@
 
       function saveResult(won) {
         const scores = getScores()
-        newRecord = false
+        let newRecord = false
         if (won) {
           scores.wins++
           scores.currentStreak++
@@ -1624,12 +1587,9 @@
           scores.losses++
           scores.currentStreak = 0
         }
-        try {
-          localStorage.setItem(SCORES_KEY, JSON.stringify(scores))
-        } catch (e) {
-          // navigation privée : le score ne sera pas gardé
-        }
+        writeStore(SCORES_KEY, JSON.stringify(scores))
         updateScoreboard(scores, true)
+        return newRecord
       }
 
       function updateScoreboard(scores = getScores(), animate = false) {
@@ -1650,14 +1610,13 @@
       function fireworks() {
         if (reduceMotion) return
         const canvas = $("fireworks")
-        const dpr = window.devicePixelRatio || 1
+        // Un point du canevas par gros pixel, agrandi sans lissage.
+        const P = 5
         const w = window.innerWidth
         const h = window.innerHeight
-        canvas.width = w * dpr
-        canvas.height = h * dpr
+        canvas.width = Math.ceil(w / P)
+        canvas.height = Math.ceil(h / P)
         const ctx = canvas.getContext("2d")
-        ctx.scale(dpr, dpr)
-        const P = 5
         const colors = [
           "#ffec27",
           "#ff004d",
@@ -1666,7 +1625,7 @@
           "#ff77a8",
           "#ffa300",
         ]
-        const particles = []
+        let particles = []
         const burst = () => {
           const x = w * (0.15 + Math.random() * 0.7)
           const y = h * (0.12 + Math.random() * 0.3)
@@ -1690,9 +1649,9 @@
         let frame = 0
         const tick = (now) => {
           frame++
-          ctx.clearRect(0, 0, w, h)
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          particles = particles.filter((p) => p.life > 0)
           particles.forEach((p) => {
-            if (p.life <= 0) return
             p.x += p.vx
             p.y += p.vy
             p.vx *= 0.97
@@ -1701,10 +1660,10 @@
             // En fin de vie, l'étincelle clignote.
             if (p.life < 0.35 && frame % 4 < 2) return
             ctx.fillStyle = p.color
-            ctx.fillRect(Math.round(p.x / P) * P, Math.round(p.y / P) * P, P, P)
+            ctx.fillRect(Math.round(p.x / P), Math.round(p.y / P), 1, 1)
           })
           if (now - start < 3200) requestAnimationFrame(tick)
-          else ctx.clearRect(0, 0, w, h)
+          else canvas.width = 0
         }
         requestAnimationFrame(tick)
       }
@@ -1734,20 +1693,17 @@
           el.dataset.tiles.split(",").forEach((spec) => {
             const [letter, state, size] = spec.split(":")
             const cell = makeCell(letter, state)
-            if (size || el.dataset.tiles.includes(","))
-              cell.classList.add("small")
+            if (size) cell.classList.add(size)
             el.appendChild(cell)
           })
         })
         $("helpBtn").innerHTML = pixelSvg(GLYPHS["?"])
-        $("helpBtn").querySelector("svg").style.height = "21px"
         renderSoundButton()
       }
 
       function renderSoundButton() {
         const btn = $("soundBtn")
         btn.innerHTML = pixelSvg(soundOn ? ICONS.soundOn : ICONS.soundOff)
-        btn.querySelector("svg").style.height = "24px"
         btn.classList.toggle("off", !soundOn)
         btn.setAttribute(
           "aria-label",
@@ -1758,9 +1714,7 @@
 
       $("soundBtn").onclick = () => {
         soundOn = !soundOn
-        try {
-          localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off")
-        } catch (e) {}
+        writeStore(SOUND_KEY, soundOn ? "on" : "off")
         renderSoundButton()
         wakeAudio(400)
         SFX.key()
@@ -1782,7 +1736,7 @@
 
       // Un appui au clavier fait aussi s'enfoncer la touche à l'écran.
       function pressKey(key) {
-        const btn = $("keyboard").querySelector(`[data-key="${key}"]`)
+        const btn = keyButtons[key]
         if (!btn) return
         btn.classList.add("pressed")
         setTimeout(() => btn.classList.remove("pressed"), 100)
@@ -1827,7 +1781,7 @@
       buildStatic()
       updateScoreboard()
       renderGrid()
-      renderKeyboard()
+      buildKeyboard()
       // Pendant le chargement du dictionnaire : rien à protéger.
       if (window.ExitGuard) ExitGuard.setActive(false)
       loadWords()
