@@ -33,10 +33,11 @@ PRISES = Path.home() / ".cache" / "marzouzoute-voix"
 NB_PRISES, NB_MAX = 3, 8  # trois prises, et d'autres tant qu'aucune n'est juste
 MODELE, VOIX = "voxtral-mini-tts-2603", "e0580ce5-e63c-4cbe-88c8-a983b80c5f1f"  # Marie - Curious (fr)
 
-# Ce que la voix lit mal : l'écran garde le mot, seule la voix lit l'autre graphie.
+# Ce que la voix lit mal : l'écran garde le mot, seule la voix lit ce texte-ci.
 PRONONCIATION = {
-    "dinde": "dinnde",  # « Dinde. » sort souvent « dine-dé »
-    "burger": "beurgueur",  # sinon « burgé » ; « beurgeur » est bloqué par la modération de Mistral
+    "dinde": "Dinnde.",  # « Dinde. » sort souvent « dine-dé »
+    "burger": "Beurgueur.",  # sinon « burgé » ; « beurgeur » est bloqué par la modération de Mistral
+    "quille": "Quille !",  # « Quille. » sort « qui », « Gilles »…
 }
 
 
@@ -94,7 +95,7 @@ def main(jeu: str):
     rapport_f = dossier / "choix.json"
     rapport = json.loads(rapport_f.read_text()) if rapport_f.exists() else {}
     for mot in a_faire(jeu):
-        texte = PRONONCIATION.get(mot, mot).capitalize() + "."
+        texte = PRONONCIATION.get(mot, mot.capitalize() + ".")
         notes = []
         for n in range(1, NB_MAX + 1):
             if n > NB_PRISES and min(notes)[0] == 0:
@@ -108,20 +109,26 @@ def main(jeu: str):
             prononcer_expressions([attendu, hyp])
             # Écart en sons entre ce qui est dit et le mot ; à égalité, la prise la plus courte.
             notes.append((_distance(_phrases[attendu], _phrases[hyp]), sf.info(str(f)).duration, f.name, entendu))
-        # Une prise trop brève ne se mesure pas (loudnorm) : on passe alors à la suivante.
-        for ecart, _, meilleure, entendu in sorted(notes):
-            try:
-                pinson.mp3(dossier / meilleure, sortie / f"{slug(mot)}.mp3")
-                break
-            except subprocess.CalledProcessError:
-                continue
-        else:
-            print(f"{mot} : aucune prise convertible", flush=True)
-            continue
+        ecart, _, meilleure, entendu = min(notes)
+        try:
+            pinson.mp3(dossier / meilleure, sortie / f"{slug(mot)}.mp3")
+        except subprocess.CalledProcessError:
+            court(dossier / meilleure, sortie / f"{slug(mot)}.mp3", pinson.ROGNER)
         rapport[mot] = {"prise": meilleure, "ecart": ecart, "entendu": entendu}
         alerte = "  ← à écouter" if ecart else ""
         print(f"{mot:20} {meilleure:24} {ecart} son(s) d'écart : {entendu}{alerte}", flush=True)
     rapport_f.write_text(json.dumps(rapport, ensure_ascii=False, indent=1))
+
+
+def court(src: Path, dst: Path, rogner: str):
+    """Un mot si bref (moins d'une demi-seconde) que loudnorm ne peut pas mesurer son volume : on le
+    règle sur sa crête, au niveau où culminent les autres mots."""
+    mesure = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(src), "-af", f"{rogner},volumedetect",
+                             "-f", "null", "-"], capture_output=True, text=True, check=True)
+    crete = float(re.search(r"max_volume: (-?[\d.]+) dB", mesure.stderr).group(1))
+    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(src), "-af",
+                    f"{rogner},volume={-3 - crete}dB,adelay=120", "-ar", "44100", "-ac", "1", "-c:a", "libmp3lame",
+                    "-b:a", "96k", str(dst)], check=True)
 
 
 if __name__ == "__main__":
