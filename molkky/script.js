@@ -5,18 +5,19 @@ let teamMissCount = {} // Pour tracker les ratés consécutifs par équipe
 let gameStarted = false
 let gameEnded = false
 
+function serializeState() {
+  return JSON.stringify({
+    players,
+    currentTeamId,
+    teamPlayerIndexes,
+    teamMissCount,
+    gameStarted,
+    gameEnded,
+  })
+}
+
 function saveState() {
-  localStorage.setItem(
-    "molkkyState",
-    JSON.stringify({
-      players,
-      currentTeamId,
-      teamPlayerIndexes,
-      teamMissCount,
-      gameStarted,
-      gameEnded,
-    }),
-  )
+  localStorage.setItem("molkkyState", serializeState())
 }
 
 function loadState() {
@@ -119,8 +120,7 @@ function startGame() {
 }
 
 // Joue un lancer de l'équipe en cours. Rend ce qu'il s'est passé, pour
-// l'animer : le score avant et après, et si l'équipe a dépassé 50 ou vient
-// d'être éliminée.
+// l'animer : si l'équipe a dépassé 50 ou vient d'être éliminée.
 function addScore(teamId, points) {
   if (gameEnded || teamId !== currentTeamId) return null
 
@@ -156,11 +156,10 @@ function addScore(teamId, points) {
     }
   })
 
-  const to = teamPlayers[0].score
-  const result = { from, to, overflow: from + points > 50, eliminated }
+  const result = { overflow: from + points > 50, eliminated }
 
   // Vérifier la victoire (n'importe quel joueur de l'équipe atteint 50)
-  if (to === 50) {
+  if (teamPlayers[0].score === 50) {
     gameEnded = true
     saveState()
     return result
@@ -193,9 +192,7 @@ function nextTeam() {
 }
 
 function getActiveTeams() {
-  return [
-    ...new Set(players.filter((p) => !p.eliminated).map((p) => p.teamId)),
-  ]
+  return [...new Set(players.filter((p) => !p.eliminated).map((p) => p.teamId))]
 }
 
 function checkGameEnd() {
@@ -267,7 +264,8 @@ const ROWS = 7
 function cellsOf(value) {
   if (value < 0) return []
   const cells = []
-  const digits = value < 10 ? [null, value] : [Math.floor(value / 10), value % 10]
+  const digits =
+    value < 10 ? [null, value] : [Math.floor(value / 10), value % 10]
   digits.forEach((d, i) => {
     if (d === null) return
     GLYPHS[d].forEach((line, r) => {
@@ -336,19 +334,48 @@ class Led {
     const dpr = window.devicePixelRatio || 1
     const w = this.canvas.clientWidth
     const h = this.canvas.clientHeight
-    if (!w || !h) return
+    const size = `${w}×${h}×${dpr}`
+    if (!w || !h || size === this.size) return
+    this.size = size
     this.canvas.width = Math.round(w * dpr)
     this.canvas.height = Math.round(h * dpr)
     // Une demi-case de marge tout autour, pour le halo.
     this.pitch = Math.min(w / (COLS + 1), h / (ROWS + 1)) * dpr
     this.ox = (this.canvas.width - COLS * this.pitch) / 2 + this.pitch / 2
     this.oy = (this.canvas.height - ROWS * this.pitch) / 2 + this.pitch / 2
+    this.paintGrid()
+  }
+
+  setColor(color) {
+    this.color = color
+    if (this.pitch) this.paintGrid()
+  }
+
+  // Les LED éteintes, la grille du tableau : peintes une fois, recopiées à
+  // chaque image.
+  paintGrid() {
+    const p = this.pitch
+    this.grid = document.createElement("canvas")
+    this.grid.width = this.canvas.width
+    this.grid.height = this.canvas.height
+    const g = this.grid.getContext("2d")
+    g.fillStyle = this.color + "26"
+    g.beginPath()
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const x = this.ox + c * p
+        const y = this.oy + r * p
+        g.moveTo(x + p * 0.34, y)
+        g.arc(x, y, p * 0.34, 0, Math.PI * 2)
+      }
+    }
+    g.fill()
     this.draw(performance.now())
   }
 
   // mode : "none" (d'un coup), "morph" (les points volent vers le nouveau
-  // nombre), "fall" (ils tombent, puis le nouveau s'allume de haut en bas),
-  // "off" (ils tombent et rien ne revient).
+  // nombre), "fall" (ils tombent, puis le nouveau s'allume de haut en bas ;
+  // rien ne revient si value vaut -1).
   set(value, mode = "none") {
     const prev = this.lit
     const next = cellsOf(value)
@@ -379,7 +406,12 @@ class Led {
           arc: (Math.random() - 0.5) * 3,
         })
       }
-      this.anim = { mode: "morph", start: performance.now(), particles, dur: 900 }
+      this.anim = {
+        mode: "morph",
+        start: performance.now(),
+        particles,
+        dur: 900,
+      }
     } else {
       prev.forEach((s) =>
         particles.push({
@@ -389,17 +421,20 @@ class Led {
         }),
       )
       this.anim = {
-        mode: mode === "off" ? "off" : "fall",
+        mode: "fall",
         start: performance.now(),
         particles,
-        dur: mode === "off" || !next.length ? 900 : 1300,
+        dur: next.length ? 1300 : 900,
       }
     }
     animate(this)
   }
 
+  // Le nombre gagnant scintille quelques secondes, puis reste allumé : pas
+  // d'animation sans fin pendant que le téléphone traîne sur la table.
   setPulse(on) {
     this.pulse = on && !reducedMotion
+    this.pulseUntil = performance.now() + 4000
     if (this.pulse) animate(this)
   }
 
@@ -407,6 +442,10 @@ class Led {
     this.draw(now)
     if (this.anim && now - this.anim.start > this.anim.dur) {
       this.anim = null
+      this.draw(now)
+    }
+    if (this.pulse && now > this.pulseUntil) {
+      this.pulse = false
       this.draw(now)
     }
     return !!this.anim || this.pulse
@@ -429,16 +468,8 @@ class Led {
     const { ctx, pitch: p } = this
     if (!p) return
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-    // Les LED éteintes : la grille du tableau.
     ctx.globalAlpha = 1
-    ctx.fillStyle = this.color + "26"
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        ctx.beginPath()
-        ctx.arc(this.ox + c * p, this.oy + r * p, p * 0.34, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    }
+    ctx.drawImage(this.grid, 0, 0)
     const sprite = spriteOf(this.color)
     const anim = this.anim
     if (!anim) {
@@ -489,10 +520,10 @@ const sparks = {
     this.canvas = $("sparks")
     this.ctx = this.canvas.getContext("2d")
     this.resize()
-    addEventListener("resize", () => this.resize())
   },
+  // Calque plein écran : une densité de 2 suffit pour des points flous.
   resize() {
-    const dpr = window.devicePixelRatio || 1
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
     this.dpr = dpr
     this.canvas.width = innerWidth * dpr
     this.canvas.height = innerHeight * dpr
@@ -870,20 +901,14 @@ function clearPins() {
   renderThrowBtn()
 }
 
-function snapshot() {
-  return JSON.stringify({
-    players,
-    currentTeamId,
-    teamPlayerIndexes,
-    teamMissCount,
-    gameStarted,
-    gameEnded,
-  })
-}
-
 function rectCenter(el) {
   const r = el.getBoundingClientRect()
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }
+  return {
+    x: r.left + r.width / 2,
+    y: r.top + r.height / 2,
+    w: r.width,
+    h: r.height,
+  }
 }
 
 function onThrow() {
@@ -896,7 +921,7 @@ function onThrow() {
     .filter((p) => selected.has(Number(p.dataset.n)))
     .map(rectCenter)
 
-  undoStack.push(snapshot())
+  undoStack.push(serializeState())
   const result = addScore(teamId, points)
   if (!result) {
     undoStack.pop()
@@ -908,7 +933,7 @@ function onThrow() {
     clearPins()
     let mode = "morph"
     if (result.eliminated) {
-      mode = "off"
+      mode = "fall"
       sounds.out()
     } else if (result.overflow) {
       mode = "fall"
@@ -923,17 +948,19 @@ function onThrow() {
       if (m) shake(m)
     }
     const wait = reducedMotion ? 0 : mode === "morph" ? 650 : 1100
-    setTimeout(() => {
-      busy = false
-      if (gameEnded) showWinner(true)
-    }, gameEnded ? wait + 250 : 150)
+    setTimeout(
+      () => {
+        busy = false
+        if (gameEnded) showWinner(true)
+      },
+      gameEnded ? wait + 250 : 150,
+    )
   }
 
+  if (points > 0) sounds.points(points)
   if (points > 0 && !reducedMotion) {
-    sounds.points(points)
     sparks.stream(froms, rectCenter(row.led.canvas), colorOf(teamId), land)
   } else {
-    if (points > 0) sounds.points(points)
     land()
   }
 }
@@ -970,9 +997,8 @@ function showWinner(celebrate) {
       : "a gagné !"
   $("winnerUndoBtn").classList.toggle("hidden", undoStack.length === 0)
   $("winner").classList.remove("hidden")
-  led.color = color
+  led.setColor(color)
   led.resize()
-  led.value = null
   led.set(team ? team.score : -1)
   led.setPulse(true)
 
@@ -1003,13 +1029,14 @@ function hideWinner() {
 // ---------------------------------------------------------------------------
 // Les écrans
 
-function showScreen() {
+// anim : au coup d'envoi, les zéros s'allument ligne après ligne.
+function showScreen(anim) {
   $("setup").classList.toggle("hidden", gameStarted)
   $("game").classList.toggle("hidden", !gameStarted)
   if (gameStarted) {
     buildBoard()
     clearPins()
-    renderBoard()
+    renderBoard(anim)
   } else {
     chosenTeamId = getNextAvailableTeamId()
     renderSetup()
@@ -1053,17 +1080,17 @@ document.addEventListener("DOMContentLoaded", function () {
     startGame()
     if (!gameStarted) return
     sounds.win()
-    showScreen()
-    if (!reducedMotion) renderBoardIntro()
+    showScreen({ all: "fall" })
   })
   $("throwBtn").addEventListener("click", onThrow)
   $("undoBtn").addEventListener("click", onUndo)
   $("winnerUndoBtn").addEventListener("click", onUndo)
-  $("rematchBtn").addEventListener("click", () => {
+  const restart = () => {
     hideWinner()
     newGame()
     showScreen()
-  })
+  }
+  $("rematchBtn").addEventListener("click", restart)
   $("newGameBtn").addEventListener("click", () => {
     if (!gameStarted) return
     openOverlay("confirm")
@@ -1071,9 +1098,7 @@ document.addEventListener("DOMContentLoaded", function () {
   $("confirmNo").addEventListener("click", () => closeOverlay("confirm"))
   $("confirmYes").addEventListener("click", () => {
     closeOverlay("confirm")
-    hideWinner()
-    newGame()
-    showScreen()
+    restart()
   })
   $("rulesBtn").addEventListener("click", () => openOverlay("rules"))
   $("rulesClose").addEventListener("click", () => closeOverlay("rules"))
@@ -1095,17 +1120,9 @@ document.addEventListener("DOMContentLoaded", function () {
   addEventListener("resize", () => {
     clearTimeout(resizeTimer)
     resizeTimer = setTimeout(() => {
+      sparks.resize()
       sizeLeds()
       if (!$("winner").classList.contains("hidden")) winnerLed.resize()
     }, 100)
   })
 })
-
-// Au coup d'envoi, les zéros s'allument ligne après ligne.
-function renderBoardIntro() {
-  rows.forEach(({ led }, teamId) => {
-    led.value = -1
-    led.lit = []
-    setTimeout(() => led.set(teamState(teamId).score, "fall"), 0)
-  })
-}

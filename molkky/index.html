@@ -24,7 +24,10 @@
         <button class="icon-btn" id="soundBtn" aria-label="Son">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path class="fill" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
-            <path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" />
+            <path
+              class="on"
+              d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11"
+            />
             <path class="off" d="M16 9.5l5 5m0-5l-5 5" />
           </svg>
         </button>
@@ -41,7 +44,12 @@
       <!-- Avant la partie : les équipes -->
       <section id="setup" class="setup hidden">
         <h2 class="board-title">Les équipes</h2>
-        <div class="chips" id="chips" role="radiogroup" aria-label="Couleur de l'équipe"></div>
+        <div
+          class="chips"
+          id="chips"
+          role="radiogroup"
+          aria-label="Couleur de l'équipe"
+        ></div>
         <form class="add-form" id="addForm" autocomplete="off">
           <input
             type="text"
@@ -58,16 +66,27 @@
           </button>
         </form>
         <div class="roster" id="roster"></div>
-        <button class="start-btn" id="startBtn" disabled>C'est parti !</button>
+        <button class="primary-btn" id="startBtn" disabled>
+          C'est parti !
+        </button>
       </section>
 
       <!-- Pendant la partie : le tableau, les quilles -->
       <section id="game" class="game hidden">
         <div class="board" id="board"></div>
-        <div class="turn" id="turn"><span class="turn-name" id="turnName"></span></div>
-        <div class="pins" id="pins" aria-label="Touche les quilles tombées"></div>
+        <div class="turn"><span class="turn-name" id="turnName"></span></div>
+        <div
+          class="pins"
+          id="pins"
+          aria-label="Touche les quilles tombées"
+        ></div>
         <div class="actions">
-          <button class="undo-btn" id="undoBtn" aria-label="Annuler le dernier lancer" disabled>
+          <button
+            class="undo-btn"
+            id="undoBtn"
+            aria-label="Annuler le dernier lancer"
+            disabled
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 14 4.5 9.5 9 5" />
               <path d="M4.5 9.5H14a5.5 5.5 0 0 1 0 11h-3" />
@@ -94,7 +113,11 @@
         <p class="winner-names" id="winnerNames"></p>
         <p class="winner-text" id="winnerText"></p>
         <div class="panel-actions">
-          <button class="undo-btn" id="winnerUndoBtn" aria-label="Annuler le dernier lancer">
+          <button
+            class="undo-btn"
+            id="winnerUndoBtn"
+            aria-label="Annuler le dernier lancer"
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 14 4.5 9.5 9 5" />
               <path d="M4.5 9.5H14a5.5 5.5 0 0 1 0 11h-3" />
@@ -109,7 +132,9 @@
     <div id="confirm" class="overlay hidden">
       <div class="panel">
         <h2 class="panel-title">Nouvelle partie ?</h2>
-        <p class="panel-text">Les scores repartent à zéro. Les équipes restent.</p>
+        <p class="panel-text">
+          Les scores repartent à zéro. Les équipes restent.
+        </p>
         <div class="panel-actions">
           <button class="ghost-btn" id="confirmNo">Non</button>
           <button class="primary-btn" id="confirmYes">Oui</button>
@@ -126,19 +151,14 @@
           <li>
             <strong>Le but :</strong> arriver à <b>50 points</b> tout pile.
           </li>
+          <li><strong>Une quille tombe :</strong> tu marques son numéro.</li>
           <li>
-            <strong>Une quille tombe :</strong> tu marques son numéro.
+            <strong>Plusieurs quilles tombent :</strong> tu marques le nombre de
+            quilles tombées.
           </li>
+          <li><strong>Tu dépasses 50 :</strong> ton score retombe à 25.</li>
           <li>
-            <strong>Plusieurs quilles tombent :</strong> tu marques le nombre
-            de quilles tombées.
-          </li>
-          <li>
-            <strong>Tu dépasses 50 :</strong> ton score retombe à 25.
-          </li>
-          <li>
-            <strong>3 lancers ratés de suite :</strong> ton équipe est
-            éliminée.
+            <strong>3 lancers ratés de suite :</strong> ton équipe est éliminée.
           </li>
           <li>
             <strong>Le lancer :</strong> depuis la ligne, à 3 ou 4 mètres des
