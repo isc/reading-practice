@@ -154,18 +154,19 @@
       .wave .k1 {
         stroke: var(--hard);
         stroke-width: 3.6;
-        stroke-linejoin: miter;
         stroke-linecap: butt;
       }
       .wave .k2 {
         stroke: var(--hard-2);
         stroke-width: 2.2;
-        stroke-linejoin: miter;
         opacity: 0.85;
       }
       .wave .k3 {
         stroke: var(--hard-3);
         stroke-width: 1.4;
+      }
+
+      .wave .clap path {
         stroke-linejoin: miter;
       }
 
@@ -192,6 +193,23 @@
         animation: clap 1.6s cubic-bezier(0.2, 0.9, 0.3, 1) infinite;
       }
 
+      .wave.fade {
+        -webkit-mask-image: linear-gradient(
+          90deg,
+          transparent,
+          #000 25%,
+          #000 75%,
+          transparent
+        );
+        mask-image: linear-gradient(
+          90deg,
+          transparent,
+          #000 25%,
+          #000 75%,
+          transparent
+        );
+      }
+
       @keyframes slide {
         to {
           transform: translateX(var(--period));
@@ -209,18 +227,16 @@
       }
 
       @keyframes clap {
-        0% {
-          transform: scaleY(0.22);
-        }
-        7% {
-          transform: scaleY(1.12);
-        }
-        16% {
-          transform: scaleY(0.8);
-        }
+        0%,
         55%,
         100% {
-          transform: scaleY(0.22);
+          transform: scaleY(0.55);
+        }
+        7% {
+          transform: scaleY(1.15);
+        }
+        18% {
+          transform: scaleY(0.8);
         }
       }
 
@@ -239,12 +255,23 @@
         letter-spacing: -0.01em;
       }
 
-      .welcome h1 .doux {
-        color: var(--soft);
+      /* Chaque sorte de C a sa couleur : on la lit dans --tone. */
+      .doux {
+        --tone: var(--soft);
+        --tone-bg: #d9f4ef;
       }
 
-      .welcome h1 .dur {
-        color: var(--hard);
+      .dur {
+        --tone: var(--hard);
+        --tone-bg: #ffe2d9;
+      }
+
+      .welcome h1 span,
+      .voice-tile .big-c,
+      .sym,
+      .target .example b,
+      .end-words .c {
+        color: var(--tone);
       }
 
       .welcome > p {
@@ -283,14 +310,6 @@
         line-height: 0.9;
       }
 
-      .voice-tile.doux .big-c {
-        color: var(--soft);
-      }
-
-      .voice-tile.dur .big-c {
-        color: var(--hard);
-      }
-
       .voice-tile .wave {
         height: 46px;
       }
@@ -308,18 +327,6 @@
       .sym {
         font-weight: 700;
         white-space: nowrap;
-      }
-
-      .doux .sym,
-      .tint.doux,
-      .sym.doux {
-        color: var(--soft);
-      }
-
-      .dur .sym,
-      .tint.dur,
-      .sym.dur {
-        color: var(--hard);
       }
 
       .main-btn {
@@ -355,11 +362,8 @@
         color: var(--ink);
       }
 
-      .stats .right {
-        justify-self: end;
-      }
-
       .stats .good {
+        justify-self: end;
         color: var(--ink);
         font-weight: 700;
         display: inline-flex;
@@ -381,7 +385,8 @@
       /* Les dix mots de la partie, chacun une petite onde une fois joué. */
       .track {
         display: grid;
-        grid-template-columns: repeat(10, 1fr);
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
         gap: 5px;
         height: 18px;
       }
@@ -433,16 +438,6 @@
         width: 22px;
         height: 22px;
         flex: none;
-      }
-
-      .target.ring {
-        animation: ring 0.6s ease-out;
-      }
-
-      @keyframes ring {
-        30% {
-          transform: scale(1.04);
-        }
       }
 
       /* La scène : l'image, la bande où le C chante, et le mot. */
@@ -548,15 +543,10 @@
       }
 
       .word.doux .c,
-      .word.doux .next.lit {
-        color: var(--soft);
-        background: #d9f4ef;
-      }
-
       .word.dur .c,
-      .word.dur .next.lit {
-        color: var(--hard);
-        background: #ffe2d9;
+      .word .next.lit {
+        color: var(--tone);
+        background: var(--tone-bg);
       }
 
       .word .next.lit {
@@ -761,14 +751,6 @@
         border-color: var(--muted);
       }
 
-      .end-words .doux .c {
-        color: var(--soft);
-      }
-
-      .end-words .dur .c {
-        color: var(--hard);
-      }
-
       #confetti {
         position: fixed;
         inset: 0;
@@ -782,7 +764,6 @@
         .backdrop svg,
         .live *,
         .band .pulse,
-        .target.ring,
         .word .next.lit,
         .answer.right,
         .answer.wrong {
@@ -826,7 +807,7 @@
             <span class="big-c">C</span>
             <svg class="wave live" viewBox="0 0 140 46"></svg>
             <span class="name">dur <span class="sym">[k]</span></span>
-            <span class="example">café ☕</span>
+            <span class="example">café ☕️</span>
           </button>
         </div>
         <p>
@@ -838,9 +819,11 @@
       <!-- ===== Partie ===== -->
       <section class="screen hidden" id="game">
         <div class="stats">
-          <span>Mot <b id="wordNumber">1</b> / 10</span>
+          <span
+            >Mot <b id="wordNumber">1</b> / <span id="wordTotal"></span
+          ></span>
           <span id="timer">00:00</span>
-          <span class="right good" aria-label="Bonnes réponses">
+          <span class="good" aria-label="Bonnes réponses">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -931,7 +914,7 @@
               </svg>
             </span>
             <span class="tape">
-              <svg class="wave" id="tape" viewBox="0 0 400 64"></svg>
+              <svg class="wave" id="tape"></svg>
               <span class="head" id="head"></span>
             </span>
           </button>
@@ -951,7 +934,7 @@
         { word: "couronne", emoji: "👑", isDur: true },
         { word: "cube", emoji: "🎲", isDur: true },
         { word: "écran", emoji: "🖥️", isDur: true },
-        { word: "café", emoji: "☕", isDur: true },
+        { word: "café", emoji: "☕️", isDur: true },
         { word: "cadeau", emoji: "🎁", isDur: true },
         { word: "cœur", emoji: "❤️", isDur: true },
         { word: "carte", emoji: "🗺️", isDur: true },
@@ -972,7 +955,11 @@
       ]
 
       const NUMBER_OF_WORDS = 10
-      const EXAMPLE = { true: "café", false: "citron" }
+      // Les deux sons du C, rangés selon isDur.
+      const SOUND = {
+        true: { kind: "dur", sym: "k", example: "café" },
+        false: { kind: "doux", sym: "s", example: "citron" },
+      }
 
       let score = 0
       let currentIndex = 0
@@ -1046,9 +1033,7 @@
           .map(([cls, anim, period, a, phase]) => {
             const extra = live ? period : 0
             const d = sine(x0 - extra, x1, period, (x) => a * h * env(x), phase)
-            return live
-              ? `<path class="${cls} ${anim}" style="--period:${period}px" d="${d}" />`
-              : `<path class="${cls}" d="${d}" />`
+            return `<path class="${cls} ${anim}" style="--period:${period}px" d="${d}" />`
           })
           .join("")
         return `<g class="breathe">${paths}</g>`
@@ -1074,32 +1059,14 @@
         return `<g transform="translate(${w / 2} ${h / 2})">${inner}</g>`
       }
 
-      // Les ondes vivantes du doux glissent ; leur fuseau reste fixe grâce
-      // à un masque en dégradé.
+      // Une onde qui vit, dans un SVG `.live` : les rubans du doux glissent
+      // sous un fondu fixe aux bords, le pic du dur claque.
       function liveWave(svg, isDur) {
         const [, , w, h] = svg.getAttribute("viewBox").split(" ").map(Number)
-        const id = svg.id || svg.closest("[id]").id
-        if (isDur) {
-          svg.innerHTML = waveMarkup(true, w, h, { at: 0.12 })
-          return
-        }
-        svg.innerHTML = `
-          <defs>
-            <linearGradient id="${id}-fade">
-              <stop offset="0" stop-color="#fff" stop-opacity="0" />
-              <stop offset="0.25" stop-color="#fff" />
-              <stop offset="0.75" stop-color="#fff" />
-              <stop offset="1" stop-color="#fff" stop-opacity="0" />
-            </linearGradient>
-            <mask id="${id}-mask">
-              <rect width="${w}" height="${h}" fill="url(#${id}-fade)" />
-            </mask>
-          </defs>
-          <g mask="url(#${id}-mask)">
-            <g transform="translate(${w / 2} ${h / 2})">
-              ${softWave(w, h, { live: true })}
-            </g>
-          </g>`
+        svg.classList.toggle("fade", !isDur)
+        svg.innerHTML = isDur
+          ? waveMarkup(true, w, h, { at: 0.12 })
+          : `<g transform="translate(${w / 2} ${h / 2})">${softWave(w, h, { live: true })}</g>`
       }
 
       // ===== Les sons du C, synthétisés =====
@@ -1132,10 +1099,12 @@
       }
 
       // « sss » : un souffle aigu qui monte doucement et s'éteint ;
-      // « k » : un bref claquement, puis un petit souffle.
+      // « k » : un bref claquement, puis un petit souffle. Rend sa durée,
+      // en millisecondes, pour qu'on puisse l'attendre.
       function sayC(isDur, delay = 0) {
-        const ctx = Voice.wake(1200 + delay * 1000)
-        if (!ctx) return
+        const length = isDur ? 300 : 750
+        const ctx = Voice.wake(length + 500 + delay * 1000)
+        if (!ctx) return length
         const t = ctx.currentTime + delay + 0.02
         if (isDur) {
           hiss(ctx, t, "bandpass", 1900, 1.4, [
@@ -1154,6 +1123,7 @@
             [0.75, 0],
           ])
         }
+        return length
       }
 
       // Deux notes qui montent pour une bonne réponse ; une note qui
@@ -1180,9 +1150,8 @@
       // Le C chante, puis Marie dit le mot qui le montre.
       async function demo(isDur) {
         Voice.wake(2500)
-        sayC(isDur)
-        await wait(isDur ? 350 : 850)
-        await Voice.say(EXAMPLE[isDur])
+        await wait(sayC(isDur))
+        await Voice.say(SOUND[isDur].example)
       }
 
       // ===== Chrono =====
@@ -1218,7 +1187,10 @@
       function shuffleAndSelectWords() {
         const durWords = shuffle(words.filter((w) => w.isDur))
         const douxWords = shuffle(words.filter((w) => !w.isDur))
-        gameWords = shuffle([...durWords.slice(0, 5), ...douxWords.slice(0, 5)])
+        gameWords = shuffle([
+          ...durWords.slice(0, NUMBER_OF_WORDS / 2),
+          ...douxWords.slice(0, NUMBER_OF_WORDS / 2),
+        ])
       }
 
       // Une partie cherche le [k], la suivante le [s], et ainsi de suite.
@@ -1227,15 +1199,14 @@
           currentObjectiveIsDur === undefined
             ? Math.random() < 0.5
             : !currentObjectiveIsDur
-        const kind = currentObjectiveIsDur ? "dur" : "doux"
-        const example = EXAMPLE[currentObjectiveIsDur]
-        $("targetSym").textContent = currentObjectiveIsDur ? "[k]" : "[s]"
-        $("targetSym").className = `sym ${kind}`
-        $("targetExample").innerHTML =
-          `comme <b class="tint ${kind}">${example}</b> ${currentObjectiveIsDur ? "☕" : "🍋"}`
+        const { kind, sym, example } = SOUND[currentObjectiveIsDur]
+        const { emoji } = words.find((w) => w.word === example)
+        $("target").className = `card target ${kind}`
+        $("targetSym").textContent = `[${sym}]`
+        $("targetExample").innerHTML = `comme <b>${example}</b> ${emoji}`
         $("target").setAttribute(
           "aria-label",
-          `Le C fait-il le son ${currentObjectiveIsDur ? "k" : "s"}, comme ${example} ?`,
+          `Le C fait-il le son ${sym}, comme ${example} ?`,
         )
         liveWave($("targetWave"), currentObjectiveIsDur)
         Voice.load(example)
@@ -1251,21 +1222,22 @@
         )
       }
 
-      // La position du C dans la bande, en pixels de la bande.
-      function cPosition() {
-        const band = $("band").getBoundingClientRect()
+      // Le centre du C, en pixels de `box`, avec la taille de `box`.
+      function cCenter(box) {
+        const b = box.getBoundingClientRect()
         const c = $("word").querySelector(".c").getBoundingClientRect()
         return {
-          w: band.width,
-          h: band.height,
-          x: c.left + c.width / 2 - band.left,
+          w: b.width,
+          h: b.height,
+          x: c.left + c.width / 2 - b.left,
+          y: c.top + c.height / 2 - b.top,
         }
       }
 
       // Avant la réponse : une ligne de silence, et un point qui attend sous
       // le C.
       function drawSilence() {
-        const { w, h, x } = cPosition()
+        const { w, h, x } = cCenter($("band"))
         const svg = $("bandWave")
         svg.setAttribute("viewBox", `0 0 ${w} ${h}`)
         svg.innerHTML = `
@@ -1278,7 +1250,8 @@
 
       // Le C chante : son onde sort de la lettre et s'étend des deux côtés.
       function emitWave(isDur) {
-        const { w, h, x } = cPosition()
+        const { w, h, x } = cCenter($("band"))
+        const from = cCenter($("stage"))
         const svg = $("bandWave")
         const inner = isDur
           ? hardWave(-x + 8, 0, w - x - 8, h, 7)
@@ -1290,7 +1263,7 @@
         svg.innerHTML = `<g transform="translate(${x} ${h / 2})"><g id="emitted">${inner}</g></g>`
         const g = $("emitted")
         if (reducedMotion()) return
-        burstFromC(isDur)
+        burstFromC(isDur, from)
         g.animate(
           isDur
             ? [
@@ -1311,11 +1284,7 @@
 
       // Le C lâche des particules : des éclats qui fusent pour le dur, des
       // bulles de souffle qui s'envolent pour le doux.
-      function burstFromC(isDur) {
-        const stage = $("stage").getBoundingClientRect()
-        const c = $("word").querySelector(".c").getBoundingClientRect()
-        const x = c.left + c.width / 2 - stage.left
-        const y = c.top + c.height / 2 - stage.top
+      function burstFromC(isDur, { x, y }) {
         const colors = isDur
           ? ["--hard", "--hard-2", "--hard"]
           : ["--soft", "--soft-2", "--soft-3"]
@@ -1368,11 +1337,7 @@
       // Une onde pareille à celle cherchée monte la rejoindre ; les deux
       // vibrent ensemble.
       async function joinTarget() {
-        $("target").classList.remove("ring")
-        if (reducedMotion()) {
-          $("target").classList.add("ring")
-          return
-        }
+        if (reducedMotion()) return
         const from = $("band").getBoundingClientRect()
         const to = $("targetWave").getBoundingClientRect()
         const dy = to.top + to.height / 2 - (from.top + from.height / 2)
@@ -1387,8 +1352,14 @@
           ],
           { duration: 450, easing: "cubic-bezier(0.5, 0, 0.75, 0.4)" },
         ).finished
-        void $("target").offsetWidth
-        $("target").classList.add("ring")
+        $("target").animate(
+          [
+            { transform: "none" },
+            { transform: "scale(1.04)" },
+            { transform: "none" },
+          ],
+          { duration: 600, easing: "ease-out" },
+        )
       }
 
       // Une case de la piste : une ligne plate, puis l'onde du mot joué.
@@ -1429,9 +1400,9 @@
         )
 
         // Le C chante, quoi qu'on ait répondu : son onde, sa couleur.
-        $("word").classList.add(isDur ? "dur" : "doux")
+        $("word").classList.add(SOUND[isDur].kind)
         emitWave(isDur)
-        sayC(isDur)
+        const sound = sayC(isDur)
         $("track").children[currentIndex].outerHTML = trackWave(
           isDur,
           !isCorrect,
@@ -1441,7 +1412,7 @@
           score++
           $("scoreValue").textContent = score
           right.classList.add("right")
-          await wait(isDur ? 300 : 700)
+          await wait(sound)
           tone([660, 990])
           if (sameSound) await joinTarget()
           await wait(sameSound ? 450 : 800)
@@ -1449,7 +1420,7 @@
           // Rien à lire : la touche se secoue, la bonne s'allume, la
           // lettre qui décide s'éclaire, et Marie dit le mot.
           button.classList.add("wrong")
-          await wait(isDur ? 300 : 700)
+          await wait(sound)
           tone([392], "sine", 0.75)
           right.classList.add("right")
           $("word").querySelector(".next").classList.add("lit")
@@ -1471,8 +1442,8 @@
         score = 0
         currentIndex = 0
         results = []
-        busy = false
         $("scoreValue").textContent = 0
+        $("wordTotal").textContent = NUMBER_OF_WORDS
         $("track").innerHTML = trackSlot(
           '<path class="flat" d="M3 9H27" />',
         ).repeat(NUMBER_OF_WORDS)
@@ -1492,6 +1463,7 @@
       // Les dix ondes bout à bout, comme un message vocal.
       function drawTape() {
         const seg = 40
+        $("tape").setAttribute("viewBox", `0 0 ${results.length * seg} 64`)
         $("tape").innerHTML = results
           .map(
             (r, i) =>
@@ -1564,7 +1536,7 @@
         $("endWords").innerHTML = results
           .map(
             ({ word, isDur, isCorrect }) =>
-              `<li><button class="${isDur ? "dur" : "doux"}${isCorrect ? "" : " missed"}" data-word="${word}">${wordMarkup(word)}</button></li>`,
+              `<li><button class="${SOUND[isDur].kind}${isCorrect ? "" : " missed"}" data-word="${word}">${wordMarkup(word)}</button></li>`,
           )
           .join("")
 
@@ -1594,7 +1566,12 @@
           startGame()
         })
       }
+      // La bande suit la largeur de l'écran (pas sa hauteur, qui bouge
+      // avec la barre d'adresse sur iPhone).
+      let width = innerWidth
       window.addEventListener("resize", () => {
+        if (innerWidth === width) return
+        width = innerWidth
         if (!busy && !$("game").classList.contains("hidden")) drawSilence()
       })
 
@@ -1604,8 +1581,7 @@
         "d",
         sine(0, 800, 100, () => 22),
       )
-      Voice.load("café")
-      Voice.load("citron")
+      for (const { example } of Object.values(SOUND)) Voice.load(example)
       // Écran d'accueil : aucune partie en cours.
       if (window.ExitGuard) ExitGuard.setActive(false)
     </script>
