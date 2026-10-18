@@ -1,5 +1,4 @@
 let players = []
-let teams = []
 let currentTeamId = null
 let teamPlayerIndexes = {} // Pour tracker l'index du joueur actuel par équipe
 let teamMissCount = {} // Pour tracker les ratés consécutifs par équipe
@@ -22,183 +21,45 @@ function saveState() {
 
 function loadState() {
   const saved = localStorage.getItem("molkkyState")
-  if (saved) {
-    const state = JSON.parse(saved)
-    players = state.players || []
-    currentTeamId = state.currentTeamId
-    teamPlayerIndexes = state.teamPlayerIndexes || {}
-    teamMissCount = state.teamMissCount || {}
-    gameStarted = state.gameStarted || false
-    gameEnded = state.gameEnded || false
-  }
+  if (saved) applyState(JSON.parse(saved))
 }
 
-// Couleurs prédéfinies pour les équipes
+function applyState(state) {
+  players = state.players || []
+  currentTeamId = state.currentTeamId
+  teamPlayerIndexes = state.teamPlayerIndexes || {}
+  teamMissCount = state.teamMissCount || {}
+  gameStarted = state.gameStarted || false
+  gameEnded = state.gameEnded || false
+}
+
+// Couleurs des équipes : des LED franches, lisibles sur fond noir en plein
+// soleil.
 const teamColors = [
-  { name: "Rouge", color: "#ef4444", bg: "#2a1a1a" },
-  { name: "Bleu", color: "#3b82f6", bg: "#1a1f2a" },
-  { name: "Vert", color: "#22c55e", bg: "#1a2a1a" },
-  { name: "Jaune", color: "#eab308", bg: "#2a2a1a" },
-  { name: "Violet", color: "#a855f7", bg: "#251a2a" },
-  { name: "Orange", color: "#f97316", bg: "#2a1f1a" },
-  { name: "Rose", color: "#ec4899", bg: "#2a1a22" },
-  { name: "Cyan", color: "#06b6d4", bg: "#1a252a" },
+  { name: "Rouge", color: "#ff4040" },
+  { name: "Bleu", color: "#3d9cff" },
+  { name: "Vert", color: "#3dff7e" },
+  { name: "Jaune", color: "#ffd21f" },
+  { name: "Violet", color: "#c46cff" },
+  { name: "Orange", color: "#ff8c1a" },
+  { name: "Rose", color: "#ff52b4" },
+  { name: "Cyan", color: "#26e8ff" },
+]
+const colorOf = (teamId) => (teamColors[teamId] || teamColors[0]).color
+
+// Disposition des quilles sur le terrain, vue du lanceur.
+const PIN_ROWS = [
+  [7, 9, 8],
+  [5, 11, 12, 6],
+  [3, 10, 4],
+  [1, 2],
 ]
 
-document.addEventListener("DOMContentLoaded", function () {
-  try {
-    loadState()
-    updateDisplay()
-  } catch (e) {
-    // État illisible, ou écrit par une version antérieure dont la forme a
-    // changé depuis (un joueur sans `history`, par exemple) : on repart d'une
-    // partie vierge. Sinon la page reste cassée au chargement, sans autre
-    // issue que vider les données du site.
-    console.warn("État Mölkky illisible, on repart d'une partie vierge :", e)
-    localStorage.removeItem("molkkyState")
-    players = []
-    teams = []
-    currentTeamId = null
-    teamPlayerIndexes = {}
-    teamMissCount = {}
-    gameStarted = false
-    gameEnded = false
-    updateDisplay()
-  }
-  var forceLink = document.getElementById("forceNewGameLink")
-  forceLink.addEventListener("click", function (e) {
-    e.preventDefault()
-    if (
-      confirm(
-        "Voulez-vous vraiment commencer une nouvelle partie ?\nL’état de la partie en cours sera perdu.",
-      )
-    ) {
-      newGame()
-    }
-  })
-})
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches
+const $ = (id) => document.getElementById(id)
 
-function addNewPlayerInput() {
-  if (gameStarted) return
-
-  const playersList = document.getElementById("playersList")
-  const addPlayerDiv = document.createElement("div")
-  addPlayerDiv.className = "add-player"
-
-  // Créer les options du select pour les équipes
-  const teamSelectOptions = generateTeamSelectOptions()
-
-  addPlayerDiv.innerHTML = `
-    <div class="player-input-container">
-      <select id="teamSelect" class="team-select">
-          ${teamSelectOptions}
-        </select>
-        <input type="text" id="playerNameInput" placeholder="Nom du joueur" class="player-name-input">
-      <button type="button" class="add-player-btn">Ajouter</button>
-    </div>
-  `
-  playersList.appendChild(addPlayerDiv)
-
-  // Ajouter les event listeners
-  const nameInput = addPlayerDiv.querySelector("#playerNameInput")
-  const addBtn = addPlayerDiv.querySelector(".add-player-btn")
-
-  nameInput.addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-      addPlayerFromForm()
-    }
-  })
-
-  addBtn.addEventListener("click", function () {
-    addPlayerFromForm()
-  })
-
-  // Focus sur l'input de nom
-  nameInput.focus()
-}
-
-function generateTeamSelectOptions() {
-  const usedTeamIds = new Set(players.map((p) => p.teamId))
-  const nextTeamId = getNextAvailableTeamId()
-
-  let options = ""
-
-  const nextTeamColor = teamColors[nextTeamId]
-  const nextColorEmoji = getColorEmoji(nextTeamColor.color)
-  options += `<option value="${nextTeamId}" selected>${nextColorEmoji}</option>`
-
-  usedTeamIds.forEach((teamId) => {
-    const teamColor = teamColors[teamId]
-    const colorEmoji = getColorEmoji(teamColor.color)
-    options += `<option value="${teamId}">${colorEmoji}</option>`
-  })
-
-  return options
-}
-
-function getColorEmoji(color) {
-  const colorMap = {
-    "#ef4444": "🔴",
-    "#3b82f6": "🔵",
-    "#22c55e": "🟢",
-    "#eab308": "🟡",
-    "#a855f7": "🟣",
-    "#f97316": "🟠",
-  }
-  return colorMap[color] || "⚪"
-}
-
-function addPlayerFromForm() {
-  const nameInput = document.getElementById("playerNameInput")
-  const teamSelect = document.getElementById("teamSelect")
-
-  const name = nameInput.value.trim()
-  if (!name) {
-    alert("Veuillez saisir un nom de joueur")
-    nameInput.focus()
-    return
-  }
-
-  const teamId = parseInt(teamSelect.value)
-  addPlayer(name, teamId)
-
-  nameInput.value = ""
-  teamSelect.innerHTML = generateTeamSelectOptions()
-  nameInput.focus()
-}
-
-function addStartGameButton() {
-  // Vérifier qu'il n'y a pas déjà un bouton
-  if (document.querySelector(".start-game-section")) return
-
-  const playersList = document.getElementById("playersList")
-  const startGameDiv = document.createElement("div")
-  startGameDiv.className = "start-game-section"
-
-  // Compter les équipes
-  const uniqueTeams = [...new Set(players.map((p) => p.teamId))]
-  const canStart = players.length >= 2 && uniqueTeams.length >= 2
-
-  startGameDiv.innerHTML = `
-    <div class="start-game-info">
-      <p>${players.length} joueur${players.length > 1 ? "s" : ""} dans ${
-        uniqueTeams.length
-      } équipe${uniqueTeams.length > 1 ? "s" : ""}</p>
-      ${
-        !canStart
-          ? '<p class="error">Il faut au moins 2 joueurs dans 2 équipes différentes</p>'
-          : ""
-      }
-    </div>
-    <button class="btn btn-start-game" onclick="startGame()" ${
-      !canStart ? "disabled" : ""
-    }>
-      🎯 Commencer la partie
-    </button>
-  `
-
-  playersList.appendChild(startGameDiv)
-}
+// ---------------------------------------------------------------------------
+// Règles du jeu (inchangées)
 
 function addPlayer(name, teamId = null) {
   if (gameStarted) return
@@ -216,7 +77,6 @@ function addPlayer(name, teamId = null) {
     history: [],
     teamId: teamId,
   })
-  updatePlayersList()
   saveState()
 }
 
@@ -224,45 +84,10 @@ function removePlayer(index) {
   if (gameStarted) return
 
   players.splice(index, 1)
-  updatePlayersList()
   saveState()
 }
 
-function updatePlayersList() {
-  // Mettre à jour seulement la liste des joueurs, pas le formulaire
-  const existingPlayers = document.querySelectorAll(
-    ".player-card, .simple-player-card",
-  )
-  existingPlayers.forEach((card) => card.remove())
-
-  // Mettre à jour le bouton de démarrage
-  const existingStartSection = document.querySelector(".start-game-section")
-  if (existingStartSection) {
-    existingStartSection.remove()
-  }
-
-  const playersList = document.getElementById("playersList")
-
-  // Afficher les joueurs
-  players.forEach((player, index) => {
-    const playerDiv = createPlayerCard(player, index)
-    // Insérer avant le formulaire d'ajout
-    const addPlayerDiv = document.querySelector(".add-player")
-    if (addPlayerDiv) {
-      playersList.insertBefore(playerDiv, addPlayerDiv)
-    } else {
-      playersList.appendChild(playerDiv)
-    }
-  })
-
-  // Ajouter le bouton de démarrage si nécessaire
-  if (!gameStarted && players.length > 0) {
-    addStartGameButton()
-  }
-}
-
 function getNextAvailableTeamId() {
-  // Trouver le prochain ID d'équipe disponible
   const usedTeamIds = new Set(players.map((p) => p.teamId))
   for (let i = 0; i < teamColors.length; i++) {
     if (!usedTeamIds.has(i)) {
@@ -273,18 +98,12 @@ function getNextAvailableTeamId() {
   return 0
 }
 
-function startGame() {
-  if (players.length < 2) {
-    alert("Il faut au moins 2 joueurs pour commencer!")
-    return
-  }
+const teamIds = () => [...new Set(players.map((p) => p.teamId))]
+const canStart = () => players.length >= 2 && teamIds().length >= 2
 
-  // Vérifier qu'il y a au moins 2 équipes
-  const uniqueTeams = [...new Set(players.map((p) => p.teamId))]
-  if (uniqueTeams.length < 2) {
-    alert("Il faut au moins 2 équipes pour commencer!")
-    return
-  }
+function startGame() {
+  if (!canStart()) return
+  const uniqueTeams = teamIds()
 
   gameStarted = true
   currentTeamId = uniqueTeams[0]
@@ -296,40 +115,32 @@ function startGame() {
     teamPlayerIndexes[teamId] = 0
     teamMissCount[teamId] = 0
   })
-
-  document.getElementById("gameStatus").textContent = "En cours"
-  updateDisplay()
   saveState()
 }
 
+// Joue un lancer de l'équipe en cours. Rend ce qu'il s'est passé, pour
+// l'animer : le score avant et après, et si l'équipe a dépassé 50 ou vient
+// d'être éliminée.
 function addScore(teamId, points) {
-  if (gameEnded) return
+  if (gameEnded || teamId !== currentTeamId) return null
 
-  if (!gameStarted) {
-    startGame()
-  }
-
-  if (teamId !== currentTeamId) return
-
-  // Obtenir l'équipe et le joueur actuel
   const teamPlayers = players.filter(
     (p) => p.teamId === teamId && !p.eliminated,
   )
-  if (teamPlayers.length === 0) return
+  if (teamPlayers.length === 0) return null
 
-  const currentPlayerIndex = teamPlayerIndexes[teamId] || 0
-  const currentPlayer = teamPlayers[currentPlayerIndex % teamPlayers.length]
+  const from = teamPlayers[0].score
+  let eliminated = false
 
   // Gestion des ratés au niveau équipe
   if (points > 0) {
-    // Reset le miss counter de l'équipe
     teamMissCount[teamId] = 0
   } else {
-    // Augmenter le miss counter de l'équipe
     teamMissCount[teamId]++
     if (teamMissCount[teamId] >= 3) {
       // Éliminer toute l'équipe
       teamPlayers.forEach((player) => (player.eliminated = true))
+      eliminated = true
       checkGameEnd()
     }
   }
@@ -345,19 +156,19 @@ function addScore(teamId, points) {
     }
   })
 
+  const to = teamPlayers[0].score
+  const result = { from, to, overflow: from + points > 50, eliminated }
+
   // Vérifier la victoire (n'importe quel joueur de l'équipe atteint 50)
-  const teamScore = teamPlayers[0].score
-  if (teamScore === 50) {
-    const teamColor = teamColors[teamId]
-    showWinner(`Équipe ${teamColor.name}`)
+  if (to === 50) {
     gameEnded = true
     saveState()
-    return
+    return result
   }
 
   nextTeam()
-  updateDisplay()
   saveState()
+  return result
 }
 
 function nextTeam() {
@@ -378,264 +189,26 @@ function nextTeam() {
   }
 
   const currentTeamIndex = activeTeams.indexOf(currentTeamId)
-  const nextTeamIndex = (currentTeamIndex + 1) % activeTeams.length
-  currentTeamId = activeTeams[nextTeamIndex]
-
-  // Vérifier que la nouvelle équipe n'est pas éliminée
-  const newTeamPlayers = players.filter(
-    (p) => p.teamId === currentTeamId && !p.eliminated,
-  )
-  if (newTeamPlayers.length === 0) {
-    nextTeam() // Passer à l'équipe suivante si celle-ci est éliminée
-  }
-  saveState()
-  saveState()
+  currentTeamId = activeTeams[(currentTeamIndex + 1) % activeTeams.length]
 }
 
 function getActiveTeams() {
-  const activeTeams = [
+  return [
     ...new Set(players.filter((p) => !p.eliminated).map((p) => p.teamId)),
   ]
-  return activeTeams
-}
-
-function allTeamsEliminated() {
-  if (!gameStarted || players.length === 0) return false
-  const activeTeams = getActiveTeams()
-  return activeTeams.length <= 1
 }
 
 function checkGameEnd() {
-  if (!gameStarted || players.length === 0) {
-    return
-  }
-
-  const activeTeams = getActiveTeams()
-
-  if (activeTeams.length === 1) {
-    const teamColor = teamColors[activeTeams[0]]
-    showWinner(`Équipe ${teamColor.name}`)
-    gameEnded = true
-  } else if (activeTeams.length === 0) {
-    showWinner("Personne (toutes les équipes éliminées!)")
-    gameEnded = true
-    saveState()
-  }
+  if (!gameStarted || players.length === 0) return
+  if (getActiveTeams().length <= 1) gameEnded = true
 }
 
-function showWinner(winnerName) {
-  document.getElementById("winnerText").textContent = `${winnerName} a gagné!`
-  document.getElementById("winnerModal").classList.remove("hidden")
-  document.getElementById("gameStatus").textContent = "Terminé"
-}
-
-function updateDisplay() {
-  const playersList = document.getElementById("playersList")
-  playersList.innerHTML = ""
-
-  if (gameStarted) {
-    // Pendant le jeu, regrouper par équipe
-    displayPlayersByTeam(playersList)
-  } else {
-    // Avant le jeu, affichage simple
-    displayPlayersSimple(playersList)
-
-    // Toujours ajouter le formulaire quand le jeu n'a pas commencé
-    addNewPlayerInput()
-
-    // Ajouter le bouton de démarrage s'il y a des joueurs
-    if (players.length > 0) {
-      addStartGameButton()
-    }
-  }
-
-  // Focus sur l'input de l'équipe active après mise à jour
-  if (gameStarted && !gameEnded && currentTeamId !== null) {
-    setTimeout(() => {
-      const activeInput = document.getElementById(
-        `teamScoreInput${currentTeamId}`,
-      )
-      if (activeInput) {
-        activeInput.focus()
-      }
-    }, 100)
-  }
-}
-
-function displayPlayersSimple(playersList) {
-  players.forEach((player, index) => {
-    const playerDiv = createPlayerCard(player, index)
-    playersList.appendChild(playerDiv)
-  })
-}
-
-function displayPlayersByTeam(playersList) {
-  // Regrouper les joueurs par équipe
-  const teamGroups = {}
-  players.forEach((player, index) => {
-    if (!teamGroups[player.teamId]) {
-      teamGroups[player.teamId] = []
-    }
-    teamGroups[player.teamId].push({ player, index })
-  })
-
-  // Afficher chaque équipe
-  Object.keys(teamGroups).forEach((teamId) => {
-    const teamColor = teamColors[teamId] || teamColors[0]
-    const teamPlayers = teamGroups[teamId]
-    const currentTeamPlayers = teamPlayers.filter(
-      ({ player }) => !player.eliminated,
-    )
-
-    if (currentTeamPlayers.length === 0) return // Équipe éliminée
-
-    // Créer une carte d'équipe unique
-    const teamCard = createTeamCard(parseInt(teamId), teamPlayers)
-    playersList.appendChild(teamCard)
-  })
-}
-
-function createTeamCard(teamId, teamPlayersData) {
-  const teamColor = teamColors[teamId] || teamColors[0]
-  const teamPlayers = teamPlayersData.map((data) => data.player)
-  const activeTeamPlayers = teamPlayers.filter((p) => !p.eliminated)
-
-  const isActiveTeam = teamId === currentTeamId
-  const currentPlayerIndex = teamPlayerIndexes[teamId] || 0
-  const currentPlayer =
-    activeTeamPlayers[currentPlayerIndex % activeTeamPlayers.length]
-
-  // Score de l'équipe (tous les joueurs ont le même score)
-  const teamScore =
-    activeTeamPlayers.length > 0 ? activeTeamPlayers[0].score : 0
-
-  const teamDiv = document.createElement("div")
-  teamDiv.className = `team-card ${
-    isActiveTeam && !gameEnded ? "active" : ""
-  } ${teamScore === 50 ? "winner" : ""} ${
-    activeTeamPlayers.length === 0 ? "eliminated" : ""
-  }`
-
-  let controlsHTML = ""
-  if (!gameEnded && isActiveTeam && activeTeamPlayers.length > 0) {
-    controlsHTML = `
-      <div class="team-controls">
-        <div class="score-label">Score à ajouter :</div>
-        <input type="number"
-               class="score-input"
-               id="teamScoreInput${teamId}"
-               min="0"
-               max="12"
-               placeholder="0-12"
-               onkeypress="handleTeamScoreKeypress(event, ${teamId})"
-               oninput="validateScoreInput(this)">
-        <button class="add-score-btn" onclick="submitTeamScore(${teamId})">Valider</button>
-      </div>
-    `
-  }
-
-  // Liste des joueurs de l'équipe
-  const playersListHTML = teamPlayers
-    .map((player) => {
-      const isCurrentPlayer = player === currentPlayer && isActiveTeam
-      return `<span class="team-player ${
-        isCurrentPlayer ? "current-player" : ""
-      }">${player.name}</span>`
-    })
-    .join("")
-
-  // Miss counter de l'équipe
-  const missCount = teamMissCount[teamId] || 0
-
-  teamDiv.innerHTML = `
-    <div class="team-header-card">
-      <div class="team-name-container">
-        <div class="team-color-dot" style="background-color: ${teamColor.color}"></div>
-        <div class="players-names">${playersListHTML}</div>
-      </div>
-      <div class="team-score">${teamScore}</div>
-    </div>
-    ${controlsHTML}
-    <div class="team-stats">
-      <span>Tours: ${teamPlayers[0]?.history.length || 0}</span>
-      <span>Zéros: ${
-        teamPlayers[0]?.history.filter((score) => score === 0).length || 0
-      }</span>
-      ${
-        missCount > 0
-          ? `<span class="miss-counter">Ratés consécutifs: ${missCount}/3</span>`
-          : "<span></span>"
-      }
-    </div>
-  `
-
-  return teamDiv
-}
-
-function createPlayerCard(player, index) {
-  const teamColor = teamColors[player.teamId] || teamColors[0]
-  const playerDiv = document.createElement("div")
-
-  if (!gameStarted) {
-    // Affichage simple avant le jeu
-    playerDiv.className = "simple-player-card"
-    playerDiv.innerHTML = `
-      <div class="team-color-dot" style="background-color: ${teamColor.color}"></div>
-      <span class="player-name">${player.name}</span>
-      <button class="delete-player-btn" onclick="removePlayer(${index})" title="Supprimer ce joueur">✕</button>
-    `
-  } else {
-    // Affichage complet pendant le jeu (pas utilisé actuellement car on utilise displayPlayersByTeam)
-    playerDiv.className = `player-card ${player.score === 50 ? "winner" : ""} ${
-      player.eliminated ? "eliminated" : ""
-    }`
-
-    playerDiv.innerHTML = `
-                <div class="player-header">
-                    <div class="player-name-container">
-                        <div class="team-color-dot" style="background-color: ${teamColor.color}"></div>
-                        <div class="player-name">${player.name}</div>
-                    </div>
-                    <div class="player-score">${player.score}</div>
-                </div>
-            `
-  }
-
-  return playerDiv
-}
-
-function handleScoreKeypress(event, playerIndex) {
-  if (event.key === "Enter") {
-    submitScore(playerIndex)
-  }
-}
-
-function handleTeamScoreKeypress(event, teamId) {
-  if (event.key === "Enter") {
-    submitTeamScore(teamId)
-  }
-}
-
-function validateScoreInput(input) {
-  const value = parseInt(input.value)
-  if (value < 0) input.value = 0
-  if (value > 12) input.value = 12
-}
-
-function submitScore(playerIndex) {
-  const input = document.getElementById(`scoreInput${playerIndex}`)
-  const points = parseInt(input.value) || 0
-
-  addScore(playerIndex, points)
-  input.value = ""
-}
-
-function submitTeamScore(teamId) {
-  const input = document.getElementById(`teamScoreInput${teamId}`)
-  const points = parseInt(input.value) || 0
-
-  addScore(teamId, points)
-  input.value = ""
+// L'équipe gagnante : celle qui a 50, sinon la dernière encore en jeu.
+function winnerTeamId() {
+  const fifty = players.find((p) => !p.eliminated && p.score === 50)
+  if (fifty) return fifty.teamId
+  const active = getActiveTeams()
+  return active.length === 1 ? active[0] : null
 }
 
 function newGame() {
@@ -651,16 +224,888 @@ function newGame() {
   teamMissCount = {}
   gameStarted = false
   gameEnded = false
+  undoStack.length = 0
   saveState()
-  document.getElementById("gameStatus").textContent = "En attente"
-  document.getElementById("winnerModal").classList.add("hidden")
-  updateDisplay()
 }
 
-function showRules() {
-  document.getElementById("rulesModal").classList.remove("hidden")
+function teamState(teamId) {
+  const members = players.filter((p) => p.teamId === teamId)
+  const active = members.filter((p) => !p.eliminated)
+  const ref = active[0] || members[0]
+  return {
+    members,
+    active,
+    score: ref ? ref.score : 0,
+    history: ref ? ref.history : [],
+    eliminated: members.length > 0 && active.length === 0,
+    current: active[(teamPlayerIndexes[teamId] || 0) % (active.length || 1)],
+  }
 }
 
-function hideRules() {
-  document.getElementById("rulesModal").classList.add("hidden")
+// ---------------------------------------------------------------------------
+// Les LED : chiffres en matrice de points 5 × 7, dessinés sur un canvas.
+// Quand le score change, les points allumés s'envolent vers leur nouvelle
+// place : le nombre se recompose sous les yeux.
+
+const GLYPHS = {
+  0: ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+  1: ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+  2: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+  3: ["11111", "00010", "00100", "00010", "00001", "10001", "01110"],
+  4: ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+  5: ["11111", "10000", "11110", "00001", "00001", "10001", "01110"],
+  6: ["00110", "01000", "10000", "11110", "10001", "10001", "01110"],
+  7: ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+  8: ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+  9: ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
+}
+const COLS = 11 // deux chiffres de 5 colonnes, une colonne d'écart
+const ROWS = 7
+
+// Les points allumés d'un nombre de 0 à 99, calé à droite comme sur un vrai
+// tableau ; -1 éteint tout.
+function cellsOf(value) {
+  if (value < 0) return []
+  const cells = []
+  const digits = value < 10 ? [null, value] : [Math.floor(value / 10), value % 10]
+  digits.forEach((d, i) => {
+    if (d === null) return
+    GLYPHS[d].forEach((line, r) => {
+      for (let c = 0; c < 5; c++) {
+        if (line[c] === "1") cells.push({ c: c + i * 6, r })
+      }
+    })
+  })
+  return cells
+}
+
+// Un point lumineux pré-dessiné par couleur : cœur blanc, couleur, halo.
+// Pas de filtre ni d'ombre à chaque image.
+const sprites = new Map()
+function spriteOf(color) {
+  if (sprites.has(color)) return sprites.get(color)
+  const s = document.createElement("canvas")
+  s.width = s.height = 64
+  const g = s.getContext("2d")
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+  grad.addColorStop(0, "#fff")
+  grad.addColorStop(0.16, color)
+  grad.addColorStop(0.4, color)
+  grad.addColorStop(0.47, color + "70")
+  grad.addColorStop(0.7, color + "22")
+  grad.addColorStop(1, color + "00")
+  g.fillStyle = grad
+  g.fillRect(0, 0, 64, 64)
+  sprites.set(color, s)
+  return s
+}
+
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
+const clamp01 = (t) => Math.max(0, Math.min(1, t))
+
+// Une seule boucle d'animation pour tout ce qui bouge.
+const animated = new Set()
+let looping = false
+function animate(thing) {
+  animated.add(thing)
+  if (!looping) {
+    looping = true
+    requestAnimationFrame(tick)
+  }
+}
+function tick(now) {
+  animated.forEach((thing) => {
+    if (!thing.step(now)) animated.delete(thing)
+  })
+  if (animated.size) requestAnimationFrame(tick)
+  else looping = false
+}
+
+class Led {
+  constructor(canvas, color) {
+    this.canvas = canvas
+    this.ctx = canvas.getContext("2d")
+    this.color = color
+    this.value = null
+    this.lit = []
+    this.anim = null
+    this.pulse = false
+  }
+
+  resize() {
+    const dpr = window.devicePixelRatio || 1
+    const w = this.canvas.clientWidth
+    const h = this.canvas.clientHeight
+    if (!w || !h) return
+    this.canvas.width = Math.round(w * dpr)
+    this.canvas.height = Math.round(h * dpr)
+    // Une demi-case de marge tout autour, pour le halo.
+    this.pitch = Math.min(w / (COLS + 1), h / (ROWS + 1)) * dpr
+    this.ox = (this.canvas.width - COLS * this.pitch) / 2 + this.pitch / 2
+    this.oy = (this.canvas.height - ROWS * this.pitch) / 2 + this.pitch / 2
+    this.draw(performance.now())
+  }
+
+  // mode : "none" (d'un coup), "morph" (les points volent vers le nouveau
+  // nombre), "fall" (ils tombent, puis le nouveau s'allume de haut en bas),
+  // "off" (ils tombent et rien ne revient).
+  set(value, mode = "none") {
+    const prev = this.lit
+    const next = cellsOf(value)
+    const changed = value !== this.value
+    this.value = value
+    this.lit = next
+    if (reducedMotion || mode === "none" || !changed) {
+      this.anim = null
+      this.draw(performance.now())
+      return
+    }
+    const particles = []
+    if (mode === "morph" && prev.length && next.length) {
+      // Chaque point d'arrivée part d'un point de départ, dans l'ordre des
+      // colonnes : les points glissent de gauche à droite, se séparent ou se
+      // rejoignent selon qu'il en faut plus ou moins.
+      const order = (a, b) => a.c - b.c || a.r - b.r
+      const a = [...prev].sort(order)
+      const b = [...next].sort(order)
+      const n = Math.max(a.length, b.length)
+      for (let i = 0; i < n; i++) {
+        const s = a[Math.floor((i * a.length) / n)]
+        const d = b[Math.floor((i * b.length) / n)]
+        particles.push({
+          s,
+          d,
+          delay: (i / n) * 220 + Math.random() * 60,
+          arc: (Math.random() - 0.5) * 3,
+        })
+      }
+      this.anim = { mode: "morph", start: performance.now(), particles, dur: 900 }
+    } else {
+      prev.forEach((s) =>
+        particles.push({
+          s,
+          vx: (Math.random() - 0.5) * 0.004,
+          delay: Math.random() * 180 + (ROWS - s.r) * 20,
+        }),
+      )
+      this.anim = {
+        mode: mode === "off" ? "off" : "fall",
+        start: performance.now(),
+        particles,
+        dur: mode === "off" || !next.length ? 900 : 1300,
+      }
+    }
+    animate(this)
+  }
+
+  setPulse(on) {
+    this.pulse = on && !reducedMotion
+    if (this.pulse) animate(this)
+  }
+
+  step(now) {
+    this.draw(now)
+    if (this.anim && now - this.anim.start > this.anim.dur) {
+      this.anim = null
+      this.draw(now)
+    }
+    return !!this.anim || this.pulse
+  }
+
+  dot(sprite, c, r, alpha = 1) {
+    const p = this.pitch
+    const size = p * 2
+    this.ctx.globalAlpha = alpha
+    this.ctx.drawImage(
+      sprite,
+      this.ox + c * p - size / 2,
+      this.oy + r * p - size / 2,
+      size,
+      size,
+    )
+  }
+
+  draw(now) {
+    const { ctx, pitch: p } = this
+    if (!p) return
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    // Les LED éteintes : la grille du tableau.
+    ctx.globalAlpha = 1
+    ctx.fillStyle = this.color + "26"
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        ctx.beginPath()
+        ctx.arc(this.ox + c * p, this.oy + r * p, p * 0.34, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+    const sprite = spriteOf(this.color)
+    const anim = this.anim
+    if (!anim) {
+      this.lit.forEach(({ c, r }) => {
+        const a = this.pulse
+          ? 0.85 + 0.15 * Math.sin(now / 140 - c * 0.6 + r * 0.2)
+          : 1
+        this.dot(sprite, c, r, a)
+      })
+    } else if (anim.mode === "morph") {
+      const t0 = now - anim.start
+      anim.particles.forEach(({ s, d, delay, arc }) => {
+        const t = easeInOut(clamp01((t0 - delay) / 600))
+        const c = s.c + (d.c - s.c) * t
+        const r = s.r + (d.r - s.r) * t - Math.sin(Math.PI * t) * arc
+        this.dot(sprite, c, r)
+      })
+    } else {
+      const t0 = now - anim.start
+      // Les anciens points tombent hors du tableau en s'éteignant.
+      anim.particles.forEach(({ s, vx, delay }) => {
+        const t = Math.max(0, t0 - delay)
+        const r = s.r + 0.00004 * t * t
+        if (r > ROWS + 1) return
+        this.dot(sprite, s.c + vx * t, r, 1 - clamp01(t / 700))
+      })
+      // Puis le nouveau nombre s'allume ligne par ligne.
+      if (anim.mode === "fall") {
+        this.lit.forEach(({ c, r }) => {
+          const a = clamp01((t0 - 750 - r * 60) / 120)
+          if (a > 0) this.dot(sprite, c, r, a)
+        })
+      }
+    }
+    ctx.globalAlpha = 1
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Les étincelles : un calque plein écran pour les points qui volent des
+// quilles vers le tableau, et le feu d'artifice de la victoire.
+
+const sparks = {
+  particles: [],
+  canvas: null,
+  ctx: null,
+  init() {
+    this.canvas = $("sparks")
+    this.ctx = this.canvas.getContext("2d")
+    this.resize()
+    addEventListener("resize", () => this.resize())
+  },
+  resize() {
+    const dpr = window.devicePixelRatio || 1
+    this.dpr = dpr
+    this.canvas.width = innerWidth * dpr
+    this.canvas.height = innerHeight * dpr
+  },
+  // Des points partent de chaque quille touchée et filent vers le score.
+  stream(froms, to, color, onArrive) {
+    const now = performance.now()
+    let last = 0
+    froms.forEach((f, i) => {
+      for (let k = 0; k < 5; k++) {
+        const delay = i * 70 + k * 35
+        last = Math.max(last, delay)
+        this.particles.push({
+          kind: "stream",
+          color,
+          start: now + delay,
+          dur: 520,
+          x0: f.x + (Math.random() - 0.5) * 16,
+          y0: f.y + (Math.random() - 0.5) * 16,
+          x1: to.x + (Math.random() - 0.5) * to.w * 0.6,
+          y1: to.y + (Math.random() - 0.5) * to.h * 0.5,
+          bend: (Math.random() - 0.5) * 160,
+          size: 16,
+        })
+      }
+    })
+    setTimeout(onArrive, last + 480)
+    animate(this)
+  },
+  burst(x, y, color, n = 40) {
+    const now = performance.now()
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2
+      const v = 0.15 + Math.random() * 0.35
+      this.particles.push({
+        kind: "burst",
+        color,
+        start: now,
+        dur: 1100 + Math.random() * 500,
+        x0: x,
+        y0: y,
+        vx: Math.cos(a) * v,
+        vy: Math.sin(a) * v,
+        size: 10 + Math.random() * 10,
+      })
+    }
+    animate(this)
+  },
+  step(now) {
+    const { ctx, dpr } = this
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    this.particles = this.particles.filter((p) => now < p.start + p.dur)
+    this.particles.forEach((p) => {
+      const t = (now - p.start) / p.dur
+      if (t < 0) return
+      let x
+      let y
+      let a = 1
+      if (p.kind === "stream") {
+        const e = easeInOut(t)
+        // Une courbe de Bézier : le point s'élève puis plonge vers le score.
+        const mx = (p.x0 + p.x1) / 2 + p.bend
+        const my = Math.min(p.y0, p.y1) - 60
+        x = (1 - e) ** 2 * p.x0 + 2 * (1 - e) * e * mx + e * e * p.x1
+        y = (1 - e) ** 2 * p.y0 + 2 * (1 - e) * e * my + e * e * p.y1
+        a = t > 0.85 ? (1 - t) / 0.15 : 1
+      } else {
+        const ms = now - p.start
+        x = p.x0 + p.vx * ms
+        y = p.y0 + p.vy * ms + 0.00018 * ms * ms
+        a = 1 - t
+      }
+      ctx.globalAlpha = a
+      const s = p.size * dpr
+      ctx.drawImage(spriteOf(p.color), x * dpr - s / 2, y * dpr - s / 2, s, s)
+    })
+    ctx.globalAlpha = 1
+    return this.particles.length > 0
+  },
+}
+
+// ---------------------------------------------------------------------------
+// Les sons, synthétisés, par le contexte audio de voix.js (débloqué au
+// toucher, y compris sur iPhone).
+
+let soundOn = localStorage.getItem("molkkySon") !== "off"
+
+function tone(freq, at, dur, { type = "square", vol = 0.06, to } = {}) {
+  if (!soundOn || !window.Voice) return
+  const ctx = Voice.context()
+  if (!ctx) return
+  const t = ctx.currentTime + at
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.type = type
+  osc.frequency.setValueAtTime(freq, t)
+  if (to) osc.frequency.exponentialRampToValueAtTime(to, t + dur)
+  gain.gain.setValueAtTime(0, t)
+  gain.gain.linearRampToValueAtTime(vol, t + 0.01)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+  osc.connect(gain).connect(ctx.destination)
+  osc.start(t)
+  osc.stop(t + dur + 0.02)
+}
+
+const note = (n) => 440 * 2 ** ((n - 9) / 12) // n demi-tons au-dessus du do 4
+
+const sounds = {
+  pin(n, on) {
+    tone(note(n + 12), 0, 0.07, { vol: on ? 0.05 : 0.03 })
+  },
+  // Un bip par point, qui monte : on entend le score grimper.
+  points(k) {
+    for (let i = 0; i < k; i++) tone(note(12 + i * 2), 0.12 + i * 0.045, 0.06)
+  },
+  miss() {
+    tone(196, 0, 0.16, { type: "sawtooth", vol: 0.05 })
+    tone(147, 0.18, 0.28, { type: "sawtooth", vol: 0.05 })
+  },
+  overflow() {
+    tone(880, 0, 0.7, { type: "triangle", vol: 0.09, to: 220 })
+  },
+  out() {
+    tone(392, 0, 0.9, { type: "sawtooth", vol: 0.05, to: 65 })
+  },
+  win() {
+    ;[0, 4, 7, 12, 7, 12, 16].forEach((n, i) =>
+      tone(note(12 + n), i * 0.11, i === 6 ? 0.6 : 0.12, { vol: 0.06 }),
+    )
+  },
+}
+
+function updateSoundBtn() {
+  $("soundBtn").classList.toggle("muted", !soundOn)
+  $("soundBtn").setAttribute("aria-pressed", String(soundOn))
+}
+
+// ---------------------------------------------------------------------------
+// Avant la partie : composer les équipes
+
+let chosenTeamId = 0
+
+function renderSetup() {
+  const counts = {}
+  players.forEach((p) => (counts[p.teamId] = (counts[p.teamId] || 0) + 1))
+
+  $("chips").replaceChildren(
+    ...teamColors.map((team, id) => {
+      const chip = document.createElement("button")
+      chip.type = "button"
+      chip.className = "chip"
+      chip.style.setProperty("--c", team.color)
+      chip.setAttribute("role", "radio")
+      chip.setAttribute("aria-label", team.name)
+      chip.setAttribute("aria-checked", String(id === chosenTeamId))
+      chip.classList.toggle("used", !!counts[id])
+      if (counts[id]) chip.textContent = counts[id]
+      chip.addEventListener("click", () => {
+        chosenTeamId = id
+        renderSetup()
+        $("playerNameInput").focus()
+      })
+      return chip
+    }),
+  )
+
+  const roster = teamIds().map((teamId) => {
+    const line = document.createElement("div")
+    line.className = "team-line"
+    line.style.setProperty("--c", colorOf(teamId))
+    players.forEach((p, index) => {
+      if (p.teamId !== teamId) return
+      const tag = document.createElement("span")
+      tag.className = "player-tag"
+      const name = document.createElement("span")
+      name.textContent = p.name
+      const del = document.createElement("button")
+      del.type = "button"
+      del.className = "del-btn"
+      del.setAttribute("aria-label", `Retirer ${p.name}`)
+      del.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>'
+      del.addEventListener("click", () => {
+        removePlayer(index)
+        if (!players.some((q) => q.teamId === chosenTeamId)) {
+          chosenTeamId = getNextAvailableTeamId()
+        }
+        renderSetup()
+      })
+      tag.append(name, del)
+      line.append(tag)
+    })
+    return line
+  })
+  // Il faut deux équipes : des places vides le montrent.
+  for (let i = roster.length; i < 2; i++) {
+    const ghost = document.createElement("div")
+    ghost.className = "team-line ghost"
+    roster.push(ghost)
+  }
+  $("roster").replaceChildren(...roster)
+  $("startBtn").disabled = !canStart()
+}
+
+function shake(el) {
+  el.classList.remove("shake")
+  void el.offsetWidth
+  el.classList.add("shake")
+}
+
+function onAddPlayer(event) {
+  event.preventDefault()
+  const input = $("playerNameInput")
+  const name = input.value.trim()
+  if (!name) {
+    shake(input)
+    input.focus()
+    return
+  }
+  addPlayer(name, chosenTeamId)
+  sounds.pin(players.length, true)
+  input.value = ""
+  chosenTeamId = getNextAvailableTeamId()
+  renderSetup()
+  input.focus()
+}
+
+// ---------------------------------------------------------------------------
+// Pendant la partie : le tableau
+
+const rows = new Map() // teamId → { el, led, names, misses, gauge, history }
+const selected = new Set()
+const undoStack = []
+let busy = false
+
+function buildBoard() {
+  const board = $("board")
+  board.replaceChildren()
+  rows.clear()
+  const ids = teamIds()
+  // À plus de trois équipes, des tuiles sur deux colonnes : les chiffres
+  // restent grands.
+  board.classList.toggle("tiles", ids.length > 3)
+  ids.forEach((teamId) => {
+    const el = document.createElement("div")
+    el.className = "row"
+    el.style.setProperty("--c", colorOf(teamId))
+    el.innerHTML = `
+      <div class="info">
+        <div class="names"></div>
+        <div class="gauge"><div class="gauge-fill"></div></div>
+        <div class="history"></div>
+      </div>
+      <div class="misses"><i></i><i></i><i></i></div>
+      <canvas class="led"></canvas>`
+    board.append(el)
+    const led = new Led(el.querySelector("canvas"), colorOf(teamId))
+    rows.set(teamId, {
+      el,
+      led,
+      names: el.querySelector(".names"),
+      misses: [...el.querySelectorAll(".misses i")],
+      gauge: el.querySelector(".gauge-fill"),
+      history: el.querySelector(".history"),
+    })
+  })
+  sizeLeds()
+}
+
+// La hauteur des rangées dépend du nombre d'équipes et de l'écran : les
+// chiffres prennent toute la place qu'ils peuvent.
+function sizeLeds() {
+  const tiles = $("board").classList.contains("tiles")
+  rows.forEach(({ el, led }) => {
+    const h = tiles
+      ? Math.min(
+          el.clientHeight - el.querySelector(".info").offsetHeight - 18,
+          (el.clientWidth - 20) / 1.5,
+          112,
+        )
+      : Math.min(el.clientHeight - 12, 112)
+    led.canvas.style.height = h + "px"
+    led.canvas.style.width = h * 1.5 + "px"
+    led.resize()
+  })
+}
+
+function renderBoard(anim = {}) {
+  rows.forEach((row, teamId) => {
+    const team = teamState(teamId)
+    const isActive = teamId === currentTeamId && !gameEnded
+    row.el.classList.toggle("active", isActive)
+    row.el.classList.toggle("out", team.eliminated)
+
+    row.names.replaceChildren(
+      ...team.members.map((p) => {
+        const s = document.createElement("span")
+        s.textContent = p.name
+        if (isActive && p === team.current) s.className = "current"
+        return s
+      }),
+    )
+    const misses = team.eliminated ? 3 : teamMissCount[teamId] || 0
+    row.misses.forEach((m, i) => m.classList.toggle("on", i < misses))
+    row.gauge.style.transform = `scaleX(${team.score / 50})`
+    row.history.replaceChildren(
+      ...team.history.slice(-8).map((v) => {
+        const s = document.createElement("span")
+        s.textContent = v
+        if (v === 0) s.className = "zero"
+        return s
+      }),
+    )
+
+    const mode = anim.teamId === teamId ? anim.mode : anim.all || "none"
+    row.led.set(team.eliminated ? -1 : team.score, mode)
+  })
+
+  const team = teamState(currentTeamId)
+  const color = colorOf(currentTeamId)
+  $("game").style.setProperty("--c", color)
+  $("turnName").textContent = team.current ? team.current.name : ""
+  $("undoBtn").disabled = undoStack.length === 0
+}
+
+function buildPins(container, interactive) {
+  container.replaceChildren()
+  PIN_ROWS.forEach((line, y) => {
+    line.forEach((n, i) => {
+      const pin = document.createElement(interactive ? "button" : "span")
+      pin.className = "pin"
+      pin.textContent = n
+      pin.style.setProperty("--x", i + (4 - line.length) / 2)
+      pin.style.setProperty("--y", y)
+      if (interactive) {
+        pin.type = "button"
+        pin.dataset.n = n
+        pin.setAttribute("aria-pressed", "false")
+        pin.addEventListener("click", () => togglePin(pin))
+      }
+      container.append(pin)
+    })
+  })
+}
+
+const pinButtons = () => [...$("pins").querySelectorAll(".pin")]
+
+// Une quille seule vaut son numéro ; plusieurs valent leur nombre.
+function pointsOf(pins) {
+  if (pins.size === 1) return [...pins][0]
+  return pins.size
+}
+
+function togglePin(pin) {
+  if (busy) return
+  Voice.wake(400)
+  const n = Number(pin.dataset.n)
+  const on = !selected.has(n)
+  if (on) selected.add(n)
+  else selected.delete(n)
+  pin.setAttribute("aria-pressed", String(on))
+  sounds.pin(n, on)
+  renderThrowBtn()
+}
+
+function renderThrowBtn() {
+  const btn = $("throwBtn")
+  btn.classList.toggle("has-points", selected.size > 0)
+  $("throwPoints").textContent = selected.size ? "+" + pointsOf(selected) : ""
+}
+
+function clearPins() {
+  selected.clear()
+  pinButtons().forEach((p) => p.setAttribute("aria-pressed", "false"))
+  renderThrowBtn()
+}
+
+function snapshot() {
+  return JSON.stringify({
+    players,
+    currentTeamId,
+    teamPlayerIndexes,
+    teamMissCount,
+    gameStarted,
+    gameEnded,
+  })
+}
+
+function rectCenter(el) {
+  const r = el.getBoundingClientRect()
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }
+}
+
+function onThrow() {
+  if (busy || gameEnded) return
+  Voice.wake(2500)
+  const teamId = currentTeamId
+  const row = rows.get(teamId)
+  const points = pointsOf(selected)
+  const froms = pinButtons()
+    .filter((p) => selected.has(Number(p.dataset.n)))
+    .map(rectCenter)
+
+  undoStack.push(snapshot())
+  const result = addScore(teamId, points)
+  if (!result) {
+    undoStack.pop()
+    return
+  }
+  busy = true
+
+  const land = () => {
+    clearPins()
+    let mode = "morph"
+    if (result.eliminated) {
+      mode = "off"
+      sounds.out()
+    } else if (result.overflow) {
+      mode = "fall"
+      sounds.overflow()
+    } else if (points === 0) {
+      sounds.miss()
+    }
+    renderBoard({ teamId, mode })
+    if (points === 0) {
+      shake(row.el)
+      const m = row.misses[(teamMissCount[teamId] || 3) - 1]
+      if (m) shake(m)
+    }
+    const wait = reducedMotion ? 0 : mode === "morph" ? 650 : 1100
+    setTimeout(() => {
+      busy = false
+      if (gameEnded) showWinner(true)
+    }, gameEnded ? wait + 250 : 150)
+  }
+
+  if (points > 0 && !reducedMotion) {
+    sounds.points(points)
+    sparks.stream(froms, rectCenter(row.led.canvas), colorOf(teamId), land)
+  } else {
+    if (points > 0) sounds.points(points)
+    land()
+  }
+}
+
+function onUndo() {
+  if (busy || !undoStack.length) return
+  Voice.wake(300)
+  applyState(JSON.parse(undoStack.pop()))
+  saveState()
+  hideWinner()
+  clearPins()
+  renderBoard({ all: "morph" })
+  sounds.pin(1, false)
+}
+
+// ---------------------------------------------------------------------------
+// La fin
+
+let fireworks = null
+
+function showWinner(celebrate) {
+  const teamId = winnerTeamId()
+  const led = winnerLed
+  const team = teamId === null ? null : teamState(teamId)
+  const color = team ? colorOf(teamId) : "#ff4040"
+  $("winner").style.setProperty("--c", color)
+  $("winnerNames").textContent = team
+    ? team.members.map((p) => p.name).join("\u00a0· ")
+    : ""
+  $("winnerText").textContent = !team
+    ? "Personne n'a gagné !"
+    : team.members.length > 1
+      ? "ont gagné !"
+      : "a gagné !"
+  $("winnerUndoBtn").classList.toggle("hidden", undoStack.length === 0)
+  $("winner").classList.remove("hidden")
+  led.color = color
+  led.resize()
+  led.value = null
+  led.set(team ? team.score : -1)
+  led.setPulse(true)
+
+  if (celebrate) {
+    sounds.win()
+    if (!reducedMotion) {
+      let n = 0
+      const pop = () => {
+        const r = $("winnerLed").getBoundingClientRect()
+        sparks.burst(
+          r.left + Math.random() * r.width,
+          r.top + Math.random() * r.height * 0.6,
+          n % 2 ? "#ffffff" : color,
+        )
+        if (++n < 7) fireworks = setTimeout(pop, 260)
+      }
+      pop()
+    }
+  }
+}
+
+function hideWinner() {
+  clearTimeout(fireworks)
+  winnerLed.setPulse(false)
+  $("winner").classList.add("hidden")
+}
+
+// ---------------------------------------------------------------------------
+// Les écrans
+
+function showScreen() {
+  $("setup").classList.toggle("hidden", gameStarted)
+  $("game").classList.toggle("hidden", !gameStarted)
+  if (gameStarted) {
+    buildBoard()
+    clearPins()
+    renderBoard()
+  } else {
+    chosenTeamId = getNextAvailableTeamId()
+    renderSetup()
+  }
+}
+
+function openOverlay(id) {
+  $(id).classList.remove("hidden")
+}
+function closeOverlay(id) {
+  $(id).classList.add("hidden")
+}
+
+let winnerLed
+
+document.addEventListener("DOMContentLoaded", function () {
+  sparks.init()
+  winnerLed = new Led($("winnerLed"), "#ff4040")
+  buildPins($("pins"), true)
+  buildPins($("rulesPins"), false)
+  updateSoundBtn()
+
+  try {
+    loadState()
+    showScreen()
+  } catch (e) {
+    // État illisible, ou écrit par une version antérieure dont la forme a
+    // changé depuis (un joueur sans `history`, par exemple) : on repart d'une
+    // partie vierge. Sinon la page reste cassée au chargement, sans autre
+    // issue que vider les données du site.
+    console.warn("État Mölkky illisible, on repart d'une partie vierge :", e)
+    localStorage.removeItem("molkkyState")
+    applyState({})
+    showScreen()
+  }
+  if (gameEnded) showWinner(false)
+
+  $("addForm").addEventListener("submit", onAddPlayer)
+  $("startBtn").addEventListener("click", () => {
+    Voice.wake(800)
+    startGame()
+    if (!gameStarted) return
+    sounds.win()
+    showScreen()
+    if (!reducedMotion) renderBoardIntro()
+  })
+  $("throwBtn").addEventListener("click", onThrow)
+  $("undoBtn").addEventListener("click", onUndo)
+  $("winnerUndoBtn").addEventListener("click", onUndo)
+  $("rematchBtn").addEventListener("click", () => {
+    hideWinner()
+    newGame()
+    showScreen()
+  })
+  $("newGameBtn").addEventListener("click", () => {
+    if (!gameStarted) return
+    openOverlay("confirm")
+  })
+  $("confirmNo").addEventListener("click", () => closeOverlay("confirm"))
+  $("confirmYes").addEventListener("click", () => {
+    closeOverlay("confirm")
+    hideWinner()
+    newGame()
+    showScreen()
+  })
+  $("rulesBtn").addEventListener("click", () => openOverlay("rules"))
+  $("rulesClose").addEventListener("click", () => closeOverlay("rules"))
+  $("soundBtn").addEventListener("click", () => {
+    soundOn = !soundOn
+    localStorage.setItem("molkkySon", soundOn ? "on" : "off")
+    updateSoundBtn()
+    Voice.wake(300)
+    sounds.pin(5, true)
+  })
+  // Un tap à côté du panneau le ferme, sauf la victoire.
+  ;["confirm", "rules"].forEach((id) =>
+    $(id).addEventListener("click", (e) => {
+      if (e.target.id === id) closeOverlay(id)
+    }),
+  )
+
+  let resizeTimer
+  addEventListener("resize", () => {
+    clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(() => {
+      sizeLeds()
+      if (!$("winner").classList.contains("hidden")) winnerLed.resize()
+    }, 100)
+  })
+})
+
+// Au coup d'envoi, les zéros s'allument ligne après ligne.
+function renderBoardIntro() {
+  rows.forEach(({ led }, teamId) => {
+    led.value = -1
+    led.lit = []
+    setTimeout(() => led.set(teamState(teamId).score, "fall"), 0)
+  })
 }
