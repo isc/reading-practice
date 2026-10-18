@@ -4,11 +4,8 @@ import { canListen, handleTranscript, startRecognition } from "./speech.js"
 import * as UI from "./ui.js"
 
 const game = new GameState()
-const LEVEL_ORDER = Object.keys(sentences)
 let recognition
 let reading = false // une phrase est affichée et pas encore lue en entier
-let denied = false
-let restarts = 0
 let emojis = []
 
 // Une note par mot, qui monte le long de la phrase (gamme pentatonique)
@@ -32,14 +29,6 @@ function tone(freq, at, length = 0.5, volume = 0.07) {
 
 const chord = (notes) => notes.forEach((n, i) => tone(NOTES[n], i * 0.09, 0.9))
 
-function stepIndex() {
-  const done = LEVEL_ORDER.slice(0, LEVEL_ORDER.indexOf(game.currentLevel))
-  return (
-    done.reduce((sum, level) => sum + sentences[level].length, 0) +
-    game.currentSentenceIndex
-  )
-}
-
 function startGame() {
   if (!canListen()) return UI.refuse()
   game.resetGame()
@@ -52,10 +41,9 @@ function startGame() {
 function initializeNewSentence() {
   const sentence = game.prepareNewSentence()
   UI.displaySentence(sentence, game.currentLevel)
-  UI.updateSteps(stepIndex())
+  UI.updateSteps(game.progress())
   UI.updateTimerDisplay(game.timer)
   reading = true
-  restarts = 0
   listen()
 
   clearInterval(game.timerInterval)
@@ -65,9 +53,16 @@ function initializeNewSentence() {
 }
 
 function listen() {
-  denied = false
+  recognition?.stop()
   try {
-    recognition = startRecognition(onTranscript, onError, onEnd)
+    recognition = startRecognition({
+      onTranscript,
+      onDenied: () => {
+        UI.setMode("denied")
+        UI.refuse()
+      },
+      onIdle: () => UI.setMode("idle"),
+    })
     UI.setMode("listen")
   } catch (error) {
     console.error("Speech recognition error", error)
@@ -76,7 +71,6 @@ function listen() {
 }
 
 function onTranscript(transcript) {
-  restarts = 0
   UI.heard()
   handleTranscript(
     transcript,
@@ -87,22 +81,6 @@ function onTranscript(transcript) {
     },
     onSentenceComplete,
   )
-}
-
-function onError(event) {
-  if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-    denied = true
-    UI.setMode("denied")
-    UI.refuse()
-  }
-}
-
-// Le navigateur coupe l'écoute après un silence : on la relance tant que la
-// phrase n'est pas finie, sauf si elle s'arrête en boucle.
-function onEnd() {
-  if (!reading || denied) return
-  if (restarts++ < 3) listen()
-  else UI.setMode("idle")
 }
 
 function onSentenceComplete() {
@@ -135,13 +113,13 @@ UI.onGo(() => {
   const mode = UI.mode()
   if (mode === "next") nextSentence()
   else if (mode === "start" || mode === "replay") startGame()
-  else if (mode === "idle" || (mode === "denied" && reading)) {
-    restarts = 0
-    listen()
-  } else if (mode === "denied") UI.refuse()
+  else if (reading && (mode === "idle" || mode === "denied")) listen()
+  else if (mode === "denied") UI.refuse()
 })
 
-UI.buildSteps(LEVEL_ORDER.map((level) => [level, sentences[level].length]))
+UI.buildSteps(
+  Object.entries(sentences).map(([level, list]) => [level, list.length]),
+)
 UI.showHome(game.bestTime)
 UI.setMode(canListen() ? "start" : "denied")
 

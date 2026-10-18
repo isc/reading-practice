@@ -17,8 +17,8 @@ const LEVELS = {
 }
 
 const $ = (id) => document.getElementById(id)
-const reduceMotion = () =>
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches
+const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+const reduceMotion = () => motionQuery.matches
 
 function paint(el, index) {
   const [c, c2] = COLORS[index % COLORS.length]
@@ -246,34 +246,30 @@ export function showBest(bestTime) {
 // Le gros bouton change de rôle au fil de la partie :
 // start (micro), listen (micro qui écoute), idle (micro au repos, à
 // toucher pour relancer l'écoute), denied (micro barré), next, replay.
-const LABELS = {
-  start: "Commencer",
-  listen: "J'écoute",
-  idle: "Relancer le micro",
-  denied: "Micro indisponible",
-  next: "Phrase suivante",
-  replay: "Rejouer",
-}
-const HINTS = {
-  start: "Touche le micro",
-  listen: "Lis la phrase",
-  idle: "Touche le micro",
-  denied: "Il faut le micro",
+const MODES = {
+  start: ["Commencer", "Touche le micro"],
+  listen: ["J'écoute", "Lis la phrase"],
+  idle: ["Relancer le micro", "Touche le micro"],
+  denied: ["Micro indisponible", "Il faut le micro"],
+  next: ["Phrase suivante", ""],
+  replay: ["Rejouer", ""],
 }
 
 export function setMode(mode) {
   const go = $("go")
   go.dataset.mode = mode
-  go.setAttribute("aria-label", LABELS[mode])
-  $("hint").textContent = HINTS[mode] || ""
+  const [label, hint] = MODES[mode]
+  go.setAttribute("aria-label", label)
+  $("hint").textContent = hint
 }
 
 export const mode = () => $("go").dataset.mode
 
 // Le navigateur a entendu quelque chose : le micro bat une fois.
+let heartbeat
 export function heard() {
-  if (reduceMotion()) return
-  $("go").animate(
+  if (reduceMotion() || heartbeat?.playState === "running") return
+  heartbeat = $("go").animate(
     [
       { transform: "scale(1)" },
       { transform: "scale(1.08)" },
@@ -300,8 +296,8 @@ export function onGo(callback) {
   $("go").addEventListener("click", callback)
   document.addEventListener("keydown", (event) => {
     if (event.code !== "Space" && event.code !== "Enter") return
-    if (event.target === $("go")) return // le clic du bouton suffit
+    if (event.target.closest("button")) return // le bouton se clique tout seul
     event.preventDefault()
-    callback()
+    $("go").click()
   })
 }
