@@ -38,6 +38,7 @@ PRONONCIATION = {
     "dinde": "Dinnde.",  # « Dinde. » sort souvent « dine-dé »
     "burger": "Beurgueur.",  # sinon « burgé » ; « beurgeur » est bloqué par la modération de Mistral
     "quille": "Quille !",  # « Quille. » sort « qui », « Gilles »…
+    "train": "Le train.",  # seul, « Train. » sort « R », « fin », « rien »…
 }
 
 
