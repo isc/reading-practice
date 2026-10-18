@@ -294,7 +294,7 @@
         bottom: 4px;
         width: var(--token, 48px);
         height: var(--token, 48px);
-        transition: transform 0.14s ease-out;
+        transition: translate 0.14s ease-out;
         z-index: 3;
       }
 
@@ -494,7 +494,7 @@
         transform: translateY(3px) scale(1.04, 0.96);
       }
 
-      .hidden {
+      [hidden] {
         display: none !important;
       }
 
@@ -508,10 +508,6 @@
         place-items: center;
         padding: 20px;
         background: #0e0624c4;
-      }
-
-      .sheet[hidden] {
-        display: none;
       }
 
       .sheet-card {
@@ -592,7 +588,6 @@
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .hopper,
         .hopper img,
         .score.turn .mini,
         .status.thinking::after {
@@ -639,19 +634,19 @@
       </div>
 
       <div class="scorebar">
-        <div class="score red" id="scoreCardRed">
+        <div class="score red" id="card-red">
           <img class="mini" alt="" data-jelly="red" />
           <span class="who" id="scoreLabelRed">Rouge</span>
-          <span class="value" id="scoreRed">0</span>
+          <span class="value" id="score-red">0</span>
         </div>
         <div class="score draws">
           <span class="who">Nuls</span>
-          <span class="value" id="scoreDraws">0</span>
+          <span class="value" id="score-draws">0</span>
         </div>
-        <div class="score yellow" id="scoreCardYellow">
+        <div class="score yellow" id="card-yellow">
           <img class="mini" alt="" data-jelly="yellow" />
           <span class="who" id="scoreLabelYellow">Jaune</span>
-          <span class="value" id="scoreYellow">0</span>
+          <span class="value" id="score-yellow">0</span>
         </div>
       </div>
 
@@ -659,7 +654,7 @@
         <div class="arena" id="arena">
           <div class="rail">
             <div class="hopper" id="hopper"><img alt="" /></div>
-            <p class="verdict hidden" id="message"></p>
+            <p class="verdict" id="message" hidden></p>
           </div>
           <div class="slab">
             <div class="board" id="board"></div>
@@ -668,7 +663,7 @@
 
         <div class="foot">
           <p class="status" id="status" aria-live="polite"></p>
-          <button type="button" class="jelly-btn hidden" id="newGameBtn">
+          <button type="button" class="jelly-btn" id="newGameBtn" hidden>
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -873,27 +868,43 @@
         return [x / l, y / l, z / l]
       }
 
-      // balls: [{ x, y, r, bubbles }] in canvas pixels
-      // `reach` is the field radius (in jelly radii) once fully spread: wider
-      // for a diagonal, whose jellies are further apart.
+      const GROW = 0.08 // the jellies swell a little as they melt
+
+      // Field and height buffers, kept from one frame of the fusion to the next
+      let scratch = { field: new Float32Array(0), height: new Float32Array(0) }
+
+      // balls: [{ x, y, r, bubbles }] in canvas pixels, all the same radius.
+      // `reach` is the field radius (in jelly radii) once fully spread: it
+      // must grow with the distance between the jellies for them to meet.
       function paintJelly(ctx, balls, palette, spread, reach = 2) {
         const w = ctx.canvas.width
         const h = ctx.canvas.height
-        const grow = 1 + 0.08 * spread
+        const grow = 1 + GROW * spread
         const R0 = 1.25 + (reach - 1.25) * spread
         const threshold = (1 - (grow / R0) ** 2) ** 3
-        const field = new Float32Array(w * h)
-        const height = new Float32Array(w * h)
+        if (scratch.field.length !== w * h) {
+          scratch = {
+            field: new Float32Array(w * h),
+            height: new Float32Array(w * h),
+          }
+        }
+        const { field, height } = scratch
+        field.fill(0)
+        height.fill(0)
         for (const b of balls) {
           const R = b.r * R0
-          const x0 = Math.max(0, Math.floor(b.x - R))
-          const x1 = Math.min(w - 1, Math.ceil(b.x + R))
+          const invR2 = 1 / (R * R)
           const y0 = Math.max(0, Math.floor(b.y - R))
           const y1 = Math.min(h - 1, Math.ceil(b.y + R))
           for (let y = y0; y <= y1; y++) {
+            const dy2 = (y - b.y) ** 2
+            if (dy2 >= R * R) continue
+            const half = Math.sqrt(R * R - dy2)
+            const x0 = Math.max(0, Math.floor(b.x - half))
+            const x1 = Math.min(w - 1, Math.ceil(b.x + half))
             for (let x = x0; x <= x1; x++) {
-              const d2 = ((x - b.x) ** 2 + (y - b.y) ** 2) / (R * R)
-              if (d2 < 1) field[y * w + x] += (1 - d2) ** 3
+              const q = 1 - ((x - b.x) ** 2 + dy2) * invR2
+              if (q > 0) field[y * w + x] += q * q * q
             }
           }
         }
@@ -915,14 +926,16 @@
             // Antialiased edge: how far the threshold is, in pixels
             const alpha = Math.min(
               1,
-              (f - threshold) / (Math.hypot(gx, gy) + 1e-6) + 0.5,
+              (f - threshold) / (Math.sqrt(gx * gx + gy * gy) + 1e-6) + 0.5,
             )
             if (alpha <= 0) continue
-            const [nx, ny, nz] = normalize([
-              -(height[i + 1] - height[i - 1]) / 2,
-              -(height[i + w] - height[i - w]) / 2,
-              1,
-            ])
+            // Normal of the surface (written out: this runs per pixel)
+            const hx = (height[i - 1] - height[i + 1]) / 2
+            const hy = (height[i - w] - height[i + w]) / 2
+            const il = 1 / Math.sqrt(hx * hx + hy * hy + 1)
+            const nx = hx * il
+            const ny = hy * il
+            const nz = il
             const thick = height[i] / lift
             const body = smoothstep(0, 0.55, thick)
             const out =
@@ -932,8 +945,8 @@
             const diffuse =
               0.8 +
               0.32 * Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2])
-            const dotH = Math.max(0, nx * HALF[0] + ny * HALF[1] + nz * HALF[2])
-            const shine = dotH ** 90 * 1.2 + dotH ** 10 * 0.14
+            const dotH = nx * HALF[0] + ny * HALF[1] + nz * HALF[2]
+            const shine = dotH > 0.6 ? dotH ** 90 * 1.2 + dotH ** 10 * 0.14 : 0
             for (let k = 0; k < 3; k++) {
               let v = deep[k] + (base[k] - deep[k]) * body
               v += (glow[k] - v) * out
@@ -943,23 +956,22 @@
           }
         }
         ctx.putImageData(image, 0, 0)
+        drawBubbles(ctx, balls)
+      }
+
+      function drawBubbles(ctx, balls) {
         for (const b of balls) {
           for (const [dx, dy, br] of b.bubbles) {
             const x = b.x + dx * b.r
             const y = b.y + dy * b.r
+            const r = br * b.r
             ctx.fillStyle = "rgba(255, 255, 255, 0.22)"
             ctx.beginPath()
-            ctx.arc(x, y, br * b.r, 0, Math.PI * 2)
+            ctx.arc(x, y, r, 0, Math.PI * 2)
             ctx.fill()
             ctx.fillStyle = "rgba(255, 255, 255, 0.7)"
             ctx.beginPath()
-            ctx.arc(
-              x - br * b.r * 0.35,
-              y - br * b.r * 0.35,
-              br * b.r * 0.3,
-              0,
-              Math.PI * 2,
-            )
+            ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.3, 0, Math.PI * 2)
             ctx.fill()
           }
         }
@@ -970,19 +982,26 @@
         return t * t * (3 - 2 * t)
       }
 
-      // One image per color and bubble pattern, painted once
+      // One image per color and bubble pattern: the jelly is shaded once per
+      // color, then each pattern adds its bubbles
       const SPRITES = {}
       for (const player of ["red", "yellow"]) {
+        const ball = { x: SPRITE_SIZE / 2, y: SPRITE_SIZE / 2 }
+        ball.r = SPRITE_SIZE * SPRITE_RADIUS
+        const jelly = document.createElement("canvas")
+        jelly.width = jelly.height = SPRITE_SIZE
+        paintJelly(
+          jelly.getContext("2d"),
+          [{ ...ball, bubbles: [] }],
+          PALETTES[player],
+          0,
+        )
         SPRITES[player] = BUBBLES.map((bubbles) => {
           const canvas = document.createElement("canvas")
           canvas.width = canvas.height = SPRITE_SIZE
-          const c = SPRITE_SIZE / 2
-          paintJelly(
-            canvas.getContext("2d"),
-            [{ x: c, y: c, r: SPRITE_SIZE * SPRITE_RADIUS, bubbles }],
-            PALETTES[player],
-            0,
-          )
+          const ctx = canvas.getContext("2d")
+          ctx.drawImage(jelly, 0, 0)
+          drawBubbles(ctx, [{ ...ball, bubbles }])
           return canvas.toDataURL()
         })
       }
@@ -1132,29 +1151,26 @@
         const dist = Math.abs(col - hopperCol)
         hopperCol = col
         const x = columnX(col) - hopper.offsetWidth / 2
-        hopper.style.transitionDuration =
-          instant || reduceMotion ? "0s" : `${90 + dist * 30}ms`
-        hopper.style.transform = `translateX(${x}px)`
-        return instant || reduceMotion ? null : wait(90 + dist * 30)
+        const ms = instant || reduceMotion ? 0 : 90 + dist * 30
+        hopper.style.transitionDuration = `${ms}ms`
+        hopper.style.translate = `${x}px 0`
+        return ms ? wait(ms) : null
       }
 
-      function showHopper() {
+      function showHopper(visible) {
         const hopper = $("hopper")
-        const visible = !gameOver
         hopper.classList.toggle("away", !visible)
         if (!visible) return
         hopper.querySelector("img").src = SPRITES[currentPlayer][0]
-        if (!reduceMotion) {
-          hopper.animate(
-            [
-              { transform: hopper.style.transform + " scale(0.2, 0.2)" },
-              { transform: hopper.style.transform + " scale(1.2, 0.85)" },
-              { transform: hopper.style.transform + " scale(0.92, 1.08)" },
-              { transform: hopper.style.transform + " scale(1, 1)" },
-            ],
-            { duration: 360, easing: "ease-out" },
-          )
-        }
+        squish(
+          hopper,
+          [
+            [0.2, 0.2],
+            [1.2, 0.85],
+            [0.92, 1.08],
+          ],
+          { duration: 360, easing: "ease-out" },
+        )
       }
 
       function clearBoard() {
@@ -1202,7 +1218,7 @@
 
       // The jelly falls from the hopper, squashes, bounces and wobbles.
       // Resolves when it lands.
-      function animateDrop(row, col, token) {
+      function animateDrop(row, token) {
         if (reduceMotion) return Promise.resolve()
         const fromTop =
           $("hopper").getBoundingClientRect().top -
@@ -1238,19 +1254,27 @@
         return wait(fall)
       }
 
+      // Squash and stretch: from scale(1, 1) through `steps` ([x, y] scales)
+      // back to scale(1, 1). Resolves when done (at once without motion).
+      function squish(el, steps, options) {
+        if (reduceMotion) return Promise.resolve()
+        const frames = [[1, 1], ...steps, [1, 1]].map(([x, y]) => ({
+          transform: `scale(${x}, ${y})`,
+        }))
+        return el.animate(frames, options).finished
+      }
+
       // The jellies underneath feel the shock
       function shakeBelow(row, col) {
-        if (reduceMotion) return
         for (let r = row + 1, k = 1; r < ROWS && k <= 2; r++, k++) {
           const token = cells[r][col].token
           if (!token) continue
           const s = 0.12 / k
-          token.animate(
+          squish(
+            token,
             [
-              { transform: "scale(1, 1)" },
-              { transform: `scale(${1 + s}, ${1 - s})` },
-              { transform: `scale(${1 - s / 2}, ${1 + s / 2})` },
-              { transform: "scale(1, 1)" },
+              [1 + s, 1 - s],
+              [1 - s / 2, 1 + s / 2],
             ],
             { duration: 380, delay: (k - 1) * 40, easing: "ease-out" },
           )
@@ -1286,14 +1310,14 @@
         // Alternate who starts the next game (red, yellow, red, ...)
         startingPlayer = otherPlayer(startingPlayer)
         gameOver = false
-        $("message").className = "verdict hidden"
-        $("newGameBtn").classList.add("hidden")
-        $("status").classList.remove("hidden")
+        $("message").hidden = true
+        $("newGameBtn").hidden = true
+        $("status").hidden = false
         if (window.ExitGuard) ExitGuard.setActive(false)
         clearBoard()
         moveHopper(3, true)
         updateTurnIndicator()
-        showHopper()
+        showHopper(true)
         scheduleComputerMove()
       }
 
@@ -1304,7 +1328,7 @@
         document.querySelectorAll("#levelSelect button").forEach((btn) => {
           btn.classList.toggle("active", btn.dataset.level === level)
         })
-        $("levelSelect").classList.toggle("hidden", mode !== "ia")
+        $("levelSelect").hidden = mode !== "ia"
         const { names } = MODES[mode]
         $("scoreLabelRed").textContent = names.red
         $("scoreLabelYellow").textContent = names.yellow
@@ -1327,9 +1351,10 @@
         status.classList.toggle("thinking", isComputerTurn())
         $("arena").classList.toggle("locked", !acceptsHumanInput())
         for (const player of ["red", "yellow"]) {
-          const card =
-            player === "red" ? $("scoreCardRed") : $("scoreCardYellow")
-          card.classList.toggle("turn", !gameOver && currentPlayer === player)
+          $(`card-${player}`).classList.toggle(
+            "turn",
+            !gameOver && currentPlayer === player,
+          )
         }
         if (gameOver) {
           status.textContent = ""
@@ -1358,20 +1383,13 @@
         if (busy || gameOver) return
         if (isColumnFull(col)) return refuseColumn(col)
         busy = true
+        updateTurnIndicator()
         const myGen = gen
-        $("arena").classList.add("locked")
         await moveHopper(col)
         if (myGen !== gen) return
-        playMove(col)
-      }
 
-      async function playMove(col) {
-        if (gameOver) return
         const row = findLowestRow(col)
-        if (row === -1) return
-        const myGen = gen
         const player = currentPlayer
-
         board[row][col] = player
         if (window.ExitGuard) ExitGuard.setActive(true)
 
@@ -1383,8 +1401,8 @@
           currentPlayer = otherPlayer(player)
         }
         const token = placeToken(row, col, player)
-        $("hopper").classList.add("away")
-        await animateDrop(row, col, token)
+        showHopper(false)
+        await animateDrop(row, token)
         if (myGen !== gen) return
         soundPlop(player)
         shakeBelow(row, col)
@@ -1394,7 +1412,7 @@
         if (result) {
           endGame(result, winningCells)
         } else {
-          showHopper()
+          showHopper(true)
           scheduleComputerMove()
         }
       }
@@ -1423,8 +1441,8 @@
           if (MODES[mode].isHuman(result) && !reduceMotion) showConfetti()
         }
         popIn(message)
-        $("status").classList.add("hidden")
-        $("newGameBtn").classList.remove("hidden")
+        $("status").hidden = true
+        $("newGameBtn").hidden = false
         popIn($("newGameBtn"))
         bumpScore(result)
       }
@@ -1466,23 +1484,19 @@
         const myGen = gen
         const tokens = winning.map(([r, c]) => cells[r][c].token)
         soundGather()
-        if (!reduceMotion) {
-          await Promise.all(
-            tokens.map(
-              (token, i) =>
-                token.animate(
-                  [
-                    { transform: "scale(1, 1)" },
-                    { transform: "scale(1.14, 0.86)" },
-                    { transform: "scale(0.9, 1.1)" },
-                    { transform: "scale(1.06, 0.94)" },
-                    { transform: "scale(1, 1)" },
-                  ],
-                  { duration: 380, delay: i * 80, easing: "ease-in-out" },
-                ).finished,
+        await Promise.all(
+          tokens.map((token, i) =>
+            squish(
+              token,
+              [
+                [1.14, 0.86],
+                [0.9, 1.1],
+                [1.06, 0.94],
+              ],
+              { duration: 380, delay: i * 80, easing: "ease-in-out" },
             ),
-          )
-        }
+          ),
+        )
         if (myGen !== gen) return
 
         // A canvas over the four cells, with room for the blob to swell
@@ -1498,9 +1512,13 @@
             bubbles: BUBBLES[variantAt(r, c)],
           }
         })
-        const [r0, c0] = winning[0]
-        const [r1, c1] = winning[1]
-        const reach = r0 !== r1 && c0 !== c1 ? 3.1 : 2
+        // Two neighbours give the direction of the line. Diagonal jellies
+        // are further apart and need a wider field to meet (both values set
+        // by eye: one rule for both made either thin necks or a fat blob)
+        const dx = centers[1].x - centers[0].x
+        const dy = centers[1].y - centers[0].y
+        const diagonal = Math.abs(dx) > 1 && Math.abs(dy) > 1
+        const reach = diagonal ? 3.4 : 2
         const margin = centers[0].r * 1.5
         const left = Math.min(...centers.map((b) => b.x)) - margin
         const top = Math.min(...centers.map((b) => b.y)) - margin
@@ -1528,17 +1546,12 @@
           r: b.r * dpr,
           bubbles: b.bubbles,
         }))
-        const frame = (t) => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
+        const frame = (t) =>
           paintJelly(ctx, balls, PALETTES[player], easeInOut(t), reach)
-        }
 
-        if (reduceMotion) {
-          frame(1)
-          tokens.forEach((token) => (token.style.opacity = 0))
-        } else {
-          frame(0)
-          tokens.forEach((token) => (token.style.opacity = 0))
+        frame(reduceMotion ? 1 : 0)
+        tokens.forEach((token) => (token.style.opacity = 0))
+        if (!reduceMotion) {
           const start = performance.now()
           await new Promise((resolve) => {
             const step = (now) => {
@@ -1551,17 +1564,14 @@
             requestAnimationFrame(step)
           })
           if (myGen !== gen) return
-          wobbleAlong(canvas, winning)
+          wobbleAlong(canvas, Math.atan2(dy, dx))
           splash(mid, player)
         }
         soundMerged(MODES[mode].isHuman(player))
       }
 
       // The merged jelly wobbles along its length, like a gummy worm
-      function wobbleAlong(canvas, winning) {
-        const [r0, c0] = winning[0]
-        const [r1, c1] = winning[winning.length - 1]
-        const angle = Math.atan2(r1 - r0, c1 - c0)
+      function wobbleAlong(canvas, angle) {
         const along = (sx, sy) =>
           `rotate(${angle}rad) scale(${sx}, ${sy}) rotate(${-angle}rad)`
         canvas.animate(
@@ -1624,12 +1634,11 @@
         if (reduceMotion) return
         cells.forEach((row, r) =>
           row.forEach((cell, c) =>
-            cell.token?.animate(
+            squish(
+              cell.token,
               [
-                { transform: "scale(1, 1)" },
-                { transform: "scale(0.88, 1.14)" },
-                { transform: "scale(1.08, 0.92)" },
-                { transform: "scale(1, 1)" },
+                [0.88, 1.14],
+                [1.08, 0.92],
               ],
               { duration: 420, delay: c * 50 + r * 30, easing: "ease-in-out" },
             ),
@@ -1784,18 +1793,13 @@
 
       function bumpScore(result) {
         updateScoreboard()
-        const id = {
-          red: "scoreRed",
-          yellow: "scoreYellow",
-          draw: "scoreDraws",
-        }
-        popIn($(id[result]))
+        popIn($(`score-${SCORE_FIELD[result]}`))
       }
 
       function updateScoreboard(scores = getScores()) {
-        $("scoreRed").textContent = scores.red
-        $("scoreYellow").textContent = scores.yellow
-        $("scoreDraws").textContent = scores.draws
+        for (const field of Object.values(SCORE_FIELD)) {
+          $(`score-${field}`).textContent = scores[field]
+        }
       }
 
       // ---------- Gestes ----------
