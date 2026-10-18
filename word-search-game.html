@@ -217,7 +217,7 @@
         transform: scale(0.92);
       }
 
-      #soundBtn {
+      .sound-btn {
         justify-self: end;
       }
 
@@ -316,9 +316,7 @@
       }
 
       @media (hover: hover) {
-        .card:hover {
-          border-color: rgba(200, 250, 255, 0.6);
-        }
+        .card:hover,
         .icon-btn:hover {
           border-color: rgba(200, 250, 255, 0.6);
         }
@@ -414,6 +412,7 @@
         position: relative;
         margin: 0 auto;
         width: calc(var(--cols) * var(--cell));
+        --cell-font: calc(var(--cell) * 0.66);
         touch-action: none;
       }
 
@@ -427,7 +426,7 @@
       .cell {
         display: grid;
         place-items: center;
-        font-size: calc(var(--cell) * 0.66);
+        font-size: var(--cell-font);
         font-weight: 700;
         line-height: 1;
         padding-top: 0.12em;
@@ -568,7 +567,8 @@
         overflow: visible;
       }
 
-      .fish .tail path {
+      .fish .tail path,
+      .fish .fin path {
         fill: var(--c2);
       }
 
@@ -580,10 +580,6 @@
         max-width: 28px;
         height: 28%;
         overflow: visible;
-      }
-
-      .fish .fin path {
-        fill: var(--c2);
       }
 
       .fish .body {
@@ -806,7 +802,7 @@
             aria-label="Retour à l'accueil"
           ></button>
           <span></span>
-          <button class="icon-btn sound-btn"></button>
+          <button class="icon-btn sound-btn" aria-label="Petits sons"></button>
         </div>
         <h1 class="title" aria-label="Mots mêlés">
           <span class="word"></span><span class="word lit"></span>
@@ -831,7 +827,7 @@
             <b id="foundCount">0</b><small>/</small
             ><small id="totalCount">8</small>
           </div>
-          <button class="icon-btn sound-btn"></button>
+          <button class="icon-btn sound-btn" aria-label="Petits sons"></button>
         </div>
         <div class="board" id="board">
           <div class="caustics"></div>
@@ -956,7 +952,8 @@
         }
       }
 
-      const doneGrids = () => (readSetting(DONE_KEY) || "").split(",")
+      const doneGrids = () =>
+        (readSetting(DONE_KEY) || "").split(",").filter(Boolean)
 
       // ===== Icônes =====
 
@@ -972,7 +969,7 @@
       }
 
       // Un poisson : queue, nageoire, corps, œil, et le mot dedans.
-      function fishHTML(text, [c1, c2], i) {
+      function fishHTML(text) {
         const letters = [...text].map((l) => `<span>${l}</span>`).join("")
         return `
           <span class="shape" aria-hidden="true">
@@ -987,7 +984,7 @@
         el.style.setProperty("--c1", color[0])
         el.style.setProperty("--c2", color[1])
         el.style.setProperty("--i", i)
-        el.innerHTML = fishHTML(text, color, i)
+        el.innerHTML = fishHTML(text)
       }
 
       // ===== La mer =====
@@ -1019,46 +1016,39 @@
 
       // ===== Sons =====
 
-      // Une goutte d'eau : une note qui monte très vite et s'éteint.
-      function drop(freq, when = 0, volume = 0.13, length = 0.16) {
+      // Une note douce : elle part de `freq`, glisse jusqu'à `freq * glide`
+      // et s'éteint en `length` secondes.
+      function tone(type, freq, when, volume, length, glide = 1) {
         if (!soundOn) return
-        const ctx = Voice.wake(1500)
+        const ctx = Voice.wake(1500 + when * 1000)
         if (!ctx) return
         const t = ctx.currentTime + when
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
-        osc.type = "sine"
+        osc.type = type
         osc.frequency.setValueAtTime(freq, t)
-        osc.frequency.exponentialRampToValueAtTime(freq * 1.9, t + length * 0.5)
+        if (glide !== 1) {
+          osc.frequency.exponentialRampToValueAtTime(
+            freq * glide,
+            t + length / 2,
+          )
+        }
         gain.gain.setValueAtTime(0, t)
-        gain.gain.linearRampToValueAtTime(volume, t + 0.01)
+        gain.gain.linearRampToValueAtTime(volume, t + 0.012)
         gain.gain.exponentialRampToValueAtTime(0.001, t + length)
         osc.connect(gain)
         gain.connect(ctx.destination)
         osc.start(t)
-        osc.stop(t + length + 0.02)
+        osc.stop(t + length + 0.05)
       }
 
-      // Une harpe sous l'eau : des notes douces qui montent.
-      function harp(notes, gap = 0.08) {
-        if (!soundOn) return
-        const ctx = Voice.wake(2500)
-        if (!ctx) return
-        notes.forEach((freq, i) => {
-          const t = ctx.currentTime + i * gap
-          const osc = ctx.createOscillator()
-          const gain = ctx.createGain()
-          osc.type = "triangle"
-          osc.frequency.setValueAtTime(freq, t)
-          gain.gain.setValueAtTime(0, t)
-          gain.gain.linearRampToValueAtTime(0.1, t + 0.015)
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.9)
-          osc.connect(gain)
-          gain.connect(ctx.destination)
-          osc.start(t)
-          osc.stop(t + 0.95)
-        })
-      }
+      // Une goutte d'eau : une note qui monte très vite.
+      const drop = (freq, when = 0, volume = 0.13, length = 0.16) =>
+        tone("sine", freq, when, volume, length, 1.9)
+
+      // Une harpe sous l'eau : des notes qui montent l'une après l'autre.
+      const harp = (notes, gap = 0.08) =>
+        notes.forEach((freq, i) => tone("triangle", freq, i * gap, 0.1, 0.9))
 
       const sounds = {
         step: (n) => drop(520 + Math.min(n, 12) * 55, 0, 0.07, 0.09),
@@ -1074,7 +1064,6 @@
       function renderSound() {
         document.querySelectorAll(".sound-btn").forEach((btn) => {
           btn.innerHTML = soundOn ? ICONS.soundOn : ICONS.soundOff
-          btn.setAttribute("aria-label", "Petits sons")
           btn.setAttribute("aria-pressed", soundOn)
         })
       }
@@ -1176,9 +1165,11 @@
         const field = $("field")
         field.style.setProperty("--cols", cols)
         field.style.setProperty("--cell", cell + "px")
+        game.cell = cell
       }
 
-      const cellSize = () => $("letters").firstChild.offsetWidth
+      const inGrid = (r, c) =>
+        r >= 0 && r < game.rows.length && c >= 0 && c < game.rows[0].length
       const cellEl = (row, col) =>
         $("letters").children[row * game.rows[0].length + col]
       const letterAt = (row, col) => game.rows[row][col]
@@ -1186,25 +1177,21 @@
       // Le trait part de la case touchée et suit le doigt dans la plus proche
       // des huit directions, sans sortir de la grille.
       function pathTo(clientX, clientY) {
-        const rect = $("field").getBoundingClientRect()
-        const size = cellSize()
-        const dx = (clientX - rect.left) / size - (drag.col + 0.5)
-        const dy = (clientY - rect.top) / size - (drag.row + 0.5)
+        const { rect } = drag
+        const dx = (clientX - rect.left) / game.cell - (drag.col + 0.5)
+        const dy = (clientY - rect.top) / game.cell - (drag.row + 0.5)
         const length = Math.hypot(dx, dy)
         if (length < 0.5) return { dir: DIRECTIONS[0], steps: 0 }
         const turn = Math.round(Math.atan2(dy, dx) / (Math.PI / 4))
         const dir = DIRECTIONS[(turn + 8) % 8]
         const unit = Math.hypot(dir[0], dir[1])
         let steps = Math.round((dx * dir[1] + dy * dir[0]) / unit / unit)
-        const inside = (n) => {
-          const r = drag.row + dir[0] * n
-          const c = drag.col + dir[1] * n
-          return (
-            r >= 0 && r < game.rows.length && c >= 0 && c < game.rows[0].length
-          )
-        }
         steps = Math.max(0, steps)
-        while (steps > 0 && !inside(steps)) steps--
+        while (
+          steps > 0 &&
+          !inGrid(drag.row + dir[0] * steps, drag.col + dir[1] * steps)
+        )
+          steps--
         return { dir, steps }
       }
 
@@ -1233,8 +1220,8 @@
           $("marks").append(stroke)
         }
         placeStroke(stroke, drag.row, drag.col, drag.path)
-        document
-          .querySelectorAll(".cell.sel")
+        $("letters")
+          .querySelectorAll(".sel")
           .forEach((c) => c.classList.remove("sel"))
         cellsOf(drag.path).forEach(([r, c]) =>
           cellEl(r, c).classList.add("sel"),
@@ -1244,20 +1231,19 @@
       function onPointerDown(e) {
         if (!game || game.found.size === game.words.length || drag) return
         const rect = $("field").getBoundingClientRect()
-        const size = cellSize()
-        const col = Math.floor((e.clientX - rect.left) / size)
-        const row = Math.floor((e.clientY - rect.top) / size)
-        if (row < 0 || row >= game.rows.length) return
-        if (col < 0 || col >= game.rows[0].length) return
+        const col = Math.floor((e.clientX - rect.left) / game.cell)
+        const row = Math.floor((e.clientY - rect.top) / game.cell)
+        if (!inGrid(row, col)) return
         e.preventDefault()
         $("field").setPointerCapture(e.pointerId)
         Voice.wake(3000)
         if (window.ExitGuard) ExitGuard.setActive(true)
         drag = {
           pointerId: e.pointerId,
+          rect,
           row,
           col,
-          path: { dir: [0, 1], steps: 0 },
+          path: { dir: DIRECTIONS[0], steps: 0 },
         }
         showSelection()
         sounds.step(0)
@@ -1280,10 +1266,9 @@
         const cells = cellsOf(drag.path)
         const word = cells.map(([r, c]) => letterAt(r, c)).join("")
         const stroke = $("selection")
-        const start = drag
         drag = null
-        document
-          .querySelectorAll(".cell.sel")
+        $("letters")
+          .querySelectorAll(".sel")
           .forEach((c) => c.classList.remove("sel"))
         stroke.id = ""
         Voice.wake(3000)
@@ -1295,13 +1280,13 @@
           stroke.remove()
           tapFish(index)
         } else {
-          catchWord(index, stroke, start, cells)
+          catchWord(index, stroke, cells)
         }
       }
 
       // ===== Un mot trouvé =====
 
-      function catchWord(index, stroke, start, cells) {
+      function catchWord(index, stroke, cells) {
         game.found.add(index)
         stroke.className = "stroke mark"
         stroke.style.setProperty("--c1", colors[index][0])
@@ -1347,8 +1332,8 @@
         const layer = $("layer")
         const slot = $("school").children[index]
         const slotRect = slot.getBoundingClientRect()
-        const size = cellSize()
-        const gridFont = size * 0.66
+        const size = game.cell
+        const gridFont = parseFloat(getComputedStyle(cellEl(0, 0)).fontSize)
         const labelFont = parseFloat(
           getComputedStyle(slot.querySelector(".label")).fontSize,
         )
@@ -1385,12 +1370,11 @@
         const flights = rects.map((rect, i) => {
           const letter = document.createElement("span")
           letter.className = "drift"
-          letter.textContent = cellEl(...cells[i]).textContent
-          letter.style.cssText = `width:${size}px;height:${size}px;font-size:${gridFont}px`
-          letter.style.transform = `translate(${rect.left}px, ${rect.top}px)`
+          letter.textContent = letterAt(...cells[i])
+          const from = `translate(${rect.left}px, ${rect.top}px)`
+          letter.style.cssText = `width:${size}px;height:${size}px;font-size:${gridFont}px;transform:${from}`
           layer.append(letter)
           const [tx, ty] = targets[i]
-          const from = `translate(${rect.left}px, ${rect.top}px)`
           const lift = `translate(${rect.left}px, ${rect.top - size * 0.3}px) scale(1.3)`
           const to = `translate(${tx - size / 2}px, ${ty - size / 2}px)`
           return letter
@@ -1449,6 +1433,7 @@
           frames.push({ transform: `${at(x, y, s)} rotate(${tilt}deg)` })
         }
         const trail = setInterval(() => {
+          if (game !== current) return clearInterval(trail)
           const r = fish.getBoundingClientRect()
           spawnBubble(
             leftward ? r.right - 6 : r.left + 6,
@@ -1518,13 +1503,11 @@
             700 + Math.random() * 400,
           )
         }
+        const transform = getComputedStyle(stroke).transform
         stroke.animate(
           [
-            { opacity: 1, transform: getComputedStyle(stroke).transform },
-            {
-              opacity: 0,
-              transform: `${getComputedStyle(stroke).transform} scale(1.04, 0.3)`,
-            },
+            { opacity: 1, transform },
+            { opacity: 0, transform: `${transform} scale(1.04, 0.3)` },
           ],
           { duration: 260, easing: "ease-in" },
         ).onfinish = () => stroke.remove()
@@ -1553,10 +1536,7 @@
         if (window.ExitGuard) ExitGuard.setActive(false)
         const done = doneGrids()
         if (!done.includes(String(game.index))) {
-          writeSetting(
-            DONE_KEY,
-            [...done, game.index].filter((g) => g !== "").join(","),
-          )
+          writeSetting(DONE_KEY, [...done, game.index].join(","))
         }
         sounds.win()
 
@@ -1576,10 +1556,12 @@
               },
             ),
           )
+          const current = game
           const r = $("board").getBoundingClientRect()
           for (let k = 0; k < 40; k++) {
             setTimeout(
               () =>
+                game === current &&
                 spawnBubble(
                   r.left + Math.random() * r.width,
                   r.bottom - Math.random() * 20,
