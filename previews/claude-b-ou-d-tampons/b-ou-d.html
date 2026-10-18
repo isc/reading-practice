@@ -187,9 +187,11 @@
 
       /* ===== Partie ===== */
 
+      /* Trois colonnes, celle du milieu centrée : les chiffres du chrono, qui
+         n'ont pas tous la même largeur, ne font plus bouger les compteurs. */
       .stats {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
         align-items: baseline;
         gap: 10px;
         font-family: var(--slab);
@@ -216,6 +218,7 @@
       }
 
       #timer {
+        justify-self: end;
         font-variant-numeric: tabular-nums;
       }
 
