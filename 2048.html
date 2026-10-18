@@ -37,6 +37,12 @@
         --gold: #ffd36b;
         --display: "Unbounded", "Arial Rounded MT Bold", system-ui, sans-serif;
         --font: "Lexend", "Trebuchet MS", system-ui, sans-serif;
+        --gold-orb: radial-gradient(
+          circle at 40% 35%,
+          #fff,
+          #fff1b8 45%,
+          #f2c832
+        );
         --board-size: min(calc(100vw - 32px), 440px, calc(100dvh - 300px));
       }
 
@@ -352,12 +358,7 @@
       .seal.lit {
         border: none;
         color: #5a2a00;
-        background: radial-gradient(
-          circle at 40% 35%,
-          #fff,
-          #fff1b8 45%,
-          #f2c832
-        );
+        background: var(--gold-orb);
         box-shadow: 0 0 14px #ffd36b;
       }
 
@@ -451,12 +452,7 @@
         height: 36px;
         font-size: 0.55rem;
         color: #5a2a00;
-        background: radial-gradient(
-          circle at 40% 35%,
-          #fff,
-          #fff1b8 45%,
-          #f2c832
-        );
+        background: var(--gold-orb);
         box-shadow: 0 0 18px #ffd36b;
       }
 
@@ -465,11 +461,16 @@
       }
 
       .fuse .a {
-        transform: translateX(-17px);
+        --x: -17px;
       }
 
       .fuse .b {
-        transform: translateX(17px);
+        --x: 17px;
+      }
+
+      .fuse .a,
+      .fuse .b {
+        transform: translateX(var(--x));
       }
 
       .fuse .four {
@@ -477,21 +478,20 @@
       }
 
       @media (prefers-reduced-motion: no-preference) {
-        .fuse .a {
-          animation: fuse-a 3s ease-in-out infinite;
-        }
+        .fuse .a,
         .fuse .b {
-          animation: fuse-b 3s ease-in-out infinite;
+          animation: fuse 3s ease-in-out infinite;
         }
         .fuse .four {
           animation: fuse-four 3s ease-in-out infinite;
         }
       }
 
-      @keyframes fuse-a {
+      /* Les deux 2 glissent l'un vers l'autre puis s'effacent… */
+      @keyframes fuse {
         0%,
         25% {
-          transform: translateX(-17px);
+          transform: translateX(var(--x));
           opacity: 1;
         }
         45% {
@@ -504,32 +504,12 @@
           opacity: 0;
         }
         100% {
-          transform: translateX(-17px);
+          transform: translateX(var(--x));
           opacity: 0;
         }
       }
 
-      @keyframes fuse-b {
-        0%,
-        25% {
-          transform: translateX(17px);
-          opacity: 1;
-        }
-        45% {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        50%,
-        90% {
-          transform: translateX(0);
-          opacity: 0;
-        }
-        100% {
-          transform: translateX(17px);
-          opacity: 0;
-        }
-      }
-
+      /* … et le 4 éclot à leur place. */
       @keyframes fuse-four {
         0%,
         44% {
@@ -731,7 +711,6 @@
       let score = 0
       let gameOver = false
       let won = false
-      let gameCounted = false
       let nextId = 1
 
       const $ = (id) => document.getElementById(id)
@@ -759,7 +738,6 @@
         score = 0
         gameOver = false
         won = false
-        gameCounted = false
         $("message").textContent = ""
         $("message").className = "message"
         $("board").classList.remove("over")
@@ -819,6 +797,7 @@
         // fusion partagent `pair` : l'id de l'orbe qu'ils deviennent.
         const slides = []
         const born = new Map()
+        const merges = []
         let moved = false
         let gained = 0
         let highest = 0
@@ -842,6 +821,7 @@
               slides.push({ ...a, to, pair: merged.id })
               slides.push({ ...b, to, pair: merged.id })
               born.set(merged.id, "merge")
+              merges.push({ to, value: merged.value })
               gained += merged.value
               moved = true
               k += 2
@@ -868,65 +848,58 @@
         const spawn = spawnTile()
         if (spawn) born.set(spawn.id, "spawn")
         anim = { start: performance.now(), slides, born, direction }
+        lastInput = anim.start
 
-        const mergedValues = slides
-          .filter((s) => s.pair)
-          .map((s) => s.tile.value * 2)
-        const sound = wakeSound(highest >= 2048 && !won ? 3500 : 900)
+        const scores = getScores()
+        const justWon = !won && highest >= 2048
+        const sound = wakeSound(justWon ? 3500 : 900)
         if (sound) {
           playSlide(sound)
-          playMerges(sound, mergedValues)
+          playMerges(
+            sound,
+            merges.map((m) => m.value),
+          )
         }
         if (gained) showGain(gained)
 
-        updateScoreDisplay()
-        requestDraw()
-
-        const scores = getScores()
+        // Les éclats d'une fusion partent quand les deux gouttes se
+        // rejoignent, à la fin du glissement.
+        const burstAt = anim.start + SLIDE
+        for (const m of merges) burst(...center(...m.to), m.value, burstAt)
 
         // Win check (first time)
-        if (!won && highest >= 2048) {
+        if (justWon) {
           won = true
           if (!scores.reached2048) {
             scores.reached2048 = true
-            saveScores(scores)
             showConfetti()
           }
           if (sound) playWin(sound)
-          supernova()
+          supernova(burstAt)
           $("message").textContent = "Bravo, tu as atteint 2048 !"
           $("message").className = "message show"
-          updateScoreDisplay()
         }
 
         // Update best score live
-        if (score > scores.bestScore) {
-          scores.bestScore = score
-          saveScores(scores)
-          updateScoreDisplay()
-        }
+        if (score > scores.bestScore) scores.bestScore = score
 
         // Game over check
         if (!hasMoves()) {
           gameOver = true
           if (window.ExitGuard) ExitGuard.setActive(false)
-          const before = getScores()
-          const isRecord = score > 0 && score >= before.bestScore
-          if (!gameCounted) {
-            gameCounted = true
-            before.gamesPlayed++
-            if (score > before.bestScore) before.bestScore = score
-            saveScores(before)
-            updateScoreDisplay()
-          }
+          scores.gamesPlayed++
           $("endScore").textContent = score
-          $("endRecord").hidden = !isRecord
+          $("endRecord").hidden = !(score > 0 && score === scores.bestScore)
           $("board").classList.add("over")
           if (sound) playGameOver(sound)
           setTimeout(() => {
             if (gameOver) $("newGameBtn").focus({ preventScroll: true })
           }, 1100)
         }
+
+        saveScores(scores)
+        updateScoreDisplay()
+        requestDraw()
       }
 
       function hasMoves() {
@@ -982,8 +955,9 @@
       let particles = []
       let rings = []
       let sprites = new Map()
-      let drawQueued = false
+      let frameQueued = false
       let lastFrame = 0
+      let lastInput = 0
 
       const level = (value) => Math.min(Math.log2(value), LOOKS.length - 1)
       const look = (value) => LOOKS[level(value)]
@@ -999,11 +973,7 @@
 
       function rgba(hex, alpha) {
         const n = parseInt(hex.slice(1), 16)
-        const full = hex.length === 4
-        const [r, g, b] = full
-          ? [(n >> 8) * 17, ((n >> 4) & 15) * 17, (n & 15) * 17]
-          : [n >> 16, (n >> 8) & 255, n & 255]
-        return `rgba(${r},${g},${b},${alpha})`
+        return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`
       }
 
       function resize() {
@@ -1011,7 +981,7 @@
         size = rect.width
         pad = size * 0.035
         cell = (size - 2 * pad) / SIZE
-        dpr = Math.min(window.devicePixelRatio || 1, 3)
+        dpr = Math.min(window.devicePixelRatio || 1, 2)
         canvas.width = Math.round(size * dpr)
         canvas.height = Math.round(size * dpr)
         sprites = new Map()
@@ -1020,64 +990,87 @@
 
       // Un disque de lumière pré-dessiné : on le pose ensuite avec
       // drawImage, bien moins coûteux qu'un dégradé recréé à chaque image.
-      function makeSprite(px, paint) {
-        const sprite = document.createElement("canvas")
-        sprite.width = sprite.height = Math.max(2, Math.ceil(px * dpr))
+      // (fx, fy) décale le centre de la lumière.
+      function makeSprite(px, stops, fx = 0, fy = 0) {
+        const h = px / 2
+        const sprite = blankSprite(px)
         const g = sprite.getContext("2d")
-        g.scale(dpr, dpr)
-        paint(g, px / 2)
+        const gradient = g.createRadialGradient(h + fx, h + fy, 0, h, h, h)
+        for (const [at, color] of stops) gradient.addColorStop(at, color)
+        g.fillStyle = gradient
+        g.fillRect(0, 0, px, px)
         return sprite
       }
 
-      function radial(g, x0, y0, r0, x1, y1, r1, stops) {
-        const gradient = g.createRadialGradient(x0, y0, r0, x1, y1, r1)
-        for (const [at, color] of stops) gradient.addColorStop(at, color)
-        return gradient
+      function blankSprite(px) {
+        const sprite = document.createElement("canvas")
+        sprite.width = sprite.height = Math.max(2, Math.ceil(px * dpr))
+        sprite.getContext("2d").scale(dpr, dpr)
+        return sprite
+      }
+
+      // Le nombre, dessiné une fois par valeur (le texte est lent à tracer).
+      function makeLabel(value, ink) {
+        const sprite = blankSprite(cell)
+        const g = sprite.getContext("2d")
+        const digits = String(value).length
+        const px = cell * [0, 0.36, 0.33, 0.27, 0.21, 0.17][Math.min(digits, 5)]
+        g.font = `700 ${px}px Unbounded, "Arial Rounded MT Bold", sans-serif`
+        g.textAlign = "center"
+        g.textBaseline = "middle"
+        const y = cell / 2 + px * 0.04
+        if (ink === "#fff") {
+          g.fillStyle = "rgba(10, 4, 40, 0.35)"
+          g.fillText(value, cell / 2, y + px * 0.06)
+        }
+        g.fillStyle = ink
+        g.fillText(value, cell / 2, y)
+        return sprite
       }
 
       function spritesFor(value) {
         if (sprites.has(value)) return sprites.get(value)
         const L = Math.min(level(value), 11)
-        const { body, core, halo = core } = look(value)
+        const { body, core, ink, halo = core } = look(value)
         const R = radius(value)
         const haloR = R * (1.35 + 0.06 * L)
         const set = {
           haloR,
-          halo: makeSprite(haloR * 2, (g, h) => {
-            g.fillStyle = radial(g, h, h, 0, h, h, h, [
-              [0, rgba(halo, 0.12 + 0.03 * L)],
-              [R / haloR, rgba(halo, 0.1 + 0.028 * L)],
-              [1, rgba(halo, 0)],
-            ])
-            g.fillRect(0, 0, h * 2, h * 2)
-          }),
+          halo: makeSprite(haloR * 2, [
+            [0, rgba(halo, 0.12 + 0.03 * L)],
+            [R / haloR, rgba(halo, 0.1 + 0.028 * L)],
+            [1, rgba(halo, 0)],
+          ]),
           // Le cœur, décalé vers le haut à gauche pour donner du volume, se
           // fond dans la couleur du corps au bord : les ponts entre gouttes
           // restent sans couture.
-          core: makeSprite(R * 2, (g, h) => {
-            g.fillStyle = radial(g, h - R * 0.2, h - R * 0.25, 0, h, h, R, [
+          core: makeSprite(
+            R * 2,
+            [
               [0, rgba(core, 0.95)],
               [0.55, rgba(core, 0.35)],
               [1, rgba(body, 0)],
-            ])
-            g.fillRect(0, 0, h * 2, h * 2)
-          }),
-          blob: makeSprite(R * 1.1, (g, h) => {
-            g.fillStyle = radial(g, h, h, 0, h, h, h, [
-              [0, rgba("#ffffff", 0.55)],
-              [0.4, rgba(core, 0.3)],
-              [1, rgba(core, 0)],
-            ])
-            g.fillRect(0, 0, h * 2, h * 2)
-          }),
-          spark: makeSprite(cell * 0.14, (g, h) => {
-            g.fillStyle = radial(g, h, h, 0, h, h, h, [
-              [0, "#fff"],
-              [0.3, rgba(core, 0.9)],
-              [1, rgba(core, 0)],
-            ])
-            g.fillRect(0, 0, h * 2, h * 2)
-          }),
+            ],
+            -R * 0.2,
+            -R * 0.25,
+          ),
+          blob: makeSprite(R * 1.1, [
+            [0, rgba("#ffffff", 0.55)],
+            [0.4, rgba(core, 0.3)],
+            [1, rgba(core, 0)],
+          ]),
+          spark: makeSprite(cell * 0.14, [
+            [0, "#fff"],
+            [0.3, rgba(core, 0.9)],
+            [1, rgba(core, 0)],
+          ]),
+          label: makeLabel(value, ink),
+          ring: rgba(halo, 0.7),
+        }
+        if (L >= 11) {
+          set.corona = ctx.createLinearGradient(R * 0.7, 0, R * 1.55, 0)
+          set.corona.addColorStop(0, rgba(halo, 0.4))
+          set.corona.addColorStop(1, rgba(halo, 0))
         }
         sprites.set(value, set)
         return set
@@ -1092,7 +1085,7 @@
       // train d'éclore.
       function sceneOrbs(now) {
         const orbs = []
-        const t = anim ? now - anim.start : Infinity
+        const t = anim && !reducedMotion.matches ? now - anim.start : Infinity
         if (t < SLIDE) {
           const k = easeOutQuad(t / SLIDE)
           for (const s of anim.slides) {
@@ -1213,14 +1206,6 @@
         }
         ctx.translate(dx, dy)
 
-        // Les éclats et les ondes d'une fusion partent à la fin du glissement.
-        if (anim && !anim.burst && now - anim.start >= SLIDE) {
-          anim.burst = true
-          for (const orb of orbs) {
-            if (anim.born.get(orb.id) === "merge") burst(orb, now)
-          }
-        }
-
         // 1. Les halos, en lumière additive.
         ctx.globalCompositeOperation = "lighter"
         for (const o of orbs) {
@@ -1277,9 +1262,8 @@
         for (const o of orbs) {
           const set = spritesFor(o.value)
           const R = radius(o.value)
-          ctx.save()
-          ctx.translate(o.x, o.y)
-          ctx.scale(o.sx, o.sy)
+          place(o, dx, dy)
+          ctx.globalCompositeOperation = "source-over"
           ctx.drawImage(set.core, -R, -R, R * 2, R * 2)
           ctx.globalCompositeOperation = "lighter"
           const L = level(o.value)
@@ -1296,8 +1280,8 @@
             put(set.blob, 0, 0, R * 2.4)
             ctx.globalAlpha = 1
           }
-          ctx.restore()
         }
+        ctx.setTransform(dpr, 0, 0, dpr, dpr * dx, dpr * dy)
 
         // 4. L'éclat des grands : des étincelles en orbite dès 128, une
         // couronne de rayons à 2048.
@@ -1307,7 +1291,7 @@
           if (L < 7) continue
           const set = spritesFor(o.value)
           const R = radius(o.value) * Math.max(o.sx, o.sy)
-          if (L >= 11) drawCorona(o, R, time)
+          if (set.corona) drawCorona(o, set, R, time)
           const count = Math.min(L - 6, 5)
           for (let s = 0; s < count; s++) {
             const a = time * 0.0016 + (s * Math.PI * 2) / count + o.id
@@ -1325,27 +1309,31 @@
         ctx.globalCompositeOperation = "source-over"
 
         // 5. Les nombres.
-        ctx.textAlign = "center"
-        ctx.textBaseline = "middle"
         for (const o of orbs) {
           if (o.ink <= 0) continue
-          const digits = String(o.value).length
-          const px =
-            cell * [0, 0.36, 0.33, 0.27, 0.21, 0.17][Math.min(digits, 5)]
-          ctx.save()
-          ctx.translate(o.x, o.y + px * 0.04)
-          ctx.scale(o.sx, o.sy)
+          place(o, dx, dy)
           ctx.globalAlpha = Math.min(1, o.ink)
-          ctx.font = `700 ${px}px Unbounded, "Arial Rounded MT Bold", sans-serif`
-          const ink = look(o.value).ink
-          if (ink === "#fff") {
-            ctx.fillStyle = "rgba(10, 4, 40, 0.35)"
-            ctx.fillText(o.value, 0, px * 0.06)
-          }
-          ctx.fillStyle = ink
-          ctx.fillText(o.value, 0, 0)
-          ctx.restore()
+          ctx.drawImage(
+            spritesFor(o.value).label,
+            -cell / 2,
+            -cell / 2,
+            cell,
+            cell,
+          )
         }
+        ctx.globalAlpha = 1
+      }
+
+      // Repère centré sur l'orbe, à son échelle.
+      function place(o, dx, dy) {
+        ctx.setTransform(
+          dpr * o.sx,
+          0,
+          0,
+          dpr * o.sy,
+          dpr * (o.x + dx),
+          dpr * (o.y + dy),
+        )
       }
 
       function drawEdge({ dx, dy }, alpha) {
@@ -1361,89 +1349,80 @@
         ctx.fillRect(0, 0, size, size)
       }
 
-      function drawCorona(o, R, time) {
-        const { core, halo = core } = look(o.value)
+      function drawCorona(o, set, R, time) {
         ctx.save()
         ctx.translate(o.x, o.y)
         ctx.rotate(time * 0.0004)
-        const g = ctx.createLinearGradient(R * 0.7, 0, R * 1.55, 0)
-        g.addColorStop(0, rgba(halo, 0.4))
-        g.addColorStop(1, rgba(halo, 0))
-        ctx.fillStyle = g
+        ctx.scale(R, R)
+        ctx.fillStyle = set.corona
+        ctx.beginPath()
         for (let k = 0; k < 16; k++) {
-          ctx.beginPath()
-          ctx.moveTo(R * 0.7, -R * 0.05)
-          ctx.lineTo(R * (k % 2 ? 1.3 : 1.55), 0)
-          ctx.lineTo(R * 0.7, R * 0.05)
-          ctx.fill()
-          ctx.rotate(Math.PI / 8)
+          const a = (k * Math.PI) / 8
+          const tip = k % 2 ? 1.3 : 1.55
+          ctx.moveTo(0.7 * Math.cos(a - 0.07), 0.7 * Math.sin(a - 0.07))
+          ctx.lineTo(tip * Math.cos(a), tip * Math.sin(a))
+          ctx.lineTo(0.7 * Math.cos(a + 0.07), 0.7 * Math.sin(a + 0.07))
         }
+        ctx.fill()
         ctx.restore()
+      }
+
+      // Un éclat qui part de (x, y), et une onde : rien de tout ça quand
+      // les animations sont réduites.
+      function spark(x, y, value, speed, born, life, size) {
+        if (reducedMotion.matches) return
+        const a = Math.random() * Math.PI * 2
+        const vx = Math.cos(a) * speed
+        const vy = Math.sin(a) * speed
+        particles.push({ value, x, y, vx, vy, born, life, size })
+      }
+
+      function ring(x, y, value, born, life, to) {
+        if (!reducedMotion.matches) rings.push({ value, x, y, born, life, to })
       }
 
       // Une fusion lance des éclats de la nouvelle couleur, d'autant plus
       // nombreux et rapides que la valeur est grande, et une onde dès 64.
-      function burst(orb, now) {
-        if (reducedMotion.matches) return
-        const L = level(orb.value)
-        const count = 5 + L * 2
-        for (let i = 0; i < count; i++) {
-          const a = Math.random() * Math.PI * 2
+      function burst(x, y, value, born) {
+        const L = level(value)
+        for (let i = 0; i < 5 + L * 2; i++) {
           const speed = cell * (1.2 + Math.random() * 1.6 + L * 0.12)
-          particles.push({
-            value: orb.value,
-            x: orb.x,
-            y: orb.y,
-            vx: Math.cos(a) * speed,
-            vy: Math.sin(a) * speed,
-            born: now,
-            life: 380 + Math.random() * 320 + L * 25,
-            size: cell * (0.09 + Math.random() * 0.08),
-          })
+          const life = 380 + Math.random() * 320 + L * 25
+          spark(
+            x,
+            y,
+            value,
+            speed,
+            born,
+            life,
+            cell * (0.09 + Math.random() * 0.08),
+          )
         }
-        if (L >= 6) {
-          rings.push({
-            value: orb.value,
-            x: orb.x,
-            y: orb.y,
-            born: now,
-            life: 520,
-            to: cell * (0.9 + L * 0.06),
-          })
-        }
+        if (L >= 6) ring(x, y, value, born, 520, cell * (0.9 + L * 0.06))
       }
 
       // 2048 : une supernova, l'onde traverse tout le plateau.
-      function supernova() {
-        if (reducedMotion.matches) return
-        const now = performance.now() + SLIDE
+      function supernova(born) {
         for (let r = 0; r < SIZE; r++) {
           for (let c = 0; c < SIZE; c++) {
             if (grid[r][c]?.value !== 2048) continue
             const [x, y] = center(r, c)
             for (let i = 0; i < 3; i++) {
-              rings.push({
-                value: 2048,
-                x,
-                y,
-                born: now + i * 160,
-                life: 1100,
-                to: size * 1.1,
-              })
+              ring(x, y, 2048, born + i * 160, 1100, size * 1.1)
             }
             for (let i = 0; i < 70; i++) {
-              const a = Math.random() * Math.PI * 2
+              const value = 2 ** (1 + Math.floor(Math.random() * 11))
               const speed = cell * (2 + Math.random() * 4)
-              particles.push({
-                value: 2 ** (1 + Math.floor(Math.random() * 11)),
+              const life = 900 + Math.random() * 700
+              spark(
                 x,
                 y,
-                vx: Math.cos(a) * speed,
-                vy: Math.sin(a) * speed,
-                born: now,
-                life: 900 + Math.random() * 700,
-                size: cell * (0.1 + Math.random() * 0.12),
-              })
+                value,
+                speed,
+                born,
+                life,
+                cell * (0.1 + Math.random() * 0.12),
+              )
             }
           }
         }
@@ -1474,13 +1453,14 @@
         for (const ring of rings) {
           const k = (now - ring.born) / ring.life
           if (k < 0) continue
-          const { core, halo = core } = look(ring.value)
-          ctx.strokeStyle = rgba(halo, 0.7 * (1 - k))
+          ctx.globalAlpha = 1 - k
+          ctx.strokeStyle = spritesFor(ring.value).ring
           ctx.lineWidth = cell * 0.08 * (1 - k) + 1
           ctx.beginPath()
           ctx.arc(ring.x, ring.y, ring.to * easeOut(k), 0, Math.PI * 2)
           ctx.stroke()
         }
+        ctx.globalAlpha = 1
       }
 
       function nudge(direction) {
@@ -1494,37 +1474,32 @@
           down: [0, 1],
         }[direction]
         nudgeAnim = { start: performance.now(), dx, dy }
+        lastInput = nudgeAnim.start
         requestDraw()
       }
 
-      // Avec les animations, le plasma vit en continu ; sinon, une seule
-      // image à chaque changement.
+      // Avec les animations, le plasma vit en continu (ralenti au bout de
+      // vingt secondes sans geste, arrêté en fin de partie) ; sinon, une
+      // seule image à chaque changement.
       function frame(now) {
-        drawQueued = false
-        if (reducedMotion.matches) {
-          anim = null
-          nudgeAnim = null
-          draw(now)
-          return
-        }
-        // Au repos, une image sur deux suffit au plasma : on ménage la
-        // batterie.
+        frameQueued = false
+        if (reducedMotion.matches) return draw(now)
         const busy =
           (anim && now - anim.start < SLIDE + BLOOM) ||
           nudgeAnim ||
           particles.length ||
           rings.length
-        if (busy || now - lastFrame > 30) {
+        const pace = now - lastInput > 20000 ? 66 : 30
+        if (busy || now - lastFrame > pace) {
           lastFrame = now
           draw(now)
         }
-        drawQueued = true
-        requestAnimationFrame(frame)
+        if (busy || !gameOver) requestDraw()
       }
 
       function requestDraw() {
-        if (drawQueued && !reducedMotion.matches) return
-        drawQueued = true
+        if (frameQueued) return
+        frameQueued = true
         requestAnimationFrame(frame)
       }
 
@@ -1712,7 +1687,11 @@
       )
       new ResizeObserver(resize).observe(canvas)
       reducedMotion.addEventListener("change", requestDraw)
-      document.fonts.load("700 20px Unbounded").then(requestDraw)
+      // Les nombres sont pré-dessinés : on les refait une fois la police là.
+      document.fonts.load("700 20px Unbounded").then(() => {
+        sprites = new Map()
+        requestDraw()
+      })
       updateSoundButton()
       updateScoreDisplay()
       initGame()
