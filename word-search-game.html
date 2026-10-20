@@ -23,6 +23,7 @@
         --ink: #05304d;
         --foam: #e9fbff;
         --glow: #9ff3ff;
+        --glow-fill: linear-gradient(180deg, #d5fdff, var(--glow));
         --glass: rgba(150, 230, 255, 0.1);
         --edge: rgba(180, 240, 255, 0.3);
       }
@@ -264,7 +265,7 @@
         position: absolute;
         inset: 0;
         border-radius: 999px;
-        background: linear-gradient(180deg, #d5fdff, var(--glow));
+        background: var(--glow-fill);
         box-shadow:
           0 0 18px rgba(159, 243, 255, 0.8),
           0 0 46px rgba(159, 243, 255, 0.35);
@@ -308,7 +309,7 @@
         background: var(--glass);
         border: 1.5px solid var(--edge);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-        animation: appear 0.5s ease-out calc(var(--i) * 80ms) backwards;
+        animation: appear 0.5s ease-out calc(min(var(--i), 4) * 80ms) backwards;
       }
 
       .card:active {
@@ -333,9 +334,28 @@
         letter-spacing: 0;
       }
 
+      .card .sounds,
       .card .words {
         display: flex;
         flex-wrap: wrap;
+      }
+
+      .card .sounds {
+        gap: 6px;
+      }
+
+      .card .sounds span {
+        padding: 0.18em 0.6em 0.04em;
+        border-radius: 999px;
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.2;
+        color: var(--ink);
+        background: var(--glow-fill);
+        box-shadow: 0 0 12px rgba(159, 243, 255, 0.45);
+      }
+
+      .card .words {
         gap: 0 12px;
         font-size: 15px;
         font-weight: 600;
@@ -844,9 +864,13 @@
     <div class="layer" id="layer"></div>
 
     <script>
+      // Une grille par son. Les quatre premières viennent des dictées de Zoé, les
+      // suivantes de outils/grilles.py. On n'ajoute qu'à la fin : l'étoile d'une
+      // grille finie est rangée sous son numéro.
       const gameGrids = [
         {
           grid: "LELTGORILLEB ÉOTREGARDERA GUDGOURMANDG UGUITAREUNEU MÉRÉGALERRAE ERUEUGÂTEAUU",
+          sounds: ["g", "gu"],
           words: [
             { word: "gorille" },
             { word: "gourmand" },
@@ -860,6 +884,7 @@
         },
         {
           grid: "NDÉCIDERSONC LCERISECEELI ETPARCELUICN ÇESICITRONIQ OPDGARÇONNRI NGDECQCINÉMA",
+          sounds: ["ce", "ci", "ç"],
           words: [
             { word: "citron" },
             { word: "cinéma" },
@@ -873,6 +898,7 @@
         },
         {
           grid: "BIENCOINCERI LPNOTHNNIPCH OCLOINEDBLHI PEINTUREERII NIOANVIANDEE INNNNTRAINNR",
+          sounds: ["ien", "oin", "ein", "ain"],
           words: [
             { word: "lion" },
             { word: "loin" },
@@ -886,6 +912,7 @@
         },
         {
           grid: "OLOSCLICHANTE RADITAMBOURME AMCIMMNCHESAE NAALUPLANTENE GRANDEISSORGT ERACHANSONSEA",
+          sounds: ["an", "am"],
           words: [
             { word: "chanson" },
             { word: "chante" },
@@ -897,6 +924,190 @@
             { word: "tambour" },
           ],
         },
+        // <grilles générées>
+        {
+          grid: "CHEMISETCMMC LCECECCHTSOH OHUECHTIMVUE CACHOCOLATCV HTLHVACHEIHA EOHHCHAISEEL",
+          sounds: ["ch"],
+          words: [
+            { word: "chat" },
+            { word: "cheval" },
+            { word: "chaise" },
+            { word: "chemise" },
+            { word: "vache" },
+            { word: "chocolat" },
+            { word: "mouche" },
+            { word: "cloche" },
+          ],
+        },
+        {
+          grid: "PGENOUMMRGOL OUCITROUILLE UKANGOUROUPU LCKONLTHIBOU ESOUPEOMEHEU BOUCHENLKBGO",
+          sounds: ["ou"],
+          words: [
+            { word: "poule" },
+            { word: "mouton" },
+            { word: "soupe" },
+            { word: "bouche" },
+            { word: "genou" },
+            { word: "hibou" },
+            { word: "citrouille" },
+            { word: "kangourou" },
+          ],
+        },
+        {
+          grid: "NYPRCIVOBIMS ACOPOMPIERAA CONCOMBREBIV CBALLONRMMSO PNVICOCHONON CRAYONMRCENC",
+          sounds: ["on", "om"],
+          words: [
+            { word: "ballon" },
+            { word: "maison" },
+            { word: "cochon" },
+            { word: "crayon" },
+            { word: "savon" },
+            { word: "pompier" },
+            { word: "ombre" },
+            { word: "concombre" },
+          ],
+        },
+        {
+          grid: "ÉNROINEMMOIM TUPMTOISEAUI OPOISSONIHSI IOIMOUCHOIRI LORTOARMOIRE EOEVVOITUREI",
+          sounds: ["oi"],
+          words: [
+            { word: "roi" },
+            { word: "poire" },
+            { word: "étoile" },
+            { word: "voiture" },
+            { word: "oiseau" },
+            { word: "poisson" },
+            { word: "armoire" },
+            { word: "mouchoir" },
+          ],
+        },
+        {
+          grid: "GAUCHEUEJBJA AECHAPEAUAAU CAGCADEAUTUU CCHÂTEAUCENU AUTRUCHEUAET UUSAUTERAUEU",
+          sounds: ["au", "eau"],
+          words: [
+            { word: "jaune" },
+            { word: "sauter" },
+            { word: "autruche" },
+            { word: "gauche" },
+            { word: "bateau" },
+            { word: "château" },
+            { word: "chapeau" },
+            { word: "cadeau" },
+          ],
+        },
+        {
+          grid: "RPCIOVÉLOEAC OAFUSÉERCUZO CNRZÉCOLEÉÉH HIECLBÉBÉRON EEUEOVPÉNEZÉ RRCPHIBOÉPÉE",
+          sounds: ["é", "er", "ez"],
+          words: [
+            { word: "bébé" },
+            { word: "école" },
+            { word: "vélo" },
+            { word: "fusée" },
+            { word: "épée" },
+            { word: "panier" },
+            { word: "rocher" },
+            { word: "nez" },
+          ],
+        },
+        {
+          grid: "FFLÈCHEAÈIEN ONFFHFFRAISE REÊLLEÊFRÈRE ÊITAEBALEINE TGEEELAITTLR REAELFIOEFIO",
+          sounds: ["è", "ê", "ai", "ei"],
+          words: [
+            { word: "frère" },
+            { word: "flèche" },
+            { word: "fête" },
+            { word: "forêt" },
+            { word: "fraise" },
+            { word: "lait" },
+            { word: "neige" },
+            { word: "baleine" },
+          ],
+        },
+        {
+          grid: "FMBEJMUEETBB LOEOJEUDIULT ETUBUTUERUEO UERDOCTEURUR RURJUECIUFEU OREURECHEVEU",
+          sounds: ["eu"],
+          words: [
+            { word: "feu" },
+            { word: "bleu" },
+            { word: "jeudi" },
+            { word: "cheveu" },
+            { word: "fleur" },
+            { word: "beurre" },
+            { word: "docteur" },
+            { word: "moteur" },
+          ],
+        },
+        {
+          grid: "TSAJIMOULINI IIIALMATINHI MMIRDAUPHIND BPLDIDATPNSI RLAINALAPINN EENNPIISAPIN",
+          sounds: ["in", "im"],
+          words: [
+            { word: "lapin" },
+            { word: "sapin" },
+            { word: "jardin" },
+            { word: "matin" },
+            { word: "dauphin" },
+            { word: "moulin" },
+            { word: "timbre" },
+            { word: "simple" },
+          ],
+        },
+        {
+          grid: "NSRCDSOENEPI NISTECOUSSIN TCSASRSBISOU POUSSINUVASE NVSSIRSIROSE SOAENCOUSINV",
+          sounds: ["s", "ss"],
+          words: [
+            { word: "rose" },
+            { word: "vase" },
+            { word: "cousin" },
+            { word: "bisou" },
+            { word: "tasse" },
+            { word: "dessin" },
+            { word: "coussin" },
+            { word: "poussin" },
+          ],
+        },
+        {
+          grid: "EBPAPILLONLS LIFILLEELRBO LLOREILLEELL LLEEABEILLEE FEUILLERIEII OGRENOUILLEL",
+          sounds: ["ill", "eil", "ouil", "euil"],
+          words: [
+            { word: "fille" },
+            { word: "bille" },
+            { word: "papillon" },
+            { word: "soleil" },
+            { word: "abeille" },
+            { word: "oreille" },
+            { word: "grenouille" },
+            { word: "feuille" },
+          ],
+        },
+        {
+          grid: "CPCYGNEGNOGM VEELIGNEPNNA IICHAMPIGNON GGEACAGNEAUI NNAGILGAGNER EEARAIGNÉEEN",
+          sounds: ["gn"],
+          words: [
+            { word: "cygne" },
+            { word: "ligne" },
+            { word: "peigne" },
+            { word: "vigne" },
+            { word: "agneau" },
+            { word: "gagner" },
+            { word: "araignée" },
+            { word: "champignon" },
+          ],
+        },
+        {
+          grid: "PELTÉLÉPHONE HALPHABETOEP OÉLÉPHANTPNH QÉPHAREHALTO UGIRAFEPOOTT EOCOFFRELLÉO",
+          sounds: ["f", "ff", "ph"],
+          words: [
+            { word: "phare" },
+            { word: "photo" },
+            { word: "phoque" },
+            { word: "éléphant" },
+            { word: "alphabet" },
+            { word: "téléphone" },
+            { word: "girafe" },
+            { word: "coffre" },
+          ],
+        },
+        // </grilles générées>
       ]
 
       // Les couleurs des poissons, un par mot : clair en haut, foncé en bas.
@@ -1077,6 +1288,13 @@
 
       // ===== Accueil =====
 
+      const spans = (className, texts) => {
+        const el = document.createElement("span")
+        el.className = className
+        el.innerHTML = texts.map((t) => `<span>${upper(t)}</span>`).join("")
+        return el
+      }
+
       function renderHome() {
         if (window.ExitGuard) ExitGuard.setActive(false)
         $("home").classList.remove("hidden")
@@ -1090,13 +1308,17 @@
           card.style.setProperty("--i", index)
           const fish = document.createElement("span")
           fish.className = "fish"
-          paintFish(fish, String(index + 1), colors[[0, 2, 4, 7][index]], index)
-          const words = document.createElement("span")
-          words.className = "words"
-          words.innerHTML = g.words
-            .map((w) => `<span>${upper(w.word)}</span>`)
-            .join("")
-          card.append(fish, words)
+          // 3 et 8 sont premiers entre eux : les huit couleurs passent avant
+          // de revenir, et deux cartes voisines ne se ressemblent pas.
+          paintFish(
+            fish,
+            String(index + 1),
+            colors[(index * 3) % colors.length],
+            index,
+          )
+          // Le son de la grille, en pastilles de lumière, puis ses mots.
+          const words = g.words.map((w) => w.word)
+          card.append(fish, spans("sounds", g.sounds), spans("words", words))
           if (done.includes(String(index))) {
             card.insertAdjacentHTML(
               "beforeend",
