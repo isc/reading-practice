@@ -58,10 +58,14 @@ def slug(mot: str) -> str:
     return sans.replace(" ", "-")
 
 
+def mots(jeu: str) -> list[str]:
+    """Les mots d'un jeu, lus dans sa page : les `word: "…"` de son tableau."""
+    return re.findall(r'word: "([^"]+)"', (RACINE / f"{jeu}.html").read_text())
+
+
 def a_faire(jeu: str) -> list[str]:
-    page = (RACINE / f"{jeu}.html").read_text()
     sortie = RACINE / "audio" / jeu
-    return [m for m in re.findall(r'word: "([^"]+)"', page) if not (sortie / f"{slug(m)}.mp3").exists()]
+    return [m for m in mots(jeu) if not (sortie / f"{slug(m)}.mp3").exists()]
 
 
 def dire(texte: str, f: Path):
