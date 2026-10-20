@@ -51,13 +51,14 @@ DESSINS = {
     "cygne": "a white swan swimming, graceful curved neck, orange beak",
     "cyprès": "a tall narrow columnar dark green cypress tree with a brown trunk, standing on a little patch of grass",
     "cœur": "a red heart",
-    "école": "a small school building with a bell tower and a clock, a flag on top",
+    "école": "a teacher pointing at a green chalkboard in a classroom, two children sitting at school desks with raised hands, seen from behind",
     "écran": "a computer monitor screen on a stand, blue glowing screen",
 }
 
 # Une graine par mot, à changer pour obtenir d'autres essais.
-# graine 1 : caméra donnait un appareil photo, cyprès un arbre en feu (« flame shaped »)
-GRAINES = {"caméra": 3, "cyprès": 2}
+# graine 1 : caméra donnait un appareil photo, cyprès un arbre en feu (« flame shaped »), école un
+# bâtiment qu'on ne reconnaissait pas
+GRAINES = {"caméra": 3, "cyprès": 2, "école": 3}
 
 
 def webp(mot: str) -> Path:
