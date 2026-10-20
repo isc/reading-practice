@@ -416,7 +416,6 @@
       .picture {
         position: relative;
         font-size: 6.6rem;
-        line-height: 1.1;
         user-select: none;
         -webkit-user-select: none;
       }
@@ -641,6 +640,12 @@
           animation: none;
         }
       }
+      /* L'image du mot, à la taille de l'emoji qu'elle remplace. */
+      .picture img {
+        display: block;
+        width: 1.1em;
+        height: 1.1em;
+      }
     </style>
     <script src="exit-guard.js"></script>
   </head>
@@ -711,7 +716,7 @@
         <div class="panel stage" id="stage">
           <div class="burst" id="burst" aria-hidden="true"></div>
           <div class="slot" id="slot"></div>
-          <div class="picture" id="picture"></div>
+          <div class="picture"><img id="picture" alt="" /></div>
           <button class="listen" id="listen" aria-label="Écouter le mot">
             <svg
               viewBox="0 0 24 24"
@@ -769,43 +774,62 @@
 
     <script src="confetti.js"></script>
     <script src="voix.js"></script>
+    <script src="images.js"></script>
     <script>
       const words = [
         // OU words
-        { word: "ours", emoji: "🐻", answer: "ou" },
-        { word: "poule", emoji: "🐔", answer: "ou" },
-        { word: "loup", emoji: "🐺", answer: "ou" },
-        { word: "souris", emoji: "🐭", answer: "ou" },
-        { word: "chou", emoji: "🥬", answer: "ou" },
-        { word: "hibou", emoji: "🦉", answer: "ou" },
-        { word: "fourmi", emoji: "🐜", answer: "ou" },
-        { word: "bouche", emoji: "👄", answer: "ou" },
-        { word: "poubelle", emoji: "🗑️", answer: "ou" },
-        { word: "couteau", emoji: "🔪", answer: "ou" },
-        { word: "bougie", emoji: "🕯️", answer: "ou" },
-        { word: "boussole", emoji: "🧭", answer: "ou" },
-        { word: "couronne", emoji: "👑", answer: "ou" },
-        { word: "rouge", emoji: "🔴", answer: "ou" },
-        { word: "mouche", emoji: "🪰", answer: "ou" },
-        { word: "poussin", emoji: "🐥", answer: "ou" },
+        { word: "ours", answer: "ou" },
+        { word: "poule", answer: "ou" },
+        { word: "loup", answer: "ou" },
+        { word: "souris", answer: "ou" },
+        { word: "chou", answer: "ou" },
+        { word: "hibou", answer: "ou" },
+        { word: "fourmi", answer: "ou" },
+        { word: "bouche", answer: "ou" },
+        { word: "poubelle", answer: "ou" },
+        { word: "couteau", answer: "ou" },
+        { word: "bougie", answer: "ou" },
+        { word: "boussole", answer: "ou" },
+        { word: "couronne", answer: "ou" },
+        { word: "loupe", answer: "ou" },
+        { word: "mouche", answer: "ou" },
+        { word: "poussin", answer: "ou" },
+        { word: "roue", answer: "ou" },
+        { word: "clou", answer: "ou" },
+        { word: "genou", answer: "ou" },
+        { word: "toupie", answer: "ou" },
+        { word: "nounours", answer: "ou" },
+        { word: "citrouille", answer: "ou" },
+        { word: "douche", answer: "ou" },
+        { word: "poupée", answer: "ou" },
+        { word: "bouée", answer: "ou" },
+        { word: "mouette", answer: "ou" },
 
         // ON words
-        { word: "bonbon", emoji: "🍬", answer: "on" },
-        { word: "lion", emoji: "🦁", answer: "on" },
-        { word: "maison", emoji: "🏠", answer: "on" },
-        { word: "avion", emoji: "✈️", answer: "on" },
-        { word: "ballon", emoji: "🎈", answer: "on" },
-        { word: "cochon", emoji: "🐷", answer: "on" },
-        { word: "poisson", emoji: "🐟", answer: "on" },
-        { word: "citron", emoji: "🍋", answer: "on" },
-        { word: "dragon", emoji: "🐉", answer: "on" },
-        { word: "champignon", emoji: "🍄", answer: "on" },
-        { word: "montre", emoji: "⌚", answer: "on" },
-        { word: "pont", emoji: "🌉", answer: "on" },
-        { word: "rond", emoji: "⭕", answer: "on" },
-        { word: "papillon", emoji: "🦋", answer: "on" },
-        { word: "hérisson", emoji: "🦔", answer: "on" },
-        { word: "crayon", emoji: "✏️", answer: "on" },
+        { word: "bonbon", answer: "on" },
+        { word: "lion", answer: "on" },
+        { word: "maison", answer: "on" },
+        { word: "avion", answer: "on" },
+        { word: "ballon", answer: "on" },
+        { word: "cochon", answer: "on" },
+        { word: "poisson", answer: "on" },
+        { word: "citron", answer: "on" },
+        { word: "dragon", answer: "on" },
+        { word: "champignon", answer: "on" },
+        { word: "montre", answer: "on" },
+        { word: "pont", answer: "on" },
+        { word: "melon", answer: "on" },
+        { word: "papillon", answer: "on" },
+        { word: "hérisson", answer: "on" },
+        { word: "crayon", answer: "on" },
+        { word: "camion", answer: "on" },
+        { word: "savon", answer: "on" },
+        { word: "violon", answer: "on" },
+        { word: "chaton", answer: "on" },
+        { word: "biberon", answer: "on" },
+        { word: "cornichon", answer: "on" },
+        { word: "glaçon", answer: "on" },
+        { word: "flocon", answer: "on" },
       ]
 
       const NUMBER_OF_WORDS = 20
@@ -827,6 +851,8 @@
       const reducedMotion = () => motionQuery.matches
 
       Voice.folder = "audio/ou-ou-on/"
+      // Toutes les images d'avance : le jeu marche ensuite hors-ligne.
+      WordImage.preload(words.map((w) => w.word))
 
       function showScreen(id) {
         for (const screen of ["welcome", "game", "end"]) {
@@ -1369,9 +1395,9 @@
       }
 
       function displayWord() {
-        const { word, emoji } = words[currentIndex]
+        const { word } = words[currentIndex]
         $("wordNumber").textContent = currentIndex + 1
-        $("picture").textContent = emoji
+        $("picture").src = WordImage.src(word)
         $("goodCount").textContent = countRight()
         $("track").children[currentIndex].className = "now"
         waitingBubble()

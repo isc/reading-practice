@@ -47,6 +47,8 @@ PRONONCIATION = {
     "phoque": "Le phoque.",  # seul, Whisper entend « fuck » à chaque prise
     "bébé": "Le bébé.",  # « Bébé. » part en babil (« Zata, bouboune, bébé ») à chaque prise
     "gauche": "À gauche.",  # « Gauche. » sort « gouche », ou part en phrases inventées
+    "bottes": "Les bottes.",  # « Bottes. » : Whisper entend « bots »
+    "quai": "Le quai.",  # « Quai. » : Whisper entend « OK »
 }
 
 
