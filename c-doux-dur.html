@@ -484,6 +484,33 @@
         opacity: 0;
       }
 
+      /* Au premier palier, l'image se touche pour entendre le mot. */
+      .hear {
+        position: relative;
+        display: grid;
+      }
+
+      .hear .speaker {
+        position: absolute;
+        right: -10px;
+        bottom: -2px;
+        width: 32px;
+        height: 32px;
+        padding: 6px;
+        border-radius: 50%;
+        background: var(--card);
+        color: var(--muted);
+        box-shadow: 0 2px 8px -2px rgba(34, 26, 61, 0.3);
+      }
+
+      .hear:disabled {
+        cursor: default;
+      }
+
+      .hear:disabled .speaker {
+        display: none;
+      }
+
       .example img {
         width: 1.6em;
         height: 1.6em;
@@ -885,7 +912,24 @@
         </button>
 
         <div class="card stage" id="stage">
-          <img class="picture" id="picture" alt="" />
+          <button class="hear" id="hear" aria-label="Écouter le mot">
+            <img class="picture" id="picture" alt="" />
+            <svg
+              class="speaker"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 9H8L13 5V19L8 15H4Z" fill="currentColor" />
+              <path
+                d="M16.5 8.5A5 5 0 0 1 16.5 15.5M19 6A8.5 8.5 0 0 1 19 18"
+              />
+            </svg>
+          </button>
           <div class="band" id="band">
             <svg class="wave" id="bandWave"></svg>
           </div>
@@ -994,10 +1038,24 @@
       let pictureTimer
 
       // L'image du mot aide à le reconnaître sans le lire : on la retire peu
-      // à peu, à mesure que l'enfant maîtrise. Deux parties d'affilée à 9/10
-      // font monter d'un palier, une partie sous 7/10 fait redescendre.
-      const PICTURE_DELAYS = [0, 3000, Infinity] // Infinity : après la réponse
+      // à peu, à mesure que l'enfant maîtrise. Au premier palier, on peut même
+      // la toucher pour entendre le mot. Deux parties d'affilée à 9/10 font
+      // monter d'un palier, une partie sous 7/10 fait redescendre.
+      const PICTURE_DELAYS = [0, 0, 3000, Infinity] // Infinity : après la réponse
       const LEVEL_KEY = "c-doux-dur.palier"
+      // Ce que dit l'écran de fin en arrivant à un palier, en montant ou en
+      // descendant.
+      const LEVEL_UP = [
+        null, // on ne monte jamais au palier 0
+        "Tu lis si bien que tu n'as plus besoin d'écouter le mot !",
+        "Tu lis si bien que l'image va se cacher un peu !",
+        "Super ! L'image arrivera après ta réponse.",
+      ]
+      const LEVEL_DOWN = [
+        "Tu peux de nouveau toucher l'image pour écouter le mot.",
+        "L'image revient tout de suite pour t'aider.",
+        "L'image revient plus tôt pour t'aider.",
+      ]
       let level = { step: 0, streak: 0 }
       try {
         level = JSON.parse(localStorage.getItem(LEVEL_KEY)) || level
@@ -1410,6 +1468,7 @@
         clearTimeout(pictureTimer)
         const delay = PICTURE_DELAYS[level.step]
         $("picture").classList.toggle("veiled", delay > 0)
+        $("hear").disabled = level.step > 0
         if (delay > 0 && delay < Infinity)
           pictureTimer = setTimeout(showPicture, delay)
         $("word").className = "word"
@@ -1600,10 +1659,9 @@
           localStorage.setItem(LEVEL_KEY, JSON.stringify(level))
         } catch {}
         $("levelNote").hidden = level.step === step
-        $("levelNote").textContent =
-          level.step > step
-            ? "Tu lis si bien que l'image va se cacher un peu !"
-            : "L'image revient plus tôt pour t'aider."
+        $("levelNote").textContent = (
+          level.step > step ? LEVEL_UP : LEVEL_DOWN
+        )[level.step]
       }
 
       // ===== Départ =====
@@ -1617,6 +1675,9 @@
       $("tileDoux").addEventListener("click", () => demo(false))
       $("tileDur").addEventListener("click", () => demo(true))
       $("record").addEventListener("click", playTape)
+      $("hear").addEventListener("click", () => {
+        if (!busy) Voice.say(gameWords[currentIndex].word)
+      })
       $("endWords").addEventListener("click", (e) => {
         const button = e.target.closest("button")
         if (button) Voice.say(button.dataset.word)
