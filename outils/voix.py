@@ -38,6 +38,8 @@ PRONONCIATION = {
     "dinde": "Dinnde.",  # « Dinde. » sort souvent « dine-dé »
     "burger": "Beurgueur.",  # sinon « burgé » ; « beurgeur » est bloqué par la modération de Mistral
     "quille": "Quille !",  # « Quille. » sort « qui », « Gilles »…
+    "hibou": "Hibou !",  # « Hibou. » sort « Ibu »
+    "pont": "Ponts !",  # « Pont. » sort « fond », « bon »
 }
 
 
