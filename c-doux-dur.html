@@ -476,6 +476,12 @@
       .picture {
         width: 6rem;
         height: 6rem;
+        transition: opacity 0.4s;
+      }
+
+      /* Caché, il garde sa place : le mot ne saute pas quand il arrive. */
+      .picture.veiled {
+        opacity: 0;
       }
 
       .example img {
@@ -732,6 +738,12 @@
         color: var(--muted);
       }
 
+      .level-note {
+        margin: 0;
+        text-align: center;
+        font-weight: 700;
+      }
+
       /* Les mots de la partie, à toucher pour les entendre ; une erreur a
          son contour en pointillés. */
       .end-words {
@@ -927,6 +939,7 @@
             </span>
           </button>
           <div class="score" id="score"></div>
+          <p class="level-note" id="levelNote" hidden></p>
           <ul class="end-words" id="endWords"></ul>
           <button class="main-btn" id="replayBtn">Rejouer</button>
         </div>
@@ -978,6 +991,17 @@
       let gameWords = []
       let results = []
       let busy = false
+      let pictureTimer
+
+      // L'image du mot aide à le reconnaître sans le lire : on la retire peu
+      // à peu, à mesure que l'enfant maîtrise. Deux parties d'affilée à 9/10
+      // font monter d'un palier, une partie sous 7/10 fait redescendre.
+      const PICTURE_DELAYS = [0, 3000, Infinity] // Infinity : après la réponse
+      const LEVEL_KEY = "c-doux-dur.palier"
+      let level = { step: 0, streak: 0 }
+      try {
+        level = JSON.parse(localStorage.getItem(LEVEL_KEY)) || level
+      } catch {}
 
       const $ = (id) => document.getElementById(id)
       const wait = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -1383,15 +1407,26 @@
         const { word } = gameWords[currentIndex]
         $("wordNumber").textContent = currentIndex + 1
         $("picture").src = WordImage.src(word)
+        clearTimeout(pictureTimer)
+        const delay = PICTURE_DELAYS[level.step]
+        $("picture").classList.toggle("veiled", delay > 0)
+        if (delay > 0 && delay < Infinity)
+          pictureTimer = setTimeout(showPicture, delay)
         $("word").className = "word"
         $("word").innerHTML = wordMarkup(word)
         drawSilence()
         Voice.load(word)
       }
 
+      function showPicture() {
+        $("picture").classList.remove("veiled")
+      }
+
       async function checkAnswer(button) {
         if (busy) return
         busy = true
+        clearTimeout(pictureTimer)
+        showPicture()
         const { word, isDur } = gameWords[currentIndex]
         const playerChoice = Boolean(button.dataset.yes)
         const sameSound = isDur === currentObjectiveIsDur
@@ -1552,6 +1587,23 @@
         showScreen("end")
         window.scrollTo(0, 0)
         if (score === NUMBER_OF_WORDS) showConfetti()
+        updateLevel()
+      }
+
+      function updateLevel() {
+        const { step } = level
+        if (score < 7) level = { step: Math.max(step - 1, 0), streak: 0 }
+        else if (score < 9) level.streak = 0
+        else if (++level.streak >= 2 && step < PICTURE_DELAYS.length - 1)
+          level = { step: step + 1, streak: 0 }
+        try {
+          localStorage.setItem(LEVEL_KEY, JSON.stringify(level))
+        } catch {}
+        $("levelNote").hidden = level.step === step
+        $("levelNote").textContent =
+          level.step > step
+            ? "Tu lis si bien que l'image va se cacher un peu !"
+            : "L'image revient plus tôt pour t'aider."
       }
 
       // ===== Départ =====
