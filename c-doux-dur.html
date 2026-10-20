@@ -474,10 +474,14 @@
       }
 
       .picture {
-        font-family:
-          "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", sans-serif;
-        font-size: 4.4rem;
-        line-height: 1.1;
+        width: 6rem;
+        height: 6rem;
+      }
+
+      .example img {
+        width: 1.6em;
+        height: 1.6em;
+        vertical-align: middle;
       }
 
       .band {
@@ -797,7 +801,9 @@
             <span class="big-c">C</span>
             <svg class="wave live" viewBox="0 0 140 46"></svg>
             <span class="name">doux <span class="sym">[s]</span></span>
-            <span class="example">citron 🍋</span>
+            <span class="example"
+              >citron <img src="images/mots/citron.webp" alt=""
+            /></span>
           </button>
           <button
             class="card voice-tile dur"
@@ -807,7 +813,9 @@
             <span class="big-c">C</span>
             <svg class="wave live" viewBox="0 0 140 46"></svg>
             <span class="name">dur <span class="sym">[k]</span></span>
-            <span class="example">café ☕️</span>
+            <span class="example"
+              >café <img src="images/mots/cafe.webp" alt=""
+            /></span>
           </button>
         </div>
         <p>
@@ -865,7 +873,7 @@
         </button>
 
         <div class="card stage" id="stage">
-          <div class="picture" id="picture"></div>
+          <img class="picture" id="picture" alt="" />
           <div class="band" id="band">
             <svg class="wave" id="bandWave"></svg>
           </div>
@@ -926,32 +934,33 @@
     </main>
 
     <script src="voix.js"></script>
+    <script src="images.js"></script>
     <script src="confetti.js"></script>
     <script>
       const words = [
         // C dur (son K)
-        { word: "caméra", emoji: "📷", isDur: true },
-        { word: "couronne", emoji: "👑", isDur: true },
-        { word: "cube", emoji: "🎲", isDur: true },
-        { word: "écran", emoji: "🖥️", isDur: true },
-        { word: "café", emoji: "☕️", isDur: true },
-        { word: "cadeau", emoji: "🎁", isDur: true },
-        { word: "cœur", emoji: "❤️", isDur: true },
-        { word: "carte", emoji: "🗺️", isDur: true },
-        { word: "carotte", emoji: "🥕", isDur: true },
-        { word: "école", emoji: "🏫", isDur: true },
+        { word: "caméra", isDur: true },
+        { word: "couronne", isDur: true },
+        { word: "cube", isDur: true },
+        { word: "écran", isDur: true },
+        { word: "café", isDur: true },
+        { word: "cadeau", isDur: true },
+        { word: "cœur", isDur: true },
+        { word: "carte", isDur: true },
+        { word: "carotte", isDur: true },
+        { word: "école", isDur: true },
 
         // C doux (son S)
-        { word: "citron", emoji: "🍋", isDur: false },
-        { word: "cygne", emoji: "🦢", isDur: false },
-        { word: "cerise", emoji: "🍒", isDur: false },
-        { word: "cinéma", emoji: "🎬", isDur: false },
-        { word: "ciel", emoji: "☁️", isDur: false },
-        { word: "cerceau", emoji: "⭕", isDur: false },
-        { word: "cigogne", emoji: "🦩", isDur: false },
-        { word: "ceinture", emoji: "👔", isDur: false },
-        { word: "cycle", emoji: "🔄", isDur: false },
-        { word: "cyprès", emoji: "🌲", isDur: false },
+        { word: "citron", isDur: false },
+        { word: "cygne", isDur: false },
+        { word: "cerise", isDur: false },
+        { word: "cinéma", isDur: false },
+        { word: "ciel", isDur: false },
+        { word: "cerceau", isDur: false },
+        { word: "cigogne", isDur: false },
+        { word: "ceinture", isDur: false },
+        { word: "cycliste", isDur: false },
+        { word: "cyprès", isDur: false },
       ]
 
       const NUMBER_OF_WORDS = 10
@@ -1200,10 +1209,10 @@
             ? Math.random() < 0.5
             : !currentObjectiveIsDur
         const { kind, sym, example } = SOUND[currentObjectiveIsDur]
-        const { emoji } = words.find((w) => w.word === example)
         $("target").className = `card target ${kind}`
         $("targetSym").textContent = `[${sym}]`
-        $("targetExample").innerHTML = `comme <b>${example}</b> ${emoji}`
+        $("targetExample").innerHTML =
+          `comme <b>${example}</b> <img src="${WordImage.src(example)}" alt="" />`
         $("target").setAttribute(
           "aria-label",
           `Le C fait-il le son ${sym}, comme ${example} ?`,
@@ -1371,9 +1380,9 @@
         trackSlot(waveMarkup(isDur, 30, 18, { scale: 0.32, step: 2.2 }), missed)
 
       function displayWord() {
-        const { word, emoji } = gameWords[currentIndex]
+        const { word } = gameWords[currentIndex]
         $("wordNumber").textContent = currentIndex + 1
-        $("picture").textContent = emoji
+        $("picture").src = WordImage.src(word)
         $("word").className = "word"
         $("word").innerHTML = wordMarkup(word)
         drawSilence()
@@ -1582,6 +1591,7 @@
         sine(0, 800, 100, () => 22),
       )
       for (const { example } of Object.values(SOUND)) Voice.load(example)
+      WordImage.preload(words.map((w) => w.word))
       // Écran d'accueil : aucune partie en cours.
       if (window.ExitGuard) ExitGuard.setActive(false)
     </script>
