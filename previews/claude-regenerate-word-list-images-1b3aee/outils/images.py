@@ -35,7 +35,7 @@ STYLE = (
 DESSINS = {
     "cadeau": "a wrapped gift box with a red ribbon bow",
     "café": "a white cup of hot coffee on a saucer, with steam",
-    "caméra": "a black video camera with a big round lens",
+    "caméra": "a smiling cameraman filming with a big professional video camera on his shoulder, red recording light on",
     "carotte": "an orange carrot with green leaves",
     "carte": "an unfolded treasure map with a dotted path and a red cross",
     "ceinture": "a brown leather belt with a golden buckle, buckled in a loop",
@@ -56,7 +56,8 @@ DESSINS = {
 }
 
 # Une graine par mot, à changer pour obtenir d'autres essais.
-GRAINES = {"cyprès": 2}  # à la graine 1, « flame shaped » le mettait en feu
+# graine 1 : caméra donnait un appareil photo, cyprès un arbre en feu (« flame shaped »)
+GRAINES = {"caméra": 3, "cyprès": 2}
 
 
 def webp(mot: str) -> Path:
