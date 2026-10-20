@@ -38,6 +38,15 @@ PRONONCIATION = {
     "dinde": "Dinnde.",  # « Dinde. » sort souvent « dine-dé »
     "burger": "Beurgueur.",  # sinon « burgé » ; « beurgeur » est bloqué par la modération de Mistral
     "quille": "Quille !",  # « Quille. » sort « qui », « Gilles »…
+    "train": "Le train.",  # seul, « Train. » sort « R », « fin », « rien »…
+    "hibou": "Hibou !",  # « Hibou. » sort « Ibu »
+    "pont": "Ponts !",  # « Pont. » sort « fond », « bon »
+    "feu": "Le feu.",  # seul, « Feu. » part en phrases inventées (« Je te remercie… »)
+    "tasse": "La tasse.",  # « Tasse. » sort « tas », « l'as »
+    "fraise": "La fraise.",  # « Fraise. » sort « faise », « fries », « treize »
+    "phoque": "Le phoque.",  # seul, Whisper entend « fuck » à chaque prise
+    "bébé": "Le bébé.",  # « Bébé. » part en babil (« Zata, bouboune, bébé ») à chaque prise
+    "gauche": "À gauche.",  # « Gauche. » sort « gouche », ou part en phrases inventées
 }
 
 
@@ -107,8 +116,12 @@ def main(jeu: str):
             entendu = " ".join(s.text.strip() for s in segments)
             attendu, hyp = tuple(words(mot)), tuple(words(entendu))
             prononcer_expressions([attendu, hyp])
-            # Écart en sons entre ce qui est dit et le mot ; à égalité, la prise la plus courte.
-            notes.append((_distance(_phrases[attendu], _phrases[hyp]), sf.info(str(f)).duration, f.name, entendu))
+            # Écart en sons entre ce qui est dit et le mot ; à égalité, la prise la plus courte. Une prise
+            # trop longue pour son texte a bavardé autour du mot (« J'lis, j'lis… bébé »), ce que
+            # Whisper n'entend pas toujours : elle ne compte pas.
+            duree = sf.info(str(f)).duration
+            ecart = _distance(_phrases[attendu], _phrases[hyp]) + (99 if duree > 0.5 + 0.08 * len(texte) else 0)
+            notes.append((ecart, duree, f.name, entendu))
         ecart, _, meilleure, entendu = min(notes)
         try:
             pinson.mp3(dossier / meilleure, sortie / f"{slug(mot)}.mp3")
