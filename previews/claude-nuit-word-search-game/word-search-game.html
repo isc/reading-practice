@@ -1398,45 +1398,43 @@
         letters.forEach((l) => l.remove())
         fish.style.opacity = 1
 
-        // Il se forme, tourné vers l'endroit où il va.
-        const leftward = x1 < x0 - 10
-        const flip = leftward ? -1 : 1
-        const shape = fish.querySelector(".shape")
-        await shape.animate(
+        // Il se forme, tourné comme le banc : il ne se retourne jamais en
+        // route (le banc est sous la grille, on plonge presque toujours).
+        await fish.querySelector(".shape").animate(
           [
-            { transform: `scale(${0.2 * flip}, 0.2)`, opacity: 0 },
-            {
-              transform: `scale(${1.15 * flip}, 1.1)`,
-              opacity: 1,
-              offset: 0.7,
-            },
-            { transform: `scale(${flip}, 1)`, opacity: 1 },
+            { transform: "scale(0.2)", opacity: 0 },
+            { transform: "scale(1.15, 1.1)", opacity: 1, offset: 0.7 },
+            { transform: "scale(1)", opacity: 1 },
           ],
-          { duration: 380, easing: "ease-out", fill: "forwards" },
+          { duration: 380, easing: "ease-out" },
         ).finished
         if (game !== current) return
 
-        // Il file en ondulant, avec un sillage de bulles.
+        // Il file en ondulant, le nez vers le bas tant qu'il plonge, avec un
+        // sillage de bulles.
         const frames = []
         const steps = 8
         const nx = -(y1 - y0)
         const ny = x1 - x0
         const norm = Math.hypot(nx, ny) || 1
+        const slope = Math.atan2(y1 - y0, Math.abs(x1 - x0))
+        const dive = Math.min(20, (slope * 180) / Math.PI)
         for (let k = 0; k <= steps; k++) {
           const t = k / steps
           const ease = t * t * (3 - 2 * t)
-          const wave = Math.sin(t * Math.PI * 2) * 26 * (1 - t)
-          const x = x0 + (x1 - x0) * ease + (nx / norm) * wave
-          const y = y0 + (y1 - y0) * ease + (ny / norm) * wave
+          // L'ondulation part et arrive à plat : pas d'à-coup au départ.
+          const sway = Math.sin(t * Math.PI * 2) * (1 - t)
+          const x = x0 + (x1 - x0) * ease + (nx / norm) * sway * 26
+          const y = y0 + (y1 - y0) * ease + (ny / norm) * sway * 26
           const s = scale + (1 - scale) * ease
-          const tilt = Math.cos(t * Math.PI * 2) * 10 * (1 - t) * flip
+          const tilt = dive * Math.sin(t * Math.PI) + sway * 10
           frames.push({ transform: `${at(x, y, s)} rotate(${tilt}deg)` })
         }
         const trail = setInterval(() => {
           if (game !== current) return clearInterval(trail)
           const r = fish.getBoundingClientRect()
           spawnBubble(
-            leftward ? r.right - 6 : r.left + 6,
+            r.left + 6,
             r.top + r.height / 2,
             4 + Math.random() * 6,
             40,
@@ -1448,15 +1446,6 @@
           fill: "forwards",
         }).finished
         clearInterval(trail)
-        if (game !== current) return
-
-        // Arrivé : il se retourne s'il nageait à l'envers.
-        if (leftward) {
-          await shape.animate(
-            [{ transform: "scale(-1, 1)" }, { transform: "scale(1, 1)" }],
-            { duration: 240, easing: "ease-in-out", fill: "forwards" },
-          ).finished
-        }
         if (game !== current) return
         fish.remove()
         land(index)
