@@ -29,6 +29,7 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f0f2f5" />
     <title>Nom du jeu</title>
     <style>
       /* styles du jeu */
@@ -44,6 +45,10 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
 ```
 
 ## Style & UX
+
+- **Barre d'état** : le `theme-color` de chaque page prend la couleur du haut
+  de son fond. Chrome sur Android colore la barre d'état avec, même dans la
+  PWA installée ; sinon elle garde la couleur du manifeste et jure avec le jeu.
 
 - **Langue** : toute l'interface est en **français**.
 - **Couleurs** : accent principal `#4a90e2` (bleu), fond de page `#f0f2f5`.
