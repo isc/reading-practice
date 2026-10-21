@@ -29,6 +29,7 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f0f2f5" />
     <title>Nom du jeu</title>
     <style>
       /* styles du jeu */
@@ -44,6 +45,17 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
 ```
 
 ## Style & UX
+
+- **Barre d'état** : le `theme-color` de chaque page prend la couleur du haut
+  de son fond. Chrome sur Android colore la barre d'état avec, même dans la
+  PWA installée ; sinon elle garde la couleur du manifeste et jure avec le jeu.
+- **Barre du bas** (navigation Android) : elle, ne suit pas les pages. Chrome
+  la peint d'une seule couleur pour toute l'appli installée, celle du
+  manifeste (`background_color`, et `theme_color` à l'identique, comme l'a
+  établi kine-tracker). Elle est noire : sous un jeu sombre elle se fond, sous
+  un jeu clair elle passe pour la barre normale d'Android, alors qu'une bande
+  claire sous un jeu sombre fait bug. Une appli installée relit son manifeste
+  au plus une fois par jour : réinstaller pour voir un changement tout de suite.
 
 - **Langue** : toute l'interface est en **français**.
 - **Couleurs** : accent principal `#4a90e2` (bleu), fond de page `#f0f2f5`.
