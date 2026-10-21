@@ -112,8 +112,8 @@ DESSINS = {
     "doudou": "a soft cuddly teddy bunny comforter toy with floppy ears",
     "doudoune": "a puffy blue winter down jacket",
     "dragon": "a friendly green dragon with small wings",
-    "drapeau": "a colorful flag waving on a pole",
-    "dromadaire": "a dromedary camel with a single hump, standing in the desert sand",
+    "drapeau": "the French flag with three vertical stripes blue, white and red, waving on a pole",
+    "dromadaire": "a dromedary with only ONE single hump in the middle of its back, side view, standing on desert sand",
     "drone": "a small quadcopter drone flying",
     "dé": "a single white dice showing five dots",
     "déguisement": "a child wearing a superhero costume with a cape and a mask",
@@ -196,6 +196,8 @@ GRAINES = {
     "dentiste": 5,
     "datte": 5,
     "bracelet": 5,
+    "dromadaire": 6,  # graine 1 : deux bosses, un chameau
+    "drapeau": 5,
 }
 
 
