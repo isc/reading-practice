@@ -82,13 +82,17 @@ DESSINS = {
     "chaton": "a cute kitten sitting",
     "chou": "a green cabbage",
     "ciel": "a blue sky with a smiling sun and white fluffy clouds, in a rounded square frame",
-    "cigale": "a cicada insect with transparent wings",
+    "cigale": (
+        "a green cicada seen from the side, sitting on a tree branch, big eyes on the sides of a wide head, clear veined wings folded like a roof over its body"
+    ),
     "cigogne": "a white stork with black wing tips, long red beak and long red legs",
     "cinq": "the number 5 as a big bold colorful digit",
     "cintre": "a wooden clothes hanger",
     "cinéma": "a cinema clapperboard next to a striped popcorn box",
     "cirque": "a red and white striped circus tent with a flag on top",
-    "ciseaux": "a pair of scissors with colorful handles",
+    "ciseaux": (
+        "a closed pair of children's scissors, side view, two metal blades joined by a screw, two round red finger loops"
+    ),
     "citron": "a yellow lemon with a green leaf",
     "citrouille": "an orange pumpkin",
     "clou": "a hammer hitting a metal nail into a wooden plank",
@@ -211,6 +215,8 @@ GRAINES = {
     "bracelet": 5,
     "drapeau": 5,
     "baignoire": 5,  # graine 1 : un canard qui distrait
+    "ciseaux": 5,  # graine 1 : une lame sans poignée
+    "cigale": 5,  # graine 1 : une abeille
 }
 
 
