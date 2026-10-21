@@ -91,7 +91,7 @@ DESSINS = {
     "cinéma": "a cinema clapperboard next to a striped popcorn box",
     "cirque": "a red and white striped circus tent with a flag on top",
     "ciseaux": (
-        "a closed pair of children's scissors, side view, two metal blades joined by a screw, two round red finger loops"
+        "a pair of open scissors seen from the front, perfectly straight and symmetrical, pointing up, two round red finger loops at the bottom"
     ),
     "citron": "a yellow lemon with a green leaf",
     "citrouille": "an orange pumpkin",
@@ -215,7 +215,7 @@ GRAINES = {
     "bracelet": 5,
     "drapeau": 5,
     "baignoire": 5,  # graine 1 : un canard qui distrait
-    "ciseaux": 5,  # graine 1 : une lame sans poignée
+    "ciseaux": 9,  # graine 1 : une lame sans poignée ; graine 5 : une lame tordue
     "cigale": 5,  # graine 1 : une abeille
 }
 
