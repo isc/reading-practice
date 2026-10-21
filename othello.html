@@ -178,6 +178,56 @@
         display: block;
       }
 
+      /* ===== Le mode : à deux, ou contre l'ordi (et son niveau) ===== */
+
+      .modes {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .seg {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        background: var(--glass);
+        border: 1px solid var(--glass-edge);
+        border-radius: 22px;
+      }
+
+      .seg button {
+        flex: 1;
+        min-height: 38px;
+        border-radius: 18px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .seg.levels button {
+        min-height: 32px;
+        font-size: 0.7rem;
+      }
+
+      .seg button.active {
+        color: var(--ink);
+        background: linear-gradient(90deg, var(--silver), var(--gold));
+      }
+
+      /* Contre l'ordi, un petit « toi » et « ordi » sous les astres. */
+      .who {
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .app:not(.vs-computer) .who,
+      .app:not(.vs-computer) .levels {
+        display: none;
+      }
+
       /* ===== La barre : lunes à gauche, soleils à droite, et au milieu la
          roue du ciel, qui fait lever l'astre dont c'est le tour. ===== */
 
@@ -229,6 +279,18 @@
         width: 30px;
         height: 30px;
         flex: none;
+      }
+
+      .avatar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+      }
+
+      /* L'ordi réfléchit : les rayons de son soleil tournent. */
+      .side.thinking .aura {
+        animation: spin 2.4s linear infinite;
       }
 
       .dial {
@@ -736,6 +798,7 @@
         }
 
         .sky .night::after,
+        .side.thinking .aura,
         .cell.valid::after,
         .piece.ghost-flip,
         .end-orb .aura {
@@ -752,7 +815,7 @@
       <div class="night" id="night"></div>
     </div>
 
-    <main class="app">
+    <main class="app" id="app">
       <header class="top">
         <h1>Othello</h1>
         <button
@@ -784,9 +847,24 @@
         </button>
       </header>
 
+      <div class="modes">
+        <div class="seg" id="modeSelect">
+          <button type="button" data-mode="2p">À deux</button>
+          <button type="button" data-mode="ia">Contre l'ordi</button>
+        </div>
+        <div class="seg levels" id="levelSelect">
+          <button type="button" data-level="facile">Facile</button>
+          <button type="button" data-level="moyen">Moyen</button>
+          <button type="button" data-level="difficile">Difficile</button>
+        </div>
+      </div>
+
       <div class="bar">
         <div class="side moon" id="side-moon" aria-label="Lunes">
-          <div class="mini" data-orb="moon"></div>
+          <div class="avatar">
+            <div class="mini" data-orb="moon"></div>
+            <span class="who">toi</span>
+          </div>
           <span class="count" id="liveBlack">2</span>
         </div>
         <div class="dial" aria-hidden="true">
@@ -798,7 +876,10 @@
         </div>
         <div class="side sun" id="side-sun" aria-label="Soleils">
           <span class="count" id="liveWhite">2</span>
-          <div class="mini" data-orb="sun"></div>
+          <div class="avatar">
+            <div class="mini" data-orb="sun"></div>
+            <span class="who">ordi</span>
+          </div>
         </div>
       </div>
 
@@ -836,10 +917,11 @@
       </div>
 
       <section class="panel">
-        <h2>Parties gagnées</h2>
+        <h2 id="scoreTitle">Parties gagnées</h2>
         <div class="wins">
           <div class="win">
             <div class="mini" data-orb="moon"></div>
+            <span class="who">toi</span>
             <span class="value" id="scoreBlack">0</span>
           </div>
           <div class="win">
@@ -848,6 +930,7 @@
           </div>
           <div class="win">
             <div class="mini" data-orb="sun"></div>
+            <span class="who">ordi</span>
             <span class="value" id="scoreWhite">0</span>
           </div>
         </div>
@@ -859,6 +942,10 @@
           <li>
             <span class="mini" data-orb="moon"></span>
             <span>La lune commence, puis le soleil, chacun son tour.</span>
+          </li>
+          <li>
+            <span class="dot"></span>
+            <span>Contre l'ordi, tu es la lune et l'ordi est le soleil.</span>
           </li>
           <li>
             <span class="dot"></span>
@@ -891,8 +978,18 @@
       // lune, blanc est le soleil.
       const ORB = { black: "moon", white: "sun", draw: "eclipse" }
       const LABELS = { black: "la lune", white: "le soleil" }
-      const SCORES_KEY = "othello-scores"
       const SOUND_KEY = "othello-sound"
+      const SETTINGS_KEY = "othello-settings"
+      // Facile n'a pas de profondeur : il ne cherche pas. Difficile joue
+      // parfaitement les `endgame` dernières cases.
+      const LEVELS = {
+        facile: { name: "Facile" },
+        moyen: { name: "Moyen", depth: 2 },
+        difficile: { name: "Difficile", depth: 4, endgame: 8 },
+      }
+      // Contre l'ordi, l'enfant est la lune : c'est toujours lui qui commence.
+      const HUMAN = "black"
+      const COMPUTER = "white"
       const DEFAULT_SCORES = { black: 0, white: 0, draws: 0 }
       const SCORE_FIELD = { black: "black", white: "white", draw: "draws" }
       const DIRECTIONS = [
@@ -909,6 +1006,10 @@
       // posé, une case toutes les WAVE_MS.
       const FLIP_MS = 680
       const WAVE_MS = 110
+      // L'ordi attend que les éclipses soient finies, puis encore un peu ;
+      // plus longtemps quand la roue fait un tour complet (un tour passé).
+      const AI_PAUSE_MS = 450
+      const PASS_PAUSE_MS = 1000
 
       const $ = (id) => document.getElementById(id)
       const reducedMotion = window.matchMedia(
@@ -924,10 +1025,21 @@
       let validMoves = new Map() // "r,c" -> cases retournées [[r, c], …]
       let hoverKey = null
       let wheelTurn = 0
+      let mode = "2p" // "2p" ou "ia"
+      let level = "moyen"
+      let timers = [] // annulés à chaque nouvelle partie
       const cells = []
 
       function opponent(p) {
         return p === "black" ? "white" : "black"
+      }
+
+      function later(fn, ms) {
+        timers.push(setTimeout(fn, ms))
+      }
+
+      function isComputerTurn() {
+        return !gameOver && mode === "ia" && currentPlayer === COMPUTER
       }
 
       // ===== Les astres =====
@@ -1094,6 +1206,8 @@
       }
 
       function initGame() {
+        timers.forEach(clearTimeout)
+        timers = []
         board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null))
         const mid = SIZE / 2
         board[mid - 1][mid - 1] = "white"
@@ -1120,35 +1234,62 @@
       }
 
       function computeValidMoves() {
-        validMoves = new Map()
+        validMoves = movesFor(currentPlayer)
+      }
+
+      function movesFor(player) {
+        const moves = new Map()
         for (let r = 0; r < SIZE; r++) {
           for (let c = 0; c < SIZE; c++) {
             if (board[r][c] !== null) continue
-            const flips = getFlipsForMove(r, c, currentPlayer)
+            const flips = getFlipsForMove(r, c, player)
             if (flips.length > 0) {
-              validMoves.set(`${r},${c}`, flips)
+              moves.set(`${r},${c}`, flips)
             }
           }
         }
+        return moves
+      }
+
+      // Nombre d'astres de l'autre que `player` encadre dans une direction
+      function lineFlips(row, col, dr, dc, player) {
+        const opp = opponent(player)
+        let r = row + dr
+        let c = col + dc
+        let count = 0
+        while (board[r]?.[c] === opp) {
+          r += dr
+          c += dc
+          count++
+        }
+        return count > 0 && board[r]?.[c] === player ? count : 0
       }
 
       function getFlipsForMove(row, col, player) {
-        const opp = opponent(player)
-        const allFlips = []
+        const flips = []
         for (const [dr, dc] of DIRECTIONS) {
-          const lineFlips = []
-          let r = row + dr
-          let c = col + dc
-          while (board[r]?.[c] === opp) {
-            lineFlips.push([r, c])
-            r += dr
-            c += dc
-          }
-          if (lineFlips.length > 0 && board[r]?.[c] === player) {
-            allFlips.push(...lineFlips)
+          const count = lineFlips(row, col, dr, dc, player)
+          for (let i = 1; i <= count; i++) {
+            flips.push([row + dr * i, col + dc * i])
           }
         }
-        return allFlips
+        return flips
+      }
+
+      // Combien de coups `player` a, sans calculer leurs retournements
+      function mobility(player) {
+        let count = 0
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            if (
+              board[r][c] === null &&
+              DIRECTIONS.some(([dr, dc]) => lineFlips(r, c, dr, dc, player))
+            ) {
+              count++
+            }
+          }
+        }
+        return count
       }
 
       function updateHints() {
@@ -1159,7 +1300,7 @@
           for (let c = 0; c < SIZE; c++) {
             cells[r][c].classList.toggle(
               "valid",
-              !gameOver && validMoves.has(`${r},${c}`),
+              !gameOver && !isComputerTurn() && validMoves.has(`${r},${c}`),
             )
           }
         }
@@ -1186,7 +1327,7 @@
         document
           .querySelectorAll(".cell.ghosted")
           .forEach((node) => node.classList.remove("ghosted"))
-        if (!hoverKey || gameOver || busy || !validMoves.has(hoverKey)) return
+        if (!hoverKey || !acceptsTap() || !validMoves.has(hoverKey)) return
         const [hr, hc] = hoverKey.split(",").map(Number)
         const orb = ORB[currentPlayer]
         cells[hr][hc].classList.add("ghosted")
@@ -1202,9 +1343,14 @@
 
       // ===== Un coup =====
 
+      function acceptsTap() {
+        return !gameOver && !busy && !isComputerTurn()
+      }
+
       function onTap(row, col) {
-        if (gameOver || busy) return
-        if (validMoves.has(`${row},${col}`)) playMove(row, col)
+        if (!acceptsTap()) return
+        const key = `${row},${col}`
+        if (validMoves.has(key)) playMove(key)
         else refuse(row, col)
       }
 
@@ -1228,8 +1374,8 @@
         )
       }
 
-      function playMove(row, col) {
-        const key = `${row},${col}`
+      function playMove(key) {
+        const [row, col] = key.split(",").map(Number)
         if (window.ExitGuard) ExitGuard.setActive(true)
         const flips = validMoves.get(key)
         const player = currentPlayer
@@ -1251,7 +1397,7 @@
 
         const settle = reducedMotion ? 0 : (steps - 1) * WAVE_MS + FLIP_MS
         busy = true
-        setTimeout(() => {
+        later(() => {
           busy = false
         }, settle - 200)
 
@@ -1265,12 +1411,17 @@
             endGame(settle)
             return
           }
-          setTimeout(() => announcePass(opponent(player)), settle)
+          later(() => announcePass(opponent(player)), settle)
         } else {
           showNote("")
         }
         updateHints()
         updateTurn()
+        if (isComputerTurn()) {
+          const passed = currentPlayer === player
+          const pause = AI_PAUSE_MS + (passed ? PASS_PAUSE_MS : 0)
+          later(() => playMove(chooseComputerMove()), settle + pause)
+        }
       }
 
       function animatePlacement(piece, orb) {
@@ -1381,6 +1532,164 @@
         }
       }
 
+      // ===== L'ordi =====
+
+      // Les coins ne se reprennent jamais ; les cases voisines d'un coin
+      // vide le donnent à l'autre.
+      const WEIGHTS = [
+        [100, -20, 10, 5, 5, 10, -20, 100],
+        [-20, -50, -2, -2, -2, -2, -50, -20],
+        [10, -2, 1, 1, 1, 1, -2, 10],
+        [5, -2, 1, 0, 0, 1, -2, 5],
+        [5, -2, 1, 0, 0, 1, -2, 5],
+        [10, -2, 1, 1, 1, 1, -2, 10],
+        [-20, -50, -2, -2, -2, -2, -50, -20],
+        [100, -20, 10, 5, 5, 10, -20, 100],
+      ]
+      const WIN_SCORE = 100000
+
+      function randomItem(list) {
+        return list[Math.floor(Math.random() * list.length)]
+      }
+
+      function chooseComputerMove() {
+        const { depth, endgame = 0 } = LEVELS[level]
+        if (!depth) return chooseEasyMove([...validMoves])
+        const { black, white } = countDiscs()
+        const empties = SIZE * SIZE - black - white
+        return chooseBestMove(validMoves, empties <= endgame ? empties : depth)
+      }
+
+      // Facile : une fois sur deux au hasard, sinon le coup qui retourne le
+      // plus d'astres. Ça a l'air gourmand, mais c'est une mauvaise stratégie.
+      function chooseEasyMove(moves) {
+        if (Math.random() < 0.5) return randomItem(moves)[0]
+        const most = Math.max(...moves.map(([, flips]) => flips.length))
+        return randomItem(moves.filter(([, flips]) => flips.length === most))[0]
+      }
+
+      // Moyen / Difficile : negamax avec élagage alpha-bêta
+      function chooseBestMove(moves, depth) {
+        let bestScore = -Infinity
+        let bestKeys = []
+        for (const [key, flips] of moves) {
+          // Les scores sont entiers : alpha = meilleur - 1 écarte les coups
+          // moins bons tout en notant exactement les égalités
+          const score = scoreMove(
+            key,
+            flips,
+            currentPlayer,
+            depth,
+            bestScore - 1,
+            Infinity,
+          )
+          if (score > bestScore) {
+            bestScore = score
+            bestKeys = [key]
+          } else if (score === bestScore) {
+            bestKeys.push(key)
+          }
+        }
+        // Au hasard parmi les meilleurs, pour que les parties varient
+        return randomItem(bestKeys)
+      }
+
+      // Valeur, pour `player`, de jouer `key` (qui retourne `flips`)
+      function scoreMove(key, flips, player, depth, alpha, beta) {
+        const [row, col] = key.split(",").map(Number)
+        board[row][col] = player
+        for (const [r, c] of flips) board[r][c] = player
+        const score = -negamax(opponent(player), depth - 1, -beta, -alpha)
+        board[row][col] = null
+        for (const [r, c] of flips) board[r][c] = opponent(player)
+        return score
+      }
+
+      function negamax(player, depth, alpha, beta, passed = false) {
+        if (depth <= 0) return evaluate(player)
+        const moves = movesFor(player)
+        if (moves.size === 0) {
+          // Personne ne peut plus jouer : la partie est finie
+          if (passed) return finalScore(player)
+          return -negamax(opponent(player), depth, -beta, -alpha, true)
+        }
+        let best = -Infinity
+        for (const [key, flips] of moves) {
+          const score = scoreMove(key, flips, player, depth, alpha, beta)
+          if (score > best) best = score
+          if (score > alpha) alpha = score
+          if (alpha >= beta) break
+        }
+        return best
+      }
+
+      function finalScore(player) {
+        const counts = countDiscs()
+        const diff = counts[player] - counts[opponent(player)]
+        return Math.sign(diff) * WIN_SCORE + diff
+      }
+
+      // Valeur heuristique pour `player` : les bonnes cases, et avoir plus de
+      // choix que l'autre. Seules les feuilles de la recherche y passent.
+      function evaluate(player) {
+        const mine = mobility(player)
+        const theirs = mobility(opponent(player))
+        if (mine === 0 && theirs === 0) return finalScore(player)
+        let score = 0
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === player) score += WEIGHTS[r][c]
+            else if (board[r][c] !== null) score -= WEIGHTS[r][c]
+          }
+        }
+        return score + 5 * (mine - theirs)
+      }
+
+      // ===== Le mode =====
+
+      function loadSettings() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY))
+          if (stored?.mode === "2p" || stored?.mode === "ia") mode = stored.mode
+          if (LEVELS[stored?.level]) level = stored.level
+        } catch (e) {
+          // réglages absents ou illisibles : on garde ceux par défaut
+        }
+      }
+
+      // Chaque bouton porte un seul réglage : data-mode ou data-level.
+      const settingOf = (btn) => Object.entries(btn.dataset)[0]
+
+      function renderModeSelect() {
+        for (const btn of document.querySelectorAll(".seg button")) {
+          const [name, value] = settingOf(btn)
+          btn.classList.toggle("active", { mode, level }[name] === value)
+        }
+        $("app").classList.toggle("vs-computer", mode === "ia")
+        $("scoreTitle").textContent =
+          mode === "ia"
+            ? `Contre l'ordi · ${LEVELS[level].name}`
+            : "Parties gagnées"
+        updateScoreboard()
+      }
+
+      function changeSettings(next) {
+        if (next.mode === mode && next.level === level) return
+        ;({ mode, level } = next)
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify({ mode, level }))
+        } catch (e) {
+          // navigation privée : le réglage n'est pas gardé
+        }
+        renderModeSelect()
+        initGame()
+      }
+
+      for (const btn of document.querySelectorAll(".seg button")) {
+        const [name, value] = settingOf(btn)
+        btn.onclick = () => changeSettings({ mode, level, [name]: value })
+      }
+
       // ===== Le tour, les compteurs, le ciel =====
 
       // La roue tourne d'un demi-tour à chaque coup : l'astre dont c'est le
@@ -1396,15 +1705,26 @@
         $("wheel").style.transform = `rotate(${wheelTurn * 180}deg)`
         $("side-moon").classList.toggle("active", orb === "moon")
         $("side-sun").classList.toggle("active", orb === "sun")
+        $("side-" + ORB[COMPUTER]).classList.toggle(
+          "thinking",
+          isComputerTurn(),
+        )
+      }
+
+      function passText(stuck) {
+        if (mode === "2p") {
+          return `${capitalize(LABELS[stuck])} ne peut pas jouer : ${LABELS[currentPlayer]} rejoue.`
+        }
+        return stuck === HUMAN
+          ? "Tu ne peux pas jouer : l'ordi rejoue."
+          : "L'ordi ne peut pas jouer : à toi de rejouer."
       }
 
       function announcePass(stuck) {
         if (gameOver) return
         playPassSound()
         updateTurn(1)
-        showNote(
-          `${capitalize(LABELS[stuck])} ne peut pas jouer : ${LABELS[currentPlayer]} rejoue.`,
-        )
+        showNote(passText(stuck))
         const side = $("side-" + ORB[stuck])
         if (reducedMotion) return
         side.animate(
@@ -1462,26 +1782,23 @@
         const { black, white } = countDiscs()
         winner = black > white ? "black" : white > black ? "white" : "draw"
         saveScore(winner)
-        setTimeout(() => showEnd(black, white), settle + 250)
+        later(() => showEnd(black, white), settle + 250)
       }
 
       function showEnd(black, white) {
         const orb = ORB[winner]
         $("endOrb").dataset.orb = orb
         fillOrbs([$("endOrb")])
-        $("endTitle").textContent =
-          orb === "eclipse"
-            ? "Égalité : éclipse !"
-            : `${capitalize(LABELS[winner])} gagne !`
+        $("endTitle").textContent = endText()
         $("endMoon").textContent = black
         $("endSun").textContent = white
         $("end").classList.remove("hidden")
         updateTurn()
         updateLiveScore()
         playEndSound(orb)
-        if (orb !== "eclipse" && typeof showConfetti === "function") {
-          showConfetti()
-        }
+        // Pas de confettis quand l'ordi gagne
+        const cheer = mode === "ia" ? winner === HUMAN : winner !== "draw"
+        if (cheer && typeof showConfetti === "function") showConfetti()
         if (!reducedMotion) {
           $("end")
             .querySelector(".end-card")
@@ -1495,15 +1812,27 @@
         }
       }
 
+      function endText() {
+        if (winner === "draw") return "Égalité : éclipse !"
+        if (mode === "2p") return `${capitalize(LABELS[winner])} gagne !`
+        return winner === HUMAN ? "Bravo, tu as gagné !" : "L'ordi gagne !"
+      }
+
+      // Les records à deux gardent leur clé d'origine ; contre l'ordi, un
+      // tableau par niveau.
+      function scoresKey() {
+        return mode === "ia" ? `othello-scores-ia-${level}` : "othello-scores"
+      }
+
       function getScores() {
-        const stored = localStorage.getItem(SCORES_KEY)
+        const stored = localStorage.getItem(scoresKey())
         return stored ? JSON.parse(stored) : { ...DEFAULT_SCORES }
       }
 
       function saveScore(result) {
         const scores = getScores()
         scores[SCORE_FIELD[result]]++
-        localStorage.setItem(SCORES_KEY, JSON.stringify(scores))
+        localStorage.setItem(scoresKey(), JSON.stringify(scores))
         updateScoreboard(scores)
       }
 
@@ -1521,7 +1850,8 @@
       fillOrbs()
       renderSoundBtn()
       buildBoard()
-      updateScoreboard()
+      loadSettings()
+      renderModeSelect()
       initGame()
     </script>
   </body>
