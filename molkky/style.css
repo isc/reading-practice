@@ -45,11 +45,20 @@ body {
     var(--bg);
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  /* Une colonne de téléphone, centrée sur un grand écran. */
+  max-width: 480px;
+  margin: 0 auto;
   overflow: hidden;
   touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
     env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+input {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 button {
