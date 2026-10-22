@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#be9662" />
     <title>b ou d ?</title>
     <style>
       /* L'atelier de tampons : du papier kraft sur l'établi, une feuille
@@ -49,21 +50,35 @@
         box-sizing: border-box;
       }
 
+      /* La page prend la hauteur de l'écran par les pourcentages, pas par
+         100dvh : dans l'appli installée sur Android, Chrome compte la barre
+         d'état dans 100dvh. La page dépassait alors de cette hauteur : elle
+         défilait, et les tampons passaient sous la barre du bas. */
+      html {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
       /* Le kraft de l'établi, avec ses fibres. */
       body {
         font-family: var(--read);
         color: var(--ink);
         background-color: var(--kraft);
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6 0.05' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0 0.08 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23f)'/%3E%3C/svg%3E");
-        min-height: 100vh;
-        min-height: 100dvh;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
         -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
       }
 
       .desk {
+        flex: 1;
+        width: 100%;
         max-width: 520px;
-        min-height: 100vh;
-        min-height: 100dvh;
         margin: 0 auto;
         padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
         display: flex;
@@ -291,8 +306,6 @@
 
       .picture {
         font-size: min(9rem, 22vh);
-        line-height: 1.15;
-        text-shadow: 0 3px 2px rgba(60, 35, 10, 0.18);
       }
 
       .word {
@@ -390,13 +403,16 @@
       /* ===== Les tampons ===== */
 
       /* L'établi vu de dessus, comme la feuille : deux tampons et le tampon
-         encreur entre eux. */
+         encreur entre eux. En bas, la place de l'ombre d'un tampon levé : elle
+         s'écarte vers le bas (pressStamp) et dépasse alors le tampon de 26 px
+         au plus, que couvrent ces 12 px et le bas du bureau (14 px). Sans
+         elle, la page déborde et défile le temps d'un coup de tampon. */
       .tray {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 18px;
-        padding: 8px 0 4px;
+        padding: 8px 0 12px;
       }
 
       .stamp {
@@ -605,6 +621,13 @@
           font-size: 18vh;
         }
       }
+      /* L'image du mot, à la taille de l'emoji qu'elle remplace. */
+      .picture img {
+        display: block;
+        width: 1.1em;
+        height: 1.1em;
+        filter: drop-shadow(0 3px 2px rgba(60, 35, 10, 0.18));
+      }
     </style>
     <script src="exit-guard.js"></script>
   </head>
@@ -690,7 +713,7 @@
               />
             </svg>
           </button>
-          <div class="picture" id="picture"></div>
+          <div class="picture"><img id="picture" alt="" /></div>
           <div class="word" id="word"></div>
           <div class="note" id="note"></div>
         </div>
@@ -725,50 +748,67 @@
 
     <script src="confetti.js"></script>
     <script src="voix.js"></script>
+    <script src="images.js"></script>
     <script>
       const words = [
         // D words
-        { word: "dauphin", emoji: "🐬", answer: "d" },
-        { word: "dragon", emoji: "🐉", answer: "d" },
-        { word: "dinde", emoji: "🦃", answer: "d" },
-        { word: "douche", emoji: "🚿", answer: "d" },
-        { word: "dé", emoji: "🎲", answer: "d" },
-        { word: "donut", emoji: "🍩", answer: "d" },
-        { word: "dame", emoji: "👸", answer: "d" },
-        { word: "doigt", emoji: "👆", answer: "d" },
-        { word: "dent", emoji: "🦷", answer: "d" },
-        { word: "diamant", emoji: "💎", answer: "d" },
-        { word: "dollar", emoji: "💵", answer: "d" },
-        { word: "dossier", emoji: "📁", answer: "d" },
-        { word: "document", emoji: "📄", answer: "d" },
-        { word: "dynamite", emoji: "🧨", answer: "d" },
-        { word: "disque", emoji: "💿", answer: "d" },
-        { word: "drapeau", emoji: "🏁", answer: "d" },
+        { word: "dauphin", answer: "d" },
+        { word: "dragon", answer: "d" },
+        { word: "dinde", answer: "d" },
+        { word: "douche", answer: "d" },
+        { word: "dé", answer: "d" },
+        { word: "donut", answer: "d" },
+        { word: "domino", answer: "d" },
+        { word: "doigt", answer: "d" },
+        { word: "dent", answer: "d" },
+        { word: "diamant", answer: "d" },
+        { word: "dinosaure", answer: "d" },
+        { word: "dentifrice", answer: "d" },
+        { word: "doudou", answer: "d" },
+        { word: "dromadaire", answer: "d" },
+        { word: "danseuse", answer: "d" },
+        { word: "drapeau", answer: "d" },
+        { word: "dix", answer: "d" },
+        { word: "dessin", answer: "d" },
+        { word: "doudoune", answer: "d" },
+        { word: "dentiste", answer: "d" },
+        { word: "déguisement", answer: "d" },
+        { word: "drone", answer: "d" },
+        { word: "dessert", answer: "d" },
+        { word: "datte", answer: "d" },
+        { word: "diadème", answer: "d" },
         // B words
-        { word: "banane", emoji: "🍌", answer: "b" },
-        { word: "ballon", emoji: "🎈", answer: "b" },
-        { word: "bateau", emoji: "⛵", answer: "b" },
-        { word: "bus", emoji: "🚌", answer: "b" },
-        { word: "bougie", emoji: "🕯️", answer: "b" },
-        { word: "bague", emoji: "💍", answer: "b" },
-        { word: "baleine", emoji: "🐋", answer: "b" },
-        { word: "bonhomme de neige", emoji: "⛄", answer: "b" },
-        { word: "bébé", emoji: "👶", answer: "b" },
-        { word: "bicyclette", emoji: "🚲", answer: "b" },
-        { word: "burger", emoji: "🍔", answer: "b" },
-        { word: "bowling", emoji: "🎳", answer: "b" },
-        { word: "bombe", emoji: "💣", answer: "b" },
-        { word: "buffle", emoji: "🦬", answer: "b" },
-        { word: "boussole", emoji: "🧭", answer: "b" },
-        { word: "boîte", emoji: "📦", answer: "b" },
-        { word: "bouquet", emoji: "💐", answer: "b" },
-        { word: "basketball", emoji: "🏀", answer: "b" },
-        { word: "baseball", emoji: "⚾", answer: "b" },
-        { word: "bureau", emoji: "🏢", answer: "b" },
-        { word: "batterie", emoji: "🔋", answer: "b" },
+        { word: "banane", answer: "b" },
+        { word: "ballon", answer: "b" },
+        { word: "bateau", answer: "b" },
+        { word: "bus", answer: "b" },
+        { word: "bougie", answer: "b" },
+        { word: "bague", answer: "b" },
+        { word: "baleine", answer: "b" },
+        { word: "bonhomme de neige", answer: "b" },
+        { word: "bébé", answer: "b" },
+        { word: "bicyclette", answer: "b" },
+        { word: "burger", answer: "b" },
+        { word: "bowling", answer: "b" },
+        { word: "bonnet", answer: "b" },
+        { word: "biberon", answer: "b" },
+        { word: "boussole", answer: "b" },
+        { word: "boîte", answer: "b" },
+        { word: "bouquet", answer: "b" },
+        { word: "balançoire", answer: "b" },
+        { word: "bottes", answer: "b" },
+        { word: "bureau", answer: "b" },
+        { word: "baignoire", answer: "b" },
+        { word: "bouteille", answer: "b" },
+        { word: "bol", answer: "b" },
+        { word: "brouette", answer: "b" },
+        { word: "bracelet", answer: "b" },
       ]
 
       const NUMBER_OF_WORDS = 20
+      // Le registre n'en montre pas plus : sur un téléphone, il tient sous la
+      // feuille d'accueil sans faire défiler la page.
+      const MAX_SCORES = 5
       const PRAISE = ["Bravo !", "Oui !", "Super !", "Bien vu !"]
       const SOUND_KEY = "b-ou-d-sound"
 
@@ -842,7 +882,7 @@
       }
 
       function updateScoreboard(highlightId) {
-        const scores = readScores()
+        const scores = readScores().slice(0, MAX_SCORES)
         $("scoreboardBody").innerHTML = scores.length
           ? scores
               .map((s) => {
@@ -900,6 +940,8 @@
 
       // Les mots, dits par Marie (voix.js, outils/voix.py).
       Voice.folder = "audio/b-ou-d/"
+      // Toutes les images d'avance : le jeu marche ensuite hors-ligne.
+      WordImage.preload(words.map((w) => w.word))
 
       function speakWord() {
         Voice.say(words[currentIndex].word)
@@ -1031,9 +1073,9 @@
       }
 
       function displayWord() {
-        const { word, emoji } = words[currentIndex]
+        const { word } = words[currentIndex]
         $("wordNumber").textContent = currentIndex + 1
-        $("picture").textContent = emoji
+        $("picture").src = WordImage.src(word)
         $("word").innerHTML = slotHTML(word[0]) + word.slice(1)
         $("note").textContent = ""
         // Les tampons changent de côté d'un mot à l'autre : on lit la
