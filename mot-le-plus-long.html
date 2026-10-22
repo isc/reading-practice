@@ -1336,6 +1336,54 @@
           .replace(/Æ/g, "AE")
       }
 
+      // Les gros mots restent jouables, mais le jeu ne les propose jamais
+      // comme « plus long mot possible » (il a montré ENCULE, octobre 2026).
+      // Chaque motif prend un mot entier, sans accents, avec toutes ses
+      // formes, et épargne ses voisins innocents : SALOPETTE, PISSENLIT,
+      // BRANLANT (une dent), BORDELAIS, DECONNECTER, TAPINOIS, TRINGLE,
+      // BAISER (le nom). Les mots d'enfants (CACA, ZIZI) et le vocabulaire
+      // neutre (SEXE, CHATTE, PEDALE, BATARD) restent.
+      // Les formes d'un verbe en -er, hors infinitif, et ses noms en -eur.
+      const ER_FORMS =
+        "A|AI|AIENT|AIS|AIT|AMES|AS|ASSE|ASSENT|ASSES|ASSIEZ|ASSIONS|AT|ATES" +
+        "|E|EE|EES|ENT|ERA|ERAI|ERAIENT|ERAIS|ERAIT|ERAS|ERENT|EREZ|ERIEZ|ERIONS" +
+        "|ERONS|ERONT|ES|EUR|EURS|EUSE|EUSES|EZ|IEZ|IONS|ONS"
+      const SWEAR_WORD = new RegExp(
+        "^(?:" +
+          [
+            // Grossièretés
+            "ENCUL.*",
+            "CONS?|CONNES?|CONN?ARD(E|ES|S)?|CONN?ASSES?|CONNERIES?|DECONN(?!ECT|EX).*",
+            "CULS?",
+            "COUILL.*",
+            "BITES?|BITT.*",
+            "PUTES?|PUTAINS?|PUTASS.*",
+            "SALOP(?!ETTE).*|SALAUD(E|ES|S)?|SALIGAUD.*",
+            "(EM|DE)?MERD.*",
+            `CHI(${ER_FORMS}|ANTE?S?|ER|URES?)|CHIOTTES?`,
+            "NIQU.*",
+            "FOUT.*",
+            "BORDELS?|BORDELIQUES?",
+            "ENFOIRE.*",
+            "PISS(?!ENLIT).*",
+            "DEGUEUL.*",
+            "FIONS?",
+            "GARCES?|CATINS?|PETASSES?|POU?FFIASSES?|GROGNASSES?",
+            // Vocabulaire sexuel cru (BAISER, le nom, reste)
+            `BAIS(${ER_FORMS}|ANT)`,
+            "BRANL(?!ANT|EMENT).*",
+            "CHIBRE|ZOB|NICHONS?|GODES?|GODEMICHES?|PARTOUZES?",
+            "TRINGL(?!ES?$).*|TAPIN(?!OIS).*",
+            "PORNO.*|SODOM.*|MASTURB.*|FELLATIONS?|CUNNILINGUS|ORGASMES?|EJACUL.*",
+            "PEDOPHIL.*|ZOOPHIL.*|NECROPHIL.*|INCEST.*|VIOLEUR.*|VIOLEUSES?",
+            // Injures racistes ou homophobes
+            "PEDES?|PEDERA.*|GOUINES?|TANTOUZES?|TRAVELOS?",
+            "NEGRES?|NEGRESS.*|NEGRILL.*|NEGRO.*|YOUPIN.*|BOUGNOUL.*|BICOTS?|CHINETOQUES?|BAMBOULAS?",
+            "BOCHES?|RITALS?",
+          ].join("|") +
+          ")$",
+      )
+
       async function loadWords() {
         const res = await fetch("fr_FR.txt")
         const text = await res.text()
@@ -1349,7 +1397,9 @@
           set.add(norm)
         })
         validWordsSet = set
-        wordsByLength = Array.from(set).sort((a, b) => b.length - a.length)
+        wordsByLength = Array.from(set)
+          .filter((w) => !SWEAR_WORD.test(w))
+          .sort((a, b) => b.length - a.length)
       }
 
       function weightedConsonant() {
