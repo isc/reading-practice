@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#100e2c" />
     <title>Sutom</title>
     <style>
       /* Pixel art 8 bits : chaque lettre est dessinée point par point dans
@@ -41,7 +42,6 @@
         --absent: #19173f;
         --absent-ink: #514f8a;
         --gap: 5px;
-        --vh: 100vh;
         --dock: 180px;
       }
 
@@ -56,12 +56,15 @@
       }
 
       html {
-        background: var(--night);
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
       }
 
       body {
-        min-height: 100vh;
-        min-height: 100dvh;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
         background: var(--night);
         color: var(--white);
         font-family: "Pixelify Sans", Arial, sans-serif;
@@ -152,6 +155,8 @@
       /* ===== Mise en page ===== */
       .app {
         position: relative;
+        flex: 1;
+        width: 100%;
         max-width: 480px;
         margin: 0 auto;
         padding: max(10px, env(safe-area-inset-top)) 12px
@@ -160,8 +165,6 @@
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
-        min-height: 100vh;
-        min-height: 100dvh;
       }
 
       /* Le plateau occupe le milieu, le clavier reste en bas, sous le pouce. */
@@ -315,12 +318,6 @@
           0 0 0 3px var(--tile-hi),
           6px 6px 0 3px #07061a;
         margin: 3px 0 6px;
-      }
-
-      @supports (height: 100dvh) {
-        :root {
-          --vh: 100dvh;
-        }
       }
 
       .grid {
@@ -791,8 +788,8 @@
       canvas#fireworks {
         position: fixed;
         inset: 0;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         pointer-events: none;
         z-index: 10;
         image-rendering: pixelated;
@@ -924,6 +921,14 @@
         ["Q", "S", "D", "F", "G", "H", "J", "K", "L", "M"],
         ["W", "X", "C", "V", "B", "N", "BACK", "ENTER"],
       ]
+
+      // La taille des cases suit la hauteur vraiment visible : dans l'appli
+      // installée sur Android, 100vh compte aussi la barre d'état.
+      const root = document.documentElement
+      const fitHeight = () =>
+        root.style.setProperty("--vh", `${root.clientHeight}px`)
+      fitHeight()
+      window.addEventListener("resize", fitHeight)
 
       const reduceMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
@@ -1612,8 +1617,8 @@
         const canvas = $("fireworks")
         // Un point du canevas par gros pixel, agrandi sans lissage.
         const P = 5
-        const w = window.innerWidth
-        const h = window.innerHeight
+        const w = canvas.clientWidth
+        const h = canvas.clientHeight
         canvas.width = Math.ceil(w / P)
         canvas.height = Math.ceil(h / P)
         const ctx = canvas.getContext("2d")

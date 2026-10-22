@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#cfeadf" />
     <title>Pendu</title>
     <style>
         /* Lettres aimantées sur une porte de frigo : grosses lettres rondes en
@@ -29,13 +30,21 @@
             box-sizing: border-box;
         }
 
+        html {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
         /* La porte du frigo, émaillée, avec un reflet. */
         body {
             font-family: 'Fredoka', 'Arial Rounded MT Bold', sans-serif;
             color: var(--ink);
             background: linear-gradient(100deg, var(--door) 0%, var(--door-light) 38%, var(--door) 62%, #bfe0d2 100%);
-            min-height: 100vh;
+            flex-grow: 1;
             padding: 16px 20px 40px;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .page {
@@ -419,7 +428,7 @@
             top: 0;
             left: 0;
             width: 100vw;
-            height: 100vh;
+            height: 100%;
             pointer-events: none;
             z-index: 1000;
         }

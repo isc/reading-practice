@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#ea9db1" />
     <title>Fracto Dingo</title>
     <script src="exit-guard.js"></script>
     <style>
@@ -43,13 +44,12 @@
         font-family: "Fraunces", Georgia, serif;
         color: var(--chocolate);
         background: var(--cream);
-        min-height: 100vh;
-        min-height: 100dvh;
         display: flex;
         justify-content: center;
         align-items: flex-start;
         padding: 0 16px 24px;
         -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
         user-select: none;
       }
 
@@ -738,7 +738,7 @@
         top: 0;
         left: 0;
         width: 100vw;
-        height: 100vh;
+        height: 100%;
         pointer-events: none;
         z-index: 1000;
       }
