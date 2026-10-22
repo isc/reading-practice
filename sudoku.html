@@ -60,40 +60,6 @@
         overflow-x: hidden;
       }
 
-      /* Aurore qui tourne lentement derrière tout */
-      body::before {
-        content: "";
-        position: fixed;
-        inset: -40vmax;
-        background: conic-gradient(
-          from 0deg,
-          #ff4d6d,
-          #ffb347,
-          #ffe66d,
-          #5fe08a,
-          #4dd8e8,
-          #5b8cff,
-          #a66bff,
-          #ff6bd5,
-          #ff4d6d
-        );
-        filter: blur(90px);
-        opacity: 0.13;
-        animation: aurore 60s linear infinite;
-        pointer-events: none;
-        z-index: -1;
-      }
-
-      body.in-game::before {
-        animation-play-state: paused;
-      }
-
-      @keyframes aurore {
-        to {
-          transform: rotate(1turn);
-        }
-      }
-
       #confetti {
         position: fixed;
         inset: 0;
@@ -195,6 +161,19 @@
         font-size: 22px;
         font-weight: 600;
         color: #fff;
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        box-shadow: 0 8px 30px rgba(120, 100, 255, 0.35);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      }
+
+      /* Deux longueurs de dégradé côte à côte, qui glissent d'une longueur. */
+      .play::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 400%;
         background: linear-gradient(
           100deg,
           #ff4d6d,
@@ -203,10 +182,9 @@
           #5b8cff 75%,
           #ff6bd5
         );
-        background-size: 200% 100%;
+        background-size: 50%;
         animation: chatoie 6s linear infinite;
-        box-shadow: 0 8px 30px rgba(120, 100, 255, 0.35);
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+        z-index: -1;
       }
 
       .play small {
@@ -218,7 +196,7 @@
 
       @keyframes chatoie {
         to {
-          background-position: 200% 0;
+          transform: translateX(-50%);
         }
       }
 
@@ -278,15 +256,32 @@
       }
 
       .orb.current {
-        animation: pulse 1.8s ease-in-out infinite;
         outline: 2px solid #fff;
         outline-offset: 3px;
       }
 
-      @keyframes pulse {
+      /* Les lueurs qui battent en continu n'animent que l'opacité d'un calque :
+         animer fond et ombre repeint à chaque image, et un vieil iPad rame. */
+      .orb.current::after,
+      .cell.hint::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        opacity: 0;
+        animation: bat 1.3s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      @keyframes bat {
         50% {
-          box-shadow: 0 0 30px hsl(var(--h) 100% 65% / 0.9);
+          opacity: 1;
         }
+      }
+
+      .orb.current::after {
+        box-shadow: 0 0 30px hsl(var(--h) 100% 65% / 0.9);
+        animation-duration: 1.8s;
       }
 
       .orb .stars {
@@ -462,6 +457,12 @@
         color: var(--muted);
       }
 
+      /* En partie, un appui long ne sélectionne rien et n'ouvre pas de bulle. */
+      #game {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
       .stage {
         --size: min(calc(100vw - 32px), calc(100vh - 270px), 528px);
         --size: min(calc(100vw - 32px), calc(100dvh - 270px), 528px);
@@ -497,8 +498,6 @@
         aspect-ratio: 1;
         border-radius: calc(var(--size) / var(--n) / 6);
         background: var(--glass);
-        display: grid;
-        place-items: center;
         font-size: calc(var(--size) / var(--n) * 0.52);
         font-weight: 600;
         line-height: 1;
@@ -509,8 +508,13 @@
           box-shadow 0.2s;
       }
 
+      /* Le chiffre et les notes se placent sur la case elle-même : centrés par
+         la grille du bouton, ils restaient en haut de la case sur un iPad. */
       .cell .v {
-        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        translate: -50% -50%;
       }
 
       .cell.given .v {
@@ -554,17 +558,11 @@
         box-shadow: inset 0 0 0 1.5px rgba(255, 224, 138, 0.55);
       }
 
-      .cell.hint {
-        animation: lueur 1.3s ease-in-out infinite;
-      }
-
-      @keyframes lueur {
-        50% {
-          background: rgba(255, 224, 138, 0.35);
-          box-shadow:
-            0 0 22px rgba(255, 224, 138, 0.8),
-            inset 0 0 0 2px var(--gold);
-        }
+      .cell.hint::after {
+        background: rgba(255, 224, 138, 0.35);
+        box-shadow:
+          0 0 22px rgba(255, 224, 138, 0.8),
+          inset 0 0 0 2px var(--gold);
       }
 
       .cell .faux {
@@ -631,9 +629,9 @@
       }
 
       .notes {
+        position: absolute;
+        inset: 6%;
         display: grid;
-        width: 88%;
-        height: 88%;
         font-size: calc(var(--size) / var(--n) * 0.22);
         font-weight: 500;
       }
@@ -820,9 +818,8 @@
       }
 
       @media (prefers-reduced-motion: reduce) {
-        body::before,
         .logo span,
-        .play {
+        .play::before {
           animation: none;
         }
       }
@@ -1208,10 +1205,12 @@
       // ===== Écrans =====
       const $ = (id) => document.getElementById(id)
       function show(id) {
+        // Un champ caché peut garder le focus dans Safari, et avec lui la
+        // barre « Coller / Remplissage auto » de l'iPad.
+        document.activeElement?.blur()
         document
           .querySelectorAll(".screen")
           .forEach((s) => s.classList.toggle("active", s.id === id))
-        document.body.classList.toggle("in-game", id === "game")
         window.scrollTo(0, 0)
       }
 
@@ -1523,7 +1522,8 @@
           const left = G.n - vals.filter((v) => v === d).length
           keyEls[d].classList.toggle("held", held === d)
           keyEls[d].classList.toggle("done", left === 0)
-          keyEls[d].querySelector(".reste").textContent = left
+          const reste = keyEls[d].querySelector(".reste")
+          if (reste.textContent !== String(left)) reste.textContent = left
         }
       }
 

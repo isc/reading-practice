@@ -56,6 +56,11 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   un jeu clair elle passe pour la barre normale d'Android, alors qu'une bande
   claire sous un jeu sombre fait bug. Une appli installée relit son manifeste
   au plus une fois par jour : réinstaller pour voir un changement tout de suite.
+- **Animations continues** : une animation infinie n'anime que `transform` ou
+  `opacity` (une lueur qui bat : un `::after` dont l'opacité varie), et jamais
+  de `filter: blur` sur un grand calque. Le reste se repeint à chaque image :
+  sur un vieil iPad, le sudoku devenait injouable au fil de la partie
+  (octobre 2026).
 - **Hauteur d'écran** : jamais `100vh` ni `100dvh` pour la hauteur de la page.
   Dans l'appli installée sur Android, Chrome y compte la barre d'état, que la
   page n'occupe pas. La page dépassait donc de ~58 px : elle défilait, et son
