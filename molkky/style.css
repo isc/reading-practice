@@ -526,19 +526,16 @@ main {
   text-shadow: 0 0 12px var(--c);
 }
 
-/* Les quilles, placées comme sur le terrain. */
+/* Les quilles, rangées de 1 à 12. */
 .pins {
-  position: relative;
   flex: none;
   align-self: center;
-  width: calc(4 * var(--d) + 3 * var(--g));
-  height: calc(var(--d) + 3 * 0.87 * (var(--d) + var(--g)));
+  display: grid;
+  grid-template-columns: repeat(4, var(--d));
+  gap: var(--g);
   margin: 4px 0 10px;
 }
 .pin {
-  position: absolute;
-  left: calc(var(--x) * (var(--d) + var(--g)));
-  top: calc(var(--y) * 0.87 * (var(--d) + var(--g)));
   width: var(--d);
   height: var(--d);
   border-radius: 50%;
@@ -710,11 +707,21 @@ main {
   font-weight: 700;
 }
 
+/* Dans les règles, les quilles placées comme sur le terrain. */
 .rules-panel .pins-mini {
   --d: 40px;
   --g: 8px;
   --c: var(--amber);
+  display: block;
+  position: relative;
+  width: calc(4 * var(--d) + 3 * var(--g));
+  height: calc(var(--d) + 3 * 0.87 * (var(--d) + var(--g)));
   margin: 0;
+}
+.pins-mini .pin {
+  position: absolute;
+  left: calc(var(--x) * (var(--d) + var(--g)));
+  top: calc(var(--y) * 0.87 * (var(--d) + var(--g)));
 }
 .rules-list {
   list-style: none;
