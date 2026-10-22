@@ -6,6 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
+    <meta name="theme-color" content="#fff3df" />
     <title>Qwirkle</title>
     <style>
       /* Qwirkle à la Memphis (années 80) : formes franches cernées de noir,
@@ -775,7 +776,7 @@
         line-height: 1.1;
       }
 
-      .move-sticker {
+      .sticker {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -791,22 +792,22 @@
         transform: rotate(-4deg);
       }
 
-      .move-sticker svg {
+      .sticker svg {
         width: 30px;
         height: 30px;
         margin-bottom: 4px;
       }
 
-      .move-sticker:empty {
+      .sticker:empty {
         display: none;
       }
 
-      .move-text {
+      .card-text {
         font-size: 15px;
         margin-bottom: 18px;
       }
 
-      .move-text:empty {
+      .card-text:empty {
         display: none;
       }
 
@@ -1147,11 +1148,79 @@
         />
       </svg>
       <div class="card">
-        <div class="move-sticker" id="moveSticker"></div>
-        <p class="move-text" id="moveText"></p>
+        <div class="sticker" id="moveSticker"></div>
+        <p class="card-text" id="moveText"></p>
         <p class="sub">Passe l'appareil à</p>
         <h2 class="handoff-name" id="handoffName">Joueur 2</h2>
         <button class="btn btn-primary" id="handoffBtn">Voir mes tuiles</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="quit">
+      <svg
+        class="deco"
+        viewBox="0 0 60 60"
+        width="90"
+        style="left: -14px; top: 12%"
+      >
+        <path
+          d="M30 6l26 46H4z"
+          fill="#22c3d6"
+          stroke="#161616"
+          stroke-width="4"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <svg
+        class="deco"
+        viewBox="0 0 60 60"
+        width="80"
+        style="right: -10px; top: 22%"
+      >
+        <circle
+          cx="30"
+          cy="30"
+          r="24"
+          fill="#ff5fa2"
+          stroke="#161616"
+          stroke-width="4"
+        />
+      </svg>
+      <svg
+        class="deco"
+        viewBox="0 0 80 40"
+        width="120"
+        style="left: 8%; bottom: 8%"
+      >
+        <path
+          d="M4 30l12-20 12 20 12-20 12 20 12-20"
+          fill="none"
+          stroke="#161616"
+          stroke-width="6"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+        />
+      </svg>
+      <div class="card">
+        <div class="sticker">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#161616"
+            stroke-width="2.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M19 12a7 7 0 1 1-2.05-4.95" />
+            <path d="M17.5 3.5v4h-4" />
+          </svg>
+        </div>
+        <h2>Nouvelle partie ?</h2>
+        <p class="card-text">La partie en cours sera abandonnée.</p>
+        <div class="row">
+          <button class="btn" id="quitNo">Continuer</button>
+          <button class="btn btn-primary" id="quitYes">Abandonner</button>
+        </div>
       </div>
     </div>
 
@@ -2162,7 +2231,7 @@
         player.score += result.score
         pending.clear()
         refillRack(player)
-        lastMove = { kind: "score", name: player.name, ...result }
+        lastMove = { kind: "score", ...result }
         if (bag.length === 0 && player.rack.length === 0) {
           player.score += 6
           const qwirkleMsg = result.qwirkles > 0 ? ", un Qwirkle" : ""
@@ -2206,11 +2275,7 @@
         }
         exchangeMode = false
         exchangeSelection = new Set()
-        lastMove = {
-          kind: "exchange",
-          name: player.name,
-          count: removed.length,
-        }
+        lastMove = { kind: "exchange", count: removed.length }
         sfx("swap")
         nextTurn()
         lockFor(650, showHandoff)
@@ -2218,7 +2283,7 @@
 
       function passTurn() {
         if (pending.size > 0 || exchangeMode || gameOver) return
-        lastMove = { kind: "pass", name: currentPlayer().name }
+        lastMove = { kind: "pass" }
         sfx("pass")
         nextTurn()
         lockFor(450, showHandoff)
@@ -2271,19 +2336,21 @@
         sticker.innerHTML = ""
         text.textContent = ""
         if (lastMove) {
-          const { kind, name } = lastMove
+          // La carte s'adresse à celui qui vient de jouer (« Passe l'appareil
+          // à… ») : on le tutoie aussi pour son coup.
+          const { kind } = lastMove
           if (kind === "score") {
             sticker.textContent = `+${lastMove.score}`
             const plural = lastMove.score > 1 ? "s" : ""
             const bonus = lastMove.qwirkles ? ", avec un Qwirkle" : ""
-            text.textContent = `${name} marque ${lastMove.score} point${plural}${bonus}.`
+            text.textContent = `Tu marques ${lastMove.score} point${plural}${bonus}.`
           } else if (kind === "exchange") {
             sticker.innerHTML = `${ICONS.swap}${lastMove.count}`
             const plural = lastMove.count > 1 ? "s" : ""
-            text.textContent = `${name} échange ${lastMove.count} tuile${plural}.`
+            text.textContent = `Tu échanges ${lastMove.count} tuile${plural}.`
           } else {
             sticker.innerHTML = ICONS.pass
-            text.textContent = `${name} passe son tour.`
+            text.textContent = "Tu passes ton tour."
           }
         }
         document.getElementById("handoffName").textContent =
@@ -2792,18 +2859,20 @@
         else showMessage(`Partie reprise. Au tour de ${currentPlayer().name} !`)
       }
 
+      // Une partie engagée ne s'abandonne pas d'un seul geste : on demande
+      // d'abord, sur une carte du jeu plutôt qu'avec le `confirm` du système.
       function startNewGame() {
-        if (
-          gameEngaged &&
-          !gameOver &&
-          !confirm(
-            "Abandonner la partie en cours et en commencer une nouvelle ?",
-          )
-        ) {
+        if (gameEngaged && !gameOver) {
+          document.getElementById("quit").classList.add("visible")
+          sfx("select")
           return
         }
         initGame()
         showSetup()
+      }
+
+      function closeQuit() {
+        document.getElementById("quit").classList.remove("visible")
       }
 
       // ===== Noms des joueurs =====
@@ -2869,6 +2938,12 @@
       }
 
       document.getElementById("newGameBtn").onclick = startNewGame
+      document.getElementById("quitNo").onclick = closeQuit
+      document.getElementById("quitYes").onclick = () => {
+        closeQuit()
+        initGame()
+        showSetup()
+      }
       document.getElementById("handoffBtn").onclick = hideHandoff
       document.getElementById("setupBtn").onclick = confirmSetup
       document.getElementById("soundBtn").onclick = toggleSound
