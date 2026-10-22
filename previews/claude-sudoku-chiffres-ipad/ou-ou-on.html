@@ -1,0 +1,1546 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fff6e6" />
+    <title>ou ou on ?</title>
+    <style>
+      /* Bulles qui chantent : une case de BD, et deux bulles en gelée, une
+         par son. « ou » est une bulle ronde et bleue, « on » un nuage
+         orange. La bonne bulle vole jusqu'à l'image, le mot s'y forme
+         autour de son son, puis il chante. Une mauvaise bulle tremble,
+         éclate, et la bonne se gonfle à sa place. */
+
+      @font-face {
+        font-family: "Baloo 2";
+        src: url("Baloo2-Variable.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: swap;
+      }
+
+      :root {
+        --ink: #26173f;
+        --paper: #fff6e6;
+        --dots: #ffc9d8;
+        --ou: #3557e0;
+        --on: #f2620f;
+        --muted: #7a6a8e;
+        --font: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      body {
+        font-family: var(--font);
+        color: var(--ink);
+        background-color: var(--paper);
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        -webkit-tap-highlight-color: transparent;
+        overflow-x: hidden;
+      }
+
+      /* La trame de points des BD, qui s'efface vers le haut. */
+      .dots {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(var(--dots) 1.6px, transparent 1.9px);
+        background-size: 14px 14px;
+        -webkit-mask-image: linear-gradient(transparent 10%, #000 90%);
+        mask-image: linear-gradient(transparent 10%, #000 90%);
+      }
+
+      .app {
+        position: relative;
+        max-width: 520px;
+        flex: 1;
+        width: 100%;
+        margin: 0 auto;
+        padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .screen {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      #game {
+        flex: 1;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      /* Une case de BD : bord d'encre et ombre décalée. */
+      .panel {
+        position: relative;
+        background: #fff;
+        border: 3px solid var(--ink);
+        border-radius: 22px;
+        box-shadow: 5px 5px 0 var(--ink);
+      }
+
+      /* ===== Les bulles =====
+         Le contour est la même forme, tracée dessous avec un trait épais :
+         la queue et le corps n'ont qu'un seul contour. */
+
+      .bubble {
+        position: relative;
+        display: block;
+      }
+
+      .bubble > svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      .bubble .ink {
+        fill: var(--ink);
+        stroke: var(--ink);
+        stroke-width: 12;
+        stroke-linejoin: round;
+      }
+
+      .bubble .shine {
+        fill: #fff;
+        opacity: 0.75;
+      }
+
+      .bubble .say {
+        position: absolute;
+        inset: 4% 6% 24%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      /* La couleur du son, pour tout ce qui porte sa classe : bulle,
+         pastille, onde, croche, goutte, rayons. */
+      .ou {
+        --c: var(--ou);
+      }
+
+      .on {
+        --c: var(--on);
+      }
+
+      .bubble .say {
+        color: var(--c);
+      }
+
+      /* Dans un mot, le son en couleur, les autres lettres à l'encre. */
+      .bubble .say span {
+        display: inline-block;
+        color: var(--ink);
+      }
+
+      .bubble .say .snd {
+        color: inherit;
+      }
+
+      button.bubble {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        touch-action: manipulation;
+        font-family: var(--font);
+      }
+
+      /* ===== Accueil ===== */
+
+      .welcome {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 18px 22px;
+        margin-top: 2vh;
+      }
+
+      .title {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 700;
+        font-size: 2.2rem;
+      }
+
+      .title .bubble {
+        width: 118px;
+        height: 92px;
+      }
+
+      .title .bubble .say {
+        font-size: 2.6rem;
+      }
+
+      .welcome p {
+        font-size: 1.15rem;
+        line-height: 1.4;
+        max-width: 21em;
+      }
+
+      .big-btn {
+        font-family: var(--font);
+        font-weight: 800;
+        font-size: 1.4rem;
+        color: #fff;
+        background: var(--ou);
+        border: 3px solid var(--ink);
+        border-radius: 999px;
+        box-shadow: 4px 4px 0 var(--ink);
+        padding: 10px 42px 8px;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: transform 0.1s;
+      }
+
+      .big-btn:active {
+        transform: translate(3px, 3px);
+        box-shadow: 1px 1px 0 var(--ink);
+      }
+
+      .sound-toggle {
+        font-family: var(--font);
+        font-size: 1rem;
+        color: var(--muted);
+        background: none;
+        border: none;
+        padding: 8px 12px;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      /* ===== Partie ===== */
+
+      /* Le chrono au milieu : il avance sans faire bouger les côtés. */
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        font-variant-numeric: tabular-nums;
+        min-height: 34px;
+      }
+
+      .stats > :last-child {
+        justify-self: end;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .stats svg {
+        width: 22px;
+        height: 22px;
+        fill: #ffc21a;
+        stroke: var(--ink);
+        stroke-width: 2;
+        stroke-linejoin: round;
+      }
+
+      .stats #timer {
+        color: var(--muted);
+      }
+
+      /* Une pastille par mot : pleine dans la couleur du son si c'est juste,
+         un simple anneau sinon. */
+      .track {
+        display: grid;
+        grid-template-columns: repeat(20, 1fr);
+        gap: 4px;
+        padding: 0 2px;
+      }
+
+      .track span {
+        aspect-ratio: 1;
+        max-height: 12px;
+        border-radius: 50%;
+        background: #eadff0;
+        justify-self: center;
+        width: 100%;
+        max-width: 12px;
+      }
+
+      .track .now {
+        background: var(--ink);
+      }
+
+      .track .ok {
+        background: var(--c);
+      }
+
+      .track .ko {
+        background: none;
+        box-shadow: inset 0 0 0 2.5px var(--c);
+      }
+
+      .stage {
+        flex: 1;
+        min-height: 330px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 12px 12px;
+        overflow: hidden;
+      }
+
+      /* Les rayons de BD derrière l'image, dans la couleur du son qui
+         chante. */
+      .burst {
+        position: absolute;
+        left: 50%;
+        bottom: 20px;
+        width: 560px;
+        height: 560px;
+        margin: 0 0 -280px -280px;
+        border-radius: 50%;
+        background: repeating-conic-gradient(
+          var(--c) 0deg 7deg,
+          transparent 7deg 20deg
+        );
+        -webkit-mask-image: radial-gradient(
+          circle,
+          transparent 14%,
+          #000 30%,
+          transparent 70%
+        );
+        mask-image: radial-gradient(
+          circle,
+          transparent 14%,
+          #000 30%,
+          transparent 70%
+        );
+        opacity: 0;
+        pointer-events: none;
+        will-change: transform, opacity;
+      }
+
+      .slot {
+        position: relative;
+        width: min(100%, 340px);
+        aspect-ratio: 220 / 170;
+        margin-bottom: 4px;
+      }
+
+      .slot > * {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* La bulle vide : en pointillés, avec les trois points de quelqu'un
+         qui va parler. */
+      .waiting path {
+        fill: rgba(255, 255, 255, 0.7);
+        stroke: #c9bcd6;
+        stroke-width: 4;
+        stroke-dasharray: 10 9;
+        stroke-linecap: round;
+      }
+
+      .waiting .typing {
+        position: absolute;
+        inset: 0 0 24%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .typing i {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #c9bcd6;
+        animation: typing 1.2s ease-in-out infinite;
+      }
+
+      .typing i:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      .typing i:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes typing {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+        }
+        30% {
+          transform: translateY(-9px);
+        }
+      }
+
+      .answer .say {
+        font-size: calc(var(--fit, 1) * 3.4rem);
+      }
+
+      /* Une onde : le contour de la bulle, qui s'élargit et s'efface. */
+      .ring {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        fill: none;
+        stroke: var(--c);
+        stroke-width: 4;
+        transform-origin: 50% 43%;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .picture {
+        position: relative;
+        font-size: 6.6rem;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .listen {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: 3px solid var(--ink);
+        background: #fff;
+        color: var(--ink);
+        box-shadow: 3px 3px 0 var(--ink);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        touch-action: manipulation;
+        z-index: 2;
+      }
+
+      .listen:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0 var(--ink);
+      }
+
+      .listen svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      /* Les deux bulles à toucher : elles respirent, chacune à son rythme. */
+      .choices {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+      }
+
+      .choice {
+        flex: 1;
+        max-width: 180px;
+        aspect-ratio: 220 / 170;
+        animation: breathe 2.6s ease-in-out infinite;
+      }
+
+      .choice.on {
+        animation-duration: 3.1s;
+        animation-delay: -1.3s;
+      }
+
+      .choice .say {
+        font-size: 3.8rem;
+      }
+
+      @keyframes breathe {
+        50% {
+          transform: scale(1.04, 0.97) translateY(-3px);
+        }
+      }
+
+      .choice.gone {
+        opacity: 0.3;
+        transition: opacity 0.25s;
+      }
+
+      .choice.flown {
+        opacity: 0;
+      }
+
+      /* Les éléments qui volent au-dessus de tout : la bulle choisie, les
+         notes, les gouttes. */
+      .fx {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 20;
+      }
+
+      .note {
+        width: 30px;
+        height: 30px;
+        fill: var(--c);
+        stroke: var(--ink);
+        stroke-width: 1.5;
+      }
+
+      .drop {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2.5px solid var(--ink);
+        background: var(--c);
+      }
+
+      /* ===== Fin de partie ===== */
+
+      .end {
+        padding: 18px 14px 20px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .end .score {
+        font-size: 3.4rem;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .end .score small {
+        display: block;
+        margin-top: 6px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      /* La planche : les vingt mots dans leurs bulles. Une erreur garde sa
+         bulle pâle. */
+      .strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px 4px;
+        width: 100%;
+        list-style: none;
+      }
+
+      .strip .bubble {
+        aspect-ratio: 220 / 170;
+      }
+
+      .strip .say {
+        font-size: calc(var(--fit, 1) * 0.95rem);
+        font-weight: 700;
+      }
+
+      .strip .say .snd {
+        font-weight: 800;
+      }
+
+      .strip .missed {
+        opacity: 0.4;
+      }
+
+      /* ===== Meilleurs scores ===== */
+
+      .ledger {
+        padding: 16px 16px 12px;
+      }
+
+      .ledger h3 {
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+      }
+
+      .ledger table {
+        width: 100%;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ledger th,
+      .ledger td {
+        padding: 5px 4px;
+        text-align: left;
+        border-bottom: 2px dotted #e3d8ec;
+      }
+
+      .ledger th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .ledger tr:last-child td {
+        border-bottom: none;
+      }
+
+      .ledger .current td {
+        color: var(--ou);
+        font-weight: 800;
+      }
+
+      .ledger .empty {
+        color: var(--muted);
+      }
+
+      #confetti {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 30;
+      }
+
+      /* Sur un petit écran, l'image et les bulles se resserrent. */
+      @media (max-height: 700px) {
+        .picture {
+          font-size: 5.2rem;
+        }
+
+        .stage {
+          min-height: 280px;
+        }
+
+        .choice {
+          max-width: 150px;
+        }
+
+        .choice .say {
+          font-size: 3.2rem;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .choice,
+        .typing i {
+          animation: none;
+        }
+      }
+      /* L'image du mot, à la taille de l'emoji qu'elle remplace. */
+      .picture img {
+        display: block;
+        width: 1.1em;
+        height: 1.1em;
+      }
+    </style>
+    <script src="exit-guard.js"></script>
+  </head>
+  <body>
+    <canvas id="confetti"></canvas>
+    <div class="dots" aria-hidden="true"></div>
+    <!-- Les dégradés des bulles, partagés par toutes. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <radialGradient
+          id="jelly-ou"
+          gradientUnits="userSpaceOnUse"
+          cx="80"
+          cy="45"
+          r="150"
+        >
+          <stop offset="0" stop-color="#fff" />
+          <stop offset="0.55" stop-color="#dfe6ff" />
+          <stop offset="1" stop-color="#a9b9ff" />
+        </radialGradient>
+        <radialGradient
+          id="jelly-on"
+          gradientUnits="userSpaceOnUse"
+          cx="80"
+          cy="45"
+          r="150"
+        >
+          <stop offset="0" stop-color="#fff" />
+          <stop offset="0.55" stop-color="#ffe4c7" />
+          <stop offset="1" stop-color="#ffbb7d" />
+        </radialGradient>
+      </defs>
+    </svg>
+    <main class="app">
+      <!-- ===== Accueil ===== -->
+      <section class="screen" id="welcome">
+        <div class="panel welcome">
+          <h1 class="title" aria-label="ou ou on ?">
+            <button class="bubble ou" data-sound="ou" aria-label="ou"></button>
+            <span>ou</span>
+            <button class="bubble on" data-sound="on" aria-label="on"></button>
+            <span>?</span>
+          </h1>
+          <p>
+            Écoute le mot, puis touche la bulle du son que tu entends : le mot
+            se met à chanter.
+          </p>
+          <button class="big-btn" id="startBtn">Commencer</button>
+          <button class="sound-toggle" id="soundToggle"></button>
+        </div>
+      </section>
+
+      <!-- ===== Partie ===== -->
+      <section class="screen hidden" id="game">
+        <div class="stats">
+          <span><b id="wordNumber">1</b> / 20</span>
+          <span id="timer">00:00</span>
+          <span aria-label="Bonnes réponses">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2.5L14.9 8.6L21.5 9.4L16.6 13.9L17.9 20.5L12 17.2L6.1 20.5L7.4 13.9L2.5 9.4L9.1 8.6Z"
+              />
+            </svg>
+            <b id="goodCount">0</b>
+          </span>
+        </div>
+        <div class="track" id="track"></div>
+        <div class="panel stage" id="stage">
+          <div class="burst" id="burst" aria-hidden="true"></div>
+          <div class="slot" id="slot"></div>
+          <div class="picture"><img id="picture" alt="" /></div>
+          <button class="listen" id="listen" aria-label="Écouter le mot">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3.5 9H7.5L12.5 5V19L7.5 15H3.5Z" fill="currentColor" />
+              <path
+                d="M16 8.5A5 5 0 0 1 16 15.5M18.5 6A8.5 8.5 0 0 1 18.5 18"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="choices" id="choices">
+          <button
+            class="bubble choice ou"
+            data-sound="ou"
+            aria-label="ou"
+          ></button>
+          <button
+            class="bubble choice on"
+            data-sound="on"
+            aria-label="on"
+          ></button>
+        </div>
+      </section>
+
+      <!-- ===== Fin de partie ===== -->
+      <section class="screen hidden" id="end">
+        <div class="panel end">
+          <div class="score" id="score"></div>
+          <ol class="strip" id="strip"></ol>
+          <button class="big-btn" id="replayBtn">Rejouer</button>
+        </div>
+      </section>
+
+      <div class="panel ledger" id="ledger">
+        <h3>Meilleurs scores</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Score</th>
+              <th>Temps</th>
+            </tr>
+          </thead>
+          <tbody id="scoreboardBody"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script src="confetti.js"></script>
+    <script src="voix.js"></script>
+    <script src="images.js"></script>
+    <script>
+      const words = [
+        // OU words
+        { word: "ours", answer: "ou" },
+        { word: "poule", answer: "ou" },
+        { word: "loup", answer: "ou" },
+        { word: "souris", answer: "ou" },
+        { word: "chou", answer: "ou" },
+        { word: "hibou", answer: "ou" },
+        { word: "fourmi", answer: "ou" },
+        { word: "bouche", answer: "ou" },
+        { word: "poubelle", answer: "ou" },
+        { word: "couteau", answer: "ou" },
+        { word: "bougie", answer: "ou" },
+        { word: "boussole", answer: "ou" },
+        { word: "couronne", answer: "ou" },
+        { word: "loupe", answer: "ou" },
+        { word: "mouche", answer: "ou" },
+        { word: "poussin", answer: "ou" },
+        { word: "roue", answer: "ou" },
+        { word: "clou", answer: "ou" },
+        { word: "genou", answer: "ou" },
+        { word: "toupie", answer: "ou" },
+        { word: "nounours", answer: "ou" },
+        { word: "citrouille", answer: "ou" },
+        { word: "douche", answer: "ou" },
+        { word: "poupée", answer: "ou" },
+        { word: "bouée", answer: "ou" },
+        { word: "mouette", answer: "ou" },
+
+        // ON words
+        { word: "bonbon", answer: "on" },
+        { word: "lion", answer: "on" },
+        { word: "maison", answer: "on" },
+        { word: "avion", answer: "on" },
+        { word: "ballon", answer: "on" },
+        { word: "cochon", answer: "on" },
+        { word: "poisson", answer: "on" },
+        { word: "citron", answer: "on" },
+        { word: "dragon", answer: "on" },
+        { word: "champignon", answer: "on" },
+        { word: "montre", answer: "on" },
+        { word: "pont", answer: "on" },
+        { word: "melon", answer: "on" },
+        { word: "papillon", answer: "on" },
+        { word: "hérisson", answer: "on" },
+        { word: "crayon", answer: "on" },
+        { word: "camion", answer: "on" },
+        { word: "savon", answer: "on" },
+        { word: "violon", answer: "on" },
+        { word: "chaton", answer: "on" },
+        { word: "biberon", answer: "on" },
+        { word: "cornichon", answer: "on" },
+        { word: "glaçon", answer: "on" },
+        { word: "flocon", answer: "on" },
+      ]
+
+      const NUMBER_OF_WORDS = 20
+      const SOUND_KEY = "ou-ou-on-sound"
+      const SCORES_KEY = "scores-ou-on"
+
+      let currentIndex = 0
+      // Une réponse par mot joué : { word, answer, choice }.
+      let results = []
+      let busy = false
+      let startTime
+      let timerInterval
+
+      const $ = (id) => document.getElementById(id)
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+      const countRight = () =>
+        results.filter((r) => r.choice === r.answer).length
+      const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+      const reducedMotion = () => motionQuery.matches
+
+      Voice.folder = "audio/ou-ou-on/"
+      // Toutes les images d'avance : le jeu marche ensuite hors-ligne.
+      WordImage.preload(words.map((w) => w.word))
+
+      function showScreen(id) {
+        for (const screen of ["welcome", "game", "end"]) {
+          $(screen).classList.toggle("hidden", screen !== id)
+        }
+        $("ledger").classList.toggle("hidden", id === "game")
+      }
+
+      // ===== Les formes des bulles =====
+      // Dans un cadre de 220 × 170, la queue en bas vers l'image. « ou » est
+      // un ovale lisse, « on » un nuage festonné : on les distingue aussi
+      // par la forme, pas seulement par la couleur.
+
+      const TAIL = "M82 118 L96 166 L132 120 Z"
+      const OVAL =
+        "M110 8 C168 8 206 38 206 74 C206 110 168 138 110 138 C52 138 14 110 14 74 C14 38 52 8 110 8 Z"
+
+      function cloudPath() {
+        const [cx, cy, rx, ry, n] = [110, 73, 84, 50, 11]
+        const points = Array.from({ length: n + 1 }, (_, i) => {
+          const a = -Math.PI / 2 + (i / n) * Math.PI * 2
+          return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)]
+        })
+        return (
+          `M${points[0].map((v) => v.toFixed(1)).join(" ")}` +
+          points
+            .slice(1)
+            .map(([x, y], i) => {
+              const [px, py] = points[i]
+              const r = (Math.hypot(x - px, y - py) * 0.62).toFixed(1)
+              return ` A${r} ${r} 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}`
+            })
+            .join("") +
+          " Z"
+        )
+      }
+
+      const SHAPES = { ou: OVAL, on: cloudPath() }
+
+      // Une bulle : le contour d'encre dessous, la gelée par-dessus, un
+      // reflet ; le texte vient dans `.say`.
+      function bubbleSVG(sound) {
+        const body = `<path d="${SHAPES[sound]}" /><path d="${TAIL}" />`
+        return `<svg viewBox="0 0 220 170" aria-hidden="true">
+          <g class="ink">${body}</g>
+          <g fill="url(#jelly-${sound})">${body}</g>
+          <ellipse class="shine" cx="62" cy="38" rx="22" ry="10" transform="rotate(-24 62 38)" />
+        </svg>`
+      }
+
+      // La bulle qui parle, dans la case.
+      function speechBubble(sound) {
+        const bubble = document.createElement("div")
+        bubble.className = "bubble answer"
+        bubble.dataset.sound = sound
+        fillBubble(bubble, sound)
+        return bubble
+      }
+
+      function fillBubble(el, sound) {
+        el.classList.remove("ou", "on")
+        el.classList.add(sound)
+        el.innerHTML = bubbleSVG(sound) + `<span class="say">${sound}</span>`
+      }
+
+      // Le mot lettre à lettre, le son regroupé dans un seul morceau
+      // (« b|on|b|on »).
+      function wordHTML(word, sound) {
+        return word
+          .split(new RegExp(`(${sound})`))
+          .filter(Boolean)
+          .flatMap((part) =>
+            part === sound
+              ? [`<span class="snd">${part}</span>`]
+              : [...part].map((c) => `<span>${c}</span>`),
+          )
+          .join("")
+      }
+
+      // Les mots longs rapetissent pour tenir dans la bulle.
+      const fit = (word) => Math.min(1, 6.5 / word.length).toFixed(2)
+
+      // ===== Les petits sons =====
+
+      let soundOn = true
+      try {
+        soundOn = localStorage.getItem(SOUND_KEY) !== "off"
+      } catch (e) {
+        // navigation privée : le son reste allumé
+      }
+
+      // Une note : sa fréquence, son départ, sa durée, et un glissé
+      // éventuel ; `wobble` lui donne un vibrato, comme une voix qui chante.
+      function tone(
+        freq,
+        at,
+        length,
+        { type = "sine", to, wobble, gain = 0.1 } = {},
+      ) {
+        if (!soundOn) return
+        const ctx = Voice.wake((at + length) * 1000 + 300)
+        if (!ctx) return
+        const t = ctx.currentTime + at
+        const osc = ctx.createOscillator()
+        const amp = ctx.createGain()
+        osc.type = type
+        osc.frequency.setValueAtTime(freq, t)
+        if (to) osc.frequency.exponentialRampToValueAtTime(to, t + length)
+        if (wobble) {
+          const lfo = ctx.createOscillator()
+          const depth = ctx.createGain()
+          lfo.frequency.value = 6
+          depth.gain.value = freq * 0.02
+          lfo.connect(depth)
+          depth.connect(osc.frequency)
+          lfo.start(t)
+          lfo.stop(t + length)
+        }
+        amp.gain.setValueAtTime(0, t)
+        amp.gain.linearRampToValueAtTime(gain, t + 0.02)
+        amp.gain.exponentialRampToValueAtTime(0.001, t + length)
+        osc.connect(amp)
+        amp.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + length + 0.05)
+      }
+
+      const sfx = {
+        // La bulle part : un « bloup » qui monte.
+        blop: () => tone(320, 0, 0.16, { to: 720, gain: 0.12 }),
+        // Le mot chante : trois notes avec vibrato, plus graves pour « ou ».
+        sing: (sound) => {
+          const base = sound === "ou" ? 392 : 523
+          ;[1, 1.25, 1.5].forEach((k, i) =>
+            tone(base * k, i * 0.13, 0.42, { type: "triangle", wobble: true }),
+          )
+        },
+        // Mauvaise bulle : elle tremble, puis éclate.
+        wrong: () =>
+          tone(330, 0, 0.3, { type: "triangle", to: 160, gain: 0.12 }),
+        pop: () => tone(900, 0, 0.07, { type: "square", to: 200, gain: 0.05 }),
+        // La bonne bulle se gonfle.
+        inflate: () => tone(220, 0, 0.35, { to: 660, gain: 0.08 }),
+      }
+
+      function renderSoundToggle() {
+        $("soundToggle").textContent =
+          "Petits sons : " + (soundOn ? "oui" : "non")
+        $("soundToggle").setAttribute("aria-pressed", soundOn)
+      }
+
+      function toggleSound() {
+        soundOn = !soundOn
+        try {
+          localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off")
+        } catch (e) {
+          // navigation privée : le réglage ne sera pas gardé
+        }
+        renderSoundToggle()
+        sfx.blop()
+      }
+
+      // ===== Les effets =====
+
+      const center = (el) => {
+        const r = el.getBoundingClientRect()
+        return [r.left + r.width / 2, r.top + r.height / 2]
+      }
+
+      // Un élément qui vole au-dessus de la page, retiré à la fin de son
+      // animation.
+      function fly(el, keyframes, options) {
+        el.classList.add("fx")
+        document.body.appendChild(el)
+        return el
+          .animate(keyframes, { fill: "both", ...options })
+          .finished.then(() => el.remove())
+      }
+
+      // La bulle choisie quitte sa place et vole jusqu'à la case, en arc.
+      function flight(choice, slot) {
+        if (reducedMotion()) {
+          choice.classList.add("flown")
+          return Promise.resolve()
+        }
+        const from = choice.getBoundingClientRect()
+        const to = slot.getBoundingClientRect()
+        const fontSize = getComputedStyle(choice.querySelector(".say")).fontSize
+        const ghost = choice.cloneNode(true)
+        ghost.classList.remove("gone")
+        ghost.style.animation = "none"
+        ghost.querySelector(".say").style.fontSize = fontSize
+        choice.classList.add("flown")
+        ghost.style.width = from.width + "px"
+        ghost.style.height = from.height + "px"
+        const s = to.width / from.width
+        const at = (x, y, sx, sy) => ({
+          transform: `translate(${x}px, ${y}px) scale(${sx}, ${sy})`,
+        })
+        const dx = to.left + (to.width - from.width) / 2
+        const dy = to.top + (to.height - from.height) / 2
+        return fly(
+          ghost,
+          [
+            at(from.left, from.top, 0.9, 1.08),
+            at(
+              (from.left + dx) / 2,
+              (from.top + dy) / 2 - 40,
+              (1 + s) / 2 + 0.08,
+              (1 + s) / 2 - 0.06,
+            ),
+            at(dx, dy, s, s),
+          ],
+          { duration: 460, easing: "cubic-bezier(.5,0,.3,1)" },
+        )
+      }
+
+      // Une gelée qui se pose : écrasée, étirée, puis tranquille.
+      function settle(el) {
+        if (reducedMotion()) return Promise.resolve()
+        return el.animate(
+          [
+            { transform: "scale(1.12, 0.86)" },
+            { transform: "scale(0.94, 1.07)" },
+            { transform: "scale(1.03, 0.98)" },
+            { transform: "none" },
+          ],
+          { duration: 420, easing: "ease-out" },
+        ).finished
+      }
+
+      // Le son se pose au milieu de la bulle, puis les autres lettres
+      // arrivent autour de lui pour former le mot.
+      async function formWord(bubble, word, sound) {
+        const say = bubble.querySelector(".say")
+        say.style.setProperty("--fit", fit(word))
+        say.innerHTML = wordHTML(word, sound)
+        if (reducedMotion()) return
+        const spans = [...say.children]
+        const first = say.querySelector(".snd")
+        const [sx] = center(say)
+        const [fx] = center(first)
+        const animations = spans.map((span, i) => {
+          if (span === first) {
+            return span.animate(
+              [
+                { transform: `translateX(${sx - fx}px) scale(1.5)` },
+                { transform: "none" },
+              ],
+              { duration: 380, easing: "cubic-bezier(.3,1.4,.5,1)" },
+            )
+          }
+          return span.animate(
+            [
+              { transform: "scale(0)", opacity: 0 },
+              { transform: "scale(1.2)", opacity: 1, offset: 0.7 },
+              { transform: "none", opacity: 1 },
+            ],
+            {
+              duration: 340,
+              delay: 120 + i * 40,
+              easing: "ease-out",
+              fill: "backwards",
+            },
+          )
+        })
+        await Promise.all(animations.map((a) => a.finished))
+      }
+
+      // Le mot chante : ses lettres dansent en vague, le son gonfle, la
+      // bulle résonne en ondes, des notes s'envolent, des rayons tournent
+      // derrière l'image, et Marie dit le mot.
+      async function sing(bubble, word, sound) {
+        sfx.sing(sound)
+        const voice = Voice.say(word)
+        if (!reducedMotion()) {
+          ;[...bubble.querySelectorAll(".say > span")].forEach((span, i) => {
+            const big = span.classList.contains("snd")
+            span.animate(
+              [
+                { transform: "none" },
+                {
+                  transform: `translateY(-14px) scale(${big ? 1.3 : 1.08})`,
+                  offset: 0.4,
+                },
+                { transform: "none" },
+              ],
+              { duration: 520, delay: i * 70, easing: "ease-in-out" },
+            )
+          })
+          for (let i = 0; i < 3; i++) {
+            bubble.insertAdjacentHTML(
+              "beforeend",
+              `<svg class="ring" viewBox="0 0 220 170"><path d="${SHAPES[sound]}" /></svg>`,
+            )
+            const ring = bubble.lastElementChild
+            ring
+              .animate(
+                [
+                  { transform: "none", opacity: 0.8 },
+                  { transform: "scale(1.3)", opacity: 0 },
+                ],
+                {
+                  duration: 800,
+                  delay: i * 220,
+                  easing: "ease-out",
+                  fill: "backwards",
+                },
+              )
+              .finished.then(() => ring.remove())
+          }
+          notes(bubble, sound)
+          $("burst").className = "burst " + sound
+          $("burst").animate(
+            [
+              { transform: "scale(0.6) rotate(0deg)", opacity: 0 },
+              {
+                transform: "scale(1) rotate(20deg)",
+                opacity: 0.22,
+                offset: 0.25,
+              },
+              { transform: "scale(1.05) rotate(60deg)", opacity: 0 },
+            ],
+            { duration: 1800, easing: "ease-out" },
+          )
+          $("picture").animate(
+            [
+              { transform: "none" },
+              { transform: "translateY(-8px) scale(1.06, 0.96)" },
+              { transform: "none" },
+              { transform: "translateY(-5px) scale(1.03, 0.98)" },
+              { transform: "none" },
+            ],
+            { duration: 700, easing: "ease-in-out" },
+          )
+        }
+        await Promise.all([voice, wait(900)])
+      }
+
+      // Des croches qui s'envolent de la bulle.
+      function notes(bubble, sound) {
+        if (reducedMotion()) return
+        const r = bubble.getBoundingClientRect()
+        for (let i = 0; i < 5; i++) {
+          const note = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+          )
+          note.setAttribute("viewBox", "0 0 24 24")
+          note.setAttribute("class", "note " + sound)
+          note.innerHTML =
+            i % 2
+              ? `<path d="M7 20.5a3.6 2.8-20 1 1 0-.1ZM9.9 18.6V5l9-2v13M18.9 16.6a3.6 2.8-20 1 1 0-.1Z" />`
+              : `<path d="M8 20.5a3.6 2.8-20 1 1 0-.1ZM11 18.6V3.5c2 2 6 3 5 8" stroke-linecap="round" />`
+          const x0 = r.left + r.width * (0.15 + 0.7 * (i / 4))
+          const y0 = r.top + r.height * 0.3
+          const drift = (Math.random() - 0.5) * 50
+          fly(
+            note,
+            [
+              {
+                transform: `translate(${x0}px, ${y0}px) scale(0.4) rotate(0deg)`,
+                opacity: 0,
+              },
+              {
+                transform: `translate(${x0 + drift / 2}px, ${y0 - 40}px) scale(1) rotate(-10deg)`,
+                opacity: 1,
+                offset: 0.3,
+              },
+              {
+                transform: `translate(${x0 + drift}px, ${y0 - 110}px) scale(0.8) rotate(12deg)`,
+                opacity: 0,
+              },
+            ],
+            { duration: 1100, delay: 100 + i * 90, easing: "ease-out" },
+          )
+        }
+      }
+
+      // La mauvaise bulle secoue la tête, puis éclate en gouttes.
+      async function popBubble(bubble) {
+        sfx.wrong()
+        if (reducedMotion()) {
+          sfx.pop()
+          return
+        }
+        await bubble.animate(
+          [
+            { transform: "none" },
+            { transform: "translateX(-12px) rotate(-5deg)" },
+            { transform: "translateX(11px) rotate(4deg)" },
+            { transform: "translateX(-8px) rotate(-3deg)" },
+            { transform: "translateX(5px) rotate(2deg)" },
+            { transform: "none" },
+          ],
+          { duration: 520, easing: "ease-in-out" },
+        ).finished
+        await wait(120)
+        sfx.pop()
+        const [cx, cy] = center(bubble)
+        const r = bubble.getBoundingClientRect()
+        for (let i = 0; i < 14; i++) {
+          const drop = document.createElement("span")
+          drop.className = "drop " + bubble.dataset.sound
+          const a = ((i + Math.random() * 0.6) / 14) * Math.PI * 2
+          const x0 = cx + Math.cos(a) * r.width * 0.42 - 8
+          const y0 = cy - 14 + Math.sin(a) * r.height * 0.36 - 8
+          const d = 25 + Math.random() * 55
+          fly(
+            drop,
+            [
+              { transform: `translate(${x0}px, ${y0}px) scale(1)`, opacity: 1 },
+              {
+                transform: `translate(${x0 + Math.cos(a) * d}px, ${y0 + Math.sin(a) * d + 30}px) scale(0.3)`,
+                opacity: 0,
+              },
+            ],
+            { duration: 520 + Math.random() * 200, easing: "ease-out" },
+          )
+        }
+        await bubble.animate(
+          [
+            { transform: "scale(1)", opacity: 1 },
+            { transform: "scale(1.18)", opacity: 0 },
+          ],
+          { duration: 140, easing: "ease-out" },
+        ).finished
+        bubble.remove()
+      }
+
+      // La bonne bulle se gonfle à la place, avec un rebond.
+      function inflate(bubble) {
+        $("slot").replaceChildren(bubble)
+        sfx.inflate()
+        if (reducedMotion()) return Promise.resolve()
+        return bubble.animate(
+          [
+            { transform: "scale(0.15)", opacity: 0 },
+            { transform: "scale(1.12, 1.05)", opacity: 1, offset: 0.6 },
+            { transform: "scale(0.96, 1.02)", offset: 0.8 },
+            { transform: "none", opacity: 1 },
+          ],
+          { duration: 560, easing: "ease-out" },
+        ).finished
+      }
+
+      // Pendant ce temps, la bonne bulle d'en bas se signale.
+      function nudge(choice) {
+        if (reducedMotion()) return
+        choice.animate(
+          [
+            { transform: "none" },
+            { transform: "scale(1.12)" },
+            { transform: "none" },
+            { transform: "scale(1.08)" },
+            { transform: "none" },
+          ],
+          { duration: 900, easing: "ease-in-out" },
+        )
+      }
+
+      // ===== Chrono et scores =====
+
+      function formatTime(ms) {
+        const minutes = Math.floor(ms / 60000)
+        const seconds = Math.floor((ms % 60000) / 1000)
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+      }
+
+      function updateTime() {
+        $("timer").textContent = formatTime(Date.now() - startTime)
+      }
+
+      function startTimer() {
+        startTime = Date.now()
+        clearInterval(timerInterval)
+        timerInterval = setInterval(updateTime, 1000)
+        updateTime()
+      }
+
+      function readScores() {
+        try {
+          return JSON.parse(localStorage.getItem(SCORES_KEY) || "[]")
+        } catch (e) {
+          return []
+        }
+      }
+
+      function saveScore(score, time) {
+        const scores = readScores()
+        // Identifiant unique pour retrouver la partie qu'on vient de jouer
+        // dans le tableau et la mettre en évidence.
+        const id = Date.now()
+        scores.push({
+          id,
+          date: new Date().toLocaleDateString("fr-FR"),
+          score,
+          time,
+        })
+        scores.sort((a, b) => b.score - a.score || a.time.localeCompare(b.time))
+        scores.splice(10)
+        try {
+          localStorage.setItem(SCORES_KEY, JSON.stringify(scores))
+        } catch (e) {
+          // navigation privée : le score ne sera pas gardé
+        }
+        updateScoreboard(id)
+      }
+
+      function updateScoreboard(highlightId) {
+        const scores = readScores()
+        $("scoreboardBody").innerHTML = scores.length
+          ? scores
+              .map((s) => {
+                const isCurrent = highlightId && s.id === highlightId
+                return `<tr class="${isCurrent ? "current" : ""}">
+                  <td>${isCurrent ? "→ " : ""}${s.date}</td>
+                  <td>${s.score} / ${NUMBER_OF_WORDS}</td>
+                  <td>${s.time}</td>
+                </tr>`
+              })
+              .join("")
+          : `<tr><td class="empty" colspan="3">Pas encore de partie.</td></tr>`
+      }
+
+      // ===== Partie =====
+
+      function shuffleWords() {
+        for (let i = words.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[words[i], words[j]] = [words[j], words[i]]
+        }
+      }
+
+      function waitingBubble() {
+        $("slot").innerHTML = `<div class="bubble waiting">
+          <svg viewBox="0 0 220 170" aria-hidden="true"><path d="${OVAL}" /></svg>
+          <span class="typing"><i></i><i></i><i></i></span>
+        </div>`
+      }
+
+      function displayWord() {
+        const { word } = words[currentIndex]
+        $("wordNumber").textContent = currentIndex + 1
+        $("picture").src = WordImage.src(word)
+        $("goodCount").textContent = countRight()
+        $("track").children[currentIndex].className = "now"
+        waitingBubble()
+        // Les bulles changent de côté d'un mot à l'autre : on écoute le son,
+        // pas la place.
+        $("choices").style.flexDirection =
+          Math.random() < 0.5 ? "row" : "row-reverse"
+        for (const choice of $("choices").children) {
+          choice.classList.remove("gone", "flown")
+        }
+        Voice.load(word)
+      }
+
+      async function checkAnswer(choice) {
+        if (busy) return
+        busy = true
+        const { word, answer } = words[currentIndex]
+        const sound = choice.dataset.sound
+        const isCorrect = sound === answer
+        results.push({ word, answer, choice: sound })
+        // Le toucher débloque le son, qui reste éveillé jusqu'à ce que la
+        // voix ait dit le mot.
+        Voice.wake(7000)
+        // La partie est engagée dès la première réponse.
+        if (window.ExitGuard) ExitGuard.setActive(true)
+
+        const other = [...$("choices").children].find((c) => c !== choice)
+        other.classList.add("gone")
+        sfx.blop()
+        await flight(choice, $("slot"))
+
+        let answerBubble = speechBubble(sound)
+        $("slot").replaceChildren(answerBubble)
+        await settle(answerBubble)
+
+        if (isCorrect) {
+          await formWord(answerBubble, word, sound)
+        } else {
+          await popBubble(answerBubble)
+          answerBubble = speechBubble(answer)
+          other.classList.remove("gone")
+          nudge(other)
+          await inflate(answerBubble)
+          await formWord(answerBubble, word, answer)
+        }
+        $("track").children[currentIndex].className =
+          `${isCorrect ? "ok" : "ko"} ${answer}`
+        $("goodCount").textContent = countRight()
+        await sing(answerBubble, word, answer)
+        await wait(isCorrect ? 250 : 600)
+
+        busy = false
+        currentIndex++
+        if (currentIndex >= NUMBER_OF_WORDS) showGameEnd()
+        else displayWord()
+      }
+
+      function startGame() {
+        currentIndex = 0
+        results = []
+        busy = false
+        $("track").innerHTML = "<span></span>".repeat(NUMBER_OF_WORDS)
+        // Une nouvelle partie n'est engagée qu'à la première réponse.
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        showScreen("game")
+        shuffleWords()
+        displayWord()
+        startTimer()
+      }
+
+      // ===== Fin de partie =====
+
+      function showGameEnd() {
+        const finalTime = $("timer").textContent
+        const score = countRight()
+        clearInterval(timerInterval)
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        saveScore(score, finalTime)
+
+        const verdict =
+          score === NUMBER_OF_WORDS
+            ? "Parfait !"
+            : score >= NUMBER_OF_WORDS - 3
+              ? "Bravo !"
+              : score >= NUMBER_OF_WORDS / 2
+                ? "Bien joué"
+                : "Continue !"
+        $("score").innerHTML =
+          `${score} / ${NUMBER_OF_WORDS}<small>${verdict} · en ${finalTime}</small>`
+        // La planche : chaque mot dans la bulle de son son ; une erreur
+        // reste pâle.
+        $("strip").innerHTML = results
+          .map(
+            ({ word, answer, choice }) =>
+              `<li class="${choice === answer ? "" : "missed"}"><span class="bubble ${answer}">${bubbleSVG(answer)}<span class="say" style="--fit: ${fit(word)}">${wordHTML(word, answer)}</span></span></li>`,
+          )
+          .join("")
+        showScreen("end")
+        window.scrollTo(0, 0)
+        if (score === NUMBER_OF_WORDS) showConfetti()
+      }
+
+      // ===== Départ =====
+
+      for (const choice of $("choices").children) {
+        fillBubble(choice, choice.dataset.sound)
+        choice.addEventListener("click", () => checkAnswer(choice))
+      }
+
+      // Sur l'accueil, chaque bulle chante sa petite mélodie quand on la
+      // touche.
+      for (const bubble of document.querySelectorAll(".title .bubble")) {
+        const sound = bubble.dataset.sound
+        fillBubble(bubble, sound)
+        bubble.addEventListener("click", () => {
+          sfx.sing(sound)
+          settle(bubble)
+          notes(bubble, sound)
+        })
+      }
+
+      $("listen").addEventListener("click", () =>
+        Voice.say(words[currentIndex].word),
+      )
+      $("soundToggle").addEventListener("click", toggleSound)
+      for (const id of ["startBtn", "replayBtn"]) {
+        $(id).addEventListener("click", () => {
+          Voice.wake(300)
+          startGame()
+        })
+      }
+
+      renderSoundToggle()
+      updateScoreboard()
+      // Écran d'accueil : aucune partie en cours.
+      if (window.ExitGuard) ExitGuard.setActive(false)
+    </script>
+  </body>
+</html>
