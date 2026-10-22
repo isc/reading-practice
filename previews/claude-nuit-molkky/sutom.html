@@ -1,767 +1,1804 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f0f2f5" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#100e2c" />
     <title>Sutom</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      /* Pixel art 8 bits : chaque lettre est dessinée point par point dans
+         une grille de 5 × 7, les cases sont des blocs biseautés aux coins
+         crantés, et tout bouge par à-coups, comme sur une vieille console. */
+      @font-face {
+        font-family: "Pixelify Sans";
+        src: url("PixelifySans-Variable.woff2") format("woff2");
+        font-weight: 400 700;
+        font-display: swap;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 20px;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+      :root {
+        --night: #100e2c;
+        --board: #1c1a48;
+        --tile: #2b2965;
+        --tile-hi: #3d3b88;
+        --tile-lo: #17153c;
+        --row: #34327a;
+        --red: #ff004d;
+        --red-hi: #ff7096;
+        --red-lo: #a3003a;
+        --yellow: #ffec27;
+        --orange: #ffa300;
+        --white: #fff1e8;
+        --lavender: #9d93c4;
+        --blue: #29adff;
+        --blue-hi: #8fd6ff;
+        --blue-lo: #1a68b0;
+        --green: #00c853;
+        --green-hi: #6dff9e;
+        --green-lo: #00703a;
+        --key: #4b4a8f;
+        --key-hi: #6d6cb8;
+        --key-lo: #2b2a63;
+        --absent: #19173f;
+        --absent-ink: #514f8a;
+        --gap: 5px;
+        --dock: 180px;
+      }
 
-        .container {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            max-width: 480px;
-            width: 100%;
-        }
+      [hidden] {
+        display: none !important;
+      }
 
-        h1 {
-            text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 5px;
-            font-size: 1.6em;
-            font-weight: 700;
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 0.85em;
-        }
+      html {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
 
-        .grid-wrapper {
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 8px;
-            margin-bottom: 15px;
-        }
+      body {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--night);
+        color: var(--white);
+        font-family: "Pixelify Sans", Arial, sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-        .grid {
-            display: grid;
-            grid-template-rows: repeat(6, minmax(0, 1fr));
-            gap: 4px;
-        }
+      button {
+        font: inherit;
+        color: inherit;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-        .row {
-            display: grid;
-            gap: 4px;
-        }
+      /* Un dessin en pixels mesure --px par point. */
+      .art {
+        width: calc(var(--w) * var(--px));
+        height: calc(var(--h) * var(--px));
+      }
 
-        .cell {
-            aspect-ratio: 1 / 1;
-            background: #2a2a2a;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4em;
-            font-weight: 700;
-            text-transform: uppercase;
-            border-radius: 4px;
-            position: relative;
-        }
+      svg {
+        display: block;
+        fill: currentColor;
+        shape-rendering: crispEdges;
+      }
 
-        .cell.correct {
-            background: #dc2626;
-        }
+      /* Un bloc en relief : lumière en haut à gauche, ombre en bas à droite,
+         d'une épaisseur --b. Chaque sorte de bloc ne règle que ses couleurs. */
+      .bevel {
+        background: var(--bg);
+        box-shadow:
+          inset var(--b) var(--b) 0 var(--hi),
+          inset calc(-1 * var(--b)) calc(-1 * var(--b)) 0 var(--lo);
+      }
 
-        .cell.present {
-            background: #2a2a2a;
-            color: #fbbf24;
-        }
+      /* Les coins crantés d'un bloc, d'un point de --u de côté. */
+      .notch {
+        clip-path: polygon(
+          var(--u) 0,
+          calc(100% - var(--u)) 0,
+          calc(100% - var(--u)) var(--u),
+          100% var(--u),
+          100% calc(100% - var(--u)),
+          calc(100% - var(--u)) calc(100% - var(--u)),
+          calc(100% - var(--u)) 100%,
+          var(--u) 100%,
+          var(--u) calc(100% - var(--u)),
+          0 calc(100% - var(--u)),
+          0 var(--u),
+          var(--u) var(--u)
+        );
+      }
 
-        .cell.present::after {
-            content: '';
-            position: absolute;
-            inset: 12%;
-            border-radius: 50%;
-            border: 2px solid #fbbf24;
-            pointer-events: none;
-        }
+      /* ===== Le ciel : quelques étoiles qui clignotent ===== */
+      .sky {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
 
-        .cell.absent {
-            background: #4b5563;
-            color: #d1d5db;
-        }
+      .star {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: var(--lavender);
+        opacity: 0.5;
+      }
 
-        .cell.revealed {
-            background: #dc2626;
-        }
+      .star.twinkle {
+        animation: twinkle 2.4s steps(1) infinite;
+      }
 
-        .cell.flip {
-            animation: flip 0.5s ease;
+      @keyframes twinkle {
+        0%,
+        100% {
+          opacity: 0.6;
         }
+        50% {
+          opacity: 0.1;
+        }
+      }
 
-        .cell.shake {
-            animation: shake 0.4s ease;
-        }
+      /* ===== Mise en page ===== */
+      .app {
+        position: relative;
+        flex: 1;
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto;
+        padding: max(10px, env(safe-area-inset-top)) 12px
+          max(12px, env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
 
-        @keyframes flip {
-            0% { transform: rotateX(0); }
-            50% { transform: rotateX(90deg); }
-            100% { transform: rotateX(0); }
-        }
+      /* Le plateau occupe le milieu, le clavier reste en bas, sous le pouce. */
+      .stage {
+        flex: 1;
+        display: grid;
+        place-items: center;
+      }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            50% { transform: translateX(6px); }
-            75% { transform: translateX(-4px); }
-        }
+      .topbar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+      }
 
-        .keyboard {
-            margin-bottom: 15px;
-        }
+      .topbar .help {
+        justify-self: start;
+      }
 
-        .keyboard-row {
-            display: flex;
-            justify-content: center;
-            gap: 4px;
-            margin-bottom: 4px;
-        }
+      .topbar .sound {
+        justify-self: end;
+      }
 
-        .key {
-            flex: 1 1 0;
-            min-width: 0;
-            max-width: 36px;
-            height: 44px;
-            border: none;
-            border-radius: 5px;
-            background: #e2e8f0;
-            color: #1a1a1a;
-            font-weight: 600;
-            font-size: 0.95em;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: background 0.15s ease;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
+      .icon-btn {
+        --u: 3px;
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        --px: 3px;
+      }
 
-        .key.wide {
-            flex: 1.6 1 0;
-            max-width: 60px;
-            font-size: 0.75em;
-        }
+      .icon-btn,
+      .key {
+        --b: 3px;
+        --bg: var(--key);
+        --hi: var(--key-hi);
+        --lo: var(--key-lo);
+        color: var(--white);
+      }
 
-        .key:hover:not(:disabled) {
-            background: #cbd5e1;
-        }
+      .icon-btn:active,
+      .key:active,
+      .key.pressed,
+      .btn:active {
+        transform: translateY(2px);
+      }
 
-        .key.correct {
-            background: #dc2626;
-            color: white;
-        }
+      .sound.off {
+        color: var(--absent-ink);
+      }
 
-        .key.present {
-            background: #fbbf24;
-            color: #1a1a1a;
-        }
+      .logo {
+        display: flex;
+        gap: 3px;
+      }
 
-        .key.absent {
-            background: #4b5563;
-            color: #9ca3af;
-        }
+      .logo .cell {
+        --cell: 30px;
+        animation: hop 5s steps(1) infinite;
+      }
 
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
+      @keyframes hop {
+        0%,
+        5%,
+        100% {
+          transform: translateY(0);
         }
+        2.5% {
+          transform: translateY(-5px);
+        }
+      }
 
-        .btn-new {
-            background: #1a1a1a;
-            color: white;
-        }
+      /* ===== Compteurs ===== */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+      }
 
-        .btn-new:hover {
-            background: #333;
-        }
+      .stat {
+        --u: 3px;
+        display: grid;
+        grid-template-columns: auto auto;
+        justify-content: center;
+        align-items: center;
+        column-gap: 6px;
+        padding: 6px 2px 5px;
+        background: var(--board);
+      }
 
-        .message {
-            text-align: center;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-weight: 600;
-            animation: slideIn 0.5s ease;
-        }
+      .stat {
+        --px: 2px;
+      }
 
-        .message.win {
-            background: #c6f6d5;
-            color: #22543d;
-        }
+      .stat .value {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1;
+        min-width: 1ch;
+      }
 
-        .message.lose {
-            background: #fed7d7;
-            color: #742a2a;
-        }
+      .stat .label {
+        grid-column: 1 / -1;
+        text-align: center;
+        font-size: 11px;
+        color: var(--lavender);
+        margin-top: 3px;
+      }
 
-        .message.info {
-            background: #fef3c7;
-            color: #78350f;
-        }
+      .stat.up {
+        animation: stat-up 0.45s steps(3);
+      }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+      @keyframes stat-up {
+        0% {
+          transform: translateY(-6px);
         }
+        100% {
+          transform: translateY(0);
+        }
+      }
 
-        .scoreboard {
-            margin-top: 20px;
-        }
+      .icon-star {
+        color: var(--yellow);
+      }
+      .icon-ghost {
+        color: var(--lavender);
+      }
+      .icon-flame {
+        color: var(--orange);
+      }
+      .icon-crown {
+        color: var(--blue);
+      }
 
-        .scoreboard h3 {
-            color: #1a1a1a;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
+      /* ===== Le plateau ===== */
+      .board {
+        --n: 7;
+        --cell: min(
+          calc(
+            (min(100vw, 480px) - 46px - (var(--n) - 1) * var(--gap)) / var(--n)
+          ),
+          calc((var(--vh) - 360px - 5 * var(--gap)) / 6),
+          60px
+        );
+        position: relative;
+        padding: 8px;
+        background: var(--board);
+        box-shadow:
+          0 0 0 3px var(--tile-hi),
+          6px 6px 0 3px #07061a;
+        margin: 3px 0 6px;
+      }
 
-        .score-row {
-            display: flex;
-            justify-content: space-around;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
+      .grid {
+        display: grid;
+        gap: var(--gap);
+      }
 
-        .score-cell {
-            text-align: center;
-        }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(var(--n), var(--cell));
+        gap: var(--gap);
+      }
 
-        .score-cell .label {
-            font-size: 0.8em;
-            color: #999;
-            margin-bottom: 4px;
-        }
+      .cell {
+        --u: calc(var(--cell) / 13);
+        position: relative;
+        width: var(--cell);
+        height: var(--cell);
+        color: var(--white);
+        /* Une case vide est un creux : ombre en haut, lumière en bas. */
+        --b: var(--u);
+        --bg: var(--tile);
+        --hi: var(--tile-lo);
+        --lo: var(--tile-hi);
+      }
 
-        .score-cell .value {
-            font-size: 1.4em;
-            font-weight: 700;
-            color: #1a1a1a;
-        }
+      .cell svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
 
-        .rules {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 0.85em;
-            color: #666;
-        }
+      .cell .ring {
+        fill: var(--yellow);
+        opacity: 0;
+      }
 
-        .rules h3 {
-            color: #1a1a1a;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
+      .row.current {
+        --tile: var(--row);
+      }
 
-        .rules ul {
-            margin-left: 20px;
-        }
+      /* Le curseur clignote sous la prochaine case à remplir. */
+      .cell.cursor::after {
+        content: "";
+        position: absolute;
+        left: calc(4 * var(--u));
+        width: calc(5 * var(--u));
+        bottom: calc(2 * var(--u));
+        height: var(--u);
+        background: var(--white);
+        animation: cursor 1s steps(1) infinite;
+      }
 
-        .rules li {
-            margin-bottom: 5px;
+      @keyframes cursor {
+        50% {
+          opacity: 0;
         }
+      }
 
-        .legend-cell {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border-radius: 3px;
-            vertical-align: middle;
-            margin-right: 4px;
-            position: relative;
-        }
+      /* Une lettre bien placée est un bloc en relief. */
+      .cell.correct,
+      .cell.revealed {
+        --bg: var(--red);
+        --hi: var(--red-hi);
+        --lo: var(--red-lo);
+      }
 
-        .legend-cell.correct {
-            background: #dc2626;
-        }
+      .cell.present {
+        color: var(--yellow);
+      }
 
-        .legend-cell.present {
-            background: #2a2a2a;
-        }
+      .cell.present .ring {
+        opacity: 1;
+      }
 
-        .legend-cell.present::after {
-            content: '';
-            position: absolute;
-            inset: 2px;
-            border-radius: 50%;
-            border: 2px solid #fbbf24;
-        }
+      .cell.present .ring path {
+        animation: sweep 0.1s steps(1) backwards;
+      }
 
-        .legend-cell.absent {
-            background: #4b5563;
+      @keyframes sweep {
+        from {
+          opacity: 0;
         }
+      }
 
-        canvas#confetti {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
+      .cell.absent,
+      .key.absent {
+        --bg: var(--absent);
+        --hi: var(--absent);
+        --lo: var(--absent);
+        color: var(--absent-ink);
+      }
+
+      .cell.typed svg {
+        animation: pop 0.12s steps(2);
+      }
+
+      @keyframes pop {
+        from {
+          transform: scale(1.3);
         }
+        to {
+          transform: scale(1);
+        }
+      }
+
+      /* Le dévoilement : chaque case saute comme un bloc qu'on cogne. */
+      .cell.bump {
+        animation: bump 0.3s steps(3);
+        z-index: 1;
+      }
+
+      @keyframes bump {
+        0% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-35%);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      /* Une lettre trouvée tombe dans la rangée suivante. */
+      .cell.drop {
+        animation: drop 0.36s steps(3) backwards;
+        z-index: 2;
+      }
+
+      @keyframes drop {
+        from {
+          transform: translateY(calc(-100% - var(--gap)));
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      /* La première lettre apparaît en clignotant. */
+      .cell.blink-in {
+        animation: blink-in 0.5s steps(1);
+      }
+
+      @keyframes blink-in {
+        0%,
+        40%,
+        80% {
+          opacity: 0;
+        }
+        20%,
+        60%,
+        100% {
+          opacity: 1;
+        }
+      }
+
+      /* Mot inventé : la rangée bugge. */
+      .cell.glitch {
+        animation: glitch 0.42s steps(1);
+        color: var(--red-hi);
+      }
+
+      @keyframes glitch {
+        0% {
+          transform: translate(0, 0);
+        }
+        15% {
+          transform: translate(calc(-2 * var(--u)), 0);
+        }
+        30% {
+          transform: translate(calc(2 * var(--u)), calc(-1 * var(--u)));
+        }
+        45% {
+          transform: translate(calc(-1 * var(--u)), var(--u));
+        }
+        60% {
+          transform: translate(calc(2 * var(--u)), 0);
+        }
+        75% {
+          transform: translate(calc(-1 * var(--u)), 0);
+        }
+        90% {
+          transform: translate(0, 0);
+        }
+      }
+
+      /* Mot incomplet : les cases vides clignotent en rouge. */
+      .cell.missing::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--red);
+        opacity: 0;
+        animation: missing 0.72s steps(1);
+      }
+
+      @keyframes missing {
+        0%,
+        33%,
+        66% {
+          opacity: 0.75;
+        }
+        16%,
+        50%,
+        83%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .cell.jump {
+        animation: jump 0.5s steps(4);
+        z-index: 1;
+      }
+
+      @keyframes jump {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-45%);
+        }
+      }
+
+      /* Étincelles d'une lettre bien placée. */
+      .spark {
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        background: var(--yellow);
+        pointer-events: none;
+        z-index: 3;
+        animation: spark 0.45s steps(4) forwards;
+      }
+
+      @keyframes spark {
+        0% {
+          transform: translate(0, 0);
+          opacity: 1;
+        }
+        75% {
+          opacity: 1;
+        }
+        100% {
+          transform: translate(var(--dx), var(--dy));
+          opacity: 0;
+        }
+      }
+
+      .loading {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 18px;
+        color: var(--lavender);
+        animation: cursor 1s steps(1) infinite;
+      }
+
+      /* ===== Le clavier, ou la fin de partie à sa place ===== */
+      .dock {
+        height: var(--dock);
+        display: grid;
+      }
+
+      .keyboard {
+        display: grid;
+        align-content: center;
+        gap: 6px;
+      }
+
+      .keyboard-row {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+      }
+
+      .key {
+        --u: 3px;
+        --px: 3px;
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 42px;
+        height: 54px;
+        display: grid;
+        place-items: center;
+      }
+
+      .key.wide {
+        flex: 1.6 1 0;
+        max-width: 68px;
+      }
+
+      .key.enter {
+        --bg: var(--green);
+        --hi: var(--green-hi);
+        --lo: var(--green-lo);
+      }
+
+      .key.correct {
+        --bg: var(--red);
+        --hi: var(--red-hi);
+        --lo: var(--red-lo);
+      }
+
+      .key.present {
+        --bg: var(--yellow);
+        --hi: #fff6a8;
+        --lo: var(--orange);
+        color: #4a2a00;
+      }
+
+      .end {
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 10px;
+        text-align: center;
+      }
+
+      .end .title {
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--yellow);
+        text-shadow:
+          3px 3px 0 var(--red),
+          6px 6px 0 #07061a;
+        animation: drop-in 0.4s steps(4) backwards;
+      }
+
+      .end.lose .title {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--lavender);
+        text-shadow: none;
+      }
+
+      @keyframes drop-in {
+        from {
+          transform: translateY(-30px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .end .detail {
+        font-size: 17px;
+        color: var(--white);
+      }
+
+      .end .detail .badge {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 6px;
+        background: var(--blue);
+        color: #04203a;
+        font-weight: 700;
+      }
+
+      .end .word {
+        display: flex;
+        gap: 4px;
+      }
+
+      .end .word .cell {
+        --cell: 32px;
+        animation: fall 0.36s steps(3) backwards;
+      }
+
+      @keyframes fall {
+        from {
+          transform: translateY(-40px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .btn {
+        --u: 4px;
+        min-width: 200px;
+        height: 54px;
+        padding: 0 24px;
+        font-size: 22px;
+        font-weight: 700;
+        color: #04203a;
+        --b: 4px;
+        --bg: var(--blue);
+        --hi: var(--blue-hi);
+        --lo: var(--blue-lo);
+      }
+
+      .end .error {
+        font-size: 18px;
+        color: var(--lavender);
+      }
+
+      /* ===== Comment jouer ===== */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        background: rgba(8, 7, 26, 0.86);
+      }
+
+      .panel {
+        --u: 4px;
+        width: 100%;
+        max-width: 380px;
+        padding: 22px 20px 20px;
+        --b: 4px;
+        --bg: var(--board);
+        --hi: var(--tile-hi);
+        --lo: var(--tile-lo);
+        display: grid;
+        gap: 16px;
+        justify-items: center;
+        animation: drop-in 0.3s steps(3) backwards;
+      }
+
+      .panel h2 {
+        font-size: 26px;
+        color: var(--yellow);
+        text-shadow: 3px 3px 0 var(--red);
+      }
+
+      .rules {
+        list-style: none;
+        display: grid;
+        gap: 14px;
+        width: 100%;
+        font-size: 17px;
+        line-height: 1.25;
+      }
+
+      .rules li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .rules .tiles {
+        display: flex;
+        gap: 3px;
+      }
+
+      .rules .cell {
+        --cell: 34px;
+      }
+
+      .rules .cell.small {
+        --cell: 20px;
+      }
+
+      canvas#fireworks {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+        image-rendering: pixelated;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .star.twinkle,
+        .logo .cell,
+        .cell.cursor::after,
+        .loading,
+        .cell.typed svg,
+        .cell.present .ring path,
+        .cell.drop,
+        .cell.glitch,
+        .cell.blink-in,
+        .stat.up,
+        .end .title,
+        .end .word .cell,
+        .panel {
+          animation: none;
+        }
+      }
     </style>
     <script src="exit-guard.js"></script>
-</head>
-<body>
-    <canvas id="confetti"></canvas>
-    <div class="container">
-        <h1>🟥 SUTOM</h1>
-        <p class="subtitle">Devine le mot en 6 essais</p>
+    <script src="voix.js"></script>
+  </head>
+  <body>
+    <div class="sky" id="sky" aria-hidden="true"></div>
+    <canvas id="fireworks" aria-hidden="true"></canvas>
 
-        <div id="message"></div>
+    <main class="app">
+      <header class="topbar">
+        <button
+          class="icon-btn bevel notch help"
+          id="helpBtn"
+          aria-label="Comment jouer"
+        ></button>
+        <h1 class="logo" id="logo" aria-label="Sutom"></h1>
+        <button class="icon-btn bevel notch sound" id="soundBtn"></button>
+      </header>
 
-        <div class="grid-wrapper">
-            <div class="grid" id="grid"></div>
+      <section class="stats" aria-label="Scores">
+        <div class="stat notch" id="statWins">
+          <span class="icon-star" data-icon="star"></span>
+          <span class="value" id="scoreWins">0</span>
+          <span class="label">Victoires</span>
         </div>
+        <div class="stat notch" id="statLosses">
+          <span class="icon-ghost" data-icon="ghost"></span>
+          <span class="value" id="scoreLosses">0</span>
+          <span class="label">Défaites</span>
+        </div>
+        <div class="stat notch" id="statStreak">
+          <span class="icon-flame" data-icon="flame"></span>
+          <span class="value" id="scoreStreak">0</span>
+          <span class="label">Série</span>
+        </div>
+        <div class="stat notch" id="statBest">
+          <span class="icon-crown" data-icon="crown"></span>
+          <span class="value" id="scoreBest">0</span>
+          <span class="label">Record</span>
+        </div>
+      </section>
 
+      <div class="stage">
+        <div class="board" id="board">
+          <div class="grid" id="grid"></div>
+          <div class="loading" id="loading">Chargement…</div>
+        </div>
+      </div>
+
+      <div class="dock">
         <div class="keyboard" id="keyboard"></div>
+        <div class="end" id="end" hidden></div>
+      </div>
+    </main>
 
-        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
-
-        <div class="rules">
-            <h3>Règles du jeu</h3>
-            <ul>
-                <li>Devine le mot en <strong>6 essais</strong></li>
-                <li>La première lettre est révélée au départ</li>
-                <li><span class="legend-cell correct"></span><strong>Rouge</strong> : lettre bien placée</li>
-                <li><span class="legend-cell present"></span><strong>Cercle jaune</strong> : lettre présente, mal placée</li>
-                <li><span class="legend-cell absent"></span><strong>Gris</strong> : lettre absente du mot</li>
-                <li>Seuls les mots français valides sont acceptés</li>
-            </ul>
-        </div>
-
-        <div class="scoreboard">
-            <h3>Scores</h3>
-            <div class="score-row">
-                <div class="score-cell">
-                    <div class="label">Victoires</div>
-                    <div class="value" id="scoreWins">0</div>
-                </div>
-                <div class="score-cell">
-                    <div class="label">Défaites</div>
-                    <div class="value" id="scoreLosses">0</div>
-                </div>
-                <div class="score-cell">
-                    <div class="label">Série</div>
-                    <div class="value" id="scoreStreak">0</div>
-                </div>
-                <div class="score-cell">
-                    <div class="label">Record</div>
-                    <div class="value" id="scoreBest">0</div>
-                </div>
-            </div>
-        </div>
+    <div class="overlay" id="help" hidden>
+      <div class="panel bevel notch" role="dialog" aria-labelledby="helpTitle">
+        <h2 id="helpTitle">Comment jouer</h2>
+        <ul class="rules">
+          <li>
+            <span
+              class="tiles"
+              data-tiles="S:revealed:small,::small,::small,::small,::small"
+            ></span>
+            <span
+              >Trouve le mot en <strong>6 essais</strong>. La première lettre
+              est donnée.</span
+            >
+          </li>
+          <li>
+            <span class="tiles" data-tiles="A:correct"></span>
+            <span
+              ><strong>Rouge</strong> : la lettre est à la bonne place.</span
+            >
+          </li>
+          <li>
+            <span class="tiles" data-tiles="A:present"></span>
+            <span
+              ><strong>Rond jaune</strong> : la lettre est dans le mot, mais
+              ailleurs.</span
+            >
+          </li>
+          <li>
+            <span class="tiles" data-tiles="A:absent"></span>
+            <span
+              ><strong>Sombre</strong> : la lettre n'est pas dans le mot.</span
+            >
+          </li>
+        </ul>
+        <button class="btn bevel notch" id="helpClose">J'ai compris</button>
+      </div>
     </div>
 
-    <script src="confetti.js"></script>
     <script>
-        const MAX_ATTEMPTS = 6;
-        const SCORES_KEY = 'sutom-scores';
-        const DEFAULT_SCORES = { wins: 0, losses: 0, currentStreak: 0, bestStreak: 0 };
+      const MAX_ATTEMPTS = 6
+      const SCORES_KEY = "sutom-scores"
+      const SOUND_KEY = "sutom-son"
+      const DEFAULT_SCORES = {
+        wins: 0,
+        losses: 0,
+        currentStreak: 0,
+        bestStreak: 0,
+      }
 
-        const KEYBOARD_LAYOUT = [
-            ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-            ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'],
-            ['W', 'X', 'C', 'V', 'B', 'N', 'BACK', 'ENTER']
-        ];
+      const KEYBOARD_LAYOUT = [
+        ["A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P"],
+        ["Q", "S", "D", "F", "G", "H", "J", "K", "L", "M"],
+        ["W", "X", "C", "V", "B", "N", "BACK", "ENTER"],
+      ]
 
-        let allWords = [];           // Set of valid normalized words for guess validation
-        let validWordsSet = null;    // Set for O(1) lookup
-        let candidateWords = [];     // Words eligible to be the secret (length 6-9)
-        let secretWord = '';         // Normalized secret (uppercase, no accents)
-        let wordLength = 0;
-        let currentRow = 0;
-        let currentGuess = [];       // Fixed-size array of length wordLength, null = empty
-        let lockedPositions = new Set(); // Indices verrouillées (lettres déjà bien placées)
-        let keyboardState = {};      // letter -> 'correct' | 'present' | 'absent'
-        let gameOver = false;
+      // La taille des cases suit la hauteur vraiment visible : dans l'appli
+      // installée sur Android, 100vh compte aussi la barre d'état.
+      const root = document.documentElement
+      const fitHeight = () =>
+        root.style.setProperty("--vh", `${root.clientHeight}px`)
+      fitHeight()
+      window.addEventListener("resize", fitHeight)
 
-        // Strip accents and normalize to uppercase A-Z
-        function normalize(word) {
-            return word
-                .normalize('NFD')
-                .replace(/[̀-ͯ]/g, '')
-                .toUpperCase()
-                .replace(/Œ/g, 'OE')
-                .replace(/Æ/g, 'AE');
-        }
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
 
-        function isValidWord(word) {
-            // Only basic A-Z letters, no spaces, hyphens, apostrophes
-            return /^[A-Z]+$/.test(word);
-        }
+      // ===== Les dessins en pixels =====
+      // Chaque lettre tient dans 5 × 7 points, « # » allumé, « . » éteint.
+      const GLYPHS = {
+        A: ".###./#...#/#...#/#####/#...#/#...#/#...#",
+        B: "####./#...#/#...#/####./#...#/#...#/####.",
+        C: ".###./#...#/#..../#..../#..../#...#/.###.",
+        D: "####./#...#/#...#/#...#/#...#/#...#/####.",
+        E: "#####/#..../#..../####./#..../#..../#####",
+        F: "#####/#..../#..../####./#..../#..../#....",
+        G: ".###./#...#/#..../#.###/#...#/#...#/.###.",
+        H: "#...#/#...#/#...#/#####/#...#/#...#/#...#",
+        I: ".###./..#../..#../..#../..#../..#../.###.",
+        J: "..###/...#./...#./...#./#..#./#..#./.##..",
+        K: "#...#/#..#./#.#../##.../#.#../#..#./#...#",
+        L: "#..../#..../#..../#..../#..../#..../#####",
+        M: "#...#/##.##/#.#.#/#.#.#/#...#/#...#/#...#",
+        N: "#...#/#...#/##..#/#.#.#/#..##/#...#/#...#",
+        O: ".###./#...#/#...#/#...#/#...#/#...#/.###.",
+        P: "####./#...#/#...#/####./#..../#..../#....",
+        Q: ".###./#...#/#...#/#...#/#.#.#/#..#./.##.#",
+        R: "####./#...#/#...#/####./#.#../#..#./#...#",
+        S: ".####/#..../#..../.###./....#/....#/####.",
+        T: "#####/..#../..#../..#../..#../..#../..#..",
+        U: "#...#/#...#/#...#/#...#/#...#/#...#/.###.",
+        V: "#...#/#...#/#...#/#...#/#...#/.#.#./..#..",
+        W: "#...#/#...#/#...#/#.#.#/#.#.#/#.#.#/.#.#.",
+        X: "#...#/#...#/.#.#./..#../.#.#./#...#/#...#",
+        Y: "#...#/#...#/.#.#./..#../..#../..#../..#..",
+        Z: "#####/....#/...#./..#../.#.../#..../#####",
+        "?": ".###./#...#/....#/...#./..#../...../..#..",
+      }
 
-        async function loadWords() {
-            const [dictRes, kidsRes] = await Promise.all([
-                fetch('fr_FR.txt'),
-                fetch('mots-enfants.txt'),
-            ]);
-            const dictText = await dictRes.text();
-            const kidsText = await kidsRes.text();
-            const set = new Set();
-            dictText.split('\n').forEach(line => {
-                if (!line) return;
-                const word = line.split('\t')[0];
-                if (!word) return;
-                const norm = normalize(word.trim());
-                if (!isValidWord(norm)) return;
-                if (norm.length < 4 || norm.length > 12) return;
-                set.add(norm);
-            });
-            const candidates = [];
-            const seen = new Set();
-            kidsText.split('\n').forEach(line => {
-                const norm = normalize(line.trim());
-                if (!isValidWord(norm)) return;
-                if (norm.length < 6 || norm.length > 9) return;
-                if (seen.has(norm)) return;
-                seen.add(norm);
-                set.add(norm);
-                candidates.push(norm);
-            });
-            validWordsSet = set;
-            candidateWords = candidates;
-        }
+      const ICONS = {
+        star: "....#..../....#..../...###.../#########/.#######./..#####../.###.###./.##...##.",
+        ghost:
+          "..####../.######./########/#..##..#/#..##..#/########/########/##.##.##",
+        flame:
+          "...#..../...##.../..###.#./.######./.######./###..###/###..###/.######.",
+        crown:
+          "#...#...#/##.###.##/#########/#########/#########/........./#########",
+        enter:
+          "........#/........#/..#.....#/.##.....#/#########/.##....../..#......",
+        back: "..#########/.#..#...#.#/#....#.#..#/#.....#...#/#....#.#..#/.#..#...#.#/..#########",
+        soundOn:
+          "...#....../..##...#../####.#..#./####..#.#./####..#.#./####.#..#./..##...#../...#......",
+        soundOff:
+          "...#....../..##....../####.#...#/####..#.#./####...#../####..#.#./..##.#...#/...#......",
+      }
 
-        function pickSecret() {
-            return candidateWords[Math.floor(Math.random() * candidateWords.length)];
-        }
-
-        function initGame() {
-            secretWord = pickSecret();
-            wordLength = secretWord.length;
-            currentRow = 0;
-            lockedPositions = new Set([0]);
-            keyboardState = {};
-            currentGuess = buildPrefilledGuess();
-            gameOver = false;
-            document.getElementById('message').innerHTML = '';
-            document.getElementById('message').className = '';
-            document.getElementById('newGameBtn').style.display = 'none';
-            // Nouveau mot : rien n'est encore joué, on ne garde pas la sortie.
-            if (window.ExitGuard) ExitGuard.setActive(false);
-            renderGrid();
-            renderKeyboard();
-        }
-
-        function buildPrefilledGuess() {
-            const arr = new Array(wordLength).fill(null);
-            lockedPositions.forEach(i => { arr[i] = secretWord[i]; });
-            return arr;
-        }
-
-        function renderGrid() {
-            const gridEl = document.getElementById('grid');
-            gridEl.innerHTML = '';
-            for (let r = 0; r < MAX_ATTEMPTS; r++) {
-                const rowEl = document.createElement('div');
-                rowEl.className = 'row';
-                rowEl.style.gridTemplateColumns = `repeat(${wordLength}, minmax(0, 1fr))`;
-                for (let c = 0; c < wordLength; c++) {
-                    const cellEl = document.createElement('div');
-                    cellEl.className = 'cell';
-                    cellEl.dataset.row = r;
-                    cellEl.dataset.col = c;
-                    if (r === currentRow) {
-                        if (lockedPositions.has(c)) {
-                            cellEl.classList.add('revealed');
-                            cellEl.textContent = secretWord[c];
-                        } else if (currentGuess[c]) {
-                            cellEl.textContent = currentGuess[c];
-                        }
-                    }
-                    rowEl.appendChild(cellEl);
-                }
-                gridEl.appendChild(rowEl);
+      // Un dessin devient un chemin SVG : une bande par suite de points
+      // allumés sur une ligne.
+      function pixelPath(art, ox = 0, oy = 0) {
+        let d = ""
+        art.split("/").forEach((line, y) => {
+          let x = 0
+          while (x < line.length) {
+            if (line[x] !== "#") {
+              x++
+              continue
             }
+            let len = 1
+            while (line[x + len] === "#") len++
+            d += `M${ox + x} ${oy + y}h${len}v1h-${len}z`
+            x += len
+          }
+        })
+        return d
+      }
+
+      function pixelSvg(art) {
+        const lines = art.split("/")
+        const w = lines[0].length
+        const h = lines.length
+        return `<svg class="art" style="--w:${w};--h:${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${pixelPath(art)}"/></svg>`
+      }
+
+      // Une case fait 13 × 13 points : la lettre au milieu, et autour un
+      // rond jaune en pixels pour les lettres mal placées. Le rond est coupé
+      // en huit arcs, qui s'allument l'un après l'autre en faisant le tour.
+      const RING = (() => {
+        const arcs = Array.from({ length: 8 }, () => [])
+        for (let y = 0; y < 13; y++) {
+          for (let x = 0; x < 13; x++) {
+            const d = Math.hypot(x - 6, y - 6)
+            if (d < 4.6 || d >= 5.7) continue
+            const turn = (Math.atan2(x - 6, 6 - y) / (2 * Math.PI) + 1) % 1
+            arcs[Math.floor(turn * 8)].push(`M${x} ${y}h1v1h-1z`)
+          }
         }
+        return arcs
+          .map(
+            (arc, i) =>
+              `<path style="animation-delay:${i * 0.035}s" d="${arc.join("")}"/>`,
+          )
+          .join("")
+      })()
 
-        function renderKeyboard() {
-            const kbEl = document.getElementById('keyboard');
-            kbEl.innerHTML = '';
-            KEYBOARD_LAYOUT.forEach(row => {
-                const rowEl = document.createElement('div');
-                rowEl.className = 'keyboard-row';
-                row.forEach(key => {
-                    const btn = document.createElement('button');
-                    btn.className = 'key';
-                    if (key === 'ENTER') {
-                        btn.textContent = 'Entrée';
-                        btn.classList.add('wide');
-                        btn.onclick = () => submitGuess();
-                    } else if (key === 'BACK') {
-                        btn.textContent = '⌫';
-                        btn.classList.add('wide');
-                        btn.onclick = () => deleteLetter();
-                    } else {
-                        btn.textContent = key;
-                        btn.dataset.key = key;
-                        btn.onclick = () => typeLetter(key);
-                        const state = keyboardState[key];
-                        if (state) btn.classList.add(state);
-                    }
-                    rowEl.appendChild(btn);
-                });
-                kbEl.appendChild(rowEl);
-            });
+      const cellPaths = {}
+      const letterPath = (letter) =>
+        letter ? (cellPaths[letter] ??= pixelPath(GLYPHS[letter], 4, 3)) : ""
+
+      function makeCell(letter = "", state = "") {
+        const cell = document.createElement("div")
+        cell.className = "cell bevel notch"
+        if (state) cell.classList.add(state)
+        cell.innerHTML = `<svg viewBox="0 0 13 13" aria-hidden="true"><g class="ring">${RING}</g><path class="glyph" d="${letterPath(letter)}"/></svg>`
+        return cell
+      }
+
+      function setLetter(cell, letter) {
+        const glyph = cell.querySelector(".glyph")
+        const d = letterPath(letter)
+        if (glyph.getAttribute("d") === d) return false
+        glyph.setAttribute("d", d)
+        return true
+      }
+
+      // ===== Les sons, en ondes carrées comme sur une console =====
+      let soundOn = readStore(SOUND_KEY) !== "off"
+
+      // Dans un geste de l'enfant : réveille l'audio (iPhone) pour `ms`.
+      function wakeAudio(ms) {
+        if (soundOn && window.Voice) Voice.wake(ms)
+      }
+
+      function tone({
+        freq,
+        to,
+        at = 0,
+        dur = 0.08,
+        vol = 0.05,
+        type = "square",
+      }) {
+        const c = soundOn && window.Voice && Voice.context()
+        if (!c) return
+        const t = c.currentTime + at
+        const osc = c.createOscillator()
+        const gain = c.createGain()
+        osc.type = type
+        osc.frequency.setValueAtTime(freq, t)
+        if (to) osc.frequency.exponentialRampToValueAtTime(to, t + dur)
+        gain.gain.setValueAtTime(vol, t)
+        gain.gain.setValueAtTime(vol, t + dur * 0.7)
+        gain.gain.linearRampToValueAtTime(0, t + dur)
+        osc.connect(gain)
+        gain.connect(c.destination)
+        osc.start(t)
+        osc.stop(t + dur + 0.02)
+      }
+
+      // La gamme de do majeur, de do5 à do7.
+      const SCALE = [
+        523, 587, 659, 698, 784, 880, 988, 1047, 1175, 1319, 1397, 1568, 1760,
+        1976, 2093,
+      ]
+
+      const SFX = {
+        key: () => tone({ freq: 1320, dur: 0.035, vol: 0.025 }),
+        back: () => tone({ freq: 660, to: 330, dur: 0.05, vol: 0.025 }),
+        bonk: () => {
+          tone({ freq: 200, to: 90, dur: 0.18, vol: 0.06 })
+          tone({
+            freq: 150,
+            to: 70,
+            at: 0.06,
+            dur: 0.16,
+            vol: 0.04,
+            type: "triangle",
+          })
+        },
+        // Bien placée : un « ding » de pièce qui monte avec la colonne.
+        correct: (i) => {
+          tone({ freq: SCALE[i + 2], dur: 0.06, vol: 0.04 })
+          tone({ freq: SCALE[i + 6], at: 0.06, dur: 0.14, vol: 0.035 })
+        },
+        present: (i) =>
+          tone({ freq: SCALE[i], dur: 0.12, vol: 0.05, type: "triangle" }),
+        absent: () =>
+          tone({ freq: 130, dur: 0.06, vol: 0.035, type: "triangle" }),
+        drop: () => tone({ freq: 880, to: 220, dur: 0.12, vol: 0.02 }),
+        win: () =>
+          [523, 659, 784, 1047, 784, 1047].forEach((freq, i) =>
+            tone({ freq, at: i * 0.1, dur: i === 5 ? 0.4 : 0.09, vol: 0.04 }),
+          ),
+        lose: () =>
+          [392, 370, 349, 330].forEach((freq, i) =>
+            tone({
+              freq,
+              at: i * 0.22,
+              dur: i === 3 ? 0.5 : 0.2,
+              vol: 0.06,
+              type: "triangle",
+            }),
+          ),
+        firework: () => tone({ freq: 1600, to: 200, dur: 0.25, vol: 0.015 }),
+      }
+
+      // ===== État de la partie =====
+      let validWordsSet = null // mots acceptés, normalisés
+      let candidateWords = [] // mots pouvant être le secret (6 à 9 lettres)
+      let secretWord = "" // en majuscules, sans accents
+      let wordLength = 7
+      let currentRow = 0
+      let currentGuess = [] // une lettre par colonne, null si vide
+      let lockedPositions = new Set() // colonnes dont la lettre est trouvée
+      let keyboardState = {} // lettre -> 'correct' | 'present' | 'absent'
+      let gameOver = false
+      let busy = true // pendant une animation, le clavier attend
+      let timers = []
+
+      const $ = (id) => document.getElementById(id)
+      const later = (fn, ms) => timers.push(setTimeout(fn, ms))
+
+      // Enlève les accents, ne garde que A-Z en majuscules.
+      function normalize(word) {
+        return word
+          .normalize("NFD")
+          .replace(/[̀-ͯ]/g, "")
+          .toUpperCase()
+          .replace(/Œ/g, "OE")
+          .replace(/Æ/g, "AE")
+      }
+
+      function isValidWord(word) {
+        // Que les lettres A-Z : ni espaces, ni tirets, ni apostrophes.
+        return /^[A-Z]+$/.test(word)
+      }
+
+      async function loadWords() {
+        const [dictRes, kidsRes] = await Promise.all([
+          fetch("fr_FR.txt"),
+          fetch("mots-enfants.txt"),
+        ])
+        const dictText = await dictRes.text()
+        const kidsText = await kidsRes.text()
+        const set = new Set()
+        dictText.split("\n").forEach((line) => {
+          if (!line) return
+          const word = line.split("\t")[0]
+          if (!word) return
+          const norm = normalize(word.trim())
+          if (!isValidWord(norm)) return
+          if (norm.length < 4 || norm.length > 12) return
+          set.add(norm)
+        })
+        const candidates = []
+        const seen = new Set()
+        kidsText.split("\n").forEach((line) => {
+          const norm = normalize(line.trim())
+          if (!isValidWord(norm)) return
+          if (norm.length < 6 || norm.length > 9) return
+          if (seen.has(norm)) return
+          seen.add(norm)
+          set.add(norm)
+          candidates.push(norm)
+        })
+        validWordsSet = set
+        candidateWords = candidates
+      }
+
+      function pickSecret() {
+        return candidateWords[Math.floor(Math.random() * candidateWords.length)]
+      }
+
+      function initGame() {
+        timers.forEach(clearTimeout)
+        timers = []
+        secretWord = pickSecret()
+        wordLength = secretWord.length
+        currentRow = 0
+        lockedPositions = new Set([0])
+        keyboardState = {}
+        currentGuess = buildPrefilledGuess()
+        gameOver = false
+        busy = false
+        $("loading").hidden = true
+        $("end").hidden = true
+        $("keyboard").hidden = false
+        // Nouveau mot : rien n'est encore joué, on ne garde pas la sortie.
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        renderGrid()
+        updateKeys()
+        rowCells(0)[0].classList.add("blink-in")
+      }
+
+      function buildPrefilledGuess() {
+        const arr = new Array(wordLength).fill(null)
+        lockedPositions.forEach((i) => {
+          arr[i] = secretWord[i]
+        })
+        return arr
+      }
+
+      function rowCells(r) {
+        return $("grid").children[r].children
+      }
+
+      function renderGrid() {
+        const gridEl = $("grid")
+        $("board").style.setProperty("--n", wordLength)
+        gridEl.innerHTML = ""
+        for (let r = 0; r < MAX_ATTEMPTS; r++) {
+          const rowEl = document.createElement("div")
+          rowEl.className = "row"
+          for (let c = 0; c < wordLength; c++) rowEl.appendChild(makeCell())
+          gridEl.appendChild(rowEl)
         }
+        if (secretWord) prepareRow()
+      }
 
-        function typeLetter(letter) {
-            if (gameOver) return;
-            for (let i = 0; i < wordLength; i++) {
-                if (lockedPositions.has(i)) continue;
-                if (!currentGuess[i]) {
-                    currentGuess[i] = letter;
-                    updateCurrentRowDisplay();
-                    return;
-                }
-            }
-        }
+      // Met en avant la rangée en cours, avec ses lettres déjà trouvées.
+      function prepareRow(drop = false) {
+        const rowEl = $("grid").children[currentRow]
+        rowEl.classList.add("current")
+        const cells = rowEl.children
+        lockedPositions.forEach((i) => {
+          cells[i].classList.add("revealed")
+          setLetter(cells[i], secretWord[i])
+          if (drop) cells[i].classList.add("drop")
+        })
+        updateCurrentRowDisplay()
+      }
 
-        function deleteLetter() {
-            if (gameOver) return;
-            for (let i = wordLength - 1; i >= 0; i--) {
-                if (lockedPositions.has(i)) continue;
-                if (currentGuess[i]) {
-                    currentGuess[i] = null;
-                    updateCurrentRowDisplay();
-                    return;
-                }
-            }
-        }
+      const keyButtons = {}
 
-        function updateCurrentRowDisplay() {
-            const cells = document.querySelectorAll(`.cell[data-row="${currentRow}"]`);
-            cells.forEach((cell, i) => {
-                if (lockedPositions.has(i)) {
-                    cell.textContent = secretWord[i];
-                } else {
-                    cell.textContent = currentGuess[i] || '';
-                }
-            });
-        }
-
-        function showMessage(text, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = text;
-        }
-
-        function shakeRow() {
-            const cells = document.querySelectorAll(`.cell[data-row="${currentRow}"]`);
-            cells.forEach(cell => {
-                cell.classList.remove('shake');
-                void cell.offsetWidth;
-                cell.classList.add('shake');
-            });
-        }
-
-        function submitGuess() {
-            if (gameOver) return;
-            if (currentGuess.some(c => !c)) {
-                showMessage('Mot incomplet', 'info');
-                shakeRow();
-                return;
-            }
-            const guess = currentGuess.join('');
-            if (!validWordsSet.has(guess)) {
-                showMessage('Mot non reconnu', 'info');
-                shakeRow();
-                return;
-            }
-            document.getElementById('message').innerHTML = '';
-            document.getElementById('message').className = '';
-
-            // Premier essai validé : la partie est engagée.
-            if (window.ExitGuard) ExitGuard.setActive(true);
-
-            const result = evaluateGuess(guess, secretWord);
-            applyResult(currentRow, guess, result);
-            updateKeyboardState(guess, result);
-
-            if (guess === secretWord) {
-                gameOver = true;
-                if (window.ExitGuard) ExitGuard.setActive(false);
-                setTimeout(() => {
-                    showMessage(`🎉 Bravo ! Mot trouvé en ${currentRow + 1} essai${currentRow > 0 ? 's' : ''}.`, 'win');
-                    saveResult(true);
-                    showConfetti();
-                    document.getElementById('newGameBtn').style.display = 'block';
-                }, 50);
-                return;
-            }
-
-            // Verrouille les positions trouvées dans cet essai
-            for (let i = 0; i < result.length; i++) {
-                if (result[i] === 'correct') lockedPositions.add(i);
-            }
-
-            currentRow++;
-            if (currentRow >= MAX_ATTEMPTS) {
-                gameOver = true;
-                if (window.ExitGuard) ExitGuard.setActive(false);
-                setTimeout(() => {
-                    showMessage(`😔 Perdu ! Le mot était : ${secretWord}`, 'lose');
-                    saveResult(false);
-                    document.getElementById('newGameBtn').style.display = 'block';
-                }, 50);
-                return;
-            }
-
-            // Prépare la rangée suivante avec toutes les lettres déjà bien placées
-            currentGuess = buildPrefilledGuess();
-            const nextCells = document.querySelectorAll(`.cell[data-row="${currentRow}"]`);
-            lockedPositions.forEach(i => {
-                if (nextCells[i]) {
-                    nextCells[i].classList.add('revealed');
-                    nextCells[i].textContent = secretWord[i];
-                }
-            });
-            renderKeyboard();
-        }
-
-        function updateKeyboardState(guess, result) {
-            const priority = { correct: 3, present: 2, absent: 1 };
-            for (let i = 0; i < guess.length; i++) {
-                const letter = guess[i];
-                const next = result[i];
-                const current = keyboardState[letter];
-                if (!current || priority[next] > priority[current]) {
-                    keyboardState[letter] = next;
-                }
-            }
-        }
-
-        function evaluateGuess(guess, secret) {
-            const result = new Array(guess.length).fill('absent');
-            const secretArr = secret.split('');
-            const used = new Array(secret.length).fill(false);
-            // First pass: correct positions
-            for (let i = 0; i < guess.length; i++) {
-                if (guess[i] === secretArr[i]) {
-                    result[i] = 'correct';
-                    used[i] = true;
-                }
-            }
-            // Second pass: present (wrong position)
-            for (let i = 0; i < guess.length; i++) {
-                if (result[i] === 'correct') continue;
-                for (let j = 0; j < secretArr.length; j++) {
-                    if (!used[j] && guess[i] === secretArr[j]) {
-                        result[i] = 'present';
-                        used[j] = true;
-                        break;
-                    }
-                }
-            }
-            return result;
-        }
-
-        function applyResult(row, guess, result) {
-            const cells = document.querySelectorAll(`.cell[data-row="${row}"]`);
-            cells.forEach((cell, i) => {
-                cell.classList.remove('revealed');
-                cell.textContent = guess[i];
-                setTimeout(() => {
-                    cell.classList.add('flip', result[i]);
-                }, i * 80);
-            });
-        }
-
-        function getScores() {
-            const stored = localStorage.getItem(SCORES_KEY);
-            return stored ? { ...DEFAULT_SCORES, ...JSON.parse(stored) } : { ...DEFAULT_SCORES };
-        }
-
-        function saveResult(won) {
-            const scores = getScores();
-            if (won) {
-                scores.wins++;
-                scores.currentStreak++;
-                if (scores.currentStreak > scores.bestStreak) {
-                    scores.bestStreak = scores.currentStreak;
-                }
+      function buildKeyboard() {
+        const kbEl = $("keyboard")
+        KEYBOARD_LAYOUT.forEach((row) => {
+          const rowEl = document.createElement("div")
+          rowEl.className = "keyboard-row"
+          row.forEach((key) => {
+            const btn = document.createElement("button")
+            btn.className = "key bevel notch"
+            keyButtons[key] = btn
+            if (key === "ENTER") {
+              btn.classList.add("wide", "enter")
+              btn.setAttribute("aria-label", "Valider")
+              btn.innerHTML = pixelSvg(ICONS.enter)
+              btn.onclick = () => submitGuess()
+            } else if (key === "BACK") {
+              btn.classList.add("wide")
+              btn.setAttribute("aria-label", "Effacer")
+              btn.innerHTML = pixelSvg(ICONS.back)
+              btn.onclick = () => deleteLetter()
             } else {
-                scores.losses++;
-                scores.currentStreak = 0;
+              btn.setAttribute("aria-label", key)
+              btn.innerHTML = pixelSvg(GLYPHS[key])
+              btn.onclick = () => typeLetter(key)
             }
-            localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
-            updateScoreboard(scores);
+            rowEl.appendChild(btn)
+          })
+          kbEl.appendChild(rowEl)
+        })
+      }
+
+      // Les touches prennent la couleur de ce qu'on sait de leur lettre.
+      function updateKeys() {
+        for (const [key, btn] of Object.entries(keyButtons)) {
+          btn.classList.remove("correct", "present", "absent")
+          if (keyboardState[key]) btn.classList.add(keyboardState[key])
+        }
+      }
+
+      function typeLetter(letter) {
+        if (gameOver || busy) return
+        wakeAudio(400)
+        for (let i = 0; i < wordLength; i++) {
+          if (lockedPositions.has(i)) continue
+          if (!currentGuess[i]) {
+            currentGuess[i] = letter
+            updateCurrentRowDisplay()
+            SFX.key()
+            return
+          }
+        }
+      }
+
+      function deleteLetter() {
+        if (gameOver || busy) return
+        wakeAudio(400)
+        for (let i = wordLength - 1; i >= 0; i--) {
+          if (lockedPositions.has(i)) continue
+          if (currentGuess[i]) {
+            currentGuess[i] = null
+            updateCurrentRowDisplay()
+            SFX.back()
+            return
+          }
+        }
+      }
+
+      function updateCurrentRowDisplay() {
+        const cells = rowCells(currentRow)
+        const next = currentGuess.findIndex((c) => !c)
+        Array.from(cells).forEach((cell, i) => {
+          if (lockedPositions.has(i)) return
+          if (setLetter(cell, currentGuess[i]) && currentGuess[i]) {
+            restartClass(cell, "typed")
+          }
+          cell.classList.toggle("cursor", i === next)
+        })
+      }
+
+      // Relance l'animation d'une classe, même si elle vient de jouer.
+      function restartClass(el, name) {
+        el.classList.remove(name)
+        void el.offsetWidth
+        el.classList.add(name)
+      }
+
+      function submitGuess() {
+        if (gameOver || busy) return
+        wakeAudio(1000)
+        const cells = Array.from(rowCells(currentRow))
+        if (currentGuess.some((c) => !c)) {
+          cells.forEach((cell, i) => {
+            if (!currentGuess[i]) restartClass(cell, "missing")
+          })
+          SFX.bonk()
+          return
+        }
+        const guess = currentGuess.join("")
+        if (!validWordsSet.has(guess)) {
+          cells.forEach((cell) => restartClass(cell, "glitch"))
+          SFX.bonk()
+          return
         }
 
-        function updateScoreboard(scores = getScores()) {
-            document.getElementById('scoreWins').textContent = scores.wins;
-            document.getElementById('scoreLosses').textContent = scores.losses;
-            document.getElementById('scoreStreak').textContent = scores.currentStreak;
-            document.getElementById('scoreBest').textContent = scores.bestStreak;
+        // Premier essai validé : la partie est engagée.
+        if (window.ExitGuard) ExitGuard.setActive(true)
+
+        const result = evaluateGuess(guess, secretWord)
+        const won = guess === secretWord
+        updateKeyboardState(guess, result)
+        busy = true
+        const revealTime = revealRow(cells, result)
+        wakeAudio(revealTime + 3000)
+
+        if (won) {
+          const record = endGame(true)
+          later(() => winSequence(cells, record), revealTime)
+          return
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (gameOver && e.key !== 'Enter') return;
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (gameOver) return;
-                submitGuess();
-            } else if (e.key === 'Backspace') {
-                e.preventDefault();
-                deleteLetter();
-            } else if (/^[a-zA-ZàâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]$/.test(e.key)) {
-                const letter = normalize(e.key);
-                if (letter.length === 1) typeLetter(letter);
+        // Verrouille les positions trouvées dans cet essai.
+        result.forEach((r, i) => {
+          if (r === "correct") lockedPositions.add(i)
+        })
+
+        $("grid").children[currentRow].classList.remove("current")
+        currentRow++
+        if (currentRow >= MAX_ATTEMPTS) {
+          endGame(false)
+          later(() => {
+            updateKeys()
+            showEnd(false)
+            SFX.lose()
+          }, revealTime)
+          return
+        }
+
+        // Les lettres trouvées tombent dans la rangée suivante.
+        currentGuess = buildPrefilledGuess()
+        later(() => {
+          updateKeys()
+          prepareRow(!reduceMotion)
+          SFX.drop()
+          busy = false
+        }, revealTime)
+      }
+
+      // Dévoile la rangée case par case ; renvoie la durée en ms.
+      function revealRow(cells, result) {
+        const step = reduceMotion ? 60 : 190
+        cells.forEach((cell, i) => {
+          cell.classList.remove("cursor", "revealed", "typed")
+          later(() => {
+            if (!reduceMotion) restartClass(cell, "bump")
+          }, i * step)
+          // Au sommet du saut, le bloc prend sa couleur.
+          later(
+            () => {
+              cell.classList.add(result[i])
+              SFX[result[i]](i)
+              if (result[i] === "correct" && !reduceMotion) sparks(cell)
+            },
+            i * step + (reduceMotion ? 0 : 110),
+          )
+        })
+        return (cells.length - 1) * step + (reduceMotion ? 150 : 420)
+      }
+
+      function sparks(cell) {
+        const board = $("board")
+        const size = cell.offsetWidth
+        const cx = cell.offsetLeft + size / 2 - 2
+        const cy = cell.offsetTop + size / 2 - 2
+        ;[
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1],
+        ].forEach(([sx, sy]) => {
+          const s = document.createElement("span")
+          s.className = "spark"
+          s.style.left = `${cx + (sx * size) / 2}px`
+          s.style.top = `${cy + (sy * size) / 2}px`
+          s.style.setProperty("--dx", `${sx * size * 0.4}px`)
+          s.style.setProperty("--dy", `${sy * size * 0.4}px`)
+          board.appendChild(s)
+          s.addEventListener("animationend", () => s.remove())
+        })
+      }
+
+      // La partie est jouée : le score est gardé tout de suite, même si
+      // l'enfant quitte avant la fin des animations. Renvoie true pour un
+      // nouveau record.
+      function endGame(won) {
+        gameOver = true
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        return saveResult(won)
+      }
+
+      function winSequence(cells, record) {
+        const step = reduceMotion ? 0 : 80
+        cells.forEach((cell, i) => {
+          later(() => {
+            if (!reduceMotion) restartClass(cell, "jump")
+          }, i * step)
+        })
+        SFX.win()
+        updateKeys()
+        later(
+          () => {
+            showEnd(true, record)
+            fireworks()
+          },
+          cells.length * step + 200,
+        )
+      }
+
+      function showEnd(won, record = false) {
+        const end = $("end")
+        end.className = won ? "end win" : "end lose"
+        end.innerHTML = ""
+        const title = document.createElement("div")
+        title.className = "title"
+        title.textContent = won ? "Bravo !" : "Le mot était"
+        end.appendChild(title)
+        if (won) {
+          const detail = document.createElement("div")
+          detail.className = "detail"
+          const tries = currentRow + 1
+          detail.textContent = `Trouvé en ${tries} essai${tries > 1 ? "s" : ""}`
+          if (record) {
+            const badge = document.createElement("span")
+            badge.className = "badge"
+            badge.textContent = "Record !"
+            detail.appendChild(badge)
+          }
+          end.appendChild(detail)
+        } else {
+          const word = document.createElement("div")
+          word.className = "word"
+          word.setAttribute("aria-label", secretWord)
+          ;[...secretWord].forEach((letter, i) => {
+            const cell = makeCell(letter, "correct")
+            cell.style.animationDelay = `${0.2 + i * 0.09}s`
+            word.appendChild(cell)
+          })
+          end.appendChild(word)
+        }
+        const again = document.createElement("button")
+        again.className = "btn bevel notch"
+        again.textContent = "Rejouer"
+        again.onclick = initGame
+        end.appendChild(again)
+        $("keyboard").hidden = true
+        end.hidden = false
+        again.focus({ preventScroll: true })
+      }
+
+      function updateKeyboardState(guess, result) {
+        const priority = { correct: 3, present: 2, absent: 1 }
+        for (let i = 0; i < guess.length; i++) {
+          const letter = guess[i]
+          const next = result[i]
+          const current = keyboardState[letter]
+          if (!current || priority[next] > priority[current]) {
+            keyboardState[letter] = next
+          }
+        }
+      }
+
+      function evaluateGuess(guess, secret) {
+        const result = new Array(guess.length).fill("absent")
+        const secretArr = secret.split("")
+        const used = new Array(secret.length).fill(false)
+        // D'abord les lettres bien placées…
+        for (let i = 0; i < guess.length; i++) {
+          if (guess[i] === secretArr[i]) {
+            result[i] = "correct"
+            used[i] = true
+          }
+        }
+        // … puis les présentes ailleurs.
+        for (let i = 0; i < guess.length; i++) {
+          if (result[i] === "correct") continue
+          for (let j = 0; j < secretArr.length; j++) {
+            if (!used[j] && guess[i] === secretArr[j]) {
+              result[i] = "present"
+              used[j] = true
+              break
             }
-        });
+          }
+        }
+        return result
+      }
 
-        document.getElementById('newGameBtn').onclick = () => {
-            if (candidateWords.length === 0) return;
-            initGame();
-        };
+      // ===== Scores =====
+      function readStore(key) {
+        try {
+          return localStorage.getItem(key)
+        } catch (e) {
+          return null
+        }
+      }
 
-        updateScoreboard();
-        // Pendant le chargement du dictionnaire : rien à protéger.
-        if (window.ExitGuard) ExitGuard.setActive(false);
-        loadWords().then(() => {
-            initGame();
-        }).catch(err => {
-            console.error('Erreur de chargement du dictionnaire :', err);
-            showMessage('Impossible de charger le dictionnaire', 'lose');
-        });
+      function writeStore(key, value) {
+        try {
+          localStorage.setItem(key, value)
+        } catch (e) {
+          // navigation privée : rien ne sera gardé après la visite
+        }
+      }
+
+      function getScores() {
+        try {
+          return { ...DEFAULT_SCORES, ...JSON.parse(readStore(SCORES_KEY)) }
+        } catch (e) {
+          return { ...DEFAULT_SCORES }
+        }
+      }
+
+      function saveResult(won) {
+        const scores = getScores()
+        let newRecord = false
+        if (won) {
+          scores.wins++
+          scores.currentStreak++
+          if (scores.currentStreak > scores.bestStreak) {
+            scores.bestStreak = scores.currentStreak
+            newRecord = scores.bestStreak > 1
+          }
+        } else {
+          scores.losses++
+          scores.currentStreak = 0
+        }
+        writeStore(SCORES_KEY, JSON.stringify(scores))
+        updateScoreboard(scores, true)
+        return newRecord
+      }
+
+      function updateScoreboard(scores = getScores(), animate = false) {
+        ;[
+          ["Wins", scores.wins],
+          ["Losses", scores.losses],
+          ["Streak", scores.currentStreak],
+          ["Best", scores.bestStreak],
+        ].forEach(([name, value]) => {
+          const el = $(`score${name}`)
+          if (el.textContent === String(value)) return
+          el.textContent = value
+          if (animate) restartClass($(`stat${name}`), "up")
+        })
+      }
+
+      // ===== Feu d'artifice en gros pixels =====
+      function fireworks() {
+        if (reduceMotion) return
+        const canvas = $("fireworks")
+        // Un point du canevas par gros pixel, agrandi sans lissage.
+        const P = 5
+        const w = canvas.clientWidth
+        const h = canvas.clientHeight
+        canvas.width = Math.ceil(w / P)
+        canvas.height = Math.ceil(h / P)
+        const ctx = canvas.getContext("2d")
+        const colors = [
+          "#ffec27",
+          "#ff004d",
+          "#29adff",
+          "#00e436",
+          "#ff77a8",
+          "#ffa300",
+        ]
+        let particles = []
+        const burst = () => {
+          const x = w * (0.15 + Math.random() * 0.7)
+          const y = h * (0.12 + Math.random() * 0.3)
+          const color = colors[Math.floor(Math.random() * colors.length)]
+          for (let i = 0; i < 24; i++) {
+            const a = (i / 24) * Math.PI * 2
+            const v = 2.2 + (i % 3) * 0.9
+            particles.push({
+              x,
+              y,
+              vx: Math.cos(a) * v,
+              vy: Math.sin(a) * v,
+              life: 1,
+              color,
+            })
+          }
+          SFX.firework()
+        }
+        ;[0, 380, 760, 1200].forEach((ms) => setTimeout(burst, ms))
+        const start = performance.now()
+        let frame = 0
+        const tick = (now) => {
+          frame++
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          particles = particles.filter((p) => p.life > 0)
+          particles.forEach((p) => {
+            p.x += p.vx
+            p.y += p.vy
+            p.vx *= 0.97
+            p.vy = p.vy * 0.97 + 0.07
+            p.life -= 0.012
+            // En fin de vie, l'étincelle clignote.
+            if (p.life < 0.35 && frame % 4 < 2) return
+            ctx.fillStyle = p.color
+            ctx.fillRect(Math.round(p.x / P), Math.round(p.y / P), 1, 1)
+          })
+          if (now - start < 3200) requestAnimationFrame(tick)
+          else canvas.width = 0
+        }
+        requestAnimationFrame(tick)
+      }
+
+      // ===== Décor, réglages, aide =====
+      function buildSky() {
+        const sky = $("sky")
+        for (let i = 0; i < 26; i++) {
+          const s = document.createElement("span")
+          s.className = i % 3 ? "star" : "star twinkle"
+          s.style.left = `${Math.random() * 100}%`
+          s.style.top = `${Math.random() * 100}%`
+          s.style.animationDelay = `${-Math.random() * 2.4}s`
+          sky.appendChild(s)
+        }
+      }
+
+      function buildStatic() {
+        ;["S:correct", "U:present", "T", "O", "M"].forEach((spec) => {
+          const [letter, state] = spec.split(":")
+          $("logo").appendChild(makeCell(letter, state))
+        })
+        document.querySelectorAll("[data-icon]").forEach((el) => {
+          el.innerHTML = pixelSvg(ICONS[el.dataset.icon])
+        })
+        document.querySelectorAll("[data-tiles]").forEach((el) => {
+          el.dataset.tiles.split(",").forEach((spec) => {
+            const [letter, state, size] = spec.split(":")
+            const cell = makeCell(letter, state)
+            if (size) cell.classList.add(size)
+            el.appendChild(cell)
+          })
+        })
+        $("helpBtn").innerHTML = pixelSvg(GLYPHS["?"])
+        renderSoundButton()
+      }
+
+      function renderSoundButton() {
+        const btn = $("soundBtn")
+        btn.innerHTML = pixelSvg(soundOn ? ICONS.soundOn : ICONS.soundOff)
+        btn.classList.toggle("off", !soundOn)
+        btn.setAttribute(
+          "aria-label",
+          soundOn ? "Couper le son" : "Mettre le son",
+        )
+        btn.setAttribute("aria-pressed", soundOn)
+      }
+
+      $("soundBtn").onclick = () => {
+        soundOn = !soundOn
+        writeStore(SOUND_KEY, soundOn ? "on" : "off")
+        renderSoundButton()
+        wakeAudio(400)
+        SFX.key()
+      }
+
+      const helpEl = $("help")
+      const openHelp = () => {
+        helpEl.hidden = false
+        $("helpClose").focus({ preventScroll: true })
+      }
+      const closeHelp = () => {
+        helpEl.hidden = true
+      }
+      $("helpBtn").onclick = openHelp
+      $("helpClose").onclick = closeHelp
+      helpEl.onclick = (e) => {
+        if (e.target === helpEl) closeHelp()
+      }
+
+      // Un appui au clavier fait aussi s'enfoncer la touche à l'écran.
+      function pressKey(key) {
+        const btn = keyButtons[key]
+        if (!btn) return
+        btn.classList.add("pressed")
+        setTimeout(() => btn.classList.remove("pressed"), 100)
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (!helpEl.hidden) {
+          if (e.key === "Escape") closeHelp()
+          return
+        }
+        if (gameOver) return
+        if (e.key === "Enter") {
+          e.preventDefault()
+          pressKey("ENTER")
+          submitGuess()
+        } else if (e.key === "Backspace") {
+          e.preventDefault()
+          pressKey("BACK")
+          deleteLetter()
+        } else if (/^[a-zA-ZàâäéèêëîïôöùûüÿçÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇ]$/.test(e.key)) {
+          const letter = normalize(e.key)
+          if (letter.length === 1) {
+            pressKey(letter)
+            typeLetter(letter)
+          }
+        }
+      })
+
+      // Les effets d'un instant ne restent pas sur les cases.
+      $("grid").addEventListener("animationend", (e) => {
+        e.target.classList.remove(
+          "glitch",
+          "missing",
+          "bump",
+          "drop",
+          "jump",
+          "blink-in",
+        )
+      })
+
+      buildSky()
+      buildStatic()
+      updateScoreboard()
+      renderGrid()
+      buildKeyboard()
+      // Pendant le chargement du dictionnaire : rien à protéger.
+      if (window.ExitGuard) ExitGuard.setActive(false)
+      loadWords()
+        .then(initGame)
+        .catch((err) => {
+          console.error("Erreur de chargement du dictionnaire :", err)
+          $("loading").hidden = true
+          $("keyboard").hidden = true
+          $("end").hidden = false
+          $("end").innerHTML =
+            '<div class="error">Oups, les mots n\'ont pas pu se charger.</div>'
+        })
     </script>
-</body>
+  </body>
 </html>
