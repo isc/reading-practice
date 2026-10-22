@@ -58,6 +58,14 @@
           linear-gradient(#1c1846 0%, #110f2a 45%, #07060f 100%);
         background-attachment: fixed;
         overflow-x: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      input,
+      textarea {
+        -webkit-user-select: text;
+        user-select: text;
       }
 
       #confetti {
@@ -455,12 +463,6 @@
       .level-label span {
         font-size: 14px;
         color: var(--muted);
-      }
-
-      /* En partie, un appui long ne sélectionne rien et n'ouvre pas de bulle. */
-      #game {
-        -webkit-user-select: none;
-        user-select: none;
       }
 
       .stage {

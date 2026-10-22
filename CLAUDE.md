@@ -56,6 +56,12 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   un jeu clair elle passe pour la barre normale d'Android, alors qu'une bande
   claire sous un jeu sombre fait bug. Une appli installée relit son manifeste
   au plus une fois par jour : réinstaller pour voir un changement tout de suite.
+- **Pas de sélection de texte** : un appui long ne doit rien sélectionner ni
+  ouvrir de bulle. Le `body` prend `-webkit-user-select: none` et
+  `user-select: none` (Safari veut le préfixe), plus
+  `-webkit-touch-callout: none` s'il y a des images ou des liens. Les champs
+  de saisie restent sélectionnables, sans quoi l'iPad peut refuser la
+  saisie : `input, textarea { -webkit-user-select: text; user-select: text }`.
 - **Animations continues** : une animation infinie n'anime que `transform` ou
   `opacity` (une lueur qui bat : un `::after` dont l'opacité varie), et jamais
   de `filter: blur` sur un grand calque. Le reste se repeint à chaque image :
