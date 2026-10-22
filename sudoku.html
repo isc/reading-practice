@@ -39,14 +39,16 @@
       }
 
       html {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
         background: #07060f;
       }
 
       body {
         font-family: "Fredoka", "Arial Rounded MT Bold", Arial, sans-serif;
         color: var(--ink);
-        min-height: 100vh;
-        min-height: 100dvh;
+        flex-grow: 1;
         background:
           radial-gradient(
             ellipse 90% 50% at 50% 0,
