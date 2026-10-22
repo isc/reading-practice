@@ -36,6 +36,8 @@
         --edge: rgba(255, 255, 255, 0.16);
         --title: "Unbounded", "Arial Black", system-ui, sans-serif;
         --font: "Lexend", "Trebuchet MS", system-ui, sans-serif;
+        --emoji:
+          "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
       }
 
       * {
@@ -176,8 +178,8 @@
 
       .pic,
       .slot span {
-        font-family:
-          "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+        font-family: var(--emoji);
+        translate: var(--shift);
       }
 
       .pic {
@@ -792,6 +794,22 @@
       // bien les unes des autres.
       const hueOf = (symbol) => Math.round(EMOJIS.indexOf(symbol) * 137.5) % 360
 
+      // Chaque police d'emojis (Apple, Noto, Segoe…) cale son dessin à sa
+      // façon dans la ligne : on mesure la case de l'emoji pour la remettre
+      // au milieu de son rond.
+      const measureCtx = document.createElement("canvas").getContext("2d")
+      measureCtx.font = `100px ${getComputedStyle(document.documentElement).getPropertyValue("--emoji")}`
+      function shiftOf(symbol) {
+        const m = measureCtx.measureText(symbol)
+        const x = m.width - m.actualBoundingBoxRight + m.actualBoundingBoxLeft
+        const y =
+          m.fontBoundingBoxDescent -
+          m.fontBoundingBoxAscent +
+          m.actualBoundingBoxAscent -
+          m.actualBoundingBoxDescent
+        return `${x / 200}em ${y / 200}em`
+      }
+
       const $ = (id) => document.getElementById(id)
       const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
       const reducedMotion = () => motionQuery.matches
@@ -932,6 +950,7 @@
           el.dataset.id = card.id
           el.setAttribute("aria-label", `Portail ${card.id + 1}`)
           el.style.setProperty("--hue", hueOf(card.symbol))
+          el.style.setProperty("--shift", shiftOf(card.symbol))
           vortexStyle(el)
           el.innerHTML = `${VORTEX}<span class="world"><span class="pic">${card.symbol}</span></span><span class="flash"></span>`
           el.onclick = () => flipCard(card.id)
@@ -1094,6 +1113,7 @@
 
         slot.classList.add("filled")
         slot.style.setProperty("--hue", hue)
+        slot.style.setProperty("--shift", shiftOf(a.symbol))
         slot.innerHTML = `<span>${a.symbol}</span>`
 
         if (won) {
