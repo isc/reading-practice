@@ -49,6 +49,7 @@ PRONONCIATION = {
     "gauche": "À gauche.",  # « Gauche. » sort « gouche », ou part en phrases inventées
     "bottes": "Les bottes.",  # « Bottes. » : Whisper entend « bots »
     "quai": "Le quai.",  # « Quai. » : Whisper entend « OK »
+    "est": "Ai.",  # « Est. » se lit comme le point cardinal
 }
 
 
@@ -61,13 +62,30 @@ def slug(mot: str) -> str:
 
 
 def mots(jeu: str) -> list[str]:
-    """Les mots d'un jeu, lus dans sa page : les `word: "…"` de son tableau."""
-    return re.findall(r'word: "([^"]+)"', (RACINE / f"{jeu}.html").read_text())
+    """Les mots d'un jeu, lus dans sa page : les `word: "…"` de son tableau, et les mots des
+    `phrase: "…"` de « Lis à voix haute » (sans leurs marques de syllabes et de lettres muettes)."""
+    page = (RACINE / f"{jeu}.html").read_text()
+    liste = re.findall(r'word: "([^"]+)"', page)
+    for phrase in re.findall(r'phrase:\s*"([^"]+)"', page):
+        liste += [m.strip(".,!?;:").lower() for m in re.sub(r"[/()]", "", phrase).split()]
+    return list(dict.fromkeys(liste))
+
+
+# Des mots qui ne diffèrent que par l'accent partagent un fichier : bien seulement s'ils se disent
+# pareil.
+HOMOPHONES = {"a", "à"}
 
 
 def a_faire(jeu: str) -> list[str]:
+    liste = mots(jeu)
+    par_slug = {}
+    for m in liste:
+        par_slug.setdefault(slug(m), set()).add(m)
+    collisions = [" / ".join(sorted(v)) for v in par_slug.values() if len(v) > 1 and not v <= HOMOPHONES]
+    if collisions:
+        sys.exit(f"Même fichier pour des mots qui se disent autrement : {', '.join(collisions)}")
     sortie = RACINE / "audio" / jeu
-    return [m for m in mots(jeu) if not (sortie / f"{slug(m)}.mp3").exists()]
+    return [m for m in liste if not (sortie / f"{slug(m)}.mp3").exists()]
 
 
 def dire(texte: str, f: Path):
