@@ -48,7 +48,7 @@ const teamColors = [
 ]
 const colorOf = (teamId) => (teamColors[teamId] || teamColors[0]).color
 
-// Disposition des quilles sur le terrain, vue du lanceur.
+// Disposition des quilles sur le terrain, vue du lanceur : le plan des règles.
 const PIN_ROWS = [
   [7, 9, 8],
   [5, 11, 12, 6],
@@ -849,22 +849,27 @@ function renderBoard(anim = {}) {
   $("undoBtn").disabled = undoStack.length === 0
 }
 
-function buildPins(container, interactive) {
-  container.replaceChildren()
+function buildPins() {
+  // Le pavé range les quilles de 1 à 12 : après quelques lancers, elles ne
+  // sont plus à leur place de départ, on y cherche juste un numéro.
+  for (let n = 1; n <= 12; n++) {
+    const pin = document.createElement("button")
+    pin.type = "button"
+    pin.className = "pin"
+    pin.textContent = n
+    pin.dataset.n = n
+    pin.setAttribute("aria-pressed", "false")
+    pin.addEventListener("click", () => togglePin(pin))
+    $("pins").append(pin)
+  }
   PIN_ROWS.forEach((line, y) => {
     line.forEach((n, i) => {
-      const pin = document.createElement(interactive ? "button" : "span")
+      const pin = document.createElement("span")
       pin.className = "pin"
       pin.textContent = n
       pin.style.setProperty("--x", i + (4 - line.length) / 2)
       pin.style.setProperty("--y", y)
-      if (interactive) {
-        pin.type = "button"
-        pin.dataset.n = n
-        pin.setAttribute("aria-pressed", "false")
-        pin.addEventListener("click", () => togglePin(pin))
-      }
-      container.append(pin)
+      $("rulesPins").append(pin)
     })
   })
 }
@@ -1055,8 +1060,7 @@ let winnerLed
 document.addEventListener("DOMContentLoaded", function () {
   sparks.init()
   winnerLed = new Led($("winnerLed"), "#ff4040")
-  buildPins($("pins"), true)
-  buildPins($("rulesPins"), false)
+  buildPins()
   updateSoundBtn()
 
   try {
