@@ -166,12 +166,14 @@
         pointer-events: none;
       }
 
-      /* Un bassin de couleurs qui tourne lentement sous la poussière. */
+      /* Un bassin de couleurs qui tourne lentement sous la poussière.
+         Centré par transform et non par translate, que certains navigateurs
+         sautent : le bassin glissait alors sur le bouton « Mélanger ». */
       .pool,
       .eye {
         left: var(--cx);
         top: var(--cy);
-        translate: -50% -50%;
+        transform: translate(-50%, -50%);
         border-radius: 50%;
         pointer-events: none;
       }
@@ -192,7 +194,7 @@
 
       @keyframes turn {
         to {
-          transform: rotate(1turn);
+          transform: translate(-50%, -50%) rotate(1turn);
         }
       }
 
@@ -210,7 +212,7 @@
 
       @keyframes breathe {
         50% {
-          transform: scale(1.15);
+          transform: translate(-50%, -50%) scale(1.15);
           opacity: 0.75;
         }
       }
@@ -219,7 +221,7 @@
       .pad {
         width: var(--s);
         height: var(--s);
-        translate: -50% -50%;
+        transform: translate(-50%, -50%);
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.65);
         box-shadow: inset 0 3px 6px rgba(59, 28, 90, 0.14);
@@ -253,7 +255,7 @@
         top: var(--cy);
         width: calc(var(--word-w) + 90px);
         height: calc(var(--word-h) * 2.6);
-        translate: -50% -50%;
+        transform: translate(-50%, -50%);
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.9s;
@@ -270,7 +272,7 @@
         top: 50%;
         width: calc(var(--word-w) + 160px);
         height: calc(var(--word-w) + 160px);
-        translate: -50% -50%;
+        transform: translate(-50%, -50%);
         position: absolute;
         background: repeating-conic-gradient(
           rgba(255, 190, 50, 0.4) 0 5deg,
@@ -509,6 +511,12 @@
         gap: 10px;
         /* L'ombre des boutons mange l'écart avec les scores. */
         margin-bottom: 8px;
+      }
+
+      /* Au-dessus du bassin, plus grand que le plateau. */
+      .actions,
+      .scores {
+        position: relative;
       }
 
       .btn {
