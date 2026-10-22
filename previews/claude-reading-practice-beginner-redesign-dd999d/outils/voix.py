@@ -50,6 +50,18 @@ PRONONCIATION = {
     "bottes": "Les bottes.",  # « Bottes. » : Whisper entend « bots »
     "quai": "Le quai.",  # « Quai. » : Whisper entend « OK »
     "est": "Ai.",  # « Est. » se lit comme le point cardinal
+    # Lis à voix haute : Whisper entendait autre chose avec « Mot. »
+    "rit": "Ri !",  # « rite »
+    "lit": "Lit !",  # « oui »
+    "sami": "Sami !",  # « amis »
+    "en": "An !",  # « En. » : rien ; Whisper entend encore « un », à écouter
+    "toit": "Le toit.",  # « à droite »
+    "fait": "Fait !",  # « j'aime »
+    "saute": "Saute !",  # « soutes »
+    "papi": "Papy !",  # « tapis », « pathie » : à écouter
+    "fond": "Le fond.",  # « fins »
+    "quand": "Quand ?",  # « temps »
+    "ont": "On !",  # Whisper entend « un » à chaque essai : à écouter
 }
 
 
