@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#08070f" />
     <title>Time's Up</title>
     <style>
       /* Sablier magique : le temps s'écoule en grains de lumière, aux
@@ -834,8 +835,8 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         pointer-events: none;
       }
 
@@ -1607,7 +1608,7 @@
         let raf = 0
 
         function frame(now) {
-          ctx.clearRect(0, 0, innerWidth, innerHeight)
+          ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight)
           ctx.globalCompositeOperation = "lighter"
           for (let i = parts.length - 1; i >= 0; i--) {
             const p = parts[i]
@@ -1642,7 +1643,8 @@
           // Renvoie le délai, en millisecondes, avant que la première
           // étincelle arrive.
           burst(from, to, hex) {
-            if (!raf) sizeCanvas(canvas, ctx, innerWidth, innerHeight)
+            if (!raf)
+              sizeCanvas(canvas, ctx, canvas.clientWidth, canvas.clientHeight)
             const sprite = spriteFor(hexToRgb(hex))
             const tx = to.left + to.width / 2
             const ty = to.top + to.height / 2
@@ -1935,11 +1937,25 @@
 
       // ===== Déroulé d'une partie =====
 
+      // Les panneaux se superposent en fondu : juste après un changement,
+      // le second appui d'un double appui tomberait sur un bouton du
+      // panneau qui s'en va ou de celui qui arrive (un mot sauté, une relève
+      // passée). On l'ignore.
+      let panelLockUntil = 0
       function showPanel(id) {
+        panelLockUntil = performance.now() + 350
         for (const panel of document.querySelectorAll(".panel")) {
           panel.classList.toggle("shown", panel.id === id)
         }
       }
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (performance.now() < panelLockUntil && e.target.closest(".panel"))
+            e.stopPropagation()
+        },
+        true,
+      )
 
       function setTeamColor(index) {
         const hex = TEAM_COLORS[index]
