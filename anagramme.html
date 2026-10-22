@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Anagramme</title>
     <style>
-      /* Le tourbillon : les lettres du mot sont des billes de couleur qui
-         tournent autour d'un œil de lumière, dans une poussière qui spirale.
+      /* Le tourbillon : les lettres du mot sont des billes de couleur posées
+         en cercle autour d'un œil de lumière, dans une poussière qui spirale.
+         Elles restent immobiles pour qu'on puisse chercher le mot ; seul
+         « Mélanger » les fait tourner un instant.
          Touchée, une bille file se poser sur sa case en tournoyant ; quand le
          mot est trouvé, il s'illumine en or, lettre après lettre. */
 
@@ -679,7 +681,7 @@
           </button>
           <ul>
             <li style="--c: #ef4f5a">
-              Les lettres d'un mot tournent dans le tourbillon, dans le
+              Les lettres d'un mot attendent dans le tourbillon, dans le
               désordre.
             </li>
             <li style="--c: #f08321">
@@ -1021,8 +1023,7 @@
         const grow = still
           ? 1
           : easeOut(Math.min(1, Math.max(0, (now - tile.born) / 900)))
-        let r = geo.R * (0.1 + 0.9 * grow) * (1 - 0.55 * swirl(now))
-        if (!still) r += Math.sin(now / 900 + tile.id * 1.9) * geo.R * 0.04
+        const r = geo.R * (0.1 + 0.9 * grow) * (1 - 0.55 * swirl(now))
         const a = spin + tile.phase - Math.PI / 2
         return {
           x: geo.cx + r * Math.cos(a),
@@ -1254,7 +1255,8 @@
         last = now
         if (!still) {
           boost *= Math.exp(-dt * 2.5)
-          spin += dt * ((gameOver ? 0.05 : 0.12) + boost)
+          // Le cercle ne tourne que sur l'élan d'un mélange.
+          spin += dt * boost
         }
         // Sur le cercle, les billes restantes se répartissent doucement.
         const ring = displayOrder.filter((id) => !tiles[id].used)
