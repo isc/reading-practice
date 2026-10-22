@@ -29,6 +29,7 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f0f2f5" />
     <title>Nom du jeu</title>
     <style>
       /* styles du jeu */
@@ -44,6 +45,58 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
 ```
 
 ## Style & UX
+
+- **Barre d'état** : le `theme-color` de chaque page prend la couleur du haut
+  de son fond. Chrome sur Android colore la barre d'état avec, même dans la
+  PWA installée ; sinon elle garde la couleur du manifeste et jure avec le jeu.
+- **Barre du bas** (navigation Android) : elle, ne suit pas les pages. Chrome
+  la peint d'une seule couleur pour toute l'appli installée, celle du
+  manifeste (`background_color`, et `theme_color` à l'identique, comme l'a
+  établi kine-tracker). Elle est noire : sous un jeu sombre elle se fond, sous
+  un jeu clair elle passe pour la barre normale d'Android, alors qu'une bande
+  claire sous un jeu sombre fait bug. Une appli installée relit son manifeste
+  au plus une fois par jour : réinstaller pour voir un changement tout de suite.
+- **Pas de sélection de texte** : un appui long ne doit rien sélectionner ni
+  ouvrir de bulle. Le `body` prend `-webkit-user-select: none` et
+  `user-select: none` (Safari veut le préfixe), plus
+  `-webkit-touch-callout: none` s'il y a des images ou des liens. Les champs
+  de saisie restent sélectionnables, sans quoi l'iPad peut refuser la
+  saisie : `input, textarea { -webkit-user-select: text; user-select: text }`.
+- **Animations continues** : une animation infinie n'anime que `transform` ou
+  `opacity` (une lueur qui bat : un `::after` dont l'opacité varie), et jamais
+  de `filter: blur` sur un grand calque. Le reste se repeint à chaque image :
+  sur un vieil iPad, le sudoku devenait injouable au fil de la partie
+  (octobre 2026).
+- **Hauteur d'écran** : jamais `100vh` ni `100dvh` pour la hauteur de la page.
+  Dans l'appli installée sur Android, Chrome y compte la barre d'état, que la
+  page n'occupe pas. La page dépassait donc de ~58 px : elle défilait, et son
+  bas passait sous la barre du bas (vécu sur b ou d en octobre 2026, mesuré
+  sur les captures du Pixel). Une page à fond uni n'a besoin de rien : le
+  fond du `body` couvre de toute façon l'écran. Quand la page doit remplir
+  l'écran (fond en dégradé, conteneur plein écran), la hauteur vient des
+  pourcentages, qui suivent la zone vraiment visible :
+
+  ```css
+  html {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  body {
+    flex-grow: 1;
+  }
+  ```
+
+  Pour un conteneur plein écran, `body` passe en colonne
+  (`display: flex; flex-direction: column`) et le conteneur prend `flex: 1`
+  (avec `width: 100%` s'il est centré par `margin: 0 auto`). Si `body` est en
+  ligne, le conteneur prend `align-self: stretch` (tetris). `html` grandit
+  avec le contenu, donc un fond en dégradé couvre toute la page. Un écran de
+  hauteur fixe, qui ne défile jamais, enchaîne `height: 100%` sur `html`,
+  `body` et le conteneur (memory). `svh` n'aide pas : l'appli installée n'a
+  pas de barre de navigateur, donc `svh` y vaut `dvh`. Une taille de plateau
+  tirée de la hauteur se calcule plutôt sur la place qu'a pris le conteneur
+  (`clientHeight` en JS, comme tetris).
 
 - **Langue** : toute l'interface est en **français**.
 - **Couleurs** : accent principal `#4a90e2` (bleu), fond de page `#f0f2f5`.
@@ -78,6 +131,7 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
 
   Sans ça, on demande « Une partie est en cours ? » sur l'écran des scores ou
   après la victoire, et les enfants finissent par répondre au hasard.
+
 - **Listes de mots** : `fetch('fr_FR.txt')` (gros dictionnaire français) ou
   `fetch('mots-enfants.txt')` (mots adaptés aux enfants).
 
