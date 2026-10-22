@@ -507,6 +507,8 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
+        /* L'ombre des boutons mange l'écart avec les scores. */
+        margin-bottom: 8px;
       }
 
       .btn {
@@ -1261,11 +1263,11 @@
           // Le cercle ne tourne que sur l'élan d'un mélange.
           spin += dt * boost
         }
-        // Sur le cercle, les billes restantes se répartissent doucement.
-        const ring = displayOrder.filter((id) => !tiles[id].used)
-        ring.forEach((id, k) => {
+        // Chaque bille a sa place sur le cercle, qui reste vide quand elle
+        // part : les autres ne bougent pas. Seul un mélange les déplace.
+        displayOrder.forEach((id, k) => {
           const tile = tiles[id]
-          const target = (2 * Math.PI * k) / ring.length
+          const target = (2 * Math.PI * k) / displayOrder.length
           tile.phase +=
             wrapAngle(target - tile.phase) *
             Math.min(1, dt * (still ? 60 : 3.5))
