@@ -1,0 +1,1729 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f0f2f9" />
+    <title>C doux ou C dur ?</title>
+    <style>
+      /* Ondes sonores : le son du C se voit. Le C doux est une onde douce et
+         soufflée (« sss »), des rubans qui ondulent ; le C dur une onde qui
+         claque (« k »), un pic qui jaillit et retombe. Quand on répond, le C
+         du mot chante, et son onde sort de la lettre. */
+
+      @font-face {
+        font-family: "Atkinson";
+        src: url("AtkinsonHyperlegibleNext-Variable.woff2") format("woff2");
+        font-weight: 200 800;
+        font-display: swap;
+      }
+
+      :root {
+        --bg: #f4f1fb;
+        --ink: #221a3d;
+        --muted: #7a7196;
+        --line: #d9d3ea;
+        --card: #ffffff;
+        --soft: #10a99b;
+        --soft-2: #6f7cff;
+        --soft-3: #b08cff;
+        --hard: #f0401f;
+        --hard-2: #ff9a1a;
+        --hard-3: #ffd23f;
+        --font: "Atkinson", "Trebuchet MS", system-ui, sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--font);
+        color: var(--ink);
+        background: var(--bg);
+        min-height: 100vh;
+        min-height: 100dvh;
+        -webkit-tap-highlight-color: transparent;
+        overflow-x: hidden;
+      }
+
+      /* Le fond : deux taches de couleur fixes, et une onde très pâle qui
+         glisse au pied de la page (seule sa position s'anime). */
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        background:
+          radial-gradient(60% 40% at 0% 0%, #dff6f2 0%, transparent 70%),
+          radial-gradient(60% 40% at 100% 100%, #ffe6dc 0%, transparent 70%);
+      }
+
+      .backdrop svg {
+        position: absolute;
+        left: 0;
+        bottom: 6%;
+        width: 200%;
+        height: 120px;
+        animation: drift 18s linear infinite;
+      }
+
+      .backdrop path {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 2;
+      }
+
+      @keyframes drift {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      .app {
+        position: relative;
+        max-width: 520px;
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+      }
+
+      .screen {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: none;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 24px;
+        box-shadow:
+          0 1px 0 rgba(34, 26, 61, 0.04),
+          0 10px 30px -12px rgba(34, 26, 61, 0.22);
+      }
+
+      /* ===== Les ondes ===== */
+
+      .wave {
+        display: block;
+        width: 100%;
+        overflow: visible;
+      }
+
+      .wave path {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* Les rubans du C doux, l'un sur l'autre comme des voiles. */
+      .wave .s1 {
+        stroke: var(--soft);
+        stroke-width: 3.2;
+      }
+      .wave .s2 {
+        stroke: var(--soft-2);
+        stroke-width: 2.4;
+        opacity: 0.7;
+      }
+      .wave .s3 {
+        stroke: var(--soft-3);
+        stroke-width: 1.8;
+        opacity: 0.6;
+      }
+
+      /* Le pic du C dur, à angles vifs. */
+      .wave .k1 {
+        stroke: var(--hard);
+        stroke-width: 3.6;
+        stroke-linecap: butt;
+      }
+      .wave .k2 {
+        stroke: var(--hard-2);
+        stroke-width: 2.2;
+        opacity: 0.85;
+      }
+      .wave .k3 {
+        stroke: var(--hard-3);
+        stroke-width: 1.4;
+      }
+
+      .wave .clap path {
+        stroke-linejoin: miter;
+      }
+
+      .wave .flat {
+        stroke: var(--line);
+        stroke-width: 3;
+      }
+
+      /* Une onde qui vit : les rubans du doux glissent chacun à son
+         rythme et respirent ; le pic du dur claque à intervalles. */
+      .live .soft-a {
+        animation: slide 2.6s linear infinite;
+      }
+      .live .soft-b {
+        animation: slide 1.9s linear infinite reverse;
+      }
+      .live .soft-c {
+        animation: slide 1.3s linear infinite;
+      }
+      .live .breathe {
+        animation: breathe 2.8s ease-in-out infinite;
+      }
+      .live .clap {
+        animation: clap 1.6s cubic-bezier(0.2, 0.9, 0.3, 1) infinite;
+      }
+
+      .wave.fade {
+        -webkit-mask-image: linear-gradient(
+          90deg,
+          transparent,
+          #000 25%,
+          #000 75%,
+          transparent
+        );
+        mask-image: linear-gradient(
+          90deg,
+          transparent,
+          #000 25%,
+          #000 75%,
+          transparent
+        );
+      }
+
+      @keyframes slide {
+        to {
+          transform: translateX(var(--period));
+        }
+      }
+
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scaleY(0.7);
+        }
+        50% {
+          transform: scaleY(1.05);
+        }
+      }
+
+      @keyframes clap {
+        0%,
+        55%,
+        100% {
+          transform: scaleY(0.55);
+        }
+        7% {
+          transform: scaleY(1.15);
+        }
+        18% {
+          transform: scaleY(0.8);
+        }
+      }
+
+      /* ===== Accueil ===== */
+
+      .welcome {
+        justify-content: center;
+        gap: 18px;
+      }
+
+      .welcome h1 {
+        text-align: center;
+        font-size: 2.3rem;
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+      }
+
+      /* Chaque sorte de C a sa couleur : on la lit dans --tone. */
+      .doux {
+        --tone: var(--soft);
+        --tone-bg: #d9f4ef;
+      }
+
+      .dur {
+        --tone: var(--hard);
+        --tone-bg: #ffe2d9;
+      }
+
+      .welcome h1 span,
+      .voice-tile .big-c,
+      .sym,
+      .target .example b,
+      .end-words .c {
+        color: var(--tone);
+      }
+
+      .welcome > p {
+        text-align: center;
+        color: var(--muted);
+        font-size: 1.15rem;
+        line-height: 1.4;
+        padding: 0 8px;
+      }
+
+      /* Deux tuiles de même hauteur : le C doux et le C dur, qu'on touche
+         pour les entendre. */
+      .voices {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .voice-tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 16px 10px 14px;
+        text-align: center;
+        transition: transform 0.15s;
+      }
+
+      .voice-tile:active {
+        transform: scale(0.97);
+      }
+
+      .voice-tile .big-c {
+        font-size: 4.6rem;
+        font-weight: 800;
+        line-height: 0.9;
+      }
+
+      .voice-tile .wave {
+        height: 46px;
+      }
+
+      .voice-tile .name {
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+
+      .voice-tile .example {
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      .sym {
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .main-btn {
+        align-self: center;
+        min-width: 220px;
+        padding: 18px 36px;
+        border-radius: 999px;
+        background: var(--ink);
+        color: #fff;
+        font-size: 1.35rem;
+        font-weight: 700;
+        box-shadow: 0 10px 24px -10px rgba(34, 26, 61, 0.6);
+        transition: transform 0.15s;
+      }
+
+      .main-btn:active {
+        transform: scale(0.96);
+      }
+
+      /* ===== Partie ===== */
+
+      /* Le chrono au centre, les compteurs de part et d'autre : rien ne
+         bouge quand les secondes défilent. */
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        font-size: 1.05rem;
+        color: var(--muted);
+      }
+
+      .stats b {
+        color: var(--ink);
+      }
+
+      .stats .good {
+        justify-self: end;
+        color: var(--ink);
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .stats .good svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      #timer {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink);
+      }
+
+      /* Les dix mots de la partie, chacun une petite onde une fois joué. */
+      .track {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 5px;
+        height: 18px;
+      }
+
+      .track .wave {
+        height: 18px;
+      }
+
+      .track .missed {
+        opacity: 0.35;
+      }
+
+      /* Le son cherché : son onde, son symbole, son mot exemple. */
+      .target {
+        display: grid;
+        grid-template-columns: 64px 1fr;
+        align-items: center;
+        gap: 4px 10px;
+        padding: 12px 16px 12px 12px;
+        text-align: left;
+      }
+
+      .target .ask {
+        grid-column: 1 / -1;
+        font-size: 1.05rem;
+        font-weight: 700;
+        padding-left: 4px;
+      }
+
+      .target .sym {
+        font-size: 2.2rem;
+        text-align: center;
+      }
+
+      .target .wave {
+        height: 56px;
+      }
+
+      .target .example {
+        grid-column: 2;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      .speaker {
+        width: 22px;
+        height: 22px;
+        flex: none;
+      }
+
+      /* La scène : l'image, la bande où le C chante, et le mot. */
+      .stage {
+        flex: 1;
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 14px 10px 18px;
+        position: relative;
+      }
+
+      .particle {
+        position: absolute;
+        pointer-events: none;
+      }
+
+      .shard {
+        width: 5px;
+        height: 18px;
+        margin: -9px 0 0 -2.5px;
+        border-radius: 3px;
+      }
+
+      .puff {
+        width: 12px;
+        height: 12px;
+        margin: -6px 0 0 -6px;
+        border-radius: 50%;
+        opacity: 0;
+      }
+
+      .picture {
+        width: 6rem;
+        height: 6rem;
+        transition: opacity 0.4s;
+      }
+
+      /* Caché, il garde sa place : le mot ne saute pas quand il arrive. */
+      .picture.veiled {
+        opacity: 0;
+      }
+
+      /* Au premier palier, l'image se touche pour entendre le mot. */
+      .hear {
+        position: relative;
+        display: grid;
+      }
+
+      .hear .speaker {
+        position: absolute;
+        right: -10px;
+        bottom: -2px;
+        width: 32px;
+        height: 32px;
+        padding: 6px;
+        border-radius: 50%;
+        background: var(--card);
+        color: var(--muted);
+        box-shadow: 0 2px 8px -2px rgba(34, 26, 61, 0.3);
+      }
+
+      .hear:disabled {
+        cursor: default;
+      }
+
+      .hear:disabled .speaker {
+        display: none;
+      }
+
+      .example img {
+        width: 1.6em;
+        height: 1.6em;
+        vertical-align: middle;
+      }
+
+      .band {
+        position: relative;
+        width: 100%;
+        height: 84px;
+      }
+
+      .band svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      .band .dot {
+        fill: var(--ink);
+      }
+
+      .band .pulse {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 2;
+        opacity: 0;
+        animation: pulse 1.6s ease-out infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.5;
+          transform: scale(0.6);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(2.6);
+        }
+      }
+
+      .word {
+        font-size: 3.4rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        line-height: 1.1;
+        white-space: nowrap;
+      }
+
+      /* Le C dont on parle, posé sur une pastille ; il prend sa couleur
+         quand il chante, et après une erreur la lettre qui le suit (celle
+         qui décide) s'éclaire à son tour. */
+      .word .c,
+      .word .next {
+        display: inline-block;
+        padding: 0 2px;
+        border-radius: 12px;
+        transition:
+          color 0.2s,
+          background-color 0.2s;
+      }
+
+      .word .c {
+        background: #ece8f6;
+      }
+
+      .word.doux .c,
+      .word.dur .c,
+      .word .next.lit {
+        color: var(--tone);
+        background: var(--tone-bg);
+      }
+
+      .word .next.lit {
+        animation: nudge 0.5s ease-in-out 2;
+      }
+
+      @keyframes nudge {
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+
+      /* Oui et Non : deux grandes touches de même taille, une icône dessinée
+         au centre au-dessus du mot. Après la réponse, la bonne touche
+         s'allume ; une touche fausse se secoue. */
+      .answers {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .answer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        height: 96px;
+        font-size: 1.35rem;
+        font-weight: 700;
+        transition:
+          transform 0.15s,
+          opacity 0.2s,
+          background-color 0.2s,
+          color 0.2s;
+      }
+
+      .answer svg {
+        width: 38px;
+        height: 38px;
+      }
+
+      .answer:active {
+        transform: scale(0.96);
+      }
+
+      .answers.busy .answer:not(.right) {
+        opacity: 0.45;
+      }
+
+      .answer.right {
+        background: var(--ink);
+        color: #fff;
+        animation: yay 0.45s ease-out;
+      }
+
+      @keyframes yay {
+        40% {
+          transform: scale(1.06);
+        }
+      }
+
+      .answer.wrong {
+        animation: shake 0.45s ease-in-out;
+      }
+
+      @keyframes shake {
+        20%,
+        60% {
+          transform: translateX(-9px);
+        }
+        40%,
+        80% {
+          transform: translateX(9px);
+        }
+      }
+
+      @media (hover: hover) {
+        .main-btn:hover,
+        .answer:hover,
+        .voice-tile:hover {
+          transform: translateY(-2px);
+        }
+      }
+
+      /* ===== Fin de partie ===== */
+
+      .end {
+        justify-content: center;
+      }
+
+      .end .card {
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .end h2 {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 800;
+      }
+
+      /* L'enregistrement de la partie : les dix ondes bout à bout, et une
+         tête de lecture qui les rejoue. */
+      .record {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+      }
+
+      .record .play {
+        flex: none;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: #fff;
+        display: grid;
+        place-items: center;
+      }
+
+      .record .play svg {
+        width: 22px;
+        height: 22px;
+        margin-left: 3px;
+      }
+
+      .record .tape {
+        position: relative;
+        flex: 1;
+        height: 64px;
+      }
+
+      .record .tape .wave {
+        height: 64px;
+      }
+
+      .record .seg {
+        transition: opacity 0.2s;
+      }
+
+      .record .missed {
+        opacity: 0.3;
+      }
+
+      .record .seg.on {
+        opacity: 1;
+      }
+
+      .record .head {
+        position: absolute;
+        top: -4px;
+        bottom: -4px;
+        left: 0;
+        width: 3px;
+        margin-left: -1.5px;
+        border-radius: 2px;
+        background: var(--ink);
+        opacity: 0;
+      }
+
+      .score {
+        text-align: center;
+        font-size: 3rem;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .score small {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.05rem;
+        font-weight: 400;
+        color: var(--muted);
+      }
+
+      .level-note {
+        margin: 0;
+        text-align: center;
+        font-weight: 700;
+      }
+
+      /* Les mots de la partie, à toucher pour les entendre ; une erreur a
+         son contour en pointillés. */
+      .end-words {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        list-style: none;
+      }
+
+      .end-words button {
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 2px solid var(--line);
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+
+      .end-words .missed {
+        border-style: dashed;
+        border-color: var(--muted);
+      }
+
+      #confetti {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 30;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .backdrop svg,
+        .live *,
+        .band .pulse,
+        .word .next.lit,
+        .answer.right,
+        .answer.wrong {
+          animation: none !important;
+        }
+      }
+    </style>
+    <script src="exit-guard.js"></script>
+  </head>
+  <body>
+    <canvas id="confetti"></canvas>
+    <div class="backdrop" aria-hidden="true">
+      <svg viewBox="0 0 800 120" preserveAspectRatio="none">
+        <path id="backdropWave" transform="translate(0 60)" />
+      </svg>
+    </div>
+
+    <main class="app">
+      <!-- ===== Accueil ===== -->
+      <section class="screen welcome" id="welcome">
+        <h1>
+          C <span class="doux">doux</span><br />ou C
+          <span class="dur">dur</span> ?
+        </h1>
+        <div class="voices">
+          <button
+            class="card voice-tile doux"
+            id="tileDoux"
+            aria-label="C doux, son s, comme citron"
+          >
+            <span class="big-c">C</span>
+            <svg class="wave live" viewBox="0 0 140 46"></svg>
+            <span class="name">doux <span class="sym">[s]</span></span>
+            <span class="example"
+              >citron <img src="images/mots/citron.webp" alt=""
+            /></span>
+          </button>
+          <button
+            class="card voice-tile dur"
+            id="tileDur"
+            aria-label="C dur, son k, comme café"
+          >
+            <span class="big-c">C</span>
+            <svg class="wave live" viewBox="0 0 140 46"></svg>
+            <span class="name">dur <span class="sym">[k]</span></span>
+            <span class="example"
+              >café <img src="images/mots/cafe.webp" alt=""
+            /></span>
+          </button>
+        </div>
+        <p>
+          Touche un C pour l'écouter.<br />Puis fais chanter ceux des mots !
+        </p>
+        <button class="main-btn" id="startBtn">Commencer</button>
+      </section>
+
+      <!-- ===== Partie ===== -->
+      <section class="screen hidden" id="game">
+        <div class="stats">
+          <span
+            >Mot <b id="wordNumber">1</b> / <span id="wordTotal"></span
+          ></span>
+          <span id="timer">00:00</span>
+          <span class="good" aria-label="Bonnes réponses">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12.5L10 17.5L19 7" />
+            </svg>
+            <b id="scoreValue">0</b>
+          </span>
+        </div>
+        <div class="track" id="track"></div>
+
+        <button class="card target" id="target">
+          <span class="ask">Le C fait ce son ?</span>
+          <span class="sym" id="targetSym"></span>
+          <svg class="wave live" id="targetWave" viewBox="0 0 280 56"></svg>
+          <span class="example">
+            <svg
+              class="speaker"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 9H8L13 5V19L8 15H4Z" fill="currentColor" />
+              <path
+                d="M16.5 8.5A5 5 0 0 1 16.5 15.5M19 6A8.5 8.5 0 0 1 19 18"
+              />
+            </svg>
+            <span id="targetExample"></span>
+          </span>
+        </button>
+
+        <div class="card stage" id="stage">
+          <button class="hear" id="hear" aria-label="Écouter le mot">
+            <img class="picture" id="picture" alt="" />
+            <svg
+              class="speaker"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 9H8L13 5V19L8 15H4Z" fill="currentColor" />
+              <path
+                d="M16.5 8.5A5 5 0 0 1 16.5 15.5M19 6A8.5 8.5 0 0 1 19 18"
+              />
+            </svg>
+          </button>
+          <div class="band" id="band">
+            <svg class="wave" id="bandWave"></svg>
+          </div>
+          <div class="word" id="word"></div>
+        </div>
+
+        <div class="answers" id="answers">
+          <button class="card answer" data-yes="1">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12.5L10 17.5L19 7" />
+            </svg>
+            Oui
+          </button>
+          <button class="card answer" data-yes="">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.8"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M6.5 6.5L17.5 17.5M17.5 6.5L6.5 17.5" />
+            </svg>
+            Non
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== Fin de partie ===== -->
+      <section class="screen end hidden" id="end">
+        <div class="card">
+          <h2>Ta partie en ondes</h2>
+          <button class="record" id="record" aria-label="Réécouter la partie">
+            <span class="play">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M6 4.5L19.5 12L6 19.5Z" />
+              </svg>
+            </span>
+            <span class="tape">
+              <svg class="wave" id="tape"></svg>
+              <span class="head" id="head"></span>
+            </span>
+          </button>
+          <div class="score" id="score"></div>
+          <p class="level-note" id="levelNote" hidden></p>
+          <ul class="end-words" id="endWords"></ul>
+          <button class="main-btn" id="replayBtn">Rejouer</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="voix.js"></script>
+    <script src="images.js"></script>
+    <script src="confetti.js"></script>
+    <script>
+      const words = [
+        // C dur (son K)
+        { word: "caméra", isDur: true },
+        { word: "couronne", isDur: true },
+        { word: "cube", isDur: true },
+        { word: "écran", isDur: true },
+        { word: "café", isDur: true },
+        { word: "cadeau", isDur: true },
+        { word: "cœur", isDur: true },
+        { word: "carte", isDur: true },
+        { word: "carotte", isDur: true },
+        { word: "école", isDur: true },
+        { word: "canard", isDur: true },
+        { word: "cactus", isDur: true },
+        { word: "crocodile", isDur: true },
+        { word: "cartable", isDur: true },
+        { word: "castor", isDur: true },
+        { word: "cuillère", isDur: true },
+        { word: "camion", isDur: true },
+        { word: "coquillage", isDur: true },
+
+        // C doux (son S)
+        { word: "citron", isDur: false },
+        { word: "cygne", isDur: false },
+        { word: "cerise", isDur: false },
+        { word: "cinéma", isDur: false },
+        { word: "ciel", isDur: false },
+        { word: "cerceau", isDur: false },
+        { word: "cigogne", isDur: false },
+        { word: "ceinture", isDur: false },
+        { word: "cycliste", isDur: false },
+        { word: "cyprès", isDur: false },
+        { word: "citrouille", isDur: false },
+        { word: "ciseaux", isDur: false },
+        { word: "cirque", isDur: false },
+        { word: "cerf-volant", isDur: false },
+        { word: "cinq", isDur: false },
+        { word: "céréales", isDur: false },
+        { word: "cintre", isDur: false },
+        { word: "cigale", isDur: false },
+      ]
+
+      const NUMBER_OF_WORDS = 10
+      // Les deux sons du C, rangés selon isDur.
+      const SOUND = {
+        true: { kind: "dur", sym: "k", example: "café" },
+        false: { kind: "doux", sym: "s", example: "citron" },
+      }
+
+      let score = 0
+      let currentIndex = 0
+      let startTime
+      let timerInterval
+      let currentObjectiveIsDur
+      let gameWords = []
+      let results = []
+      let busy = false
+      let pictureTimer
+
+      // L'image du mot aide à le reconnaître sans le lire : on la retire peu
+      // à peu, à mesure que l'enfant maîtrise. Au premier palier, on peut même
+      // la toucher pour entendre le mot. Deux parties d'affilée à 9/10 font
+      // monter d'un palier, une partie sous 7/10 fait redescendre.
+      const PICTURE_DELAYS = [0, 0, 3000, Infinity] // Infinity : après la réponse
+      const LEVEL_KEY = "c-doux-dur.palier"
+      // Ce que dit l'écran de fin en arrivant à un palier, en montant ou en
+      // descendant.
+      const LEVEL_UP = [
+        null, // on ne monte jamais au palier 0
+        "Tu lis si bien que tu n'as plus besoin d'écouter le mot !",
+        "Tu lis si bien que l'image va se cacher un peu !",
+        "Super ! L'image arrivera après ta réponse.",
+      ]
+      const LEVEL_DOWN = [
+        "Tu peux de nouveau toucher l'image pour écouter le mot.",
+        "L'image revient tout de suite pour t'aider.",
+        "L'image revient plus tôt pour t'aider.",
+      ]
+      let level = { step: 0, streak: 0 }
+      try {
+        level = JSON.parse(localStorage.getItem(LEVEL_KEY)) || level
+      } catch {}
+
+      const $ = (id) => document.getElementById(id)
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      const reducedMotion = () =>
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+      Voice.folder = "audio/c-doux-dur/"
+
+      function showScreen(id) {
+        for (const s of ["welcome", "game", "end"])
+          $(s).classList.toggle("hidden", s !== id)
+      }
+
+      // ===== Les ondes, en tracés SVG =====
+
+      const pt = (x, y) => `${x.toFixed(1)} ${y.toFixed(1)}`
+
+      // Une sinusoïde de x0 à x1, centrée sur y = 0, d'amplitude amp(x).
+      function sine(x0, x1, period, amp, phase = 0) {
+        const pts = []
+        for (let x = x0; x <= x1 + 0.01; x += period / 16)
+          pts.push(
+            pt(x, -amp(x) * Math.sin((2 * Math.PI * x) / period + phase)),
+          )
+        return "M" + pts.join("L")
+      }
+
+      // Un claquement : une ligne plate, un pic qui jaillit en x0 et
+      // retombe en zigzags de plus en plus petits, puis la ligne reprend.
+      function burst(x0, x1, x2, amp, step, peaks = 8) {
+        const pts = [pt(x0, 0), pt(x1, 0)]
+        let x = x1
+        for (let i = 0; i < peaks; i++) {
+          x += step * (1 + i * 0.12)
+          pts.push(pt(x, (i % 2 ? 1 : -1) * amp * Math.exp(-i / 2.2)))
+        }
+        pts.push(pt(x + step, 0), pt(x2, 0))
+        return "M" + pts.join("L")
+      }
+
+      // Les trois rubans du C doux, centrés sur y = 0, de x0 à x1 (par
+      // défaut, une boîte de largeur w centrée en 0). `env` donne
+      // l'enveloppe (1 au centre) ; `live` les fait glisser : chaque ruban
+      // est alors tracé une période plus large, pour boucler.
+      function softWave(
+        w,
+        h,
+        {
+          x0 = -w / 2,
+          x1 = w / 2,
+          env = () => 1,
+          live = false,
+          scale = 1,
+        } = {},
+      ) {
+        const layers = [
+          ["s1", "soft-a", 34 * scale, 0.42, 0],
+          ["s2", "soft-b", 23 * scale, 0.3, 1.3],
+          ["s3", "soft-c", 15 * scale, 0.2, 2.1],
+        ]
+        const paths = layers
+          .map(([cls, anim, period, a, phase]) => {
+            const extra = live ? period : 0
+            const d = sine(x0 - extra, x1, period, (x) => a * h * env(x), phase)
+            return `<path class="${cls} ${anim}" style="--period:${period}px" d="${d}" />`
+          })
+          .join("")
+        return `<g class="breathe">${paths}</g>`
+      }
+
+      // Le pic du C dur : trois traits qui claquent ensemble.
+      function hardWave(x0, x1, x2, h, step = 6) {
+        return `<g class="clap">
+          <path class="k3" d="${burst(x0, x1 + 3, x2, h * 0.3, step * 0.9)}" />
+          <path class="k2" d="${burst(x0, x1 + 1.5, x2, h * 0.38, step)}" />
+          <path class="k1" d="${burst(x0, x1, x2, h * 0.47, step)}" />
+        </g>`
+      }
+
+      // Une enveloppe en fuseau : nulle aux bords, pleine au centre.
+      const spindle = (w) => (x) => Math.cos((Math.PI * x) / w) ** 2
+
+      // Une onde centrée dans une boîte w × h, prête à l'emploi.
+      function waveMarkup(isDur, w, h, opts = {}) {
+        const inner = isDur
+          ? hardWave(-w / 2, -w * (opts.at ?? 0.18), w / 2, h, opts.step)
+          : softWave(w, h, { env: spindle(w), ...opts })
+        return `<g transform="translate(${w / 2} ${h / 2})">${inner}</g>`
+      }
+
+      // Une onde qui vit, dans un SVG `.live` : les rubans du doux glissent
+      // sous un fondu fixe aux bords, le pic du dur claque.
+      function liveWave(svg, isDur) {
+        const [, , w, h] = svg.getAttribute("viewBox").split(" ").map(Number)
+        svg.classList.toggle("fade", !isDur)
+        svg.innerHTML = isDur
+          ? waveMarkup(true, w, h, { at: 0.12 })
+          : `<g transform="translate(${w / 2} ${h / 2})">${softWave(w, h, { live: true })}</g>`
+      }
+
+      // ===== Les sons du C, synthétisés =====
+
+      let noise = null
+      function noiseBuffer(ctx) {
+        if (!noise) {
+          noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate)
+          const data = noise.getChannelData(0)
+          for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+        }
+        return noise
+      }
+
+      // Du bruit filtré, avec une enveloppe de volume [temps, niveau]…
+      function hiss(ctx, t, type, freq, q, envelope) {
+        const src = ctx.createBufferSource()
+        src.buffer = noiseBuffer(ctx)
+        const filter = ctx.createBiquadFilter()
+        filter.type = type
+        filter.frequency.value = freq
+        filter.Q.value = q
+        const gain = ctx.createGain()
+        gain.gain.setValueAtTime(0, t)
+        for (const [dt, level] of envelope)
+          gain.gain.linearRampToValueAtTime(level, t + dt)
+        src.connect(filter).connect(gain).connect(ctx.destination)
+        src.start(t)
+        src.stop(t + envelope.at(-1)[0] + 0.05)
+      }
+
+      // « sss » : un souffle aigu qui monte doucement et s'éteint ;
+      // « k » : un bref claquement, puis un petit souffle. Rend sa durée,
+      // en millisecondes, pour qu'on puisse l'attendre.
+      function sayC(isDur, delay = 0) {
+        const length = isDur ? 300 : 750
+        const ctx = Voice.wake(length + 500 + delay * 1000)
+        if (!ctx) return length
+        const t = ctx.currentTime + delay + 0.02
+        if (isDur) {
+          hiss(ctx, t, "bandpass", 1900, 1.4, [
+            [0.004, 0.9],
+            [0.05, 0.05],
+            [0.07, 0],
+          ])
+          hiss(ctx, t + 0.03, "highpass", 3000, 0.7, [
+            [0.01, 0.12],
+            [0.12, 0],
+          ])
+        } else {
+          hiss(ctx, t, "highpass", 4200, 0.8, [
+            [0.15, 0.28],
+            [0.5, 0.24],
+            [0.75, 0],
+          ])
+        }
+        return length
+      }
+
+      // Deux notes qui montent pour une bonne réponse ; une note qui
+      // descend, toute douce, pour une erreur.
+      function tone(notes, type = "triangle", glide = 1) {
+        const ctx = Voice.wake(1200)
+        if (!ctx) return
+        notes.forEach((freq, i) => {
+          const t = ctx.currentTime + i * 0.1
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = type
+          osc.frequency.setValueAtTime(freq, t)
+          osc.frequency.exponentialRampToValueAtTime(freq * glide, t + 0.35)
+          gain.gain.setValueAtTime(0, t)
+          gain.gain.linearRampToValueAtTime(0.14, t + 0.015)
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5)
+          osc.connect(gain).connect(ctx.destination)
+          osc.start(t)
+          osc.stop(t + 0.55)
+        })
+      }
+
+      // Le C chante, puis Marie dit le mot qui le montre.
+      async function demo(isDur) {
+        Voice.wake(2500)
+        await wait(sayC(isDur))
+        await Voice.say(SOUND[isDur].example)
+      }
+
+      // ===== Chrono =====
+
+      function formatTime(ms) {
+        const minutes = Math.floor(ms / 60000)
+        const seconds = Math.floor((ms % 60000) / 1000)
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+      }
+
+      function updateTime() {
+        $("timer").textContent = formatTime(Date.now() - startTime)
+      }
+
+      function startTimer() {
+        startTime = Date.now()
+        clearInterval(timerInterval)
+        timerInterval = setInterval(updateTime, 1000)
+        updateTime()
+      }
+
+      // ===== Partie =====
+
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[array[i], array[j]] = [array[j], array[i]]
+        }
+        return array
+      }
+
+      // Cinq mots de chaque sorte, mélangés.
+      function shuffleAndSelectWords() {
+        const durWords = shuffle(words.filter((w) => w.isDur))
+        const douxWords = shuffle(words.filter((w) => !w.isDur))
+        gameWords = shuffle([
+          ...durWords.slice(0, NUMBER_OF_WORDS / 2),
+          ...douxWords.slice(0, NUMBER_OF_WORDS / 2),
+        ])
+      }
+
+      // Une partie cherche le [k], la suivante le [s], et ainsi de suite.
+      function setObjective() {
+        currentObjectiveIsDur =
+          currentObjectiveIsDur === undefined
+            ? Math.random() < 0.5
+            : !currentObjectiveIsDur
+        const { kind, sym, example } = SOUND[currentObjectiveIsDur]
+        $("target").className = `card target ${kind}`
+        $("targetSym").textContent = `[${sym}]`
+        $("targetExample").innerHTML =
+          `comme <b>${example}</b> <img src="${WordImage.src(example)}" alt="" />`
+        $("target").setAttribute(
+          "aria-label",
+          `Le C fait-il le son ${sym}, comme ${example} ?`,
+        )
+        liveWave($("targetWave"), currentObjectiveIsDur)
+        Voice.load(example)
+      }
+
+      // Le mot, son premier C marqué d'un point, et la lettre qui le suit.
+      function wordMarkup(word) {
+        const i = word.indexOf("c")
+        return (
+          word.slice(0, i) +
+          `<span class="c">c</span><span class="next">${word[i + 1]}</span>` +
+          word.slice(i + 2)
+        )
+      }
+
+      // Le centre du C, en pixels de `box`, avec la taille de `box`.
+      function cCenter(box) {
+        const b = box.getBoundingClientRect()
+        const c = $("word").querySelector(".c").getBoundingClientRect()
+        return {
+          w: b.width,
+          h: b.height,
+          x: c.left + c.width / 2 - b.left,
+          y: c.top + c.height / 2 - b.top,
+        }
+      }
+
+      // Avant la réponse : une ligne de silence, et un point qui attend sous
+      // le C.
+      function drawSilence() {
+        const { w, h, x } = cCenter($("band"))
+        const svg = $("bandWave")
+        svg.setAttribute("viewBox", `0 0 ${w} ${h}`)
+        svg.innerHTML = `
+          <path class="flat" d="M8 ${h / 2}H${w - 8}" />
+          <g transform="translate(${x} ${h / 2})">
+            <circle class="pulse" r="7" />
+            <circle class="dot" r="5" />
+          </g>`
+      }
+
+      // Le C chante : son onde sort de la lettre et s'étend des deux côtés.
+      function emitWave(isDur) {
+        const { w, h, x } = cCenter($("band"))
+        const from = cCenter($("stage"))
+        const svg = $("bandWave")
+        const inner = isDur
+          ? hardWave(-x + 8, 0, w - x - 8, h, 7)
+          : softWave(w, h, {
+              x0: -x + 8,
+              x1: w - x - 8,
+              env: (u) => Math.exp(-((u / (w * 0.24)) ** 2)),
+            })
+        svg.innerHTML = `<g transform="translate(${x} ${h / 2})"><g id="emitted">${inner}</g></g>`
+        const g = $("emitted")
+        if (reducedMotion()) return
+        burstFromC(isDur, from)
+        g.animate(
+          isDur
+            ? [
+                { transform: "scale(0.15, 0)", opacity: 0 },
+                { transform: "scale(1, 1.25)", opacity: 1, offset: 0.35 },
+                { transform: "scale(1, 1)", opacity: 1 },
+              ]
+            : [
+                { transform: "scale(0, 0.4)", opacity: 0 },
+                { transform: "scale(1, 1)", opacity: 1 },
+              ],
+          {
+            duration: isDur ? 260 : 750,
+            easing: isDur ? "cubic-bezier(0.2, 0.9, 0.3, 1)" : "ease-out",
+          },
+        )
+      }
+
+      // Le C lâche des particules : des éclats qui fusent pour le dur, des
+      // bulles de souffle qui s'envolent pour le doux.
+      function burstFromC(isDur, { x, y }) {
+        const colors = isDur
+          ? ["--hard", "--hard-2", "--hard"]
+          : ["--soft", "--soft-2", "--soft-3"]
+        const count = isDur ? 12 : 14
+        for (let i = 0; i < count; i++) {
+          const p = document.createElement("span")
+          p.className = `particle ${isDur ? "shard" : "puff"}`
+          p.style.left = `${x}px`
+          p.style.top = `${y}px`
+          p.style.background = `var(${colors[i % 3]})`
+          $("stage").append(p)
+          const angle = isDur
+            ? (2 * Math.PI * i) / count + Math.random() * 0.3
+            : -Math.PI / 2 + (Math.random() - 0.5) * 2.2
+          const dist = isDur ? 70 + Math.random() * 40 : 50 + Math.random() * 70
+          const dx = Math.cos(angle) * dist
+          const dy = Math.sin(angle) * dist
+          const turn = `rotate(${(angle * 180) / Math.PI + 90}deg)`
+          p.animate(
+            isDur
+              ? [
+                  {
+                    transform: `translate(0, 0) ${turn} scaleY(0.4)`,
+                    opacity: 1,
+                  },
+                  {
+                    transform: `translate(${dx}px, ${dy}px) ${turn} scaleY(1)`,
+                    opacity: 0,
+                  },
+                ]
+              : [
+                  { transform: "translate(0, 0) scale(0.4)", opacity: 0.8 },
+                  {
+                    transform: `translate(${dx}px, ${dy}px) scale(1.6)`,
+                    opacity: 0,
+                  },
+                ],
+            {
+              duration: isDur
+                ? 380 + Math.random() * 120
+                : 900 + Math.random() * 500,
+              delay: isDur ? 0 : Math.random() * 300,
+              easing: isDur ? "cubic-bezier(0.1, 0.8, 0.3, 1)" : "ease-out",
+              fill: "backwards",
+            },
+          ).finished.then(() => p.remove())
+        }
+      }
+
+      // Une onde pareille à celle cherchée monte la rejoindre ; les deux
+      // vibrent ensemble.
+      async function joinTarget() {
+        if (reducedMotion()) return
+        const from = $("band").getBoundingClientRect()
+        const to = $("targetWave").getBoundingClientRect()
+        const dy = to.top + to.height / 2 - (from.top + from.height / 2)
+        const dx = to.left + to.width / 2 - (from.left + from.width / 2)
+        await $("bandWave").animate(
+          [
+            { transform: "none", opacity: 1 },
+            {
+              transform: `translate(${dx}px, ${dy}px) scale(0.75, 0.6)`,
+              opacity: 0,
+            },
+          ],
+          { duration: 450, easing: "cubic-bezier(0.5, 0, 0.75, 0.4)" },
+        ).finished
+        $("target").animate(
+          [
+            { transform: "none" },
+            { transform: "scale(1.04)" },
+            { transform: "none" },
+          ],
+          { duration: 600, easing: "ease-out" },
+        )
+      }
+
+      // Une case de la piste : une ligne plate, puis l'onde du mot joué.
+      function trackSlot(inner, missed = false) {
+        return `<svg class="wave${missed ? " missed" : ""}" viewBox="0 0 30 18">${inner}</svg>`
+      }
+
+      const trackWave = (isDur, missed) =>
+        trackSlot(waveMarkup(isDur, 30, 18, { scale: 0.32, step: 2.2 }), missed)
+
+      function displayWord() {
+        const { word } = gameWords[currentIndex]
+        $("wordNumber").textContent = currentIndex + 1
+        $("picture").src = WordImage.src(word)
+        clearTimeout(pictureTimer)
+        const delay = PICTURE_DELAYS[level.step]
+        $("picture").classList.toggle("veiled", delay > 0)
+        $("hear").disabled = level.step > 0
+        if (delay > 0 && delay < Infinity)
+          pictureTimer = setTimeout(showPicture, delay)
+        $("word").className = "word"
+        $("word").innerHTML = wordMarkup(word)
+        drawSilence()
+        Voice.load(word)
+      }
+
+      function showPicture() {
+        $("picture").classList.remove("veiled")
+      }
+
+      async function checkAnswer(button) {
+        if (busy) return
+        busy = true
+        clearTimeout(pictureTimer)
+        showPicture()
+        const { word, isDur } = gameWords[currentIndex]
+        const playerChoice = Boolean(button.dataset.yes)
+        const sameSound = isDur === currentObjectiveIsDur
+        const isCorrect = sameSound === playerChoice
+        results.push({ word, isDur, isCorrect })
+        // Le toucher débloque le son ; après une erreur, il reste éveillé
+        // jusqu'à ce que la voix ait dit le mot.
+        Voice.wake(isCorrect ? 2000 : 7000)
+        // La partie est engagée dès la première réponse.
+        if (window.ExitGuard) ExitGuard.setActive(true)
+
+        $("answers").classList.add("busy")
+        const right = document.querySelector(
+          `.answer[data-yes="${sameSound ? 1 : ""}"]`,
+        )
+
+        // Le C chante, quoi qu'on ait répondu : son onde, sa couleur.
+        $("word").classList.add(SOUND[isDur].kind)
+        emitWave(isDur)
+        const sound = sayC(isDur)
+        $("track").children[currentIndex].outerHTML = trackWave(
+          isDur,
+          !isCorrect,
+        )
+
+        if (isCorrect) {
+          score++
+          $("scoreValue").textContent = score
+          right.classList.add("right")
+          await wait(sound)
+          tone([660, 990])
+          if (sameSound) await joinTarget()
+          await wait(sameSound ? 450 : 800)
+        } else {
+          // Rien à lire : la touche se secoue, la bonne s'allume, la
+          // lettre qui décide s'éclaire, et Marie dit le mot.
+          button.classList.add("wrong")
+          await wait(sound)
+          tone([392], "sine", 0.75)
+          right.classList.add("right")
+          $("word").querySelector(".next").classList.add("lit")
+          await wait(250)
+          await Voice.say(word)
+          await wait(900)
+        }
+
+        button.classList.remove("wrong")
+        right.classList.remove("right")
+        $("answers").classList.remove("busy")
+        busy = false
+        currentIndex++
+        if (currentIndex >= NUMBER_OF_WORDS) showGameEnd()
+        else displayWord()
+      }
+
+      function startGame() {
+        score = 0
+        currentIndex = 0
+        results = []
+        $("scoreValue").textContent = 0
+        $("wordTotal").textContent = NUMBER_OF_WORDS
+        $("track").innerHTML = trackSlot(
+          '<path class="flat" d="M3 9H27" />',
+        ).repeat(NUMBER_OF_WORDS)
+        // Une nouvelle partie n'est engagée qu'à la première réponse.
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        showScreen("game")
+        shuffleAndSelectWords()
+        setObjective()
+        displayWord()
+        startTimer()
+        // Le son cherché se fait entendre en ouvrant la partie.
+        demo(currentObjectiveIsDur)
+      }
+
+      // ===== Fin de partie =====
+
+      // Les dix ondes bout à bout, comme un message vocal.
+      function drawTape() {
+        const seg = 40
+        $("tape").setAttribute("viewBox", `0 0 ${results.length * seg} 64`)
+        $("tape").innerHTML = results
+          .map(
+            (r, i) =>
+              `<g class="seg${r.isCorrect ? "" : " missed"}" transform="translate(${i * seg} 0)">${waveMarkup(r.isDur, seg, 64, { scale: 0.45, step: 3, at: 0.3 })}</g>`,
+          )
+          .join("")
+        // Les ondes se lèvent l'une après l'autre.
+        if (reducedMotion()) return
+        $("tape")
+          .querySelectorAll(".breathe, .clap")
+          .forEach((g, i) =>
+            g.animate([{ transform: "scaleY(0)" }, { transform: "none" }], {
+              duration: 420,
+              delay: 250 + i * 90,
+              easing: "cubic-bezier(0.3, 1.4, 0.5, 1)",
+              fill: "backwards",
+            }),
+          )
+      }
+
+      let playing = false
+      async function playTape() {
+        if (playing) return
+        playing = true
+        const step = 520
+        Voice.wake(NUMBER_OF_WORDS * step + 1500)
+        const head = $("head")
+        const segs = $("tape").querySelectorAll(".seg")
+        const width = $("tape").getBoundingClientRect().width
+        head.style.opacity = 1
+        if (!reducedMotion())
+          head.animate(
+            [
+              { transform: "translateX(0)" },
+              { transform: `translateX(${width}px)` },
+            ],
+            {
+              duration: NUMBER_OF_WORDS * step,
+              easing: "linear",
+              fill: "forwards",
+            },
+          )
+        for (let i = 0; i < results.length; i++) {
+          segs[i].classList.add("on")
+          sayC(results[i].isDur, 0.12)
+          await wait(step)
+          segs[i].classList.remove("on")
+        }
+        head.style.opacity = 0
+        head.getAnimations().forEach((a) => a.cancel())
+        playing = false
+      }
+
+      function showGameEnd() {
+        const finalTime = $("timer").textContent
+        clearInterval(timerInterval)
+        if (window.ExitGuard) ExitGuard.setActive(false)
+
+        const verdict =
+          score === NUMBER_OF_WORDS
+            ? "Parfait !"
+            : score >= NUMBER_OF_WORDS - 2
+              ? "Bravo !"
+              : score >= NUMBER_OF_WORDS / 2
+                ? "Bien joué"
+                : "Continue !"
+        drawTape()
+        $("score").innerHTML =
+          `${score} / ${NUMBER_OF_WORDS}<small>${verdict} · en ${finalTime}</small>`
+        $("endWords").innerHTML = results
+          .map(
+            ({ word, isDur, isCorrect }) =>
+              `<li><button class="${SOUND[isDur].kind}${isCorrect ? "" : " missed"}" data-word="${word}">${wordMarkup(word)}</button></li>`,
+          )
+          .join("")
+
+        showScreen("end")
+        window.scrollTo(0, 0)
+        if (score === NUMBER_OF_WORDS) showConfetti()
+        updateLevel()
+      }
+
+      function updateLevel() {
+        const { step } = level
+        if (score < 7) level = { step: Math.max(step - 1, 0), streak: 0 }
+        else if (score < 9) level.streak = 0
+        else if (++level.streak >= 2 && step < PICTURE_DELAYS.length - 1)
+          level = { step: step + 1, streak: 0 }
+        try {
+          localStorage.setItem(LEVEL_KEY, JSON.stringify(level))
+        } catch {}
+        $("levelNote").hidden = level.step === step
+        $("levelNote").textContent = (
+          level.step > step ? LEVEL_UP : LEVEL_DOWN
+        )[level.step]
+      }
+
+      // ===== Départ =====
+
+      document
+        .querySelectorAll(".answer")
+        .forEach((button) =>
+          button.addEventListener("click", () => checkAnswer(button)),
+        )
+      $("target").addEventListener("click", () => demo(currentObjectiveIsDur))
+      $("tileDoux").addEventListener("click", () => demo(false))
+      $("tileDur").addEventListener("click", () => demo(true))
+      $("record").addEventListener("click", playTape)
+      $("hear").addEventListener("click", () => {
+        if (!busy) Voice.say(gameWords[currentIndex].word)
+      })
+      $("endWords").addEventListener("click", (e) => {
+        const button = e.target.closest("button")
+        if (button) Voice.say(button.dataset.word)
+      })
+      for (const id of ["startBtn", "replayBtn"]) {
+        $(id).addEventListener("click", () => {
+          Voice.wake(300)
+          startGame()
+        })
+      }
+      // La bande suit la largeur de l'écran (pas sa hauteur, qui bouge
+      // avec la barre d'adresse sur iPhone).
+      let width = innerWidth
+      window.addEventListener("resize", () => {
+        if (innerWidth === width) return
+        width = innerWidth
+        if (!busy && !$("game").classList.contains("hidden")) drawSilence()
+      })
+
+      liveWave($("tileDoux").querySelector("svg"), false)
+      liveWave($("tileDur").querySelector("svg"), true)
+      $("backdropWave").setAttribute(
+        "d",
+        sine(0, 800, 100, () => 22),
+      )
+      for (const { example } of Object.values(SOUND)) Voice.load(example)
+      WordImage.preload(words.map((w) => w.word))
+      // Écran d'accueil : aucune partie en cours.
+      if (window.ExitGuard) ExitGuard.setActive(false)
+    </script>
+  </body>
+</html>
