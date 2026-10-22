@@ -1,6 +1,11 @@
-import { getPhonetic } from './data.js'
+import { getPhonetic } from "./data.js"
 
-export function handleTranscript(transcript, remainingWords, onWordCorrect, onSentenceComplete) {
+export function handleTranscript(
+  transcript,
+  remainingWords,
+  onWordCorrect,
+  onSentenceComplete,
+) {
   const transcriptWords = transcript.toLowerCase().split(" ")
 
   for (const transcriptWord of transcriptWords) {
@@ -20,24 +25,52 @@ export function handleTranscript(transcript, remainingWords, onWordCorrect, onSe
   }
 }
 
-export function startRecognition(onTranscript, onError, onEnd) {
-  const recognition = new (window.SpeechRecognition ||
-    window.webkitSpeechRecognition)()
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
+
+export const canListen = () => Boolean(Recognition)
+
+// Écoute en continu : le navigateur coupe le micro après un silence, on le
+// relance tant qu'on ne l'a pas arrêté, sauf s'il se coupe en boucle (onIdle)
+// ou que le micro est refusé (onDenied).
+export function startRecognition({ onTranscript, onDenied, onIdle }) {
+  const recognition = new Recognition()
   recognition.lang = "fr-FR"
   recognition.interimResults = true
   recognition.continuous = true
+  let stopped = false
+  let restarts = 0
 
   recognition.onresult = (event) => {
-    console.log(event.results)
+    restarts = 0
     const result = event.results[event.results.length - 1]
     onTranscript(result[0].transcript.toLowerCase())
   }
 
-  recognition.onerror = onError
-  recognition.onend = onEnd
-  
-  console.log("Speech recognition started")
+  recognition.onerror = (event) => {
+    if (
+      event.error === "not-allowed" ||
+      event.error === "service-not-allowed"
+    ) {
+      stopped = true
+      onDenied()
+    }
+  }
+
+  recognition.onend = () => {
+    if (stopped) return
+    try {
+      if (restarts++ < 3) return recognition.start()
+    } catch {}
+    stopped = true
+    onIdle()
+  }
+
   recognition.start()
-  
-  return recognition
+
+  return {
+    stop() {
+      stopped = true
+      recognition.stop()
+    },
+  }
 }
