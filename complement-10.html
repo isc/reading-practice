@@ -261,6 +261,13 @@
         border-radius: 22px;
         background: var(--line);
         border: 1.5px solid rgba(255, 225, 255, 0.32);
+        transition: opacity 0.4s;
+      }
+
+      /* Le cadre éteint : on répond de tête, il ne garde que sa silhouette
+         jusqu'à la réponse. */
+      .frame.dark {
+        opacity: 0.3;
       }
 
       .socket {
@@ -689,6 +696,12 @@
         --c: var(--smoke);
       }
 
+      /* Un nombre donné de tête : ses lumières sont restées éteintes. */
+      .tiny i.off {
+        background: none;
+        border: 1px solid rgba(255, 199, 90, 0.45);
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .backdrop::before,
         .backdrop::after,
@@ -809,6 +822,15 @@
 
       const TOTAL_QUESTIONS = 10
       const HISTORY_KEY = "complement10-history"
+      const LEVEL_KEY = "complement10-level"
+      // Le cadre aide de moins en moins à mesure que l'enfant connaît ses
+      // amis : les lumières d'or du nombre donné restent allumées, puis
+      // s'éteignent après un coup d'œil, puis ne s'allument plus qu'une fois
+      // la réponse donnée, pour la vérifier.
+      const LIT = 1
+      const GLIMPSE = 2
+      const IN_HEAD = 3
+      const GLIMPSE_MS = 1200
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition
       const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)")
       const $ = (id) => document.getElementById(id)
@@ -829,6 +851,12 @@
       // Vrai dès qu'une mauvaise réponse a été donnée pour la question en cours :
       // on ne compte un point que si l'enfant trouve du premier coup.
       let mistakeThisQuestion = false
+      // L'aide du cadre (LIT, GLIMPSE ou IN_HEAD), qui reprend d'une partie à
+      // l'autre, et les réussites du premier coup d'affilée.
+      let level = LIT
+      let streak = 0
+      // Le minuteur du coup d'œil, qui éteint les lumières d'or.
+      let glimpse = 0
       // Début de la partie : on mesure sa durée sans afficher de chronomètre.
       let startTime = 0
       let recognition = null
@@ -1030,14 +1058,40 @@
           b.classList.toggle("current", i === currentIndex),
         )
         sockets = buildFrame($("frame"))
-        // Les lumières d'or du nombre donné s'allument une à une : on peut
-        // les compter.
+        $("frame").classList.toggle("dark", level === IN_HEAD)
         return sequence(async (step) => {
-          for (let i = 0; i < given; i++) {
-            ignite(sockets[i], "gold")
-            SFX.gold(i)
-            await step(pause(70))
-          }
+          if (level !== IN_HEAD) await lightGiven(step, given, 70)
+          // L'enfant peut répondre pendant le coup d'œil : les lumières
+          // restent alors allumées.
+          if (level === GLIMPSE) glimpse = setTimeout(dimGiven, GLIMPSE_MS)
+          busy = false
+        })
+      }
+
+      // Les lumières d'or du nombre donné s'allument une à une : on peut
+      // les compter.
+      async function lightGiven(step, given, gap) {
+        for (let i = 0; i < given; i++) {
+          ignite(sockets[i], "gold")
+          SFX.gold(i)
+          await step(pause(gap))
+        }
+      }
+
+      // Fin du coup d'œil : les lumières d'or s'effacent, le cadre s'éteint.
+      function dimGiven() {
+        busy = true
+        return sequence(async (step) => {
+          await step(
+            Promise.all(
+              [...$("frame").querySelectorAll(".orb")].map((o) =>
+                animate(o, [{ opacity: 1 }, { opacity: 0 }], {
+                  duration: 500,
+                }).then(() => o.remove()),
+              ),
+            ),
+          )
+          $("frame").classList.add("dark")
           busy = false
         })
       }
@@ -1057,6 +1111,7 @@
       function choose(choice) {
         if (busy || screen !== "game") return
         busy = true
+        clearTimeout(glimpse)
         Voice.wake(6000)
         // La partie est engagée dès la première réponse.
         if (window.ExitGuard) ExitGuard.setActive(true)
@@ -1078,6 +1133,12 @@
         const inFrame = []
         const spilled = []
         return sequence(async (step) => {
+          // Le cadre éteint se rallume pour vérifier la réponse ; après une
+          // erreur, il reste allumé.
+          if ($("frame").classList.contains("dark")) {
+            $("frame").classList.remove("dark")
+            await lightGiven(step, given, 35)
+          }
           await step(
             Promise.all(
               Array.from({ length: choice }, (_, k) => {
@@ -1108,7 +1169,8 @@
         const given = questions[currentIndex]
         // Un point seulement si la question est réussie sans erreur préalable.
         if (!mistakeThisQuestion) score++
-        results.push({ given, firstTry: !mistakeThisQuestion })
+        results.push({ given, firstTry: !mistakeThisQuestion, level })
+        adjustLevel(!mistakeThisQuestion)
 
         // Le cadre plein : une vague parcourt les dix lumières, le contour
         // s'illumine, et Marie dit la paire.
@@ -1165,6 +1227,18 @@
         currentIndex++
         if (currentIndex >= TOTAL_QUESTIONS) showGameEnd()
         else displayQuestion()
+      }
+
+      // Deux réussites du premier coup d'affilée éteignent le cadre d'un
+      // cran ; une erreur le rallume d'un cran.
+      function adjustLevel(firstTry) {
+        if (!firstTry) {
+          level = Math.max(LIT, level - 1)
+          streak = 0
+        } else if (++streak === 2) {
+          level = Math.min(IN_HEAD, level + 1)
+          streak = 0
+        }
       }
 
       async function mistake(tooFew, inFrame, spilled, step) {
@@ -1397,6 +1471,7 @@
         run++
         screen = id
         busy = false
+        clearTimeout(glimpse)
         stopListening()
         if (window.ExitGuard) ExitGuard.setActive(false)
         document.body.dataset.screen = id
@@ -1411,6 +1486,7 @@
       function showGameEnd() {
         const duration = Date.now() - startTime
         saveGame(score, duration)
+        localStorage.setItem(LEVEL_KEY, level)
 
         let message
         if (score === TOTAL_QUESTIONS) {
@@ -1421,17 +1497,18 @@
           message = "Bien joué, continue à t'entraîner !"
         }
 
-        // Chaque cadre de la partie, en petit : l'or du nombre donné, le rose
-        // du complément trouvé du premier coup (pâle s'il a fallu réessayer).
+        // Chaque cadre de la partie, en petit : l'or du nombre donné (éteint
+        // s'il a fallu l'imaginer), le rose du complément trouvé du premier
+        // coup (pâle s'il a fallu réessayer).
         const recap = results
-          .map(
-            (r) =>
-              `<div class="tiny">${Array.from(
-                { length: 10 },
-                (_, i) =>
-                  `<i class="${i < r.given ? "" : r.firstTry ? "pink" : "smoke"}"></i>`,
-              ).join("")}</div>`,
-          )
+          .map((r) => {
+            const gold = r.level === IN_HEAD ? "off" : ""
+            const pink = r.firstTry ? "pink" : "smoke"
+            return `<div class="tiny">${Array.from(
+              { length: 10 },
+              (_, i) => `<i class="${i < r.given ? gold : pink}"></i>`,
+            ).join("")}</div>`
+          })
           .join("")
 
         $("end").innerHTML = `
@@ -1468,6 +1545,8 @@
         score = 0
         currentIndex = 0
         results = []
+        level = Number(localStorage.getItem(LEVEL_KEY)) || LIT
+        streak = 0
         show("game")
         startTime = Date.now()
         buildQuestions()
