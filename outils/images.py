@@ -228,7 +228,10 @@ def essai(mot: str, n: int | str) -> Path:
     return ESSAIS / f"{slug(mot)}-{GRAINES.get(mot, 1)}-{n}.png"
 
 
-def dessiner(a_faire: list[str]):
+def dessiner(a_faire: list[str], invite=lambda mot: f"{DESSINS[mot]}. {STYLE}", essai=essai,
+             graine=lambda mot: GRAINES.get(mot, 1)):
+    """NB_ESSAIS dessins par nom de a_faire. Les scènes de « Lis à voix haute » (scenes.py) passent
+    leurs propres invite, essai et graine."""
     sys.path.insert(0, str(Path.home() / "Code" / "ddmr" / "tools" / "mots"))
     from vram import carte_libre
 
@@ -239,9 +242,9 @@ def dessiner(a_faire: list[str]):
         for mot in a_faire:
             r = subprocess.run(
                 [SD / "bin" / "sd-cli", "--diffusion-model", m / "z_image_turbo-Q8_0.gguf", "--vae", m / "ae.sft",
-                 "--llm", m / "Qwen3-4B-Instruct-2507-Q8_0.gguf", "-p", f"{DESSINS[mot]}. {STYLE}",
+                 "--llm", m / "Qwen3-4B-Instruct-2507-Q8_0.gguf", "-p", invite(mot),
                  "--cfg-scale", "1.0", "--steps", "8", "-H", str(TAILLE), "-W", str(TAILLE), "--diffusion-fa", "--vae-tiling",
-                 "--offload-to-cpu", "-s", str(GRAINES.get(mot, 1)), "-b", str(NB_ESSAIS), "-o", essai(mot, "%d"),
+                 "--offload-to-cpu", "-s", str(graine(mot)), "-b", str(NB_ESSAIS), "-o", essai(mot, "%d"),
                  "--output-begin-idx", "0"],
                 env=env, capture_output=True, text=True)
             if r.returncode:
@@ -249,15 +252,15 @@ def dessiner(a_faire: list[str]):
             print(f"{mot} dessiné", flush=True)
 
 
-def planche(jeu: str, liste: list[str]):
+def planche(nom: str, liste: list[str], essai=essai, cote=200):
     """Les essais de chaque mot sur une ligne, numérotés, pour choisir."""
     lignes = []
     for mot in liste:
         lignes += ["-label", f"{mot}", "xc:white"]
         for n in range(NB_ESSAIS):
             lignes += ["-label", str(n), str(essai(mot, n))]
-    f = ESSAIS / f"planche-{jeu}.jpg"
-    subprocess.run(["montage", *lignes, "-tile", f"{NB_ESSAIS + 1}x", "-geometry", "200x200+4+4", "-pointsize", "18",
+    f = ESSAIS / f"planche-{nom}.jpg"
+    subprocess.run(["montage", *lignes, "-tile", f"{NB_ESSAIS + 1}x", "-geometry", f"{cote}x{cote}+4+4", "-pointsize", "18",
                     "-quality", "85", f], check=True)
     print(f"planche : {f}")
 
