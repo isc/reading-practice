@@ -19,6 +19,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: start;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .container {
   background-color: rgba(255, 255, 255, 0.9);

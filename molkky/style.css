@@ -24,6 +24,8 @@ body {
   padding: 0;
   margin: 0;
   color: #e0e0e0;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .container {
