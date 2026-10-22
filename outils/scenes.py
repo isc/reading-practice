@@ -44,7 +44,7 @@ SCENES = {
     "chat-souris": "a surprised cat face to face with a tiny mouse",
     "poule-tuba": "a hen playing a big shiny brass tuba",
     "loup-moto": "a grey wolf riding a red motorcycle on a road",
-    "papa-sofa": "a dad sleeping and snoring on a sofa in a living room",
+    "papa-sofa": "a father, a grown-up man with a beard, sleeping and snoring on a sofa in a living room",
     "tortue-jupe": "a turtle wearing a pink tutu skirt",
     "chat-niche": "a cat sleeping on the roof of a wooden dog house",
     "rat-velo": "a rat riding a small bicycle",
@@ -63,7 +63,7 @@ SCENES = {
     "chien-araignee": "a little puppy playing with a friendly smiling spider",
     "pompier-souris": "a firefighter jumping in fright away from a tiny mouse",
     "escargot-course": "a snail racing against a rabbit on a race track",
-    "sorciere-balai": "a witch searching everywhere for her lost broom",
+    "sorciere-balai": "a little witch flying on her broom across the night sky, past the moon",
     "dinosaure-dents": "a dinosaur in pajamas brushing its teeth in a bathroom",
     "papi-tresor": "a grandpa digging up a treasure chest full of gold coins in a garden",
     "fusee-lapins": "rabbits in a rocket taking off toward the moon",
@@ -74,8 +74,8 @@ SCENES = {
     "pirate-perroquet": "a pirate hiding a parrot in the drawer of a wooden desk",
     "fantome-lampes": "a small scared ghost in a bedroom full of lit lamps at night",
     "ours-chateau": "a family of bears building a huge sandcastle on a beach",
-    "magicien-poule": "a surprised magician as a hen pops out of his top hat",
-    "robots-gateau": "two cute robots baking a chocolate birthday cake with candles",
+    "magicien-poule": "a surprised magician in a black cape holding his top hat upside down, a hen popping out of the hat",
+    "robots-gateau": "two cute metal robots with square heads and antennas baking a chocolate birthday cake with candles",
     "pieuvre-batterie": "an octopus playing a drum kit at the bottom of the sea",
     "sorciere-chat": "a little witch next to a bubbling cauldron and a bright blue cat",
     "facteur-alien": "a mailman handing a letter to a little green alien next to a flying saucer",
@@ -84,6 +84,10 @@ SCENES = {
 
 GRAINES = {
     "mule-lit": 2,  # graine 1 : la mule à côté du lit, pas dessus
+    "papa-sofa": 2,  # graine 1 : un petit garçon, pas un papa
+    "sorciere-balai": 2,  # la phrase a changé : elle « vole sur son balai »
+    "magicien-poule": 2,  # graine 1 : la poule et le chapeau, pas de magicien
+    "robots-gateau": 2,  # graine 1 : des peluches, pas des robots
 }
 
 
