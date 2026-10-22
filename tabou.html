@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fff6e0" />
     <title>Tabou</title>
     <script src="exit-guard.js"></script>
     <style>
@@ -66,6 +67,7 @@
         -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
         user-select: none;
+        -webkit-touch-callout: none;
       }
 
       .hidden {
@@ -94,8 +96,7 @@
       .screen {
         display: flex;
         flex-direction: column;
-        height: 100vh;
-        height: 100dvh;
+        height: 100%;
         margin: 0 auto;
         max-width: 520px;
         padding: max(14px, env(safe-area-inset-top)) 14px
@@ -1279,13 +1280,13 @@
         function resize() {
           const newDpr = Math.min(2, window.devicePixelRatio || 1)
           if (
-            window.innerWidth === width &&
-            window.innerHeight === height &&
+            canvas.clientWidth === width &&
+            canvas.clientHeight === height &&
             newDpr === dpr
           )
             return
-          width = window.innerWidth
-          height = window.innerHeight
+          width = canvas.clientWidth
+          height = canvas.clientHeight
           dpr = newDpr
           for (const [c, cx] of [
             [canvas, ctx],
