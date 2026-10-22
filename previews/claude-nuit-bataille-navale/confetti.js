@@ -86,7 +86,8 @@ function showConfetti() {
     if (confetti.length > 0) {
       requestAnimationFrame(render)
     } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      // Libère l'image plein écran : vide, la toile resterait composée par-dessus la page.
+      canvas.width = canvas.height = 0
     }
   }
 
