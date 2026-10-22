@@ -526,7 +526,7 @@ main {
   text-shadow: 0 0 12px var(--c);
 }
 
-/* Les quilles, rangées de 1 à 12. */
+/* Le pavé des points, de 1 à 12. */
 .pins {
   flex: none;
   align-self: center;

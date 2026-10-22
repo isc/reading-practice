@@ -755,7 +755,7 @@ function onAddPlayer(event) {
 // Pendant la partie : le tableau
 
 const rows = new Map() // teamId → { el, led, names, misses, gauge, history }
-const selected = new Set()
+let chosen = 0 // les points touchés sur le pavé, 0 tant que rien n'est touché
 const undoStack = []
 let busy = false
 
@@ -850,8 +850,8 @@ function renderBoard(anim = {}) {
 }
 
 function buildPins() {
-  // Le pavé range les quilles de 1 à 12 : après quelques lancers, elles ne
-  // sont plus à leur place de départ, on y cherche juste un numéro.
+  // Le pavé donne directement les points, de 1 à 12 : une quille tombée vaut
+  // son numéro, plusieurs valent leur nombre. Peu importe lesquelles.
   for (let n = 1; n <= 12; n++) {
     const pin = document.createElement("button")
     pin.type = "button"
@@ -876,34 +876,26 @@ function buildPins() {
 
 const pinButtons = () => [...$("pins").querySelectorAll(".pin")]
 
-// Une quille seule vaut son numéro ; plusieurs valent leur nombre.
-function pointsOf(pins) {
-  if (pins.size === 1) return [...pins][0]
-  return pins.size
-}
-
 function togglePin(pin) {
   if (busy) return
   Voice.wake(400)
   const n = Number(pin.dataset.n)
-  const on = !selected.has(n)
-  if (on) selected.add(n)
-  else selected.delete(n)
-  pin.setAttribute("aria-pressed", String(on))
-  sounds.pin(n, on)
-  renderThrowBtn()
+  chosen = chosen === n ? 0 : n
+  renderPins()
+  sounds.pin(n, chosen === n)
 }
 
-function renderThrowBtn() {
-  const btn = $("throwBtn")
-  btn.classList.toggle("has-points", selected.size > 0)
-  $("throwPoints").textContent = selected.size ? "+" + pointsOf(selected) : ""
+function renderPins() {
+  pinButtons().forEach((p) =>
+    p.setAttribute("aria-pressed", String(Number(p.dataset.n) === chosen)),
+  )
+  $("throwBtn").classList.toggle("has-points", chosen > 0)
+  $("throwPoints").textContent = chosen ? "+" + chosen : ""
 }
 
 function clearPins() {
-  selected.clear()
-  pinButtons().forEach((p) => p.setAttribute("aria-pressed", "false"))
-  renderThrowBtn()
+  chosen = 0
+  renderPins()
 }
 
 function rectCenter(el) {
@@ -921,9 +913,9 @@ function onThrow() {
   Voice.wake(2500)
   const teamId = currentTeamId
   const row = rows.get(teamId)
-  const points = pointsOf(selected)
+  const points = chosen
   const froms = pinButtons()
-    .filter((p) => selected.has(Number(p.dataset.n)))
+    .filter((p) => Number(p.dataset.n) === chosen)
     .map(rectCenter)
 
   undoStack.push(serializeState())
