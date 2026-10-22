@@ -50,21 +50,30 @@
         box-sizing: border-box;
       }
 
+      /* La page prend la hauteur de l'écran par les pourcentages, pas par
+         100dvh : dans l'appli installée sur Android, Chrome compte la barre
+         d'état dans 100dvh. La page dépassait alors de cette hauteur : elle
+         défilait, et les tampons passaient sous la barre du bas. */
+      html {
+        height: 100%;
+      }
+
       /* Le kraft de l'établi, avec ses fibres. */
       body {
         font-family: var(--read);
         color: var(--ink);
         background-color: var(--kraft);
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6 0.05' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0 0.08 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23f)'/%3E%3C/svg%3E");
-        min-height: 100vh;
-        min-height: 100dvh;
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
         -webkit-tap-highlight-color: transparent;
       }
 
       .desk {
+        flex: 1;
+        width: 100%;
         max-width: 520px;
-        min-height: 100vh;
-        min-height: 100dvh;
         margin: 0 auto;
         padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
         display: flex;
@@ -389,13 +398,16 @@
       /* ===== Les tampons ===== */
 
       /* L'établi vu de dessus, comme la feuille : deux tampons et le tampon
-         encreur entre eux. */
+         encreur entre eux. En bas, la place de l'ombre d'un tampon levé : elle
+         s'écarte vers le bas (pressStamp) et dépasse alors le tampon de 26 px
+         au plus, que couvrent ces 12 px et le bas du bureau (14 px). Sans
+         elle, la page déborde et défile le temps d'un coup de tampon. */
       .tray {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 18px;
-        padding: 8px 0 4px;
+        padding: 8px 0 12px;
       }
 
       .stamp {
@@ -789,6 +801,9 @@
       ]
 
       const NUMBER_OF_WORDS = 20
+      // Le registre n'en montre pas plus : sur un téléphone, il tient sous la
+      // feuille d'accueil sans faire défiler la page.
+      const MAX_SCORES = 5
       const PRAISE = ["Bravo !", "Oui !", "Super !", "Bien vu !"]
       const SOUND_KEY = "b-ou-d-sound"
 
@@ -862,7 +877,7 @@
       }
 
       function updateScoreboard(highlightId) {
-        const scores = readScores()
+        const scores = readScores().slice(0, MAX_SCORES)
         $("scoreboardBody").innerHTML = scores.length
           ? scores
               .map((s) => {
