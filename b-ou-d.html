@@ -389,13 +389,16 @@
       /* ===== Les tampons ===== */
 
       /* L'établi vu de dessus, comme la feuille : deux tampons et le tampon
-         encreur entre eux. */
+         encreur entre eux. En bas, la place de l'ombre d'un tampon levé : elle
+         s'écarte vers le bas (pressStamp) et dépasse alors le tampon de 26 px
+         au plus, que couvrent ces 12 px et le bas du bureau (14 px). Sans
+         elle, la page déborde et défile le temps d'un coup de tampon. */
       .tray {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 18px;
-        padding: 8px 0 4px;
+        padding: 8px 0 12px;
       }
 
       .stamp {
@@ -789,6 +792,9 @@
       ]
 
       const NUMBER_OF_WORDS = 20
+      // Le registre n'en montre pas plus : sur un téléphone, il tient sous la
+      // feuille d'accueil sans faire défiler la page.
+      const MAX_SCORES = 5
       const PRAISE = ["Bravo !", "Oui !", "Super !", "Bien vu !"]
       const SOUND_KEY = "b-ou-d-sound"
 
@@ -862,7 +868,7 @@
       }
 
       function updateScoreboard(highlightId) {
-        const scores = readScores()
+        const scores = readScores().slice(0, MAX_SCORES)
         $("scoreboardBody").innerHTML = scores.length
           ? scores
               .map((s) => {
