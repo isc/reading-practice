@@ -56,6 +56,36 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   un jeu clair elle passe pour la barre normale d'Android, alors qu'une bande
   claire sous un jeu sombre fait bug. Une appli installée relit son manifeste
   au plus une fois par jour : réinstaller pour voir un changement tout de suite.
+- **Hauteur d'écran** : jamais `100vh` ni `100dvh` pour la hauteur de la page.
+  Dans l'appli installée sur Android, Chrome y compte la barre d'état, que la
+  page n'occupe pas. La page dépassait donc de ~58 px : elle défilait, et son
+  bas passait sous la barre du bas (vécu sur b ou d en octobre 2026, mesuré
+  sur les captures du Pixel). Une page à fond uni n'a besoin de rien : le
+  fond du `body` couvre de toute façon l'écran. Quand la page doit remplir
+  l'écran (fond en dégradé, conteneur plein écran), la hauteur vient des
+  pourcentages, qui suivent la zone vraiment visible :
+
+  ```css
+  html {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  body {
+    flex-grow: 1;
+  }
+  ```
+
+  Pour un conteneur plein écran, `body` passe en colonne
+  (`display: flex; flex-direction: column`) et le conteneur prend `flex: 1`
+  (avec `width: 100%` s'il est centré par `margin: 0 auto`). Si `body` est en
+  ligne, le conteneur prend `align-self: stretch` (tetris). `html` grandit
+  avec le contenu, donc un fond en dégradé couvre toute la page. Un écran de
+  hauteur fixe, qui ne défile jamais, enchaîne `height: 100%` sur `html`,
+  `body` et le conteneur (memory). `svh` n'aide pas : l'appli installée n'a
+  pas de barre de navigateur, donc `svh` y vaut `dvh`. Une taille de plateau
+  tirée de la hauteur se calcule plutôt sur la place qu'a pris le conteneur
+  (`clientHeight` en JS, comme tetris).
 
 - **Langue** : toute l'interface est en **français**.
 - **Couleurs** : accent principal `#4a90e2` (bleu), fond de page `#f0f2f5`.
@@ -90,6 +120,7 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
 
   Sans ça, on demande « Une partie est en cours ? » sur l'écran des scores ou
   après la victoire, et les enfants finissent par répondre au hasard.
+
 - **Listes de mots** : `fetch('fr_FR.txt')` (gros dictionnaire français) ou
   `fetch('mots-enfants.txt')` (mots adaptés aux enfants).
 

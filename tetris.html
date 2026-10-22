@@ -45,13 +45,18 @@
         box-sizing: border-box;
       }
 
+      html {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
       /* Une nuit d'hiver. */
       body {
         font-family: "Yeseva One", Georgia, serif;
         color: var(--cream);
         background: linear-gradient(180deg, #0b1230 0%, #16224b 55%, #26386b 100%);
-        min-height: 100vh;
-        min-height: 100dvh;
+        flex-grow: 1;
         display: flex;
         justify-content: center;
         align-items: flex-start;
@@ -120,7 +125,7 @@
       }
 
       #screen-game.active {
-        height: calc(100dvh - 24px);
+        align-self: stretch;
       }
 
       /* Panneaux en bois laqué noir, bordés d'un filet d'or. */
