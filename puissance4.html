@@ -1,835 +1,1842 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#26113d" />
     <title>Puissance 4</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      /* Pions en gelée : des bonbons gélifiés qui tombent, s'écrasent,
+         rebondissent et tremblent. Quand quatre s'alignent, ils fondent les
+         uns dans les autres en une seule gelée. Les pions sont peints par un
+         petit moteur de « metaballs » (voir paintJelly) : la même lumière
+         sert aux pions posés et à la fusion, qui s'enchaîne sans couture. */
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 20px;
-        }
+      @font-face {
+        font-family: "Modak";
+        src: url("Modak-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
 
-        .container {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            max-width: 480px;
-            width: 100%;
-        }
+      @font-face {
+        font-family: "Baloo 2";
+        src: url("Baloo2-Variable.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: swap;
+      }
 
-        h1 {
-            text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 5px;
-            font-size: 1.6em;
-            font-weight: 700;
-        }
+      :root {
+        --night: #1b0e3a;
+        --plum: #3a1670;
+        --mint: #3fdcc0;
+        --mint-deep: #0f7f7c;
+        --cherry: #ff4d6d;
+        --lemon: #ffcf3a;
+        --text: #fff4e8;
+        --muted: #c9b8ec;
+        --font: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+      }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 0.85em;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        .turn-indicator {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-weight: 600;
-            color: #555;
-        }
+      body {
+        font-family: var(--font);
+        color: var(--text);
+        min-height: 100vh;
+        min-height: 100dvh;
+        background:
+          radial-gradient(60% 40% at 15% 10%, #ff4d6d33, transparent 70%),
+          radial-gradient(55% 40% at 90% 35%, #3fdcc02e, transparent 70%),
+          radial-gradient(70% 50% at 50% 110%, #ffcf3a24, transparent 70%),
+          linear-gradient(180deg, var(--night), var(--plum));
+        background-attachment: fixed;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        overflow-x: hidden;
+      }
 
-        .turn-token {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid rgba(0, 0, 0, 0.1);
-        }
+      .app {
+        max-width: 460px;
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
 
-        .turn-token.red {
-            background: #dc2626;
-        }
+      /* ===== En-tête ===== */
 
-        .turn-token.yellow {
-            background: #fbbf24;
-        }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 46px;
+      }
 
-        .board-wrapper {
-            background: #2563eb;
-            border-radius: 12px;
-            padding: 8px;
-            margin-bottom: 15px;
-        }
+      .title {
+        font-family: "Modak", var(--font);
+        font-weight: 400;
+        font-size: 2.3rem;
+        line-height: 1;
+        letter-spacing: 0.01em;
+        color: var(--cherry);
+        text-shadow:
+          0 3px 0 #a3123c,
+          0 6px 14px #0006;
+        padding-top: 6px;
+      }
 
-        .board {
-            display: grid;
-            grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 6px;
-        }
+      .title .four {
+        color: var(--lemon);
+        text-shadow:
+          0 3px 0 #b86a00,
+          0 6px 14px #0006;
+      }
 
-        .column {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background 0.15s ease;
-        }
+      .round-btn {
+        width: 44px;
+        height: 44px;
+        border: none;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: var(--text);
+        background: #ffffff1a;
+        box-shadow: inset 0 0 0 1px #ffffff2e;
+        cursor: pointer;
+      }
 
-        @media (hover: hover) {
-            .board:not(.locked) .column:hover:not(.full) {
-                background: rgba(255, 255, 255, 0.12);
-            }
-        }
+      .round-btn svg {
+        width: 24px;
+        height: 24px;
+      }
 
-        .board.locked .column {
-            cursor: default;
-        }
+      /* ===== Réglages ===== */
 
-        .mode-select {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
+      .segmented {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 999px;
+        background: #0000003d;
+        box-shadow: inset 0 1px 3px #0006;
+      }
 
-        .segmented {
-            display: flex;
-            background: #f0f2f5;
-            border-radius: 10px;
-            padding: 4px;
-            gap: 4px;
-        }
+      .segmented button {
+        flex: 1;
+        border: none;
+        border-radius: 999px;
+        padding: 8px 6px 6px;
+        font-family: inherit;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--muted);
+        background: transparent;
+        cursor: pointer;
+      }
 
-        .segmented button {
-            flex: 1;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            padding: 10px 6px;
-            font-size: 0.95em;
-            font-weight: 600;
-            color: #555;
-            cursor: pointer;
-            font-family: inherit;
-        }
+      .segmented button.active {
+        color: #053b3a;
+        background: linear-gradient(180deg, #8ff7e2, var(--mint) 55%, #22b9a6);
+        box-shadow:
+          inset 0 2px 0 #ffffffa0,
+          inset 0 -3px 0 #0f7f7c80,
+          0 2px 6px #0005;
+      }
 
-        .segmented button.active {
-            background: #4a90e2;
-            color: white;
-        }
+      .segmented.levels button {
+        font-size: 0.95rem;
+        padding: 6px 6px 4px;
+      }
 
-        .segmented.levels button {
-            padding: 8px 6px;
-            font-size: 0.85em;
-        }
+      /* ===== Scores (et tour de jeu) ===== */
 
-        .turn-indicator.thinking #turnLabel::after {
-            content: '';
-            animation: dots 1.2s steps(4) infinite;
-        }
+      .scorebar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 8px;
+      }
 
-        @keyframes dots {
-            0% { content: ''; }
-            25% { content: '.'; }
-            50% { content: '..'; }
-            75% { content: '...'; }
-        }
+      .score {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        height: 56px;
+        padding: 0 12px;
+        border-radius: 18px;
+        background: #ffffff12;
+        box-shadow: inset 0 0 0 1px #ffffff1f;
+        transition:
+          background-color 0.25s,
+          box-shadow 0.25s;
+      }
 
-        .cell {
-            aspect-ratio: 1 / 1;
-            background: #f0f2f5;
-            border-radius: 50%;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
-            position: relative;
-        }
+      .score.yellow {
+        flex-direction: row-reverse;
+        text-align: right;
+      }
 
-        .token {
-            position: absolute;
-            inset: 4%;
-            border-radius: 50%;
-            box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.25), inset 0 3px 6px rgba(255, 255, 255, 0.25);
-        }
+      .score .who {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        line-height: 1.1;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-        .token.red {
-            background: #dc2626;
-        }
+      .score .value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1;
+        padding-top: 4px;
+      }
 
-        .token.yellow {
-            background: #fbbf24;
-        }
+      .score.draws {
+        flex-direction: column;
+        justify-content: center;
+        gap: 0;
+        padding: 0 10px;
+      }
 
-        .token.drop {
-            animation: drop 0.4s cubic-bezier(0.55, 0.06, 0.68, 0.99);
-        }
+      .score.draws .who {
+        flex: none;
+        font-size: 0.8rem;
+      }
 
-        .token.winning {
-            animation: pulse 0.8s ease-in-out infinite;
-        }
+      .score.draws .value {
+        font-size: 1.25rem;
+        padding: 0;
+      }
 
-        @keyframes drop {
-            0% {
-                transform: translateY(var(--drop-from, -400%));
-            }
-            80% {
-                transform: translateY(8%);
-            }
-            100% {
-                transform: translateY(0);
-            }
-        }
+      .mini {
+        width: 30px;
+        height: 30px;
+        flex: none;
+      }
 
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.25), inset 0 3px 6px rgba(255, 255, 255, 0.25), 0 0 0 0 rgba(255, 255, 255, 0.6);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.25), inset 0 3px 6px rgba(255, 255, 255, 0.25), 0 0 0 6px rgba(255, 255, 255, 0);
-            }
-        }
+      .score.turn.red {
+        background: #ff4d6d2e;
+        box-shadow: inset 0 0 0 2px var(--cherry);
+      }
 
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        }
+      .score.turn.yellow {
+        background: #ffcf3a29;
+        box-shadow: inset 0 0 0 2px var(--lemon);
+      }
 
-        .btn-new {
-            background: #1a1a1a;
-            color: white;
-        }
+      .score.turn .who {
+        color: var(--text);
+      }
 
-        @media (hover: hover) {
-            .btn-new:hover {
-                background: #333;
-            }
-        }
+      .score.turn .mini {
+        animation: jiggle 1.6s ease-in-out infinite;
+      }
 
-        .message {
-            text-align: center;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: 600;
-            animation: slideIn 0.5s ease;
+      @keyframes jiggle {
+        0%,
+        55%,
+        100% {
+          transform: scale(1, 1);
         }
+        65% {
+          transform: scale(1.18, 0.84);
+        }
+        75% {
+          transform: scale(0.9, 1.1);
+        }
+        85% {
+          transform: scale(1.05, 0.95);
+        }
+      }
 
-        .message.win-red {
-            background: #fed7d7;
-            color: #742a2a;
-        }
+      /* ===== Plateau ===== */
 
-        .message.win-yellow {
-            background: #fef3c7;
-            color: #78350f;
-        }
+      /* The board takes the room left under the scores, centered in it */
+      .play {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 26px;
+        padding-bottom: 12px;
+      }
 
-        .message.draw {
-            background: #e2e8f0;
-            color: #1f2937;
-        }
+      .arena {
+        position: relative;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+      .arena.locked {
+        cursor: default;
+      }
 
-        .scoreboard {
-            margin-top: 20px;
-        }
+      /* Le rail : la gelée qui attend au-dessus du plateau, ou le verdict. */
+      .rail {
+        position: relative;
+        height: 62px;
+      }
 
-        .scoreboard h3 {
-            color: #1a1a1a;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
+      .hopper {
+        position: absolute;
+        left: 0;
+        bottom: 4px;
+        width: var(--token, 48px);
+        height: var(--token, 48px);
+        transition: translate 0.14s ease-out;
+        z-index: 3;
+      }
 
-        .score-row {
-            display: flex;
-            justify-content: space-around;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
+      .hopper img {
+        width: 100%;
+        height: 100%;
+        transform-origin: 50% 100%;
+        animation: idle 2.2s ease-in-out infinite;
+      }
 
-        .score-cell {
-            text-align: center;
-        }
+      .hopper.away {
+        visibility: hidden;
+      }
 
-        .score-cell .label {
-            font-size: 0.8em;
-            color: #999;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
+      @keyframes idle {
+        0%,
+        100% {
+          transform: scale(1, 1);
         }
+        50% {
+          transform: scale(1.05, 0.95);
+        }
+      }
 
-        .score-cell .label .turn-token {
-            width: 16px;
-            height: 16px;
-            border-width: 1px;
-        }
+      .verdict {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Modak", var(--font);
+        font-weight: 400;
+        font-size: 2rem;
+        line-height: 1;
+        padding-top: 8px;
+        text-align: center;
+        white-space: nowrap;
+        color: var(--text);
+        text-shadow:
+          0 3px 0 #0007,
+          0 0 18px #0006;
+      }
 
-        .score-cell .value {
-            font-size: 1.4em;
-            font-weight: 700;
-            color: #1a1a1a;
-        }
+      .verdict.red {
+        color: var(--cherry);
+      }
 
-        .rules {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 0.85em;
-            color: #666;
-        }
+      .verdict.yellow {
+        color: var(--lemon);
+      }
 
-        .rules h3 {
-            color: #1a1a1a;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
+      /* La plaque : une gelée de menthe, trouée. */
+      .slab {
+        position: relative;
+        padding: 10px;
+        border-radius: 26px;
+        background: linear-gradient(
+          165deg,
+          #8af5df 0%,
+          var(--mint) 30%,
+          #1fb3a3 70%,
+          #138f8a 100%
+        );
+        box-shadow:
+          inset 0 3px 0 #ffffff8c,
+          inset 0 -8px 14px #00454d59,
+          0 9px 0 var(--mint-deep),
+          0 20px 30px #0008;
+      }
 
-        .rules ul {
-            margin-left: 20px;
-        }
+      .board {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+      }
 
-        .rules li {
-            margin-bottom: 5px;
-        }
+      .cell {
+        position: relative;
+        aspect-ratio: 1 / 1;
+      }
 
-        canvas#confetti {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 1000;
+      .hole {
+        position: absolute;
+        inset: 6%;
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 30%, #2d1258, #160733 70%);
+        box-shadow:
+          inset 0 4px 6px #000a,
+          inset 0 -2px 0 #ffffff40;
+        transition: box-shadow 0.3s;
+      }
+
+      /* Une gelée posée teinte la plaque autour d'elle. */
+      .cell.red .hole {
+        box-shadow:
+          inset 0 4px 6px #000a,
+          0 0 16px 2px #ff3d6a99;
+      }
+
+      .cell.yellow .hole {
+        box-shadow:
+          inset 0 4px 6px #000a,
+          0 0 16px 2px #ffd23a8c;
+      }
+
+      /* Le sprite est un peu plus grand que la case : la gelée occupe 88 %
+         de l'image. */
+      .token {
+        position: absolute;
+        left: -4%;
+        top: -4%;
+        width: 108%;
+        height: 108%;
+        transform-origin: 50% 100%;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      #fusion {
+        position: absolute;
+        z-index: 4;
+        pointer-events: none;
+      }
+
+      .drop {
+        position: absolute;
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      /* ===== Bas de page : le tour, ou « Rejouer » ===== */
+
+      .foot {
+        height: 58px;
+        display: grid;
+        place-items: center;
+      }
+
+      .status {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .status.thinking::after {
+        content: "";
+        display: inline-block;
+        width: 1.2em;
+        text-align: left;
+        animation: dots 1.2s steps(4) infinite;
+      }
+
+      @keyframes dots {
+        0% {
+          content: "";
         }
+        25% {
+          content: ".";
+        }
+        50% {
+          content: "..";
+        }
+        75% {
+          content: "...";
+        }
+      }
+
+      .jelly-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 54px;
+        padding: 4px 30px 0 24px;
+        border: none;
+        border-radius: 999px;
+        font-family: inherit;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #053b3a;
+        background: linear-gradient(180deg, #a6fbe9, var(--mint) 50%, #1fb3a3);
+        box-shadow:
+          inset 0 3px 0 #ffffffb3,
+          inset 0 -4px 0 #0f7f7c99,
+          0 6px 0 var(--mint-deep),
+          0 10px 18px #0007;
+        cursor: pointer;
+      }
+
+      .jelly-btn svg {
+        width: 26px;
+        height: 26px;
+        margin-top: -4px;
+      }
+
+      .jelly-btn:active {
+        transform: translateY(3px) scale(1.04, 0.96);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      /* ===== Règles ===== */
+
+      .sheet {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: #0e0624c4;
+      }
+
+      .sheet-card {
+        position: relative;
+        max-width: 400px;
+        padding: 22px 22px 18px;
+        border-radius: 26px;
+        background: linear-gradient(180deg, #4a2390, #2c1260);
+        box-shadow:
+          inset 0 2px 0 #ffffff33,
+          0 20px 40px #000a;
+      }
+
+      .sheet-card h2 {
+        font-family: "Modak", var(--font);
+        font-weight: 400;
+        font-size: 1.9rem;
+        line-height: 1;
+        color: var(--mint);
+        margin-bottom: 10px;
+      }
+
+      .sheet-card ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 1.05rem;
+        line-height: 1.35;
+      }
+
+      .sheet-card li {
+        position: relative;
+        padding-left: 32px;
+      }
+
+      .sheet-card li img {
+        position: absolute;
+        left: 0;
+        top: 1px;
+        width: 22px;
+        height: 22px;
+      }
+
+      .sheet-card .round-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+      }
+
+      .spark {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        margin: -4px 0 0 -4px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 8px 2px #fff8;
+        pointer-events: none;
+        z-index: 6;
+      }
+
+      canvas#confetti {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1000;
+      }
+
+      @media (hover: hover) {
+        .segmented button:not(.active):hover,
+        .round-btn:hover {
+          color: var(--text);
+          background: #ffffff1f;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hopper img,
+        .score.turn .mini,
+        .status.thinking::after {
+          animation: none;
+          transition: none;
+        }
+      }
     </style>
     <script src="exit-guard.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <canvas id="confetti"></canvas>
-    <div class="container">
-        <h1>🔴🟡 Puissance 4</h1>
-        <p class="subtitle">Aligne 4 pions pour gagner</p>
+    <main class="app">
+      <header class="top">
+        <h1 class="title">Puissance <span class="four">4</span></h1>
+        <button
+          type="button"
+          class="round-btn"
+          id="rulesBtn"
+          aria-label="Règles du jeu"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M8.6 8.8a3.5 3.5 0 1 1 5 3.2c-1 .5-1.6 1.3-1.6 2.4v.6" />
+            <circle cx="12" cy="19.2" r="0.6" fill="currentColor" />
+          </svg>
+        </button>
+      </header>
 
-        <div class="mode-select">
-            <div class="segmented" id="modeSelect">
-                <button type="button" data-mode="2p">👫 2 joueurs</button>
-                <button type="button" data-mode="ia">🤖 Contre l'ordi</button>
-            </div>
-            <div class="segmented levels" id="levelSelect">
-                <button type="button" data-level="facile">😊 Facile</button>
-                <button type="button" data-level="moyen">🙂 Moyen</button>
-                <button type="button" data-level="difficile">😎 Difficile</button>
-            </div>
+      <div class="segmented" id="modeSelect">
+        <button type="button" data-mode="2p">2 joueurs</button>
+        <button type="button" data-mode="ia">Contre l'ordi</button>
+      </div>
+      <div class="segmented levels" id="levelSelect">
+        <button type="button" data-level="facile">Facile</button>
+        <button type="button" data-level="moyen">Moyen</button>
+        <button type="button" data-level="difficile">Difficile</button>
+      </div>
+
+      <div class="scorebar">
+        <div class="score red" id="card-red">
+          <img class="mini" alt="" data-jelly="red" />
+          <span class="who" id="scoreLabelRed">Rouge</span>
+          <span class="value" id="score-red">0</span>
         </div>
-
-        <div id="message"></div>
-
-        <div class="turn-indicator" id="turnIndicator">
-            <span id="turnPrefix">Au tour de</span>
-            <div class="turn-token red" id="turnToken"></div>
-            <span id="turnLabel">Rouge</span>
+        <div class="score draws">
+          <span class="who">Nuls</span>
+          <span class="value" id="score-draws">0</span>
         </div>
+        <div class="score yellow" id="card-yellow">
+          <img class="mini" alt="" data-jelly="yellow" />
+          <span class="who" id="scoreLabelYellow">Jaune</span>
+          <span class="value" id="score-yellow">0</span>
+        </div>
+      </div>
 
-        <div class="board-wrapper">
+      <section class="play">
+        <div class="arena" id="arena">
+          <div class="rail">
+            <div class="hopper" id="hopper"><img alt="" /></div>
+            <p class="verdict" id="message" hidden></p>
+          </div>
+          <div class="slab">
             <div class="board" id="board"></div>
+          </div>
         </div>
 
-        <button class="btn btn-new" id="newGameBtn" style="display: none;">Nouvelle partie</button>
-
-        <div class="rules">
-            <h3>Règles du jeu</h3>
-            <ul>
-                <li>Les joueurs jouent à tour de rôle en cliquant sur une colonne</li>
-                <li>Le pion tombe au plus bas dans la colonne choisie</li>
-                <li>Le premier à aligner <strong>4 pions</strong> (horizontalement, verticalement ou en diagonale) gagne</li>
-                <li>Si la grille est pleine sans alignement, c'est match nul</li>
-                <li>Contre l'ordi, tu as les pions <strong>rouges</strong> 🔴 et l'ordinateur les <strong>jaunes</strong> 🟡</li>
-            </ul>
+        <div class="foot">
+          <p class="status" id="status" aria-live="polite"></p>
+          <button type="button" class="jelly-btn" id="newGameBtn" hidden>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+              <path d="M18.5 3.5v4h-4" />
+            </svg>
+            Rejouer
+          </button>
         </div>
+      </section>
+    </main>
 
-        <div class="scoreboard">
-            <h3 id="scoreTitle">Scores</h3>
-            <div class="score-row">
-                <div class="score-cell">
-                    <div class="label">
-                        <div class="turn-token red"></div>
-                        <span id="scoreLabelRed">Rouge</span>
-                    </div>
-                    <div class="value" id="scoreRed">0</div>
-                </div>
-                <div class="score-cell">
-                    <div class="label">Nuls</div>
-                    <div class="value" id="scoreDraws">0</div>
-                </div>
-                <div class="score-cell">
-                    <div class="label">
-                        <div class="turn-token yellow"></div>
-                        <span id="scoreLabelYellow">Jaune</span>
-                    </div>
-                    <div class="value" id="scoreYellow">0</div>
-                </div>
-            </div>
-        </div>
+    <div class="sheet" id="rulesSheet" hidden>
+      <div class="sheet-card" role="dialog" aria-labelledby="rulesTitle">
+        <button
+          type="button"
+          class="round-btn"
+          id="rulesClose"
+          aria-label="Fermer"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.8"
+            stroke-linecap="round"
+          >
+            <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+          </svg>
+        </button>
+        <h2 id="rulesTitle">Règles du jeu</h2>
+        <ul>
+          <li>
+            <img alt="" data-jelly="red" />Chacun son tour, touche une colonne.
+          </li>
+          <li>
+            <img alt="" data-jelly="yellow" />La gelée tombe tout en bas de la
+            colonne.
+          </li>
+          <li>
+            <img alt="" data-jelly="red" />Le premier qui aligne
+            <strong>4 gelées</strong> gagne : en ligne, en colonne ou en
+            diagonale.
+          </li>
+          <li>
+            <img alt="" data-jelly="yellow" />Si la grille est pleine sans
+            alignement, c'est match nul.
+          </li>
+          <li>
+            <img alt="" data-jelly="red" />Contre l'ordi, tu as les gelées
+            <strong>rouges</strong>, et l'ordinateur les jaunes.
+          </li>
+        </ul>
+      </div>
     </div>
 
+    <script src="voix.js"></script>
     <script src="confetti.js"></script>
     <script>
-        const ROWS = 6;
-        const COLS = 7;
-        const DIRECTIONS = [[0, 1], [1, 0], [1, 1], [1, -1]];
-        const LEVEL_NAMES = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
-        const SETTINGS_KEY = 'puissance4-settings';
-        const DEFAULT_SCORES = { red: 0, yellow: 0, draws: 0 };
-        const SCORE_FIELD = { red: 'red', yellow: 'yellow', draw: 'draws' };
-        const HUMAN = 'red';
-        const COMPUTER = 'yellow';
-        // Everything that differs between the two modes
-        const MODES = {
-            '2p': {
-                names: { red: 'Rouge', yellow: 'Jaune' },
-                isHuman: () => true,
-                scoresKey: () => 'puissance4-scores',
-                scoreTitle: () => 'Scores',
-            },
-            ia: {
-                names: { red: 'Toi', yellow: 'Ordinateur' },
-                isHuman: player => player === HUMAN,
-                scoresKey: () => `puissance4-scores-ia-${level}`,
-                scoreTitle: () => `Scores contre l'ordi (${LEVEL_NAMES[level]})`,
-            },
-        };
-        // Center columns first: better alpha-beta pruning
-        const COLUMN_ORDER = [3, 2, 4, 1, 5, 0, 6];
-        const WIN_SCORE = 1000000;
-        const SEARCH_DEPTH = { moyen: 3, difficile: 6 };
-        // The 69 lines of 4 cells on the board, computed once for the evaluation
-        const WINDOWS = [];
+      const ROWS = 6
+      const COLS = 7
+      const DIRECTIONS = [
+        [0, 1],
+        [1, 0],
+        [1, 1],
+        [1, -1],
+      ]
+      const LEVEL_NAMES = {
+        facile: "Facile",
+        moyen: "Moyen",
+        difficile: "Difficile",
+      }
+      const SETTINGS_KEY = "puissance4-settings"
+      const DEFAULT_SCORES = { red: 0, yellow: 0, draws: 0 }
+      const SCORE_FIELD = { red: "red", yellow: "yellow", draw: "draws" }
+      const HUMAN = "red"
+      const COMPUTER = "yellow"
+      // Everything that differs between the two modes
+      const MODES = {
+        "2p": {
+          names: { red: "Rouge", yellow: "Jaune" },
+          isHuman: () => true,
+          scoresKey: () => "puissance4-scores",
+        },
+        ia: {
+          names: { red: "Toi", yellow: "Ordi" },
+          isHuman: (player) => player === HUMAN,
+          scoresKey: () => `puissance4-scores-ia-${level}`,
+        },
+      }
+      // Center columns first: better alpha-beta pruning
+      const COLUMN_ORDER = [3, 2, 4, 1, 5, 0, 6]
+      const WIN_SCORE = 1000000
+      const SEARCH_DEPTH = { moyen: 3, difficile: 6 }
+      // The 69 lines of 4 cells on the board, computed once for the evaluation
+      const WINDOWS = []
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          for (const [dr, dc] of DIRECTIONS) {
+            const endR = r + dr * 3
+            const endC = c + dc * 3
+            if (endR < 0 || endR >= ROWS || endC < 0 || endC >= COLS) continue
+            WINDOWS.push([0, 1, 2, 3].map((i) => [r + dr * i, c + dc * i]))
+          }
+        }
+      }
+
+      const $ = (id) => document.getElementById(id)
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+      let board = []
+      let currentPlayer = HUMAN
+      let startingPlayer = HUMAN // alternates each new game
+      let gameOver = false
+      let mode = "2p" // key of MODES
+      let level = "moyen"
+      let aiTimer = null
+      // A move is on its way (the jelly slides, then falls): taps wait
+      let busy = false
+      // Bumped by each new game, so that animations of the old one stop
+      let gen = 0
+      let hopperCol = 3
+
+      function loadSettings() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY))
+          if (stored && MODES[stored.mode]) mode = stored.mode
+          if (stored && LEVEL_NAMES[stored.level]) level = stored.level
+        } catch (e) {}
+      }
+
+      function saveSettings() {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ mode, level }))
+      }
+
+      function otherPlayer(player) {
+        return player === "red" ? "yellow" : "red"
+      }
+
+      function isComputerTurn() {
+        return !gameOver && !MODES[mode].isHuman(currentPlayer)
+      }
+
+      function acceptsHumanInput() {
+        return !busy && !gameOver && MODES[mode].isHuman(currentPlayer)
+      }
+
+      // ---------- La gelée ----------
+
+      // Each jelly is a "metaball": a field that fades out around its
+      // center. Where the fields of several jellies add up past the
+      // threshold, they become one blob. `spread` (0 → 1) widens the
+      // fields: at 0 neighbours stay apart, at 1 they melt together.
+      // The surface height comes from the field, its slope gives a normal,
+      // and the normal gives the light: a darker rim, a glow where the
+      // light comes out at the bottom, and a sharp shine at the top left.
+      const PALETTES = {
+        red: {
+          deep: [110, 4, 34],
+          base: [236, 34, 72],
+          glow: [255, 150, 120],
+        },
+        yellow: {
+          deep: [196, 92, 0],
+          base: [255, 196, 28],
+          glow: [255, 250, 170],
+        },
+      }
+      // Bubbles caught in the jelly, in radii from its center
+      const BUBBLES = [
+        [
+          [0.34, 0.3, 0.09],
+          [-0.18, 0.46, 0.06],
+          [0.5, -0.06, 0.05],
+        ],
+        [
+          [-0.36, 0.28, 0.08],
+          [0.22, 0.5, 0.05],
+        ],
+        [
+          [0.1, 0.42, 0.1],
+          [-0.44, 0.1, 0.05],
+          [0.42, 0.24, 0.045],
+        ],
+      ]
+      const LIGHT = normalize([-0.45, -0.65, 0.62])
+      const HALF = normalize([LIGHT[0], LIGHT[1], LIGHT[2] + 1])
+      const EXIT = normalize([0.35, 0.8, 0.5])
+      const SPRITE_SIZE = 128
+      const SPRITE_RADIUS = 0.44 // of the sprite size
+
+      function normalize([x, y, z]) {
+        const l = Math.hypot(x, y, z)
+        return [x / l, y / l, z / l]
+      }
+
+      const GROW = 0.08 // the jellies swell a little as they melt
+
+      // Field and height buffers, kept from one frame of the fusion to the next
+      let scratch = { field: new Float32Array(0), height: new Float32Array(0) }
+
+      // balls: [{ x, y, r, bubbles }] in canvas pixels, all the same radius.
+      // `reach` is the field radius (in jelly radii) once fully spread: it
+      // must grow with the distance between the jellies for them to meet.
+      function paintJelly(ctx, balls, palette, spread, reach = 2) {
+        const w = ctx.canvas.width
+        const h = ctx.canvas.height
+        const grow = 1 + GROW * spread
+        const R0 = 1.25 + (reach - 1.25) * spread
+        const threshold = (1 - (grow / R0) ** 2) ** 3
+        if (scratch.field.length !== w * h) {
+          scratch = {
+            field: new Float32Array(w * h),
+            height: new Float32Array(w * h),
+          }
+        }
+        const { field, height } = scratch
+        field.fill(0)
+        height.fill(0)
+        for (const b of balls) {
+          const R = b.r * R0
+          const invR2 = 1 / (R * R)
+          const y0 = Math.max(0, Math.floor(b.y - R))
+          const y1 = Math.min(h - 1, Math.ceil(b.y + R))
+          for (let y = y0; y <= y1; y++) {
+            const dy2 = (y - b.y) ** 2
+            if (dy2 >= R * R) continue
+            const half = Math.sqrt(R * R - dy2)
+            const x0 = Math.max(0, Math.floor(b.x - half))
+            const x1 = Math.min(w - 1, Math.ceil(b.x + half))
+            for (let x = x0; x <= x1; x++) {
+              const q = 1 - ((x - b.x) ** 2 + dy2) * invR2
+              if (q > 0) field[y * w + x] += q * q * q
+            }
+          }
+        }
+        const lift = balls[0].r * 0.9
+        for (let i = 0; i < field.length; i++) {
+          const t = (field[i] - threshold) / (1 - threshold)
+          if (t > 0) height[i] = Math.sqrt(Math.min(1, t)) * lift
+        }
+        const { deep, base, glow } = palette
+        const image = ctx.createImageData(w, h)
+        const px = image.data
+        for (let y = 1; y < h - 1; y++) {
+          for (let x = 1; x < w - 1; x++) {
+            const i = y * w + x
+            const f = field[i]
+            if (f < threshold * 0.3) continue
+            const gx = (field[i + 1] - field[i - 1]) / 2
+            const gy = (field[i + w] - field[i - w]) / 2
+            // Antialiased edge: how far the threshold is, in pixels
+            const alpha = Math.min(
+              1,
+              (f - threshold) / (Math.sqrt(gx * gx + gy * gy) + 1e-6) + 0.5,
+            )
+            if (alpha <= 0) continue
+            // Normal of the surface (written out: this runs per pixel)
+            const hx = (height[i - 1] - height[i + 1]) / 2
+            const hy = (height[i - w] - height[i + w]) / 2
+            const il = 1 / Math.sqrt(hx * hx + hy * hy + 1)
+            const nx = hx * il
+            const ny = hy * il
+            const nz = il
+            const thick = height[i] / lift
+            const body = smoothstep(0, 0.55, thick)
+            const out =
+              Math.max(0, nx * EXIT[0] + ny * EXIT[1] + nz * EXIT[2]) ** 1.6 *
+              smoothstep(0.05, 0.5, thick) *
+              0.85
+            const diffuse =
+              0.8 +
+              0.32 * Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2])
+            const dotH = nx * HALF[0] + ny * HALF[1] + nz * HALF[2]
+            const shine = dotH > 0.6 ? dotH ** 90 * 1.2 + dotH ** 10 * 0.14 : 0
+            for (let k = 0; k < 3; k++) {
+              let v = deep[k] + (base[k] - deep[k]) * body
+              v += (glow[k] - v) * out
+              px[i * 4 + k] = v * diffuse + 255 * shine
+            }
+            px[i * 4 + 3] = alpha * 255
+          }
+        }
+        ctx.putImageData(image, 0, 0)
+        drawBubbles(ctx, balls)
+      }
+
+      function drawBubbles(ctx, balls) {
+        for (const b of balls) {
+          for (const [dx, dy, br] of b.bubbles) {
+            const x = b.x + dx * b.r
+            const y = b.y + dy * b.r
+            const r = br * b.r
+            ctx.fillStyle = "rgba(255, 255, 255, 0.22)"
+            ctx.beginPath()
+            ctx.arc(x, y, r, 0, Math.PI * 2)
+            ctx.fill()
+            ctx.fillStyle = "rgba(255, 255, 255, 0.7)"
+            ctx.beginPath()
+            ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.3, 0, Math.PI * 2)
+            ctx.fill()
+          }
+        }
+      }
+
+      function smoothstep(a, b, x) {
+        const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
+        return t * t * (3 - 2 * t)
+      }
+
+      // One image per color and bubble pattern: the jelly is shaded once per
+      // color, then each pattern adds its bubbles
+      const SPRITES = {}
+      for (const player of ["red", "yellow"]) {
+        const ball = { x: SPRITE_SIZE / 2, y: SPRITE_SIZE / 2 }
+        ball.r = SPRITE_SIZE * SPRITE_RADIUS
+        const jelly = document.createElement("canvas")
+        jelly.width = jelly.height = SPRITE_SIZE
+        paintJelly(
+          jelly.getContext("2d"),
+          [{ ...ball, bubbles: [] }],
+          PALETTES[player],
+          0,
+        )
+        SPRITES[player] = BUBBLES.map((bubbles) => {
+          const canvas = document.createElement("canvas")
+          canvas.width = canvas.height = SPRITE_SIZE
+          const ctx = canvas.getContext("2d")
+          ctx.drawImage(jelly, 0, 0)
+          drawBubbles(ctx, [{ ...ball, bubbles }])
+          return canvas.toDataURL()
+        })
+      }
+      const variantAt = (r, c) => (r * COLS + c) % BUBBLES.length
+
+      document.querySelectorAll("[data-jelly]").forEach((img) => {
+        img.src = SPRITES[img.dataset.jelly][0]
+      })
+
+      // ---------- Sons ----------
+
+      // Soft synthesized sounds, through the audio context of voix.js
+      // (woken up by the child's taps, so that it plays on iPhone)
+      function audio(ms) {
+        return window.Voice ? Voice.wake(ms) : null
+      }
+
+      function blip(ctx, { at = 0, type = "sine", from, to, dur, vol = 0.14 }) {
+        const t = ctx.currentTime + at
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = type
+        osc.frequency.setValueAtTime(from, t)
+        osc.frequency.exponentialRampToValueAtTime(to, t + dur)
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(vol, t + 0.012)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + dur + 0.02)
+      }
+
+      // The jelly lands: a "plop", then a short wobbly "boing"
+      function soundPlop(player) {
+        const ctx = audio(900)
+        if (!ctx) return
+        const pitch = player === "red" ? 1 : 1.26
+        blip(ctx, { from: 620 * pitch, to: 150, dur: 0.12, vol: 0.2 })
+        const t = ctx.currentTime + 0.05
+        const osc = ctx.createOscillator()
+        const lfo = ctx.createOscillator()
+        const depth = ctx.createGain()
+        const gain = ctx.createGain()
+        osc.frequency.setValueAtTime(260 * pitch, t)
+        lfo.frequency.setValueAtTime(16, t)
+        depth.gain.setValueAtTime(40 * pitch, t)
+        depth.gain.exponentialRampToValueAtTime(1, t + 0.35)
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(0.07, t + 0.02)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38)
+        lfo.connect(depth)
+        depth.connect(osc.frequency)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        lfo.start(t)
+        osc.stop(t + 0.4)
+        lfo.stop(t + 0.4)
+      }
+
+      // A full column: a dull "bonk"
+      function soundBonk() {
+        const ctx = audio(500)
+        if (ctx) blip(ctx, { type: "triangle", from: 180, to: 90, dur: 0.18 })
+      }
+
+      // The four jellies wake up one after the other
+      function soundGather() {
+        const ctx = audio(1200)
+        if (!ctx) return
+        ;[392, 494, 587, 784].forEach((f, i) =>
+          blip(ctx, { at: i * 0.08, from: f, to: f * 1.5, dur: 0.14 }),
+        )
+      }
+
+      // They melt into one: a shimmering chord (for the computer: a
+      // gentle "wah-wah" going down)
+      function soundMerged(cheerful) {
+        const ctx = audio(1800)
+        if (!ctx) return
+        if (cheerful) {
+          ;[523, 659, 784, 1047].forEach((f, i) =>
+            blip(ctx, {
+              at: i * 0.05,
+              from: f,
+              to: f * 1.01,
+              dur: 1.1,
+              vol: 0.08,
+            }),
+          )
+        } else {
+          blip(ctx, { type: "triangle", from: 392, to: 349, dur: 0.35 })
+          blip(ctx, {
+            type: "triangle",
+            at: 0.32,
+            from: 330,
+            to: 247,
+            dur: 0.6,
+          })
+        }
+      }
+
+      function soundDraw() {
+        const ctx = audio(900)
+        if (!ctx) return
+        blip(ctx, { from: 440, to: 392, dur: 0.25, vol: 0.1 })
+        blip(ctx, { at: 0.2, from: 440, to: 392, dur: 0.3, vol: 0.1 })
+      }
+
+      // ---------- Plateau ----------
+
+      const cells = [] // cells[r][c] = { el, token }
+
+      function buildBoard() {
+        const boardEl = $("board")
         for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
-                for (const [dr, dc] of DIRECTIONS) {
-                    const endR = r + dr * 3;
-                    const endC = c + dc * 3;
-                    if (endR < 0 || endR >= ROWS || endC < 0 || endC >= COLS) continue;
-                    WINDOWS.push([0, 1, 2, 3].map(i => [r + dr * i, c + dc * i]));
-                }
+          cells.push([])
+          for (let c = 0; c < COLS; c++) {
+            const el = document.createElement("div")
+            el.className = "cell"
+            el.innerHTML = '<div class="hole"></div>'
+            boardEl.appendChild(el)
+            cells[r].push({ el, token: null })
+          }
+        }
+        measure()
+        window.addEventListener("resize", measure)
+      }
+
+      // The hopper above the board has the size of a token
+      function measure() {
+        const width = cells[0][0].el.getBoundingClientRect().width
+        $("arena").style.setProperty("--token", `${width * 1.08}px`)
+        moveHopper(hopperCol, true)
+      }
+
+      // Horizontal center of a column, relative to the arena
+      function columnX(col) {
+        const arena = $("arena").getBoundingClientRect()
+        const cell = cells[0][col].el.getBoundingClientRect()
+        return cell.left - arena.left + cell.width / 2
+      }
+
+      function moveHopper(col, instant) {
+        const hopper = $("hopper")
+        const dist = Math.abs(col - hopperCol)
+        hopperCol = col
+        const x = columnX(col) - hopper.offsetWidth / 2
+        const ms = instant || reduceMotion ? 0 : 90 + dist * 30
+        hopper.style.transitionDuration = `${ms}ms`
+        hopper.style.translate = `${x}px 0`
+        return ms ? wait(ms) : null
+      }
+
+      function showHopper(visible) {
+        const hopper = $("hopper")
+        hopper.classList.toggle("away", !visible)
+        if (!visible) return
+        hopper.querySelector("img").src = SPRITES[currentPlayer][0]
+        squish(
+          hopper,
+          [
+            [0.2, 0.2],
+            [1.2, 0.85],
+            [0.92, 1.08],
+          ],
+          { duration: 360, easing: "ease-out" },
+        )
+      }
+
+      function clearBoard() {
+        $("fusion")?.remove()
+        cells.forEach((row, r) =>
+          row.forEach((cell, c) => {
+            cell.el.classList.remove("red", "yellow")
+            const token = cell.token
+            cell.token = null
+            if (!token) return
+            if (reduceMotion) return token.remove()
+            // Like the slider under a real board: everything falls out
+            token
+              .animate(
+                [
+                  { transform: "translateY(0)", opacity: 1 },
+                  {
+                    transform: `translateY(${(ROWS - r) * 120}%) scale(0.9, 1.1)`,
+                    opacity: 0,
+                  },
+                ],
+                {
+                  duration: 420,
+                  delay: c * 25 + (ROWS - r) * 15,
+                  easing: "cubic-bezier(0.5, 0, 1, 1)",
+                  fill: "forwards",
+                },
+              )
+              .finished.then(() => token.remove())
+          }),
+        )
+      }
+
+      function placeToken(row, col, player) {
+        const cell = cells[row][col]
+        const token = document.createElement("img")
+        token.className = "token"
+        token.alt = ""
+        token.src = SPRITES[player][variantAt(row, col)]
+        cell.el.appendChild(token)
+        cell.el.classList.add(player)
+        cell.token = token
+        return token
+      }
+
+      // The jelly falls from the hopper, squashes, bounces and wobbles.
+      // Resolves when it lands.
+      function animateDrop(row, token) {
+        if (reduceMotion) return Promise.resolve()
+        const fromTop =
+          $("hopper").getBoundingClientRect().top -
+          token.getBoundingClientRect().top
+        const fall = Math.round(150 + 70 * Math.sqrt(row + 1))
+        const total = fall + 560
+        const a = fall / total
+        const at = (p) => a + (1 - a) * p
+        token.animate(
+          [
+            {
+              transform: `translateY(${fromTop}px) scale(0.94, 1.08)`,
+              easing: "cubic-bezier(0.45, 0, 1, 1)",
+            },
+            { transform: "translateY(0) scale(0.9, 1.12)", offset: a },
+            {
+              transform: "translateY(0) scale(1.32, 0.7)",
+              offset: at(0.08),
+              easing: "ease-out",
+            },
+            {
+              transform: "translateY(-14%) scale(0.86, 1.16)",
+              offset: at(0.3),
+              easing: "ease-in-out",
+            },
+            { transform: "translateY(0) scale(1.12, 0.9)", offset: at(0.52) },
+            { transform: "translateY(0) scale(0.96, 1.05)", offset: at(0.7) },
+            { transform: "translateY(0) scale(1.02, 0.98)", offset: at(0.86) },
+            { transform: "translateY(0) scale(1, 1)" },
+          ],
+          { duration: total },
+        )
+        return wait(fall)
+      }
+
+      // Squash and stretch: from scale(1, 1) through `steps` ([x, y] scales)
+      // back to scale(1, 1). Resolves when done (at once without motion).
+      function squish(el, steps, options) {
+        if (reduceMotion) return Promise.resolve()
+        const frames = [[1, 1], ...steps, [1, 1]].map(([x, y]) => ({
+          transform: `scale(${x}, ${y})`,
+        }))
+        return el.animate(frames, options).finished
+      }
+
+      // The jellies underneath feel the shock
+      function shakeBelow(row, col) {
+        for (let r = row + 1, k = 1; r < ROWS && k <= 2; r++, k++) {
+          const token = cells[r][col].token
+          if (!token) continue
+          const s = 0.12 / k
+          squish(
+            token,
+            [
+              [1 + s, 1 - s],
+              [1 - s / 2, 1 + s / 2],
+            ],
+            { duration: 380, delay: (k - 1) * 40, easing: "ease-out" },
+          )
+        }
+      }
+
+      // A full column says no: it shakes
+      function refuseColumn(col) {
+        soundBonk()
+        if (reduceMotion) return
+        for (let r = 0; r < ROWS; r++) {
+          cells[r][col].token?.animate(
+            [
+              { transform: "translateX(0)" },
+              { transform: "translateX(-8%) rotate(-6deg)" },
+              { transform: "translateX(7%) rotate(5deg)" },
+              { transform: "translateX(-4%) rotate(-2deg)" },
+              { transform: "translateX(0)" },
+            ],
+            { duration: 360, delay: r * 20 },
+          )
+        }
+      }
+
+      // ---------- Partie ----------
+
+      function initGame() {
+        clearTimeout(aiTimer)
+        gen++
+        busy = false
+        board = Array.from({ length: ROWS }, () => Array(COLS).fill(null))
+        currentPlayer = startingPlayer
+        // Alternate who starts the next game (red, yellow, red, ...)
+        startingPlayer = otherPlayer(startingPlayer)
+        gameOver = false
+        $("message").hidden = true
+        $("newGameBtn").hidden = true
+        $("status").hidden = false
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        clearBoard()
+        moveHopper(3, true)
+        updateTurnIndicator()
+        showHopper(true)
+        scheduleComputerMove()
+      }
+
+      function renderModeSelect() {
+        document.querySelectorAll("#modeSelect button").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.mode === mode)
+        })
+        document.querySelectorAll("#levelSelect button").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.level === level)
+        })
+        $("levelSelect").hidden = mode !== "ia"
+        const { names } = MODES[mode]
+        $("scoreLabelRed").textContent = names.red
+        $("scoreLabelYellow").textContent = names.yellow
+        updateScoreboard()
+      }
+
+      function changeSettings(newMode, newLevel) {
+        if (newMode === mode && newLevel === level) return
+        mode = newMode
+        level = newLevel
+        saveSettings()
+        // The child always starts the first game after a settings change
+        startingPlayer = HUMAN
+        renderModeSelect()
+        initGame()
+      }
+
+      function updateTurnIndicator() {
+        const status = $("status")
+        status.classList.toggle("thinking", isComputerTurn())
+        $("arena").classList.toggle("locked", !acceptsHumanInput())
+        for (const player of ["red", "yellow"]) {
+          $(`card-${player}`).classList.toggle(
+            "turn",
+            !gameOver && currentPlayer === player,
+          )
+        }
+        if (gameOver) {
+          status.textContent = ""
+        } else if (isComputerTurn()) {
+          status.textContent = "L'ordinateur réfléchit"
+        } else if (mode === "ia") {
+          status.textContent = "À toi de jouer !"
+        } else {
+          status.textContent = `Au tour de ${MODES[mode].names[currentPlayer]}`
+        }
+      }
+
+      function isColumnFull(col) {
+        return board[0][col] !== null
+      }
+
+      function findLowestRow(col) {
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (board[r][col] === null) return r
+        }
+        return -1
+      }
+
+      // The hopper slides over the column, then lets the jelly fall
+      async function requestMove(col) {
+        if (busy || gameOver) return
+        if (isColumnFull(col)) return refuseColumn(col)
+        busy = true
+        updateTurnIndicator()
+        const myGen = gen
+        await moveHopper(col)
+        if (myGen !== gen) return
+
+        const row = findLowestRow(col)
+        const player = currentPlayer
+        board[row][col] = player
+        if (window.ExitGuard) ExitGuard.setActive(true)
+
+        const winningCells = checkWin(row, col, player)
+        const result = winningCells ? player : isBoardFull() ? "draw" : null
+        if (result) {
+          gameOver = true
+        } else {
+          currentPlayer = otherPlayer(player)
+        }
+        const token = placeToken(row, col, player)
+        showHopper(false)
+        await animateDrop(row, token)
+        if (myGen !== gen) return
+        soundPlop(player)
+        shakeBelow(row, col)
+        busy = false
+        updateTurnIndicator()
+
+        if (result) {
+          endGame(result, winningCells)
+        } else {
+          showHopper(true)
+          scheduleComputerMove()
+        }
+      }
+
+      async function endGame(result, winningCells) {
+        saveScore(result)
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        const myGen = gen
+        if (winningCells) {
+          await fuse(winningCells, result)
+        } else {
+          await shrug()
+        }
+        if (myGen !== gen) return
+        const message = $("message")
+        if (result === "draw") {
+          message.textContent = "Match nul !"
+          message.className = "verdict"
+        } else {
+          message.textContent = !MODES[mode].isHuman(result)
+            ? "L'ordinateur a gagné !"
+            : mode === "ia"
+              ? "Bravo, tu as gagné !"
+              : `${MODES[mode].names[result]} a gagné !`
+          message.className = `verdict ${result}`
+          if (MODES[mode].isHuman(result) && !reduceMotion) showConfetti()
+        }
+        popIn(message)
+        $("status").hidden = true
+        $("newGameBtn").hidden = false
+        popIn($("newGameBtn"))
+        bumpScore(result)
+      }
+
+      function popIn(el) {
+        if (reduceMotion) return
+        el.animate(
+          [
+            { transform: "scale(0.3, 0.3)", opacity: 0 },
+            { transform: "scale(1.12, 0.9)", opacity: 1, offset: 0.45 },
+            { transform: "scale(0.95, 1.05)", offset: 0.7 },
+            { transform: "scale(1, 1)" },
+          ],
+          { duration: 480, easing: "ease-out" },
+        )
+      }
+
+      function scheduleComputerMove() {
+        if (!isComputerTurn()) return
+        // Short pause so the child sees their token land, then the hopper
+        // hesitates over another column before playing
+        // (initGame cancels it if a new game starts meanwhile)
+        aiTimer = setTimeout(() => {
+          const col = chooseComputerMove()
+          const others = validColumns().filter((c) => c !== col)
+          if (reduceMotion || !others.length) return requestMove(col)
+          moveHopper(randomItem(others))
+          aiTimer = setTimeout(() => requestMove(col), 320)
+        }, 300)
+      }
+
+      // ---------- La fusion ----------
+
+      const easeInOut = (t) =>
+        t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2
+
+      // The four jellies shiver, then melt into a single one
+      async function fuse(winning, player) {
+        const myGen = gen
+        const tokens = winning.map(([r, c]) => cells[r][c].token)
+        soundGather()
+        await Promise.all(
+          tokens.map((token, i) =>
+            squish(
+              token,
+              [
+                [1.14, 0.86],
+                [0.9, 1.1],
+                [1.06, 0.94],
+              ],
+              { duration: 380, delay: i * 80, easing: "ease-in-out" },
+            ),
+          ),
+        )
+        if (myGen !== gen) return
+
+        // A canvas over the four cells, with room for the blob to swell
+        const boardEl = $("board")
+        const origin = boardEl.getBoundingClientRect()
+        const dpr = Math.min(2, window.devicePixelRatio || 1)
+        const centers = winning.map(([r, c]) => {
+          const rect = cells[r][c].token.getBoundingClientRect()
+          return {
+            x: rect.left - origin.left + rect.width / 2,
+            y: rect.top - origin.top + rect.height / 2,
+            r: rect.width * SPRITE_RADIUS,
+            bubbles: BUBBLES[variantAt(r, c)],
+          }
+        })
+        // Two neighbours give the direction of the line. Diagonal jellies
+        // are further apart and need a wider field to meet (both values set
+        // by eye: one rule for both made either thin necks or a fat blob)
+        const dx = centers[1].x - centers[0].x
+        const dy = centers[1].y - centers[0].y
+        const diagonal = Math.abs(dx) > 1 && Math.abs(dy) > 1
+        const reach = diagonal ? 3.4 : 2
+        const margin = centers[0].r * 1.5
+        const left = Math.min(...centers.map((b) => b.x)) - margin
+        const top = Math.min(...centers.map((b) => b.y)) - margin
+        const width = Math.max(...centers.map((b) => b.x)) + margin - left
+        const height = Math.max(...centers.map((b) => b.y)) + margin - top
+        const canvas = document.createElement("canvas")
+        canvas.id = "fusion"
+        canvas.width = Math.round(width * dpr)
+        canvas.height = Math.round(height * dpr)
+        Object.assign(canvas.style, {
+          left: `${left}px`,
+          top: `${top}px`,
+          width: `${width}px`,
+          height: `${height}px`,
+        })
+        boardEl.appendChild(canvas)
+        const ctx = canvas.getContext("2d")
+        const mid = {
+          x: centers.reduce((s, b) => s + b.x, 0) / centers.length,
+          y: centers.reduce((s, b) => s + b.y, 0) / centers.length,
+        }
+        const balls = centers.map((b) => ({
+          x: (b.x - left) * dpr,
+          y: (b.y - top) * dpr,
+          r: b.r * dpr,
+          bubbles: b.bubbles,
+        }))
+        const frame = (t) =>
+          paintJelly(ctx, balls, PALETTES[player], easeInOut(t), reach)
+
+        frame(reduceMotion ? 1 : 0)
+        tokens.forEach((token) => (token.style.opacity = 0))
+        if (!reduceMotion) {
+          const start = performance.now()
+          await new Promise((resolve) => {
+            const step = (now) => {
+              if (myGen !== gen) return resolve()
+              const t = Math.min(1, (now - start) / 900)
+              frame(t)
+              if (t < 1) requestAnimationFrame(step)
+              else resolve()
             }
+            requestAnimationFrame(step)
+          })
+          if (myGen !== gen) return
+          wobbleAlong(canvas, Math.atan2(dy, dx))
+          splash(mid, player)
         }
+        soundMerged(MODES[mode].isHuman(player))
+      }
 
-        let board = [];
-        let currentPlayer = HUMAN;
-        let startingPlayer = HUMAN; // alternates each new game
-        let gameOver = false;
-        let mode = '2p'; // key of MODES
-        let level = 'moyen';
-        let aiTimer = null;
+      // The merged jelly wobbles along its length, like a gummy worm
+      function wobbleAlong(canvas, angle) {
+        const along = (sx, sy) =>
+          `rotate(${angle}rad) scale(${sx}, ${sy}) rotate(${-angle}rad)`
+        canvas.animate(
+          [
+            { transform: along(1, 1) },
+            { transform: along(1.1, 0.82) },
+            { transform: along(0.94, 1.12) },
+            { transform: along(1.04, 0.94) },
+            { transform: along(0.98, 1.03) },
+            { transform: along(1, 1) },
+          ],
+          { duration: 900, easing: "ease-out" },
+        )
+      }
 
-        function loadSettings() {
-            try {
-                const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
-                if (stored && MODES[stored.mode]) mode = stored.mode;
-                if (stored && LEVEL_NAMES[stored.level]) level = stored.level;
-            } catch (e) {}
+      // Drops of jelly and sparks fly out of the blob, and fall back
+      function splash(mid, player) {
+        const boardEl = $("board")
+        for (let i = 0; i < 14; i++) {
+          const isDrop = i % 2 === 0
+          const el = document.createElement(isDrop ? "img" : "div")
+          el.className = isDrop ? "drop" : "spark"
+          if (isDrop) {
+            const size = 10 + Math.random() * 10
+            el.src = SPRITES[player][i % BUBBLES.length]
+            Object.assign(el.style, {
+              width: `${size}px`,
+              height: `${size}px`,
+              margin: `${-size / 2}px 0 0 ${-size / 2}px`,
+            })
+          }
+          el.style.left = `${mid.x}px`
+          el.style.top = `${mid.y}px`
+          boardEl.appendChild(el)
+          const angle = -Math.PI / 2 + (Math.random() - 0.5) * 2.4
+          const speed = 70 + Math.random() * 70
+          const vx = Math.cos(angle) * speed
+          const vy = Math.sin(angle) * speed
+          const frames = []
+          for (let k = 0; k <= 6; k++) {
+            const t = k / 6
+            const x = vx * t * 1.4
+            const y = vy * t * 1.4 + 160 * t * t
+            frames.push({
+              transform: `translate(${x}px, ${y}px) scale(${1 - t * 0.4})`,
+              opacity: k < 4 ? 1 : 1 - (k - 3) / 3,
+            })
+          }
+          el.animate(frames, {
+            duration: 900 + Math.random() * 300,
+            easing: "linear",
+            fill: "forwards",
+          }).finished.then(() => el.remove())
         }
+      }
 
-        function saveSettings() {
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify({ mode, level }));
+      // A draw: every jelly shrugs, in a wave
+      async function shrug() {
+        soundDraw()
+        if (reduceMotion) return
+        cells.forEach((row, r) =>
+          row.forEach((cell, c) =>
+            squish(
+              cell.token,
+              [
+                [0.88, 1.14],
+                [1.08, 0.92],
+              ],
+              { duration: 420, delay: c * 50 + r * 30, easing: "ease-in-out" },
+            ),
+          ),
+        )
+        await wait(600)
+      }
+
+      // ---------- Ordinateur ----------
+
+      function validColumns() {
+        return COLUMN_ORDER.filter((c) => !isColumnFull(c))
+      }
+
+      function randomItem(list) {
+        return list[Math.floor(Math.random() * list.length)]
+      }
+
+      // Column where `player` would win right now, or -1
+      function findWinningColumn(player) {
+        for (const c of validColumns()) {
+          const r = findLowestRow(c)
+          board[r][c] = player
+          const wins = checkWin(r, c, player)
+          board[r][c] = null
+          if (wins) return c
         }
+        return -1
+      }
 
-        function otherPlayer(player) {
-            return player === 'red' ? 'yellow' : 'red';
+      function chooseComputerMove() {
+        if (level === "facile") return chooseEasyMove()
+        return chooseBestMove(SEARCH_DEPTH[level])
+      }
+
+      // Facile: wins when it can, blocks only half the time, otherwise plays at random
+      function chooseEasyMove() {
+        const win = findWinningColumn(COMPUTER)
+        if (win !== -1) return win
+        const block = findWinningColumn(HUMAN)
+        if (block !== -1 && Math.random() < 0.5) return block
+        return randomItem(validColumns())
+      }
+
+      // Moyen / Difficile: negamax with alpha-beta pruning
+      function chooseBestMove(depth) {
+        let bestScore = -Infinity
+        let bestCols = []
+        for (const c of validColumns()) {
+          // Scores are integers: alpha = best - 1 prunes worse moves
+          // while still scoring ties exactly
+          const score = scoreMove(c, COMPUTER, depth, bestScore - 1, Infinity)
+          if (score > bestScore) {
+            bestScore = score
+            bestCols = [c]
+          } else if (score === bestScore) {
+            bestCols.push(c)
+          }
         }
+        // Random among equally good moves so games vary
+        return randomItem(bestCols)
+      }
 
-        function isComputerTurn() {
-            return !gameOver && !MODES[mode].isHuman(currentPlayer);
+      // Score of `player` dropping a token in `col`, from `player`'s point of view
+      function scoreMove(col, player, depth, alpha, beta) {
+        const r = findLowestRow(col)
+        board[r][col] = player
+        let score
+        if (checkWin(r, col, player)) {
+          score = WIN_SCORE + depth // prefer faster wins
+        } else if (depth <= 1) {
+          score = evaluate(player)
+        } else {
+          score = -negamax(otherPlayer(player), depth - 1, -beta, -alpha)
         }
+        board[r][col] = null
+        return score
+      }
 
-        function acceptsHumanInput() {
-            return !gameOver && MODES[mode].isHuman(currentPlayer);
+      function negamax(player, depth, alpha, beta) {
+        const cols = validColumns()
+        if (cols.length === 0) return 0 // draw
+        let best = -Infinity
+        for (const c of cols) {
+          const score = scoreMove(c, player, depth, alpha, beta)
+          if (score > best) best = score
+          if (score > alpha) alpha = score
+          if (alpha >= beta) break
         }
+        return best
+      }
 
-        function initGame() {
-            clearTimeout(aiTimer);
-            board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-            currentPlayer = startingPlayer;
-            // Alternate who starts the next game (red, yellow, red, ...)
-            startingPlayer = otherPlayer(startingPlayer);
-            gameOver = false;
-            document.getElementById('message').innerHTML = '';
-            document.getElementById('message').className = '';
-            document.getElementById('newGameBtn').style.display = 'none';
-            if (window.ExitGuard) ExitGuard.setActive(false);
-            renderBoard();
-            updateTurnIndicator();
-            scheduleComputerMove();
+      // Heuristic value of the board for `player`
+      function evaluate(player) {
+        const opponent = otherPlayer(player)
+        let score = 0
+        for (let r = 0; r < ROWS; r++) {
+          if (board[r][3] === player) score += 3
+          else if (board[r][3] === opponent) score -= 3
         }
-
-        function renderModeSelect() {
-            document.querySelectorAll('#modeSelect button').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.mode === mode);
-            });
-            document.querySelectorAll('#levelSelect button').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.level === level);
-            });
-            document.getElementById('levelSelect').style.display = mode === 'ia' ? 'flex' : 'none';
-            const { names, scoreTitle } = MODES[mode];
-            document.getElementById('scoreLabelRed').textContent = names.red;
-            document.getElementById('scoreLabelYellow').textContent = names.yellow;
-            document.getElementById('scoreTitle').textContent = scoreTitle();
-            updateScoreboard();
+        for (const window of WINDOWS) {
+          let mine = 0
+          let theirs = 0
+          for (const [r, c] of window) {
+            const v = board[r][c]
+            if (v === player) mine++
+            else if (v === opponent) theirs++
+          }
+          if (mine && theirs) continue
+          if (mine === 3) score += 5
+          else if (mine === 2) score += 2
+          else if (theirs === 3) score -= 4
+          else if (theirs === 2) score -= 1
         }
+        return score
+      }
 
-        function changeSettings(newMode, newLevel) {
-            if (newMode === mode && newLevel === level) return;
-            mode = newMode;
-            level = newLevel;
-            saveSettings();
-            // The child always starts the first game after a settings change
-            startingPlayer = HUMAN;
-            renderModeSelect();
-            initGame();
-        }
+      // ---------- Règles & scores ----------
 
-        function renderBoard() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            boardEl.classList.toggle('locked', !acceptsHumanInput());
-            for (let c = 0; c < COLS; c++) {
-                const colEl = document.createElement('div');
-                colEl.className = 'column';
-                colEl.dataset.col = c;
-                colEl.onclick = () => {
-                    if (acceptsHumanInput()) playMove(c);
-                };
-                if (isColumnFull(c)) {
-                    colEl.classList.add('full');
-                }
-                for (let r = 0; r < ROWS; r++) {
-                    const cellEl = document.createElement('div');
-                    cellEl.className = 'cell';
-                    const value = board[r][c];
-                    if (value) {
-                        const token = document.createElement('div');
-                        token.className = `token ${value}`;
-                        cellEl.appendChild(token);
-                    }
-                    colEl.appendChild(cellEl);
-                }
-                boardEl.appendChild(colEl);
+      function isBoardFull() {
+        return board[0].every((cell) => cell !== null)
+      }
+
+      function checkWin(row, col, player) {
+        for (const [dr, dc] of DIRECTIONS) {
+          const cells = [[row, col]]
+          for (const sign of [1, -1]) {
+            for (let step = 1; step < 4; step++) {
+              const r = row + dr * step * sign
+              const c = col + dc * step * sign
+              if (r < 0 || r >= ROWS || c < 0 || c >= COLS) break
+              if (board[r][c] !== player) break
+              cells.push([r, c])
             }
+          }
+          if (cells.length >= 4) return cells
         }
+        return null
+      }
 
-        function updateTurnIndicator() {
-            const indicator = document.getElementById('turnIndicator');
-            const prefix = document.getElementById('turnPrefix');
-            const token = document.getElementById('turnToken');
-            const label = document.getElementById('turnLabel');
-            token.className = `turn-token ${currentPlayer}`;
-            indicator.classList.toggle('thinking', isComputerTurn());
-            prefix.textContent = '';
-            if (gameOver) {
-                label.textContent = 'Partie terminée';
-            } else if (isComputerTurn()) {
-                label.textContent = "L'ordinateur réfléchit";
-            } else if (mode === 'ia') {
-                label.textContent = 'À toi de jouer !';
-            } else {
-                prefix.textContent = 'Au tour de';
-                label.textContent = MODES[mode].names[currentPlayer];
-            }
+      function getScores() {
+        const stored = localStorage.getItem(MODES[mode].scoresKey())
+        return stored ? JSON.parse(stored) : { ...DEFAULT_SCORES }
+      }
+
+      // Saved right away; shown once the jellies have merged
+      function saveScore(result) {
+        const scores = getScores()
+        scores[SCORE_FIELD[result]]++
+        localStorage.setItem(MODES[mode].scoresKey(), JSON.stringify(scores))
+      }
+
+      function bumpScore(result) {
+        updateScoreboard()
+        popIn($(`score-${SCORE_FIELD[result]}`))
+      }
+
+      function updateScoreboard(scores = getScores()) {
+        for (const field of Object.values(SCORE_FIELD)) {
+          $(`score-${field}`).textContent = scores[field]
         }
+      }
 
-        function isColumnFull(col) {
-            return board[0][col] !== null;
-        }
+      // ---------- Gestes ----------
 
-        function findLowestRow(col) {
-            for (let r = ROWS - 1; r >= 0; r--) {
-                if (board[r][col] === null) return r;
-            }
-            return -1;
-        }
+      $("arena").onclick = (event) => {
+        if (!acceptsHumanInput()) return
+        audio(400) // unlocks the audio inside the child's gesture
+        const boardRect = $("board").getBoundingClientRect()
+        const col = Math.floor(
+          ((event.clientX - boardRect.left) / boardRect.width) * COLS,
+        )
+        requestMove(Math.max(0, Math.min(COLS - 1, col)))
+      }
+      $("newGameBtn").onclick = () => {
+        audio(300)
+        initGame()
+      }
+      document.querySelectorAll("#modeSelect button").forEach((btn) => {
+        btn.onclick = () => changeSettings(btn.dataset.mode, level)
+      })
+      document.querySelectorAll("#levelSelect button").forEach((btn) => {
+        btn.onclick = () => changeSettings(mode, btn.dataset.level)
+      })
+      $("rulesBtn").onclick = () => ($("rulesSheet").hidden = false)
+      $("rulesClose").onclick = () => ($("rulesSheet").hidden = true)
+      $("rulesSheet").onclick = (event) => {
+        if (event.target === $("rulesSheet")) $("rulesSheet").hidden = true
+      }
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") $("rulesSheet").hidden = true
+      })
 
-        function playMove(col) {
-            if (gameOver) return;
-            const row = findLowestRow(col);
-            if (row === -1) return;
-
-            board[row][col] = currentPlayer;
-            if (window.ExitGuard) ExitGuard.setActive(true);
-
-            const winningCells = checkWin(row, col, currentPlayer);
-            const result = winningCells ? currentPlayer : isBoardFull() ? 'draw' : null;
-            if (result) {
-                gameOver = true;
-            } else {
-                currentPlayer = otherPlayer(currentPlayer);
-            }
-            renderBoard();
-            animateDrop(row, col);
-            updateTurnIndicator();
-
-            if (result) {
-                if (winningCells) highlightWinning(winningCells);
-                endGame(result);
-            } else {
-                scheduleComputerMove();
-            }
-        }
-
-        function endGame(result) {
-            if (result === 'draw') {
-                showMessage(`🤝 Match nul !`, 'draw');
-            } else if (!MODES[mode].isHuman(result)) {
-                showMessage(`🤖 L'ordinateur a gagné ! Essaie encore !`, `win-${result}`);
-            } else {
-                const text = mode === 'ia' ? '🎉 Bravo, tu as gagné !' : `🎉 ${MODES[mode].names[result]} a gagné !`;
-                showMessage(text, `win-${result}`);
-                showConfetti();
-            }
-            saveScore(result);
-            document.getElementById('newGameBtn').style.display = 'block';
-            if (window.ExitGuard) ExitGuard.setActive(false);
-        }
-
-        function scheduleComputerMove() {
-            if (!isComputerTurn()) return;
-            // Short pause so the child sees their token land before the reply
-            // (initGame cancels it if a new game starts meanwhile)
-            aiTimer = setTimeout(() => playMove(chooseComputerMove()), 700);
-        }
-
-        // ---------- Ordinateur ----------
-
-        function validColumns() {
-            return COLUMN_ORDER.filter(c => !isColumnFull(c));
-        }
-
-        function randomItem(list) {
-            return list[Math.floor(Math.random() * list.length)];
-        }
-
-        // Column where `player` would win right now, or -1
-        function findWinningColumn(player) {
-            for (const c of validColumns()) {
-                const r = findLowestRow(c);
-                board[r][c] = player;
-                const wins = checkWin(r, c, player);
-                board[r][c] = null;
-                if (wins) return c;
-            }
-            return -1;
-        }
-
-        function chooseComputerMove() {
-            if (level === 'facile') return chooseEasyMove();
-            return chooseBestMove(SEARCH_DEPTH[level]);
-        }
-
-        // Facile: wins when it can, blocks only half the time, otherwise plays at random
-        function chooseEasyMove() {
-            const win = findWinningColumn(COMPUTER);
-            if (win !== -1) return win;
-            const block = findWinningColumn(HUMAN);
-            if (block !== -1 && Math.random() < 0.5) return block;
-            return randomItem(validColumns());
-        }
-
-        // Moyen / Difficile: negamax with alpha-beta pruning
-        function chooseBestMove(depth) {
-            let bestScore = -Infinity;
-            let bestCols = [];
-            for (const c of validColumns()) {
-                // Scores are integers: alpha = best - 1 prunes worse moves
-                // while still scoring ties exactly
-                const score = scoreMove(c, COMPUTER, depth, bestScore - 1, Infinity);
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestCols = [c];
-                } else if (score === bestScore) {
-                    bestCols.push(c);
-                }
-            }
-            // Random among equally good moves so games vary
-            return randomItem(bestCols);
-        }
-
-        // Score of `player` dropping a token in `col`, from `player`'s point of view
-        function scoreMove(col, player, depth, alpha, beta) {
-            const r = findLowestRow(col);
-            board[r][col] = player;
-            let score;
-            if (checkWin(r, col, player)) {
-                score = WIN_SCORE + depth; // prefer faster wins
-            } else if (depth <= 1) {
-                score = evaluate(player);
-            } else {
-                score = -negamax(otherPlayer(player), depth - 1, -beta, -alpha);
-            }
-            board[r][col] = null;
-            return score;
-        }
-
-        function negamax(player, depth, alpha, beta) {
-            const cols = validColumns();
-            if (cols.length === 0) return 0; // draw
-            let best = -Infinity;
-            for (const c of cols) {
-                const score = scoreMove(c, player, depth, alpha, beta);
-                if (score > best) best = score;
-                if (score > alpha) alpha = score;
-                if (alpha >= beta) break;
-            }
-            return best;
-        }
-
-        // Heuristic value of the board for `player`
-        function evaluate(player) {
-            const opponent = otherPlayer(player);
-            let score = 0;
-            for (let r = 0; r < ROWS; r++) {
-                if (board[r][3] === player) score += 3;
-                else if (board[r][3] === opponent) score -= 3;
-            }
-            for (const window of WINDOWS) {
-                let mine = 0;
-                let theirs = 0;
-                for (const [r, c] of window) {
-                    const v = board[r][c];
-                    if (v === player) mine++;
-                    else if (v === opponent) theirs++;
-                }
-                if (mine && theirs) continue;
-                if (mine === 3) score += 5;
-                else if (mine === 2) score += 2;
-                else if (theirs === 3) score -= 4;
-                else if (theirs === 2) score -= 1;
-            }
-            return score;
-        }
-
-        // ---------- Affichage & scores ----------
-
-        function animateDrop(row, col) {
-            const colEl = document.querySelector(`.column[data-col="${col}"]`);
-            if (!colEl) return;
-            const cellEl = colEl.children[row];
-            const token = cellEl.querySelector('.token');
-            if (!token) return;
-            const distance = row + 1;
-            token.style.setProperty('--drop-from', `${-distance * 110}%`);
-            token.style.animationDuration = `${0.18 * Math.sqrt(distance)}s`;
-            token.classList.add('drop');
-        }
-
-        function isBoardFull() {
-            return board[0].every(cell => cell !== null);
-        }
-
-        function checkWin(row, col, player) {
-            for (const [dr, dc] of DIRECTIONS) {
-                const cells = [[row, col]];
-                for (const sign of [1, -1]) {
-                    for (let step = 1; step < 4; step++) {
-                        const r = row + dr * step * sign;
-                        const c = col + dc * step * sign;
-                        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) break;
-                        if (board[r][c] !== player) break;
-                        cells.push([r, c]);
-                    }
-                }
-                if (cells.length >= 4) return cells;
-            }
-            return null;
-        }
-
-        function highlightWinning(cells) {
-            cells.forEach(([r, c]) => {
-                const colEl = document.querySelector(`.column[data-col="${c}"]`);
-                if (!colEl) return;
-                const cellEl = colEl.children[r];
-                const token = cellEl.querySelector('.token');
-                if (token) token.classList.add('winning');
-            });
-        }
-
-        function showMessage(text, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = text;
-        }
-
-                function getScores() {
-            const stored = localStorage.getItem(MODES[mode].scoresKey());
-            return stored ? JSON.parse(stored) : { ...DEFAULT_SCORES };
-        }
-
-        function saveScore(result) {
-            const scores = getScores();
-            scores[SCORE_FIELD[result]]++;
-            localStorage.setItem(MODES[mode].scoresKey(), JSON.stringify(scores));
-            updateScoreboard(scores);
-        }
-
-        function updateScoreboard(scores = getScores()) {
-            document.getElementById('scoreRed').textContent = scores.red;
-            document.getElementById('scoreYellow').textContent = scores.yellow;
-            document.getElementById('scoreDraws').textContent = scores.draws;
-        }
-
-        document.getElementById('newGameBtn').onclick = initGame;
-        document.querySelectorAll('#modeSelect button').forEach(btn => {
-            btn.onclick = () => changeSettings(btn.dataset.mode, level);
-        });
-        document.querySelectorAll('#levelSelect button').forEach(btn => {
-            btn.onclick = () => changeSettings(mode, btn.dataset.level);
-        });
-
-        loadSettings();
-        renderModeSelect();
-        initGame();
+      loadSettings()
+      renderModeSelect()
+      buildBoard()
+      initGame()
     </script>
-</body>
+  </body>
 </html>
