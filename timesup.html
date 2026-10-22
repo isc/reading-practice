@@ -1937,11 +1937,25 @@
 
       // ===== Déroulé d'une partie =====
 
+      // Les panneaux se superposent en fondu : juste après un changement,
+      // le second appui d'un double appui tomberait sur un bouton du
+      // panneau qui s'en va ou de celui qui arrive (un mot sauté, une relève
+      // passée). On l'ignore.
+      let panelLockUntil = 0
       function showPanel(id) {
+        panelLockUntil = performance.now() + 350
         for (const panel of document.querySelectorAll(".panel")) {
           panel.classList.toggle("shown", panel.id === id)
         }
       }
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (performance.now() < panelLockUntil && e.target.closest(".panel"))
+            e.stopPropagation()
+        },
+        true,
+      )
 
       function setTeamColor(index) {
         const hex = TEAM_COLORS[index]
