@@ -1,4 +1,4 @@
-import { sentences } from './data.js'
+import { sentences } from "./data.js"
 
 export class GameState {
   constructor() {
@@ -10,6 +10,17 @@ export class GameState {
       ? parseInt(localStorage.getItem("bestTime"))
       : Infinity
     this.remainingWords = []
+  }
+
+  // Rang de la phrase en cours dans toute la partie (pour les pastilles)
+  progress() {
+    const levels = Object.keys(sentences)
+    return (
+      levels
+        .slice(0, levels.indexOf(this.currentLevel))
+        .reduce((sum, level) => sum + sentences[level].length, 0) +
+      this.currentSentenceIndex
+    )
   }
 
   getCurrentSentence() {
