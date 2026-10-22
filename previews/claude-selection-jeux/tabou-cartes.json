@@ -1,0 +1,788 @@
+[
+  {
+    "word": "PIZZA",
+    "taboo": ["ITALIEN", "FROMAGE", "PÂTE", "TOMATE", "RESTAURANT"]
+  },
+  {
+    "word": "CHOCOLAT",
+    "taboo": ["CACAO", "SUCRÉ", "TABLETTE", "DESSERT", "BONBON"]
+  },
+  {
+    "word": "CROISSANT",
+    "taboo": [
+      "BOULANGERIE",
+      "BEURRE",
+      "VIENNOISERIE",
+      "PETIT-DÉJEUNER",
+      "FRANÇAIS"
+    ]
+  },
+  {
+    "word": "HAMBURGER",
+    "taboo": ["AMÉRICAIN", "STEAK", "PAIN", "FAST-FOOD", "MCDONALD"]
+  },
+  {
+    "word": "SUSHI",
+    "taboo": ["JAPONAIS", "POISSON", "RIZ", "BAGUETTES", "CRU"]
+  },
+  {
+    "word": "FROMAGE",
+    "taboo": ["LAIT", "CAMEMBERT", "SOURIS", "FRANÇAIS", "TARTINE"]
+  },
+  {
+    "word": "CAFÉ",
+    "taboo": ["BOIRE", "MATIN", "GRAINS", "CHAUD", "RÉVEIL"]
+  },
+  {
+    "word": "BIÈRE",
+    "taboo": ["ALCOOL", "MOUSSE", "HOUBLON", "BLONDE", "PRESSION"]
+  },
+  {
+    "word": "POMME",
+    "taboo": ["FRUIT", "ROUGE", "CROQUER", "ARBRE", "VITAMINES"]
+  },
+  {
+    "word": "PAIN",
+    "taboo": ["BOULANGER", "MANGER", "BAGUETTE", "FARINE", "GRILLER"]
+  },
+  {
+    "word": "SALADE",
+    "taboo": ["VERTE", "LÉGUME", "VINAIGRETTE", "FEUILLE", "DIÈTE"]
+  },
+  {
+    "word": "PÂTES",
+    "taboo": ["ITALIEN", "SPAGHETTI", "SAUCE", "BLÉS", "CUIRE"]
+  },
+  {
+    "word": "GLACE",
+    "taboo": ["FROID", "VANILLE", "DESSERT", "LÉCHER", "CORNET"]
+  },
+  {
+    "word": "GÂTEAU",
+    "taboo": ["ANNIVERSAIRE", "SUCRÉ", "BOUGIES", "FOUR", "FÊTE"]
+  },
+  {
+    "word": "VIN",
+    "taboo": ["ROUGE", "RAISIN", "ALCOOL", "VERRE", "FRANÇAIS"]
+  },
+  {
+    "word": "EAU",
+    "taboo": ["BOIRE", "TRANSPARENT", "SOIF", "ROBINET", "VITAL"]
+  },
+  {
+    "word": "ŒUFS",
+    "taboo": ["POULE", "JAUNE", "BLANC", "CASSER", "OMELETTE"]
+  },
+  {
+    "word": "VIANDE",
+    "taboo": ["BŒUF", "PORC", "BOUCHER", "CUIRE", "PROTÉINE"]
+  },
+  {
+    "word": "SOUPE",
+    "taboo": ["CHAUD", "LIQUIDE", "CUILLÈRE", "LÉGUMES", "HIVER"]
+  },
+  {
+    "word": "CÉRÉALES",
+    "taboo": ["MATIN", "LAIT", "BOL", "AVOINE", "PETIT-DÉJEUNER"]
+  },
+  {
+    "word": "BONBON",
+    "taboo": ["SUCRÉ", "ENFANT", "COULEUR", "MÂCHER", "DENTISTE"]
+  },
+  {
+    "word": "SANDWICH",
+    "taboo": ["PAIN", "GARNI", "JAMBON", "MANGER", "RAPIDE"]
+  },
+  {
+    "word": "ÉPICES",
+    "taboo": ["GOÛT", "CUISINE", "POIVRE", "PIQUANT", "ASSAISONNER"]
+  },
+  {
+    "word": "MIEL",
+    "taboo": ["ABEILLE", "SUCRÉ", "DORÉ", "TARTINE", "RUCHE"]
+  },
+  {
+    "word": "CHAMPAGNE",
+    "taboo": ["BULLES", "FÊTE", "ALCOOL", "CÉLÉBRER", "BOUCHON"]
+  },
+  {
+    "word": "ORDINATEUR",
+    "taboo": ["ÉCRAN", "CLAVIER", "SOURIS", "INTERNET", "LOGICIEL"]
+  },
+  {
+    "word": "TÉLÉPHONE",
+    "taboo": ["APPELER", "PORTABLE", "NUMÉRO", "SONNER", "COMMUNICATION"]
+  },
+  {
+    "word": "INTERNET",
+    "taboo": ["WEB", "SITE", "CONNEXION", "GOOGLE", "NAVIGATEUR"]
+  },
+  {
+    "word": "SMARTPHONE",
+    "taboo": ["MOBILE", "ÉCRAN", "APPLICATIONS", "TACTILE", "IPHONE"]
+  },
+  {
+    "word": "TÉLÉVISION",
+    "taboo": ["ÉCRAN", "CHAÎNE", "TÉLÉCOMMANDE", "ÉMISSION", "REGARDER"]
+  },
+  {
+    "word": "APPAREIL PHOTO",
+    "taboo": ["PHOTO", "OBJECTIF", "FLASH", "PELLICULE", "CLIC"]
+  },
+  {
+    "word": "CONSOLE",
+    "taboo": ["JEUX", "MANETTE", "PLAYSTATION", "ÉCRAN", "JOUER"]
+  },
+  {
+    "word": "RADIO",
+    "taboo": ["ÉCOUTER", "MUSIQUE", "ONDE", "STATION", "ANTENNE"]
+  },
+  {
+    "word": "IMPRIMANTE",
+    "taboo": ["PAPIER", "ENCRE", "IMPRIMER", "DOCUMENT", "BUREAU"]
+  },
+  {
+    "word": "CAMÉRA",
+    "taboo": ["FILMER", "VIDÉO", "OBJECTIF", "ENREGISTRER", "IMAGE"]
+  },
+  {
+    "word": "TABLETTE",
+    "taboo": ["ÉCRAN", "TACTILE", "NUMÉRIQUE", "APPLICATIONS", "PORTABLE"]
+  },
+  {
+    "word": "CASQUE",
+    "taboo": ["OREILLE", "MUSIQUE", "ÉCOUTER", "AUDIO", "BLUETOOTH"]
+  },
+  {
+    "word": "MICROPHONE",
+    "taboo": ["PARLER", "ENREGISTRER", "SON", "CHANTER", "AMPLIFIER"]
+  },
+  {
+    "word": "WIFI",
+    "taboo": ["INTERNET", "SANS-FIL", "CONNEXION", "MOT DE PASSE", "RÉSEAU"]
+  },
+  {
+    "word": "USB",
+    "taboo": ["BRANCHER", "FICHIER", "TRANSFÉRER", "CLÉ", "PORT"]
+  },
+  {
+    "word": "BATTERIE",
+    "taboo": ["ÉNERGIE", "RECHARGER", "ÉLECTRICITÉ", "AUTONOMIE", "PILE"]
+  },
+  {
+    "word": "ÉCOUTEURS",
+    "taboo": ["OREILLE", "MUSIQUE", "FIL", "AUDIO", "PETIT"]
+  },
+  {
+    "word": "GPS",
+    "taboo": ["NAVIGATION", "ROUTE", "SATELLITE", "LOCALISATION", "DIRECTION"]
+  },
+  {
+    "word": "BLUETOOTH",
+    "taboo": ["SANS-FIL", "CONNEXION", "APPAREIL", "SYNCHRONISER", "BLEU"]
+  },
+  {
+    "word": "EMAIL",
+    "taboo": ["MAIL", "ENVOYER", "COURRIER", "ÉLECTRONIQUE", "BOÎTE"]
+  },
+  {
+    "word": "FOOTBALL",
+    "taboo": ["BALLON", "ÉQUIPE", "MATCH", "GOAL", "JOUEUR"]
+  },
+  {
+    "word": "TENNIS",
+    "taboo": ["RAQUETTE", "BALLE", "COURT", "FILET", "WIMBLEDON"]
+  },
+  {
+    "word": "NATATION",
+    "taboo": ["EAU", "PISCINE", "NAGER", "CRAWL", "CHLORE"]
+  },
+  {
+    "word": "BASKETBALL",
+    "taboo": ["PANIER", "BALLON", "DRIBBLER", "NBA", "GÉANT"]
+  },
+  {
+    "word": "CYCLISME",
+    "taboo": ["VÉLO", "TOUR DE FRANCE", "PÉDALE", "ROUE", "CASQUE"]
+  },
+  {
+    "word": "SKI",
+    "taboo": ["NEIGE", "MONTAGNE", "PISTE", "BÂTONS", "DESCENTE"]
+  },
+  {
+    "word": "BOXE",
+    "taboo": ["GANTS", "RING", "COMBAT", "FRAPPE", "ROUND"]
+  },
+  {
+    "word": "GOLF",
+    "taboo": ["BALLE", "CLUB", "TROU", "GAZON", "SWING"]
+  },
+  {
+    "word": "RUGBY",
+    "taboo": ["OVALE", "PLACAGE", "ÉQUIPE", "ESSAI", "MÊLÉE"]
+  },
+  {
+    "word": "COURSE",
+    "taboo": ["COURIR", "MARATHON", "VITESSE", "FINISH", "CHRONO"]
+  },
+  {
+    "word": "VOLLEYBALL",
+    "taboo": ["FILET", "BALLON", "ÉQUIPE", "SERVICE", "ATTAQUE"]
+  },
+  {
+    "word": "JUDO",
+    "taboo": ["KIMONO", "PROJECTION", "ARTS MARTIAUX", "TATAMI", "CEINTURE"]
+  },
+  {
+    "word": "KARATÉ",
+    "taboo": ["ARTS MARTIAUX", "COUP", "POING", "KIMONO", "KATA"]
+  },
+  {
+    "word": "ESCALADE",
+    "taboo": ["MONTAGNE", "CORDE", "GRIMPER", "ROCHER", "HAUTEUR"]
+  },
+  {
+    "word": "PLONGÉE",
+    "taboo": ["EAU", "MASQUE", "PROFONDEUR", "POISSON", "OXYGÈNE"]
+  },
+  {
+    "word": "SURF",
+    "taboo": ["VAGUE", "PLANCHE", "OCÉAN", "ÉQUILIBRE", "HAWAII"]
+  },
+  {
+    "word": "AVIRON",
+    "taboo": ["RAME", "BATEAU", "EAU", "ÉQUIPE", "RIVIÈRE"]
+  },
+  {
+    "word": "ÉQUITATION",
+    "taboo": ["CHEVAL", "MONTER", "SELLE", "GALOP", "OBSTACLE"]
+  },
+  {
+    "word": "BADMINTON",
+    "taboo": ["RAQUETTE", "VOLANT", "FILET", "SPORT", "RAPIDE"]
+  },
+  {
+    "word": "HANDBALL",
+    "taboo": ["BALLON", "MAIN", "BUT", "ÉQUIPE", "SEPT"]
+  },
+  {
+    "word": "PATINAGE",
+    "taboo": ["GLACE", "PATINS", "ARTISTIQUE", "FROID", "GLISSER"]
+  },
+  {
+    "word": "MUSCULATION",
+    "taboo": ["POIDS", "MUSCLE", "SALLE", "FORCE", "HALTÈRES"]
+  },
+  {
+    "word": "YOGA",
+    "taboo": ["MÉDITATION", "POSTURE", "SOUPLESSE", "RESPIRER", "INDIEN"]
+  },
+  {
+    "word": "DANSE",
+    "taboo": ["BOUGER", "RYTHME", "CHORÉGRAPHIE", "BALLET", "DISCO"]
+  },
+  {
+    "word": "PÉTANQUE",
+    "taboo": ["BOULES", "COCHONNET", "PROVENCE", "POINTER", "MÉTAL"]
+  },
+  {
+    "word": "CINÉMA",
+    "taboo": ["FILM", "ÉCRAN", "ACTEUR", "POPCORN", "SALLE"]
+  },
+  {
+    "word": "MUSIQUE",
+    "taboo": ["CHANTER", "INSTRUMENT", "MÉLODIE", "CONCERT", "ÉCOUTER"]
+  },
+  {
+    "word": "THÉÂTRE",
+    "taboo": ["PIÈCE", "ACTEUR", "SCÈNE", "RIDEAU", "SPECTACLE"]
+  },
+  {
+    "word": "LECTURE",
+    "taboo": ["LIVRE", "LIRE", "PAGE", "HISTOIRE", "ROMAN"]
+  },
+  {
+    "word": "PEINTURE",
+    "taboo": ["COULEUR", "PINCEAU", "TOILE", "ARTISTE", "TABLEAU"]
+  },
+  {
+    "word": "SCULPTURE",
+    "taboo": ["STATUE", "MARBRE", "CISEAU", "FORME", "RELIEF"]
+  },
+  {
+    "word": "PHOTOGRAPHIE",
+    "taboo": ["PHOTO", "OBJECTIF", "CLICHÉ", "DÉVELOPPER", "ALBUM"]
+  },
+  {
+    "word": "POÉSIE",
+    "taboo": ["VERS", "RIMES", "POÈTE", "MÉTAPHORE", "ÉMOTIONS"]
+  },
+  {
+    "word": "CIRQUE",
+    "taboo": ["CLOWN", "ACROBATE", "CHAPITEAU", "SPECTACLE", "ANIMAUX"]
+  },
+  {
+    "word": "OPÉRA",
+    "taboo": ["CHANT", "LYRIQUE", "SCÈNE", "SOPRANO", "CLASSIQUE"]
+  },
+  {
+    "word": "BALLET",
+    "taboo": ["DANSE", "CLASSIQUE", "TUTU", "POINTES", "GRACIEUX"]
+  },
+  {
+    "word": "MAGIE",
+    "taboo": ["TOUR", "MAGICIEN", "ILLUSION", "BAGUETTE", "DISPARAÎTRE"]
+  },
+  {
+    "word": "COMÉDIE",
+    "taboo": ["RIRE", "DRÔLE", "HUMOUR", "SKETCH", "HUMORISTE"]
+  },
+  {
+    "word": "MUSÉE",
+    "taboo": ["ART", "EXPOSITION", "CULTURE", "VISITE", "ŒUVRE"]
+  },
+  {
+    "word": "BIBLIOTHÈQUE",
+    "taboo": ["LIVRE", "LIRE", "SILENCE", "EMPRUNTER", "RAYONS"]
+  },
+  {
+    "word": "FESTIVAL",
+    "taboo": ["MUSIQUE", "CONCERT", "ARTISTE", "SCÈNE", "FOULE"]
+  },
+  {
+    "word": "CARNAVAL",
+    "taboo": ["DÉGUISEMENT", "FÊTE", "MASQUE", "COULEURS", "PARADE"]
+  },
+  {
+    "word": "KARAOKE",
+    "taboo": ["CHANTER", "MICRO", "PAROLES", "ÉCRAN", "AMATEUR"]
+  },
+  {
+    "word": "JEUX VIDÉO",
+    "taboo": ["CONSOLE", "MANETTE", "ÉCRAN", "NIVEAU", "JOUER"]
+  },
+  {
+    "word": "BANDE DESSINÉE",
+    "taboo": ["BD", "DESSIN", "BULLE", "HÉROS", "ALBUM"]
+  },
+  {
+    "word": "PLAGE",
+    "taboo": ["SABLE", "MER", "SOLEIL", "VACANCES", "MAILLOT"]
+  },
+  {
+    "word": "MONTAGNE",
+    "taboo": ["SOMMET", "ALTITUDE", "ESCALADE", "ALPES", "NEIGE"]
+  },
+  {
+    "word": "FORÊT",
+    "taboo": ["ARBRE", "BOIS", "VERT", "NATURE", "PROMENADE"]
+  },
+  {
+    "word": "DÉSERT",
+    "taboo": ["SABLE", "CHAUD", "SAHARA", "DUNE", "OASIS"]
+  },
+  {
+    "word": "RESTAURANT",
+    "taboo": ["MANGER", "SERVEUR", "MENU", "PLAT", "ADDITION"]
+  },
+  {
+    "word": "HÔTEL",
+    "taboo": ["DORMIR", "CHAMBRE", "RÉCEPTION", "VOYAGE", "RÉSERVER"]
+  },
+  {
+    "word": "PARC",
+    "taboo": ["JARDIN", "VERT", "BANC", "PROMENADE", "ENFANTS"]
+  },
+  {
+    "word": "CHÂTEAU",
+    "taboo": ["ROI", "MOYEN-ÂGE", "PIERRE", "TOURS", "NOBLE"]
+  },
+  {
+    "word": "VILLE",
+    "taboo": ["URBAIN", "HABITANTS", "RUES", "BÂTIMENTS", "CENTRE"]
+  },
+  {
+    "word": "CAMPAGNE",
+    "taboo": ["RURAL", "FERME", "CHAMPS", "NATURE", "CALME"]
+  },
+  {
+    "word": "OCÉAN",
+    "taboo": ["EAU", "SALÉE", "VAGUES", "IMMENSE", "POISSONS"]
+  },
+  {
+    "word": "RIVIÈRE",
+    "taboo": ["EAU", "COURANT", "POISSONS", "BERGE", "PONT"]
+  },
+  {
+    "word": "LAC",
+    "taboo": ["EAU", "CALME", "REFLET", "PÊCHE", "TOUR"]
+  },
+  {
+    "word": "JARDIN",
+    "taboo": ["FLEURS", "PLANTES", "ARROSER", "TERRE", "POUSSER"]
+  },
+  {
+    "word": "FERME",
+    "taboo": ["ANIMAUX", "AGRICULTEUR", "CAMPAGNE", "LAIT", "RÉCOLTE"]
+  },
+  {
+    "word": "MARCHÉ",
+    "taboo": ["ACHETER", "VENDEUR", "LÉGUMES", "FOULE", "PRIX"]
+  },
+  {
+    "word": "SUPERMARCHÉ",
+    "taboo": ["COURSES", "CADDIE", "RAYON", "CAISSE", "ACHETER"]
+  },
+  {
+    "word": "MAGASIN",
+    "taboo": ["BOUTIQUE", "VENDEUR", "ACHETER", "VITRINE", "CLIENT"]
+  },
+  {
+    "word": "CENTRE COMMERCIAL",
+    "taboo": ["MAGASINS", "SHOPPING", "GALERIE", "ACHETER", "FOULE"]
+  },
+  {
+    "word": "STADE",
+    "taboo": ["SPORT", "MATCH", "SPECTATEURS", "ÉQUIPE", "PELOUSE"]
+  },
+  {
+    "word": "AÉROPORT",
+    "taboo": ["AVION", "VOYAGE", "DÉCOLLER", "BAGAGES", "CONTRÔLE"]
+  },
+  {
+    "word": "GARE",
+    "taboo": ["TRAIN", "VOYAGE", "QUAI", "BILLET", "SNCF"]
+  },
+  {
+    "word": "PORT",
+    "taboo": ["BATEAU", "EAU", "AMARRER", "PÊCHEUR", "QUAI"]
+  },
+  {
+    "word": "PONT",
+    "taboo": ["TRAVERSER", "RIVIÈRE", "ARCHE", "PIERRE", "CONSTRUCTION"]
+  },
+  {
+    "word": "TUNNEL",
+    "taboo": ["SOUTERRAIN", "TRAVERSER", "SOMBRE", "VOITURE", "MONTAGNE"]
+  },
+  {
+    "word": "ÉCOLE",
+    "taboo": ["ÉLÈVE", "PROFESSEUR", "APPRENDRE", "CLASSE", "COURS"]
+  },
+  {
+    "word": "HÔPITAL",
+    "taboo": ["MÉDECIN", "MALADE", "SOIGNER", "INFIRMIÈRE", "URGENCE"]
+  },
+  {
+    "word": "BANQUE",
+    "taboo": ["ARGENT", "CRÉDIT", "COMPTE", "DISTRIBUTEUR", "PRÊT"]
+  },
+  {
+    "word": "PRISON",
+    "taboo": ["CRIMINEL", "BARREAUX", "GARDIEN", "CELLULE", "ENFERMÉ"]
+  },
+  {
+    "word": "MAIRIE",
+    "taboo": ["MAIRE", "COMMUNE", "MARIAGE", "ADMINISTRATION", "VILLE"]
+  },
+  {
+    "word": "ÉGLISE",
+    "taboo": ["RELIGION", "PRÊTRE", "MESSE", "CLOCHER", "PRIÈRE"]
+  },
+  {
+    "word": "PHARMACIE",
+    "taboo": ["MÉDICAMENT", "PHARMACIEN", "ORDONNANCE", "SOIGNER", "CROIX"]
+  },
+  {
+    "word": "CASERNE",
+    "taboo": ["POMPIER", "URGENCE", "FEU", "SECOURS", "CAMION"]
+  },
+  {
+    "word": "COMMISSARIAT",
+    "taboo": ["POLICE", "POLICIER", "CRIME", "ENQUÊTE", "UNIFORME"]
+  },
+  {
+    "word": "TRIBUNAL",
+    "taboo": ["JUGE", "PROCÈS", "LOI", "AVOCAT", "JUSTICE"]
+  },
+  {
+    "word": "UNIVERSITÉ",
+    "taboo": ["ÉTUDIANT", "DIPLÔME", "COURS", "PROFESSEUR", "CAMPUS"]
+  },
+  {
+    "word": "LABORATOIRE",
+    "taboo": ["RECHERCHE", "EXPÉRIENCE", "SCIENTIFIQUE", "ANALYSE", "BLOUSE"]
+  },
+  {
+    "word": "USINE",
+    "taboo": ["PRODUCTION", "OUVRIER", "MACHINE", "FABRIQUER", "INDUSTRIE"]
+  },
+  {
+    "word": "BUREAU",
+    "taboo": ["TRAVAIL", "ORDINATEUR", "EMPLOYÉ", "RÉUNION", "PAPIER"]
+  },
+  {
+    "word": "AMBASSADE",
+    "taboo": ["PAYS", "DIPLOMATE", "PASSEPORT", "ÉTRANGER", "VISA"]
+  },
+  {
+    "word": "CRÈCHE",
+    "taboo": ["BÉBÉ", "ENFANT", "GARDER", "PUÉRICULTRICE", "JOUER"]
+  },
+  {
+    "word": "GARAGE",
+    "taboo": ["VOITURE", "MÉCANICIEN", "RÉPARER", "OUTIL", "MOTEUR"]
+  },
+  {
+    "word": "SALON DE COIFFURE",
+    "taboo": ["CHEVEUX", "COIFFEUR", "COUPER", "SHAMPOING", "MIROIR"]
+  },
+  {
+    "word": "CABINET MÉDICAL",
+    "taboo": ["DOCTEUR", "CONSULTER", "EXAMINER", "SANTÉ", "PATIENT"]
+  },
+  {
+    "word": "NOTAIRE",
+    "taboo": ["CONTRAT", "SIGNATURE", "LÉGAL", "ACTE", "OFFICIEL"]
+  },
+  {
+    "word": "VOITURE",
+    "taboo": ["CONDUIRE", "ROUE", "MOTEUR", "ESSENCE", "ROUTE"]
+  },
+  {
+    "word": "TRAIN",
+    "taboo": ["RAIL", "GARE", "WAGON", "SNCF", "VOYAGE"]
+  },
+  {
+    "word": "AVION",
+    "taboo": ["VOLER", "AÉROPORT", "PILOTE", "CIEL", "AILES"]
+  },
+  {
+    "word": "BATEAU",
+    "taboo": ["EAU", "NAVIGUER", "VOILE", "CAPITAINE", "PORT"]
+  },
+  {
+    "word": "MÉTRO",
+    "taboo": ["SOUTERRAIN", "STATION", "TICKET", "RAME", "PARIS"]
+  },
+  {
+    "word": "AUTOBUS",
+    "taboo": ["ARRÊT", "CHAUFFEUR", "PUBLIC", "LIGNE", "MONTER"]
+  },
+  {
+    "word": "VÉLO",
+    "taboo": ["PÉDALE", "ROUE", "CHAÎNE", "GUIDON", "SELLE"]
+  },
+  {
+    "word": "MOTO",
+    "taboo": ["DEUX ROUES", "CASQUE", "VITESSE", "BRUIT", "CONDUIRE"]
+  },
+  {
+    "word": "CAMION",
+    "taboo": ["GROS", "TRANSPORT", "MARCHANDISE", "ROUTIER", "DIESEL"]
+  },
+  {
+    "word": "TAXI",
+    "taboo": ["CHAUFFEUR", "COURSE", "JAUNE", "HÉLER", "COMPTEUR"]
+  },
+  {
+    "word": "TRAMWAY",
+    "taboo": ["RAIL", "ÉLECTRIQUE", "VILLE", "ARRÊT", "TRANSPORT"]
+  },
+  {
+    "word": "HÉLICOPTÈRE",
+    "taboo": ["VOLER", "HÉLICE", "BRUIT", "SAUVETAGE", "ROTOR"]
+  },
+  {
+    "word": "FUSÉE",
+    "taboo": ["ESPACE", "DÉCOLLER", "PLANÈTE", "ASTRONAUTE", "NASA"]
+  },
+  {
+    "word": "SOUS-MARIN",
+    "taboo": ["EAU", "PROFONDEUR", "PLONGER", "MILITAIRE", "OCÉAN"]
+  },
+  {
+    "word": "AMBULANCE",
+    "taboo": ["URGENCE", "MALADE", "SIRÈNE", "HÔPITAL", "SECOURS"]
+  },
+  {
+    "word": "CHIEN",
+    "taboo": ["ABOYER", "FIDÈLE", "LAISSE", "ANIMAL", "DOMESTIQUE"]
+  },
+  {
+    "word": "CHAT",
+    "taboo": ["MIAULER", "RONRONNER", "GRIFFES", "SOURIS", "DOMESTIQUE"]
+  },
+  {
+    "word": "ÉLÉPHANT",
+    "taboo": ["TROMPE", "GROS", "AFRIQUE", "DÉFENSES", "GRIS"]
+  },
+  {
+    "word": "LION",
+    "taboo": ["ROI", "CRINIÈRE", "RUGIR", "AFRIQUE", "FAUVE"]
+  },
+  {
+    "word": "OISEAU",
+    "taboo": ["VOLER", "PLUMES", "CHANTER", "NID", "AILES"]
+  },
+  {
+    "word": "POISSON",
+    "taboo": ["EAU", "NAGER", "ÉCAILLES", "AQUARIUM", "PÊCHER"]
+  },
+  {
+    "word": "CHEVAL",
+    "taboo": ["GALOPER", "CRINIÈRE", "ÉQUITATION", "FERME", "HENNIR"]
+  },
+  {
+    "word": "VACHE",
+    "taboo": ["LAIT", "MEUGLER", "FERME", "HERBE", "TACHE"]
+  },
+  {
+    "word": "COCHON",
+    "taboo": ["ROSE", "FERME", "GROIN", "BACON", "BOUE"]
+  },
+  {
+    "word": "MOUTON",
+    "taboo": ["LAINE", "BÊLER", "BERGER", "BLANC", "TROUPEAU"]
+  },
+  {
+    "word": "LAPIN",
+    "taboo": ["OREILLES", "CAROTTE", "SAUTILLER", "DOUX", "TERRIER"]
+  },
+  {
+    "word": "SOURIS",
+    "taboo": ["PETITE", "FROMAGE", "CHAT", "GRISE", "TROU"]
+  },
+  {
+    "word": "SERPENT",
+    "taboo": ["RAMPER", "VENIN", "LONG", "ÉCAILLES", "MORDRE"]
+  },
+  {
+    "word": "ARAIGNÉE",
+    "taboo": ["TOILE", "HUIT PATTES", "PEUR", "TISSER", "INSECTE"]
+  },
+  {
+    "word": "PAPILLON",
+    "taboo": ["VOLER", "COLORÉ", "FLEUR", "AILES", "CHENILLE"]
+  },
+  {
+    "word": "ABEILLE",
+    "taboo": ["MIEL", "PIQUER", "RUCHE", "FLEUR", "REINE"]
+  },
+  {
+    "word": "FOURMI",
+    "taboo": ["PETITE", "TRAVAILLEUSE", "FOURMILIÈRE", "PORTER", "ROUGE"]
+  },
+  {
+    "word": "SINGE",
+    "taboo": ["BANANE", "ARBRE", "GRIMPER", "INTELLIGENT", "QUEUE"]
+  },
+  {
+    "word": "GIRAFE",
+    "taboo": ["COU", "GRANDE", "TACHES", "AFRIQUE", "FEUILLES"]
+  },
+  {
+    "word": "PINGOUIN",
+    "taboo": ["NOIR ET BLANC", "GLACE", "NAGER", "ANTARCTIQUE", "MARCHER"]
+  },
+  {
+    "word": "PLUIE",
+    "taboo": ["EAU", "NUAGE", "PARAPLUIE", "MOUILLÉ", "GOUTTES"]
+  },
+  {
+    "word": "NEIGE",
+    "taboo": ["BLANC", "FROID", "HIVER", "FLOCONS", "BONHOMME"]
+  },
+  {
+    "word": "SOLEIL",
+    "taboo": ["CHAUD", "JAUNE", "BRONZER", "LUMIÈRE", "ÉTÉ"]
+  },
+  {
+    "word": "VENT",
+    "taboo": ["SOUFFLER", "AIR", "TEMPÊTE", "CERF-VOLANT", "MOULIN"]
+  },
+  {
+    "word": "ORAGE",
+    "taboo": ["TONNERRE", "ÉCLAIR", "PLUIE", "FOUDRE", "GRONDER"]
+  },
+  {
+    "word": "ARC-EN-CIEL",
+    "taboo": ["COULEURS", "PLUIE", "SOLEIL", "CIEL", "SEPT"]
+  },
+  {
+    "word": "NUAGE",
+    "taboo": ["CIEL", "BLANC", "GRIS", "PLUIE", "FLOTTER"]
+  },
+  {
+    "word": "BROUILLARD",
+    "taboo": ["VOIR", "ÉPAIS", "MATIN", "HUMIDE", "VOILE"]
+  },
+  {
+    "word": "GRÊLE",
+    "taboo": ["GLACE", "TOMBER", "ORAGE", "GROS", "BRUIT"]
+  },
+  {
+    "word": "CANICULE",
+    "taboo": ["CHAUD", "ÉTÉ", "TEMPÉRATURE", "SUEUR", "CLIMATISATION"]
+  },
+  {
+    "word": "TEMPÊTE",
+    "taboo": ["VENT", "FORT", "DANGER", "ARBRES", "TOURBILLON"]
+  },
+  {
+    "word": "VERGLAS",
+    "taboo": ["GLACE", "ROUTE", "GLISSER", "HIVER", "DANGER"]
+  },
+  {
+    "word": "ROSÉE",
+    "taboo": ["MATIN", "HERBE", "GOUTTES", "FRAÎCHEUR", "PERLES"]
+  },
+  {
+    "word": "GELÉE",
+    "taboo": ["FROID", "GLACE", "BLANC", "HIVER", "CRISTAUX"]
+  },
+  {
+    "word": "SÉCHERESSE",
+    "taboo": ["SEC", "EAU", "MANQUER", "DÉSERT", "PLANTES"]
+  },
+  {
+    "word": "CUISINE",
+    "taboo": ["CUISINER", "REPAS", "RECETTE", "CHEF", "MANGER"]
+  },
+  {
+    "word": "MÉNAGE",
+    "taboo": ["NETTOYER", "ASPIRER", "LAVER", "PROPRE", "MAISON"]
+  },
+  {
+    "word": "SHOPPING",
+    "taboo": ["ACHETER", "MAGASIN", "ARGENT", "VÊTEMENTS", "CADDIE"]
+  },
+  {
+    "word": "JARDINAGE",
+    "taboo": ["PLANTE", "ARROSER", "TERRE", "GRAINES", "POUSSER"]
+  },
+  {
+    "word": "BRICOLAGE",
+    "taboo": ["RÉPARER", "OUTIL", "MARTEAU", "VISSER", "CLOU"]
+  },
+  {
+    "word": "VACANCES",
+    "taboo": ["REPOS", "VOYAGE", "ÉTÉ", "PARTIR", "CONGÉ"]
+  },
+  {
+    "word": "CAMPING",
+    "taboo": ["TENTE", "NATURE", "FEU", "BIVOUAC", "SACS DE COUCHAGE"]
+  },
+  {
+    "word": "PIQUE-NIQUE",
+    "taboo": ["MANGER", "DEHORS", "NAPPE", "PANIER", "HERBE"]
+  },
+  {
+    "word": "BARBECUE",
+    "taboo": ["GRILLER", "VIANDE", "CHARBON", "JARDIN", "ÉTÉ"]
+  },
+  {
+    "word": "PÊCHE",
+    "taboo": ["POISSON", "CANNE", "RIVIÈRE", "APPÂT", "PATIENCE"]
+  }
+]
