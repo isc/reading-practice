@@ -30,12 +30,18 @@
             box-sizing: border-box;
         }
 
+        html {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
         /* La porte du frigo, émaillée, avec un reflet. */
         body {
             font-family: 'Fredoka', 'Arial Rounded MT Bold', sans-serif;
             color: var(--ink);
             background: linear-gradient(100deg, var(--door) 0%, var(--door-light) 38%, var(--door) 62%, #bfe0d2 100%);
-            min-height: 100vh;
+            flex-grow: 1;
             padding: 16px 20px 40px;
         }
 
@@ -420,7 +426,7 @@
             top: 0;
             left: 0;
             width: 100vw;
-            height: 100vh;
+            height: 100%;
             pointer-events: none;
             z-index: 1000;
         }

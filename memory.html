@@ -46,6 +46,10 @@
         box-sizing: border-box;
       }
 
+      html {
+        height: 100%;
+      }
+
       body {
         font-family: var(--font);
         color: var(--text);
@@ -55,8 +59,7 @@
           radial-gradient(ellipse at 50% 50%, var(--plum), var(--deep) 75%);
         background-attachment: fixed;
         background-color: var(--deep);
-        min-height: 100vh;
-        min-height: 100dvh;
+        height: 100%;
         -webkit-tap-highlight-color: transparent;
         overflow-x: hidden;
       }
@@ -70,8 +73,7 @@
 
       .app {
         max-width: 520px;
-        height: 100vh;
-        height: 100dvh;
+        height: 100%;
         margin: 0 auto;
         padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
         display: flex;
