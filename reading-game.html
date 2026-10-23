@@ -720,6 +720,89 @@
         }
       }
 
+      /* --- Le journal vocal, ouvert après coup --- */
+      .journal {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        padding: 12px;
+        background: rgba(45, 37, 69, 0.4);
+      }
+      .journal-panneau {
+        max-width: 560px;
+        max-height: 100%;
+        overflow-y: auto;
+        padding: 16px 16px max(16px, env(safe-area-inset-bottom));
+        text-align: left;
+      }
+      .journal-tete {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .journal-tete h2 {
+        margin: 0;
+        font-size: 22px;
+      }
+      .journal button {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 14px;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink);
+        background: #f4f0fb;
+        cursor: pointer;
+      }
+      .journal button.principal {
+        width: 100%;
+        margin: 10px 0;
+        color: #fff;
+        background: linear-gradient(145deg, var(--go-a), var(--go-b));
+      }
+      .journal button.eteindre {
+        width: 100%;
+        margin-top: 8px;
+        color: #c0392b;
+        background: none;
+      }
+      .journal-note {
+        color: var(--soft);
+      }
+      .journal-seance {
+        border-top: 1px solid #eee8f6;
+        padding: 10px 0;
+      }
+      .journal-seance summary {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .journal-seance small {
+        color: var(--soft);
+        font-weight: 400;
+      }
+      .journal pre {
+        max-height: 40vh;
+        overflow: auto;
+        margin: 0;
+        padding: 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        background: #f7f5fb;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
       #confetti {
         position: fixed;
         inset: 0;
@@ -1079,73 +1162,180 @@
 
       // --- Le journal vocal, pour régler la reconnaissance sur un vrai
       // appareil. Caché : 7 touches rapides sur le titre de l'accueil
-      // l'allument ou l'éteignent. Éteint, il ne garde rien de ce que dit
-      // l'enfant.
-      let debug = false
+      // l'ouvrent, et on l'y allume une fois pour toutes sur l'appareil. Il
+      // note alors sans rien afficher pendant les parties, et garde les
+      // dernières séances pour en envoyer une après coup. Éteint, il ne garde
+      // rien de ce que dit l'enfant.
+      const JOURNAL = "lecture-journal"
+      const PAUSE_SEANCE = 15 * 60000 // plus long sans rien noter : nouvelle séance
+      const LIGNES_MAX = 3000 // par séance : au-delà, les plus anciennes partent
+      const TAILLE_MAX = 400000 // caractères en tout : le stockage est commun à tous les jeux
+      let seances = null // { debut, fin, lignes: [[t, evt, detail]] } ; null : éteint
       try {
-        debug = localStorage.getItem("lecture-debug") === "1"
+        seances = JSON.parse(localStorage.getItem(JOURNAL))
       } catch {}
-      const lignes = []
-      let panneau = null
+      let aEnregistrer = null
 
       function journal(evt, detail = "") {
-        if (!debug) return
-        const t = new Date().toTimeString().slice(0, 8)
-        lignes.push(`${t} ${evt} ${detail}`)
-        if (lignes.length > 400) lignes.shift()
-        panneau ??= creerPanneau()
-        panneau.lastChild.textContent = lignes.slice(-8).join("\n")
+        if (!seances) return
+        const t = Date.now()
+        let seance = seances[seances.length - 1]
+        if (!seance || t - seance.fin > PAUSE_SEANCE) {
+          seance = { debut: t, fin: t, lignes: [] }
+          seances.push(seance)
+          seance.lignes.push(
+            [t, "appareil", `${navigator.userAgent} | appli=${matchMedia("(display-mode: standalone)").matches} | reco=${Boolean(Reco)}`],
+            [t, "réglages", `rapide<${RAPIDE}s/mot série=${SERIE} pouce=${POUCE}ms`],
+          )
+        }
+        seance.fin = t
+        seance.lignes.push([t, evt, detail])
+        if (seance.lignes.length > LIGNES_MAX) seance.lignes.splice(2, 1)
+        aEnregistrer ??= setTimeout(enregistrer, 2000)
       }
 
-      function creerPanneau() {
-        const root = el("div")
-        root.style.cssText =
-          "position:fixed;left:0;right:0;top:0;z-index:99;" +
-          "background:rgba(0,0,0,.82);color:#8f8;font:10px/1.35 monospace;" +
-          "padding:4px 6px;pointer-events:none;white-space:pre-wrap;word-break:break-all;"
-        const bouton = (label, onClick) => {
-          const b = el("button", "", label)
-          b.style.cssText =
-            "pointer-events:auto;font:inherit;color:#fff;background:#444;" +
-            "border:1px solid #888;border-radius:4px;padding:2px 8px;margin:0 6px 2px 0;"
-          b.onclick = onClick
+      function enregistrer() {
+        clearTimeout(aEnregistrer)
+        aEnregistrer = null
+        if (!seances) return
+        let json = JSON.stringify(seances)
+        while (json.length > TAILLE_MAX && seances.length > 1) {
+          seances.shift()
+          json = JSON.stringify(seances)
+        }
+        try {
+          localStorage.setItem(JOURNAL, json)
+        } catch {}
+      }
+      // La page peut être quittée en pleine partie : le journal est déjà là.
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && aEnregistrer) enregistrer()
+      })
+
+      function allumerJournal(on) {
+        seances = on ? [] : null
+        try {
+          if (on) localStorage.setItem(JOURNAL, "[]")
+          else localStorage.removeItem(JOURNAL)
+        } catch {}
+        $("hint").textContent = `Journal vocal ${on ? "allumé" : "éteint"}`
+      }
+
+      const quand = (t) =>
+        new Date(t).toLocaleString("fr-FR", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+
+      const heure = (t) =>
+        `${new Date(t).toTimeString().slice(0, 8)}.${String(t % 1000).padStart(3, "0")}`
+
+      // Envoyer : la feuille de partage du téléphone (WhatsApp, mail, copier…)
+      // avec un fichier texte, sinon le texte seul, sinon le presse-papiers.
+      async function envoyer(seance, bouton) {
+        const texte =
+          `Lis à voix haute, séance du ${quand(seance.debut)}\n` +
+          seance.lignes
+            .map(([t, evt, detail]) => `${heure(t)} ${evt} ${detail}`)
+            .join("\n")
+        // lecture-AAAAMMJJHHMM.txt, à l'heure locale
+        const nom = `lecture-${new Date(seance.debut).toLocaleString("sv-SE").slice(0, 16).replace(/\D/g, "")}.txt`
+        const fichier = new File([texte], nom, { type: "text/plain" })
+        try {
+          if (navigator.canShare?.({ files: [fichier] }))
+            return await navigator.share({ files: [fichier] })
+          if (navigator.share) return await navigator.share({ text: texte })
+        } catch (e) {
+          if (e.name === "AbortError") return
+        }
+        try {
+          await navigator.clipboard.writeText(texte)
+          bouton.textContent = "Copié ✓"
+        } catch {
+          bouton.textContent = "Copie impossible"
+        }
+      }
+
+      function ouvrirJournal() {
+        const fond = el("div", "journal")
+        const panneau = el("div", "card journal-panneau")
+        const fermer = () => fond.remove()
+        fond.addEventListener("click", (e) => e.target === fond && fermer())
+        const bouton = (label, action, classe = "") => {
+          const b = el("button", classe, label)
+          b.type = "button"
+          b.addEventListener("click", () => action(b))
           return b
         }
-        const copier = bouton("Copier le journal", () =>
-          navigator.clipboard?.writeText(lignes.join("\n")).then(
-            () => (copier.textContent = "Copié ✓"),
-            () => (copier.textContent = "Échec de la copie"),
-          ),
-        )
-        root.append(
-          copier,
-          bouton("Désactiver", () => basculerDebug(false)),
-          el("div"),
-        )
-        document.body.append(root)
-        return root
-      }
-
-      function basculerDebug(on) {
-        debug = on
-        try {
-          if (on) localStorage.setItem("lecture-debug", "1")
-          else localStorage.removeItem("lecture-debug")
-        } catch {}
-        if (on) {
-          journal(
-            "appareil",
-            `${navigator.userAgent} | appli=${matchMedia("(display-mode: standalone)").matches} | reco=${Boolean(Reco)}`,
+        const tete = el("div", "journal-tete")
+        tete.append(el("h2", "", "Journal vocal"), bouton("✕", fermer))
+        panneau.append(tete)
+        if (!seances) {
+          panneau.append(
+            el(
+              "p",
+              "journal-note",
+              "Allumé, il note ce que le micro entend pendant les parties, sans rien afficher, et garde les dernières séances sur cet appareil.",
+            ),
+            bouton(
+              "Allumer le journal",
+              () => {
+                allumerJournal(true)
+                fermer()
+              },
+              "principal",
+            ),
           )
-          journal(
-            "réglages",
-            `rapide<${RAPIDE}s/mot série=${SERIE} pouce=${POUCE}ms`,
+        } else {
+          if (!seances.length)
+            panneau.append(
+              el("p", "journal-note", "Rien pour l'instant : il note dès la prochaine partie."),
+            )
+          // La plus récente en haut, ouverte : son bouton « Envoyer » tout de suite
+          for (const seance of [...seances].reverse()) {
+            const compte = (nom) =>
+              seance.lignes.filter(([, evt]) => evt === nom).length
+            const parties = compte("partie")
+            const lues = compte("fin")
+            const bloc = el("details", "journal-seance")
+            bloc.open = seance === seances[seances.length - 1]
+            const resume = el("summary")
+            resume.append(
+              el("span", "", quand(seance.debut)),
+              el(
+                "small",
+                "",
+                `${parties} partie${parties > 1 ? "s" : ""}, ${lues} phrase${lues > 1 ? "s" : ""}`,
+              ),
+            )
+            bloc.append(
+              resume,
+              bouton("Envoyer", (b) => envoyer(seance, b), "principal"),
+              el(
+                "pre",
+                "",
+                seance.lignes
+                  .map(([t, evt, detail]) => `${heure(t)} ${evt} ${detail}`)
+                  .join("\n"),
+              ),
+            )
+            panneau.append(bloc)
+          }
+          panneau.append(
+            bouton(
+              "Éteindre le journal et l'effacer",
+              () => {
+                allumerJournal(false)
+                fermer()
+              },
+              "eteindre",
+            ),
           )
-          return
         }
-        lignes.length = 0
-        panneau?.remove()
-        panneau = null
+        fond.append(panneau)
+        document.body.append(fond)
       }
 
       // --- Comparer ce que dit l'enfant aux mots de la phrase ---
@@ -1336,6 +1526,7 @@
         let coinces = 0
         let dernierSon = 0
         let relance = null
+        let dernierInterim = ""
         let garde = null
 
         function lancer(delai = 0) {
@@ -1394,10 +1585,12 @@
             const variantes = Array.from(dernier, (alt) =>
               `${avant} ${alt.transcript}`.trim(),
             )
-            journal(
-              dernier.isFinal ? "reco:final" : "reco:interim",
-              JSON.stringify(variantes),
-            )
+            // Toutes les variantes à la fin, la première seulement en
+            // cours de route, et pas deux fois la même
+            if (dernier.isFinal) journal("reco:final", variantes.join(" | "))
+            else if (variantes[0] !== dernierInterim)
+              journal("reco:interim", variantes[0])
+            dernierInterim = dernier.isFinal ? "" : variantes[0]
             entendu(variantes)
           }
           rec.onerror = (event) => {
@@ -1797,10 +1990,7 @@
         touches.derniere = now
         if (touches.nombre < 7) return
         touches.nombre = 0
-        basculerDebug(!debug)
-        $("hint").textContent = debug
-          ? "Journal vocal activé"
-          : "Journal vocal désactivé"
+        ouvrirJournal()
       }
 
       // --- La partie ---
@@ -1840,6 +2030,7 @@
         if (!Reco) return secouer()
         Voice.wake(500)
         partie = { phrases: [], etapeDepart: progres.etape }
+        journal("partie", `étape ${progres.etape}`)
         const dots = $("dots")
         dots.replaceChildren()
         for (let i = 0; i < PAR_PARTIE; i++) {
@@ -2082,7 +2273,7 @@
 
       accueil()
       setMode(Reco ? "start" : "denied")
-      if (debug) basculerDebug(true)
+      if (!Reco) journal("reco", "absente de ce navigateur")
       // Écran d'accueil : aucune partie en cours.
       if (window.ExitGuard) ExitGuard.setActive(false)
       eveil(false)
