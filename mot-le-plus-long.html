@@ -1017,6 +1017,50 @@
         --d: 0.9s;
       }
 
+      /* Sous le mot, ce qu'il est, et sa définition s'il est peu courant. */
+      .explain {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 0 6px;
+        font-size: 0.9rem;
+        line-height: 1.35;
+      }
+
+      .explain:empty {
+        display: none;
+      }
+
+      .explain p {
+        animation: explain-in 0.5s ease backwards;
+        animation-delay: calc(var(--d, 0s) + 0.9s);
+      }
+
+      @keyframes explain-in {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+      }
+
+      .explain b {
+        font-weight: 600;
+        color: var(--gold);
+      }
+
+      .result.theirs .explain b {
+        color: var(--cyan);
+      }
+
+      .explain .definition {
+        color: var(--muted);
+      }
+
+      .explain small {
+        font-size: 0.75rem;
+        opacity: 0.75;
+      }
+
       .verdict {
         display: flex;
         align-items: center;
@@ -1232,6 +1276,7 @@
         <div class="result mine">
           <div class="result-label">Ton plus long mot <b id="mineLen"></b></div>
           <div class="board" id="mineBoard"></div>
+          <div class="explain" id="mineExplain"></div>
         </div>
 
         <div class="result theirs" id="theirs">
@@ -1239,6 +1284,7 @@
             Le plus long possible <b id="theirsLen"></b>
           </div>
           <div class="board" id="theirsBoard"></div>
+          <div class="explain" id="theirsExplain"></div>
         </div>
 
         <div class="verdict" id="verdict">
@@ -1371,7 +1417,9 @@
             "BORDELS?|BORDELIQUES?|BORDELIS.*|BOXON.*",
             "ENFOIRE.*",
             "PISS(?!ENLIT).*",
-            "DEGUEUL.*",
+            "DEGUEUL.*|DEGUEUS?",
+            "INFOUT.*|COMPISS.*|IMBITABLES?|PUTACLICS?|QUEUTARDS?|CHTOUILLES?|CAGU.*",
+            `BIT(${ER_FORMS}|ER)`,
             "FIONS?",
             "GARCES?|CATINS?|PETASSES?|POU?FFIASSES?|GROGNASSES?",
             // Vocabulaire sexuel cru (BAISER, le nom, reste)
@@ -1382,12 +1430,19 @@
             `PIN(?!ASSES?$)(${ER_FORMS}|ER)`, // la pinasse est un bateau
             "TRINGL(?!ES?$|OTS?$).*|TAPIN(?!OIS).*",
             "PORNO.*|SODOM.*|MASTURB.*|FELLATIONS?|CUNNILINGUS|ORGASMES?|EJACUL.*",
+            "COIT(?!ES?$).*", // coite : « rester coi »
+            "ANULINGUS|BANDAISONS?|CYPRINES?|CLITOS?|CHAUDASSES?|COUCHERIES?|DOIGTAGES?|NYMPHOS?",
+            "DECALOTT.*|DEPUCEL.*|DEVIRGIN.*|ENCLOQU.*|ENGROSS.*|ENTUB.*|ENVIAND.*|FORNIQU.*",
+            "GOUGNOT.*|PIGNOL.*|HARDEU(R|RS|SE|SES)|MICHETONS?|RADEUSES?|ROULURES?|ROUSTONS",
+            "PALUCH(?!ES?$).*", // la paluche, c'est la main
             "PEDOPHIL.*|ZOOPHIL.*|NECROPHIL.*|INCEST.*|VIOLEUR.*|VIOLEUSES?",
             // Injures racistes ou homophobes
             "PEDES?|PEDERA.*|GOUINES?|GOUINASSES?|GOUDOUS?|FIOTTES?|TAFIOLES?",
             "TANTOU[SZ]ES?|TARLOU[SZ]ES?|TRAVELOS?|GOGOLS?|SIDAIQUES?",
             "NEGRES?|NEGRESS.*|NEGRILL.*|NEGRO.*|YOUPIN.*|BOUGNOUL.*|BICOTS?|CHINETOQUES?|BAMBOULAS?",
-            "BOCHES?|RITALS?|POLACKS?",
+            "BOCHES?|RITALS?|POLACKS?|CHLEUHS?|SCHLEUS?|FRIDOLINS?|FRITZ|AMERLOQUES?|ANGLICHES?",
+            "BEURETTES?|CROUILL.*|DYKES?|EMPAFFES?|FEMINAZIS?|GITONS?|LOPETTES?|METEQUES?",
+            "MORICAUDS?|MOU(K|QU)ERES?|ROMANOS?|NEGRERIES?|NEGRIF.*",
           ].join("|") +
           ")$",
       )
@@ -1915,6 +1970,7 @@
           drawnLetters = drawLetters()
           longestPossible = findLongestPossible() || ""
         } while (SWEAR_WORD.test(longestPossible))
+        if (longestPossible) loadExplanations(longestPossible[0])
         placedTiles = []
         foundWords = []
         bestFound = null
@@ -1956,6 +2012,8 @@
         showOnBoard($("theirsBoard"), longest)
         $("theirsLen").textContent = longest.length
         $("theirs").classList.toggle("hidden", !longest || champion)
+        explain($("mineExplain"), bestFound ? bestFound.word : "")
+        explain($("theirsExplain"), champion ? "" : longest)
         $("verdict").classList.toggle("hidden", !champion)
         renderFound($("endFound"))
         $("endFound").classList.toggle("hidden", foundWords.length === 0)
@@ -1968,6 +2026,59 @@
             },
             reducedMotion() ? 0 : 600,
           )
+        }
+      }
+
+      // ===== Les explications de fin de manche =====
+
+      // explications/<lettre>.json (outils/explications.py) : pour chaque mot,
+      // sa forme avec ses accents, ce qu'il est (« le verbe creuser, au
+      // présent… ») et, s'il est peu courant, le mot dont il donne la
+      // définition. Un fichier par première lettre ; on ne garde en mémoire
+      // que les derniers (jusqu'à 6 Mo chacun une fois lus).
+      const explanations = new Map()
+
+      function loadExplanations(letter) {
+        if (!explanations.has(letter)) {
+          if (explanations.size >= 2) {
+            explanations.delete(explanations.keys().next().value)
+          }
+          const data = fetch(`explications/${letter}.json`)
+            .then((res) => (res.ok ? res.json() : Promise.reject()))
+            .catch(() => {
+              explanations.delete(letter) // hors ligne : on réessaiera
+              return null
+            })
+          explanations.set(letter, data)
+        }
+        return explanations.get(letter)
+      }
+
+      async function explain(el, word) {
+        el.replaceChildren()
+        el.dataset.word = word
+        // Un gros mot tapé par l'enfant reste accepté, mais sans explication.
+        if (!word || SWEAR_WORD.test(word)) return
+        const data = await loadExplanations(word[0])
+        const entry = data && data.mots[word]
+        // Une nouvelle manche a pu commencer pendant le chargement.
+        if (!entry || el.dataset.word !== word) return
+        const [form, what, lemma] = entry
+        const line = document.createElement("p")
+        const bold = document.createElement("b")
+        bold.textContent = form
+        line.append(bold, ` : ${what}.`)
+        el.append(line)
+        if (lemma) {
+          const definition = document.createElement("p")
+          definition.className = "definition"
+          const credit = document.createElement("small")
+          credit.textContent = " (d'après le Wiktionnaire)"
+          definition.append(
+            `« ${lemma} » : ${data.definitions[lemma]}.`,
+            credit,
+          )
+          el.append(definition)
         }
       }
 
