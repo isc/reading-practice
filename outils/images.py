@@ -10,8 +10,8 @@ La liste des mots est lue dans la page du jeu (les `word: "…"` de son tableau)
 mot doit avoir son dessin décrit dans DESSINS, en anglais (le modèle le comprend mieux). Un mot déjà
 en WebP n'est pas refait : supprimer le fichier, ou changer sa graine dans GRAINES, pour le redessiner.
 
-Le modèle de l'assistant vocal occupe la moitié de la carte : Ollama le décharge le temps du dessin,
-puis le recharge (vram.py de ddmr, qui fait de même pour son OCR).
+Le dessin passe sur la carte du bas de charras : celle du haut garde le modèle de l'assistant vocal,
+et n'a plus de place (home-infra, charras/SETUP.md §23).
 """
 
 import os
@@ -23,6 +23,7 @@ from voix import RACINE, mots, slug
 
 ESSAIS = Path.home() / ".cache" / "marzouzoute-images"
 SD = Path("/opt/sd")
+CARTE_DU_BAS = "GPU-0ac5edb3-530e-c1e3-bdaa-933f411d8458"  # l'INNO3D de charras
 BANQUE = RACINE / "images" / "mots"
 NB_ESSAIS, TAILLE = 4, 768  # TAILLE : le dessin ; il est réduit à COTE une fois choisi
 COTE = 256  # l'image du mot fait 6 rem, soit 96 px, sur un écran 3×
@@ -232,24 +233,22 @@ def dessiner(a_faire: list[str], invite=lambda mot: f"{DESSINS[mot]}. {STYLE}", 
              graine=lambda mot: GRAINES.get(mot, 1)):
     """NB_ESSAIS dessins par nom de a_faire. Les scènes de « Lis à voix haute » (scenes.py) passent
     leurs propres invite, essai et graine."""
-    sys.path.insert(0, str(Path.home() / "Code" / "ddmr" / "tools" / "mots"))
-    from vram import carte_libre
-
     m = SD / "models"
     env = dict(os.environ, LD_LIBRARY_PATH=str(SD / "lib"))
+    # Un shell de charras pose déjà la carte du bas ; sans rien, CUDA prendrait celle du haut, pleine.
+    env.setdefault("CUDA_VISIBLE_DEVICES", CARTE_DU_BAS)
     ESSAIS.mkdir(parents=True, exist_ok=True)
-    with carte_libre():
-        for mot in a_faire:
-            r = subprocess.run(
-                [SD / "bin" / "sd-cli", "--diffusion-model", m / "z_image_turbo-Q8_0.gguf", "--vae", m / "ae.sft",
-                 "--llm", m / "Qwen3-4B-Instruct-2507-Q8_0.gguf", "-p", invite(mot),
-                 "--cfg-scale", "1.0", "--steps", "8", "-H", str(TAILLE), "-W", str(TAILLE), "--diffusion-fa", "--vae-tiling",
-                 "--offload-to-cpu", "-s", str(graine(mot)), "-b", str(NB_ESSAIS), "-o", essai(mot, "%d"),
-                 "--output-begin-idx", "0"],
-                env=env, capture_output=True, text=True)
-            if r.returncode:
-                sys.exit(f"{mot} : sd-cli a échoué\n{r.stdout[-2000:]}")
-            print(f"{mot} dessiné", flush=True)
+    for mot in a_faire:
+        r = subprocess.run(
+            [SD / "bin" / "sd-cli", "--diffusion-model", m / "z_image_turbo-Q8_0.gguf", "--vae", m / "ae.sft",
+             "--llm", m / "Qwen3-4B-Instruct-2507-Q8_0.gguf", "-p", invite(mot),
+             "--cfg-scale", "1.0", "--steps", "8", "-H", str(TAILLE), "-W", str(TAILLE), "--diffusion-fa", "--vae-tiling",
+             "--offload-to-cpu", "-s", str(graine(mot)), "-b", str(NB_ESSAIS), "-o", essai(mot, "%d"),
+             "--output-begin-idx", "0"],
+            env=env, capture_output=True, text=True)
+        if r.returncode:
+            sys.exit(f"{mot} : sd-cli a échoué\n{r.stdout[-2000:]}")
+        print(f"{mot} dessiné", flush=True)
 
 
 def planche(nom: str, liste: list[str], essai=essai, cote=200):
