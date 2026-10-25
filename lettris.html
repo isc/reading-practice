@@ -1677,11 +1677,11 @@
       }
 
       async function loadWords() {
-        const res = await fetch("fr_FR.txt")
+        const res = await fetch("dictionnaire.txt")
         const text = await res.text()
         const set = new Set()
         text.split("\n").forEach((line) => {
-          const norm = normalize(line.split("\t")[0].trim())
+          const norm = normalize(line)
           if (/^[A-Z]{3,}$/.test(norm)) set.add(norm)
         })
         validWordsSet = set

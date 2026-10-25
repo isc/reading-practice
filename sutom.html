@@ -1132,8 +1132,10 @@
       }
 
       // ===== État de la partie =====
+      const MIN_LETTERS = 6 // longueurs possibles du mot secret, et donc
+      const MAX_LETTERS = 9 // des propositions
       let validWordsSet = null // mots acceptés, normalisés
-      let candidateWords = [] // mots pouvant être le secret (6 à 9 lettres)
+      let candidateWords = [] // mots pouvant être le secret
       let secretWord = "" // en majuscules, sans accents
       let wordLength = 7
       let currentRow = 0
@@ -1164,19 +1166,18 @@
 
       async function loadWords() {
         const [dictRes, kidsRes] = await Promise.all([
-          fetch("fr_FR.txt"),
+          fetch("dictionnaire.txt"),
           fetch("mots-enfants.txt"),
         ])
         const dictText = await dictRes.text()
         const kidsText = await kidsRes.text()
         const set = new Set()
+        // Sans ses accents, un mot ne raccourcit jamais.
         dictText.split("\n").forEach((line) => {
-          if (!line) return
-          const word = line.split("\t")[0]
-          if (!word) return
-          const norm = normalize(word.trim())
+          if (line.length > MAX_LETTERS) return
+          const norm = normalize(line)
           if (!isValidWord(norm)) return
-          if (norm.length < 4 || norm.length > 12) return
+          if (norm.length < MIN_LETTERS || norm.length > MAX_LETTERS) return
           set.add(norm)
         })
         const candidates = []
@@ -1184,7 +1185,7 @@
         kidsText.split("\n").forEach((line) => {
           const norm = normalize(line.trim())
           if (!isValidWord(norm)) return
-          if (norm.length < 6 || norm.length > 9) return
+          if (norm.length < MIN_LETTERS || norm.length > MAX_LETTERS) return
           if (seen.has(norm)) return
           seen.add(norm)
           set.add(norm)
