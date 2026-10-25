@@ -132,8 +132,15 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   Sans ça, on demande « Une partie est en cours ? » sur l'écran des scores ou
   après la victoire, et les enfants finissent par répondre au hasard.
 
-- **Listes de mots** : `fetch('fr_FR.txt')` (gros dictionnaire français) ou
-  `fetch('mots-enfants.txt')` (mots adaptés aux enfants).
+- **Listes de mots** : `fetch('dictionnaire.txt')` (les mots du français
+  qu'accepterait un joueur de Scrabble) ou `fetch('mots-enfants.txt')` (mots
+  adaptés aux enfants). `dictionnaire.txt` donne une forme par ligne, en
+  minuscules avec ses accents, sans tiret ni apostrophe, après trois lignes
+  de licence qui commencent par `#` : un jeu les ignore. Il se fabrique avec
+  `outils/dictionnaire.py`, depuis le lexique libre de Grammalecte : jamais
+  à la main. Un jeu qui montre de lui-même un mot tiré
+  du dictionnaire écarte les gros mots (cf. `SWEAR_WORD` dans le mot le plus
+  long) ; le joueur, lui, peut taper n'importe quel mot qui existe.
 
 ## Brancher le jeu dans l'accueil
 
