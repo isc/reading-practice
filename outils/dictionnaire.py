@@ -18,6 +18,7 @@ import unicodedata
 import urllib.request
 import zipfile
 from pathlib import Path
+from typing import NamedTuple
 
 RACINE = Path(__file__).resolve().parent.parent
 VERSION = "7.7"
@@ -49,15 +50,26 @@ def garder(colonnes):
     )
 
 
-def main():
+class Entree(NamedTuple):
+    forme: str
+    lemme: str
+    etiquettes: list  # ["v1_it_q_zz", "ipre", "spre", "3pl"] : nature puis précisions
+    occurrences: int  # dans les corpus de Grammalecte, pour cette analyse de la forme
+
+
+def lexique():
+    """Les lignes gardées du lexique, une Entree par analyse d'une forme."""
     with urllib.request.urlopen(URL) as reponse:
         archive = zipfile.ZipFile(io.BytesIO(reponse.read()))
-    lexique = archive.read(f"lexique-grammalecte-fr-v{VERSION}.txt").decode("utf-8")
-    formes = set()
-    for ligne in lexique.splitlines():
+    texte = archive.read(f"lexique-grammalecte-fr-v{VERSION}.txt").decode("utf-8")
+    for ligne in texte.splitlines():
         colonnes = ligne.split("\t")
-        if len(colonnes) > 10 and colonnes[0].isdigit() and garder(colonnes):
-            formes.add(colonnes[2])
+        if len(colonnes) > 15 and colonnes[0].isdigit() and garder(colonnes):
+            yield Entree(colonnes[2], colonnes[3], colonnes[4].split(), int(colonnes[15] or 0))
+
+
+def main():
+    formes = {entree.forme for entree in lexique()}
     entete = [
         f"# Mots du français, tirés du lexique de Grammalecte v{VERSION} ({URL}).",
         "# Licence : Mozilla Public License 2.0, http://mozilla.org/MPL/2.0/",
