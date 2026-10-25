@@ -62,6 +62,7 @@ PRONONCIATION = {
     "fond": "Le fond.",  # « fins »
     "quand": "Quand ?",  # « temps »
     "ont": "On !",  # Whisper entend « un » à chaque essai : à écouter
+    "crêpes": "Crêpe !",  # « Crêpes. » fait siffler le s, que Whisper ne relève pas
 }
 
 

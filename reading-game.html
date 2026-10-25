@@ -103,7 +103,8 @@
           max(16px, env(safe-area-inset-bottom));
       }
 
-      /* --- Barre du haut : l'étape à gauche, la partie au milieu --- */
+      /* --- Barre du haut : le retour à gauche, la partie au milieu, l'étape
+         à droite. Hors partie, seul le retour reste. --- */
       .bar {
         display: grid;
         grid-template-columns: 1fr auto 1fr;
@@ -111,12 +112,39 @@
         gap: 8px;
         min-height: 44px;
       }
-      .bar[hidden] {
-        display: grid;
+      .bar:not(.en-partie) .dots,
+      .bar:not(.en-partie) .etape {
         visibility: hidden;
       }
-      .etape {
+      /* Les petits boutons blancs : le retour, et l'autre choix en fin de
+         partie */
+      .retour,
+      .autre {
+        border: none;
+        color: var(--ink);
+        background: #fff;
+        box-shadow: 0 6px 14px -8px rgba(60, 40, 110, 0.45);
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      .retour {
         justify-self: start;
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.75);
+      }
+      .retour svg {
+        width: 22px;
+        height: 22px;
+      }
+      .bar .etape {
+        justify-self: end;
+      }
+      .etape {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -351,9 +379,11 @@
         margin-left: 1px;
       }
 
-      /* Le coup de pouce : un haut-parleur sur le mot qui bloque */
+      /* Le coup de pouce : un haut-parleur sur le mot qui bloque, devant
+         l'anneau du prochain mot (::after), qui sinon passe à travers */
       .ouie {
         position: absolute;
+        z-index: 1;
         top: -14px;
         right: -10px;
         width: 30px;
@@ -564,11 +594,50 @@
         font-size: 28px;
         font-weight: 700;
       }
+      /* La fin de la séance montre les images de toutes ses parties, cinq
+         par rangée */
+      .galerie.toutes {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        max-width: 300px;
+      }
+      .galerie.toutes img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        border-radius: 12px;
+      }
       .fin-etape {
         margin-top: 14px;
       }
 
-      /* --- Le gros bouton : micro, puis flèche, puis rejouer --- */
+      /* La séance du jour : une étoile par partie finie */
+      .seance {
+        margin-top: 14px;
+      }
+      .etoiles {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+      }
+      .etoiles svg {
+        display: block;
+        width: 30px;
+        height: 30px;
+        color: rgba(45, 37, 69, 0.12);
+      }
+      .etoiles .on svg {
+        color: #ffb72b;
+        filter: drop-shadow(0 3px 4px rgba(255, 150, 30, 0.45));
+      }
+      .seance p {
+        margin: 4px 0 0;
+        font-size: 15px;
+        color: var(--soft);
+      }
+
+      /* --- Le gros bouton : micro, puis flèche, puis rejouer ou fini --- */
       .controls {
         display: grid;
         justify-items: center;
@@ -613,6 +682,7 @@
       .go[data-mode="idle"] .i-mic,
       .go[data-mode="next"] .i-next,
       .go[data-mode="replay"] .i-replay,
+      .go[data-mode="fini"] .i-fini,
       .go[data-mode="denied"] .i-off {
         opacity: 1;
         transform: none;
@@ -625,6 +695,10 @@
       .go[data-mode="next"] {
         background: linear-gradient(145deg, #2fcf8e, #1e9bf0);
         box-shadow: 0 14px 30px -10px rgba(30, 155, 240, 0.7);
+      }
+      .go[data-mode="fini"] {
+        background: linear-gradient(145deg, #ffc23d, #ff8a3d);
+        box-shadow: 0 14px 30px -10px rgba(255, 138, 61, 0.7);
       }
       /* Les ondes : le micro écoute */
       .waves {
@@ -672,6 +746,13 @@
         font-weight: 700;
         color: var(--soft);
         text-align: center;
+      }
+      .autre {
+        padding: 9px 20px;
+        border-radius: 20px;
+        font: inherit;
+        font-size: 17px;
+        font-weight: 700;
       }
 
       @media (hover: hover) {
@@ -816,9 +897,21 @@
   <body>
     <div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
     <main class="app">
-      <header class="bar" id="bar" hidden>
-        <div class="etape" id="etape"></div>
+      <header class="bar" id="bar">
+        <button class="retour" id="retour" type="button" aria-label="Retour">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
         <div class="dots" id="dots" aria-hidden="true"></div>
+        <div class="etape" id="etape"></div>
       </header>
       <section class="stage" id="stage" aria-live="polite"></section>
       <div class="controls">
@@ -884,8 +977,20 @@
             <path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5" />
             <path d="M4 3.5v4.5h4.5" />
           </svg>
+          <svg
+            class="i-fini"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
         </button>
         <div class="hint" id="hint"></div>
+        <button class="autre" id="autre" type="button" hidden></button>
       </div>
     </main>
     <canvas id="confetti"></canvas>
@@ -1094,6 +1199,7 @@
       ]
       const AIDES = 4 // les étapes 1 à 4 montrent syllabes et lettres muettes
       const PAR_PARTIE = 5
+      const PARTIES_DU_JOUR = 3 // une séance : ensuite, le jeu invite à s'arrêter
       const ETAPE_COULEURS = [
         "#22b07d",
         "#1e9bf0",
@@ -1160,6 +1266,14 @@
         } catch {}
       }
 
+      // La séance du jour : les parties finies aujourd'hui, et leurs images
+      function jour() {
+        const date = new Date().toDateString()
+        if (progres.jour?.date !== date)
+          progres.jour = { date, parties: 0, images: [] }
+        return progres.jour
+      }
+
       // --- Le journal vocal, pour régler la reconnaissance sur un vrai
       // appareil. Caché : 7 touches rapides sur le titre de l'accueil
       // l'ouvrent, et on l'y allume une fois pour toutes sur l'appareil. Il
@@ -1185,7 +1299,7 @@
           seances.push(seance)
           seance.lignes.push(
             [t, "appareil", `${navigator.userAgent} | appli=${matchMedia("(display-mode: standalone)").matches} | reco=${Boolean(Reco)}`],
-            [t, "réglages", `rapide<${RAPIDE}s/mot série=${SERIE} pouce=${POUCE}ms`],
+            [t, "réglages", `rapide<${RAPIDE}s/mot série=${SERIE} pouce=${POUCE}ms séance=${PARTIES_DU_JOUR} parties`],
           )
         }
         seance.fin = t
@@ -1348,11 +1462,13 @@
           " ",
         )
 
-      // Ce que la reconnaissance a écrit, en mots
+      // Ce que la reconnaissance a écrit, en mots. Les chiffres collés à des
+      // lettres se détachent : « ses huit bras » arrive en « C8 bras ».
       function jetons(transcript) {
         return transcript
           .toLowerCase()
           .replace(/’/g, "'")
+          .replace(/\d+/g, " $& ")
           .split(/[^\p{L}\p{N}']+/u)
           .filter(Boolean)
           .map((j) => (/^\d+$/.test(j) && NOMBRES[j]) || j)
@@ -1880,22 +1996,29 @@
 
       // Le gros bouton change de rôle au fil de la partie :
       // start (micro), listen (micro qui écoute), idle (micro au repos, à
-      // toucher pour relancer l'écoute), denied (micro barré), next, replay.
+      // toucher pour relancer l'écoute), denied (micro barré), next, replay,
+      // fini (la séance du jour est faite). Les deux derniers, en fin de
+      // partie, proposent l'autre choix dans un petit bouton dessous.
       const MODES = {
         start: ["Commencer", "Touche le micro"],
         listen: ["J'écoute", "Lis la phrase"],
         idle: ["Relancer le micro", "Touche le micro"],
         denied: ["Micro indisponible", "Il faut le micro"],
         next: ["Phrase suivante", ""],
-        replay: ["Rejouer", ""],
+        replay: ["Rejouer", "", ["J'ai fini", accueil]],
+        fini: ["Fini", "", ["Encore une partie", commencer]],
       }
 
       function setMode(mode) {
         const go = $("go")
         go.dataset.mode = mode
-        const [label, hint] = MODES[mode]
+        const [label, hint, [autre, action] = []] = MODES[mode]
         go.setAttribute("aria-label", label)
         $("hint").textContent = hint
+        $("hint").hidden = Boolean(autre)
+        $("autre").hidden = !autre
+        $("autre").textContent = autre ?? ""
+        $("autre").onclick = action ?? null
       }
 
       // Le navigateur a entendu quelque chose : le micro bat une fois.
@@ -1926,7 +2049,10 @@
       }
 
       // --- L'accueil ---
+      let ecran // accueil, partie ou fin (de partie)
+
       function accueil() {
+        ecran = "accueil"
         const home = card()
         const titre = el("h1", "title", "Lis à voix haute")
         titre.addEventListener("click", toucherTitre)
@@ -1967,9 +2093,69 @@
           demo,
           chemin,
           el("p", "sons"),
+          etoiles(),
         )
         dessinerChemin()
-        $("bar").hidden = true
+        $("bar").classList.remove("en-partie")
+        setMode(Reco ? "start" : "denied")
+        entamer(false)
+        eveil(false)
+      }
+
+      // Les étoiles de la séance : une par partie finie aujourd'hui. Celle
+      // qu'on vient de gagner arrive en sautant.
+      function etoiles(gagnee = false) {
+        const { parties } = jour()
+        const rang = el("div", "etoiles")
+        for (let i = 0; i < PARTIES_DU_JOUR; i++) {
+          const etoile = el("i", i < parties ? "on" : "")
+          etoile.innerHTML = ICONE_ETAPE
+          rang.append(etoile)
+          if (gagnee && i === parties - 1 && !calme())
+            etoile.animate(
+              [
+                { transform: "scale(0) rotate(-90deg)" },
+                { transform: "scale(1.5) rotate(10deg)", offset: 0.6 },
+                { transform: "scale(1)" },
+              ],
+              {
+                duration: 700,
+                delay: 700,
+                easing: "ease-out",
+                fill: "backwards",
+              },
+            )
+        }
+        const reste = PARTIES_DU_JOUR - parties
+        const texte =
+          reste <= 0
+            ? `Séance finie : ${parties * PAR_PARTIE} phrases lues !`
+            : reste === PARTIES_DU_JOUR
+              ? `Ta séance : ${reste} parties`
+              : `Encore ${reste} partie${reste > 1 ? "s" : ""}`
+        const bloc = el("div", "seance")
+        bloc.append(rang, el("p", "", texte))
+        return bloc
+      }
+
+      // Une partie entamée (un mot lu) : le geste retour du téléphone et le
+      // bouton retour demandent confirmation
+      let entamee = false
+      function entamer(oui) {
+        entamee = oui
+        if (window.ExitGuard) ExitGuard.setActive(oui)
+      }
+
+      // Retour : d'une partie à l'accueil du jeu, de l'accueil aux autres jeux.
+      // Une partie entamée demande confirmation.
+      function retour() {
+        if (ecran === "accueil") return location.assign("index.html")
+        if (ecran === "partie") {
+          if (entamee && !confirm("Tu veux arrêter la partie ?")) return
+          journal("arrêt", `phrase ${partie.phrases.length}/${PAR_PARTIE}`)
+          arreterEcoute()
+        }
+        accueil()
       }
 
       function dessinerChemin() {
@@ -2030,6 +2216,7 @@
         if (!Reco) return secouer()
         Voice.wake(500)
         partie = { phrases: [], etapeDepart: progres.etape }
+        ecran = "partie"
         journal("partie", `étape ${progres.etape}`)
         const dots = $("dots")
         dots.replaceChildren()
@@ -2044,7 +2231,7 @@
       function nouvellePhrase() {
         const phrase = choisirPhrase()
         partie.phrases.push(phrase)
-        $("bar").hidden = false
+        $("bar").classList.add("en-partie")
         badge($("etape"))
         document.querySelectorAll("#dots i").forEach((dot, i) => {
           dot.classList.toggle("done", i < partie.phrases.length - 1)
@@ -2101,7 +2288,7 @@
         mot.el.classList.add(etat)
         crever(mot, j)
         if (!saute) allumer(mot)
-        if (window.ExitGuard) ExitGuard.setActive(true)
+        entamer(true)
       }
 
       function avancer() {
@@ -2140,11 +2327,16 @@
         $("hint").textContent = "Touche le mot pour l'entendre"
       }
 
-      function finPhrase() {
+      // La phrase s'arrête, lue ou laissée : le micro et le coup de pouce aussi
+      function arreterEcoute() {
         enCours = false
         clearTimeout(minuteur)
         ecoute.abort()
         eveil(false)
+      }
+
+      function finPhrase() {
+        arreterEcoute()
         const n = mots.length
         const aides = mots.filter((w) => w.etat === "aide").length
         const rates = mots.filter((w) => w.rate).length
@@ -2221,12 +2413,26 @@
 
       function suivante() {
         if (partie.phrases.length < PAR_PARTIE) return nouvellePhrase()
-        if (window.ExitGuard) ExitGuard.setActive(false)
+        entamer(false)
+        ecran = "fin"
+        const seance = jour()
+        const lues = partie.phrases.map((p) => p.image)
+        seance.parties++
+        // Les images ne servent qu'à la fin de la séance : pas au-delà
+        if (seance.parties <= PARTIES_DU_JOUR) seance.images.push(...lues)
+        sauver()
+        journal(
+          "partie finie",
+          `${seance.parties}/${PARTIES_DU_JOUR} aujourd'hui`,
+        )
+        // La partie qui finit la séance montre les images de toutes ses parties
+        const finSeance = seance.parties === PARTIES_DU_JOUR
+        const images = finSeance ? seance.images : lues
         const end = card()
-        const galerie = el("div", "galerie")
-        partie.phrases.forEach((phrase, i) => {
+        const galerie = el("div", finSeance ? "galerie toutes" : "galerie")
+        images.forEach((image, i) => {
           const img = new Image()
-          img.src = `images/phrases/${phrase.image}.webp`
+          img.src = `images/phrases/${image}.webp`
           img.alt = ""
           galerie.append(img)
           if (!calme())
@@ -2238,7 +2444,7 @@
               ],
               {
                 duration: 420,
-                delay: i * 110,
+                delay: i * (finSeance ? 50 : 110),
                 easing: "ease-out",
                 fill: "backwards",
               },
@@ -2248,19 +2454,27 @@
         badge(etape, progres.etape > partie.etapeDepart ? " ↑" : "")
         end.append(
           galerie,
-          el("p", "bravo", `Tu as lu ${PAR_PARTIE} phrases !`),
+          el(
+            "p",
+            "bravo",
+            finSeance ? "Bravo !" : `Tu as lu ${PAR_PARTIE} phrases !`,
+          ),
           etape,
+          etoiles(true),
         )
-        $("bar").hidden = true
-        setMode("replay")
-        chord([0, 2, 4, 5, 7, 9])
+        $("bar").classList.remove("en-partie")
+        // Séance faite : le gros bouton propose d'arrêter, le petit de continuer
+        setMode(seance.parties >= PARTIES_DU_JOUR ? "fini" : "replay")
+        chord(finSeance ? [0, 2, 4, 5, 6, 7, 8, 9] : [0, 2, 4, 5, 7, 9])
         showConfetti()
       }
 
+      $("retour").addEventListener("click", retour)
       $("go").addEventListener("click", () => {
         const mode = $("go").dataset.mode
         if (mode === "next") suivante()
         else if (mode === "start" || mode === "replay") commencer()
+        else if (mode === "fini") accueil()
         else if (enCours && (mode === "idle" || mode === "denied")) ecouter()
         else if (mode === "denied") secouer()
       })
@@ -2272,11 +2486,7 @@
       })
 
       accueil()
-      setMode(Reco ? "start" : "denied")
       if (!Reco) journal("reco", "absente de ce navigateur")
-      // Écran d'accueil : aucune partie en cours.
-      if (window.ExitGuard) ExitGuard.setActive(false)
-      eveil(false)
     </script>
   </body>
 </html>
