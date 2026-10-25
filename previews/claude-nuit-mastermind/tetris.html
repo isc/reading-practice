@@ -6,6 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
+    <meta name="theme-color" content="#0b1230" />
     <title>Tetris</title>
     <script src="exit-guard.js"></script>
     <style>
@@ -44,18 +45,24 @@
         box-sizing: border-box;
       }
 
+      html {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
       /* Une nuit d'hiver. */
       body {
         font-family: "Yeseva One", Georgia, serif;
         color: var(--cream);
         background: linear-gradient(180deg, #0b1230 0%, #16224b 55%, #26386b 100%);
-        min-height: 100vh;
-        min-height: 100dvh;
+        flex-grow: 1;
         display: flex;
         justify-content: center;
         align-items: flex-start;
         padding: 12px;
         -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
         user-select: none;
         overflow: hidden;
         overscroll-behavior: none;
@@ -119,7 +126,7 @@
       }
 
       #screen-game.active {
-        height: calc(100dvh - 24px);
+        align-self: stretch;
       }
 
       /* Panneaux en bois laqué noir, bordés d'un filet d'or. */

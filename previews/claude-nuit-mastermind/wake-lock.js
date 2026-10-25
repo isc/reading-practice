@@ -8,12 +8,23 @@
 // Le verrou est relâché d'office par le navigateur dès que l'onglet passe en
 // arrière-plan : on le redemande au retour, et à n'importe quel tap au cas où
 // le navigateur exigerait un geste de l'utilisateur.
+//
+// Une page qui ne veut l'écran allumé que par moments (pendant qu'on lit à
+// voix haute, pas sur l'accueil) appelle KeepAwake.setActive(true / false).
 ;(function () {
-  if (!("wakeLock" in navigator)) return
+  var active = true
   var lock = null
 
+  window.KeepAwake = {
+    setActive: function (on) {
+      active = on
+      if (on) keepAwake()
+      else if (lock) lock.release()
+    },
+  }
+
   async function keepAwake() {
-    if (lock) return
+    if (lock || !active || !("wakeLock" in navigator)) return
     try {
       lock = await navigator.wakeLock.request("screen")
       lock.addEventListener("release", function () {

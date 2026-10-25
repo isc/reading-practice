@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0e1a38" />
     <title>Mastermind</title>
     <style>
       /* Laboratoire de potions : les couleurs sont des gouttes de potion
-         lumineuses, versées depuis des fioles. Chaque essai se mélange dans
-         un ballon, où les indices remontent en bulles : dorée pour une bonne
-         potion à la bonne place, transparente pour une bonne potion ailleurs.
-         La recette secrète dort sous une brume, en haut. */
+         lumineuses, versées depuis des fioles. À côté de chaque essai, les
+         indices du vrai jeu : un pion doré pour une bonne potion à la bonne
+         place, un pion blanc pour une bonne potion ailleurs. La recette
+         secrète attend sous une brume, en haut. */
 
       @font-face {
         font-family: "Grandstander";
@@ -67,7 +68,7 @@
         position: fixed;
         inset: 0;
         width: 100vw;
-        height: 100vh;
+        height: 100%;
         pointer-events: none;
         z-index: 1000;
       }
@@ -126,8 +127,7 @@
       .app {
         position: relative;
         max-width: 460px;
-        height: 100vh;
-        height: 100dvh;
+        height: 100%;
         max-height: 900px;
         margin: 0 auto;
         padding: max(10px, env(safe-area-inset-top)) 16px
@@ -220,6 +220,24 @@
             transparent 35%
           );
         animation: swirl 7s linear infinite;
+      }
+
+      /* Le voile d'une case cachée : sa brume et son « ? ». */
+      .veil {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+      }
+
+      .mark {
+        position: relative;
+        width: 68%;
+        height: 68%;
+        fill: none;
+        stroke: #fff;
+        stroke-width: 2.8;
+        stroke-linecap: round;
       }
 
       .seal:nth-child(2) .fog {
@@ -368,67 +386,33 @@
         pointer-events: none;
       }
 
-      /* Le ballon où l'essai se mélange et où remontent les indices. */
+      /* Les indices, comme sur le vrai jeu : quatre petits trous en carré
+         où s'allument les pions. */
       .clue {
-        width: min(46px, 100cqh);
-        height: min(46px, 100cqh);
+        --p: min(17px, 42cqh);
+        display: grid;
+        grid-template-columns: repeat(2, var(--p));
+        gap: 3px;
       }
 
-      .clue svg {
+      .peg {
+        width: var(--p);
+        height: var(--p);
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.35);
+        box-shadow:
+          inset 0 1px 3px rgba(0, 0, 0, 0.5),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+      }
+
+      .peg .peg-icon {
+        display: block;
         width: 100%;
         height: 100%;
-        overflow: visible;
-      }
-
-      .flask-glass {
-        fill: rgba(255, 255, 255, 0.05);
-        stroke: rgba(255, 255, 255, 0.45);
-        stroke-width: 1.4;
       }
 
       .row.future .clue {
         opacity: 0.35;
-      }
-
-      .row.active.full .flask-glass {
-        stroke: var(--mint);
-      }
-
-      .row.active.full .clue {
-        animation: ready 1s ease-in-out infinite;
-      }
-
-      @keyframes ready {
-        50% {
-          opacity: 0.45;
-        }
-      }
-
-      .flask-liquid {
-        transform-box: fill-box;
-        transform-origin: 50% 100%;
-        transform: scaleY(0);
-        opacity: 0.55;
-      }
-
-      .row.done .flask-liquid {
-        transform: none;
-      }
-
-      .flask-lip {
-        fill: rgba(255, 255, 255, 0.35);
-      }
-
-      .shine {
-        fill: none;
-        stroke: rgba(255, 255, 255, 0.5);
-        stroke-width: 1.6;
-        stroke-linecap: round;
-      }
-
-      .bub {
-        transform-box: fill-box;
-        transform-origin: center;
       }
 
       .row.winner .drop {
@@ -525,6 +509,13 @@
         to {
           transform: translateX(60px);
         }
+      }
+
+      .shine {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.5);
+        stroke-width: 1.6;
+        stroke-linecap: round;
       }
 
       .bottle .glyph {
@@ -701,10 +692,11 @@
         stroke-linejoin: round;
       }
 
-      .bub-icon {
-        width: 26px;
-        height: 26px;
+      .peg-icon {
+        width: 20px;
+        height: 20px;
         flex: none;
+        overflow: visible;
       }
 
       .help-note {
@@ -731,9 +723,9 @@
         background: rgba(255, 255, 255, 0.05);
       }
 
-      .history .bub-icon {
-        width: 24px;
-        height: 24px;
+      .history .peg-icon {
+        width: 18px;
+        height: 18px;
       }
 
       .history .date {
@@ -848,7 +840,6 @@
         .fog,
         .bottle .wave,
         .slot.target::after,
-        .row.active.full .clue,
         .row.winner .drop,
         .look-up svg {
           animation: none;
@@ -863,7 +854,7 @@
   <body>
     <canvas id="confetti"></canvas>
 
-    <!-- Symboles des potions, bulles d'indice et dégradés partagés. -->
+    <!-- Symboles des potions, pions d'indice et dégradés partagés. -->
     <svg class="defs" aria-hidden="true">
       <defs>
         <symbol id="g-heart" viewBox="0 0 24 24">
@@ -887,6 +878,10 @@
         <symbol id="g-moon" viewBox="0 0 24 24">
           <path d="M14 2.5A9.5 9.5 0 1 0 21.5 15A7.5 7.5 0 1 1 14 2.5Z" />
         </symbol>
+        <symbol id="g-question" viewBox="0 0 24 24">
+          <path d="M8.8 9A3.3 3.3 0 1 1 13.6 12C12.6 12.6 12 13.3 12 14.6" />
+          <circle cx="12" cy="18.6" r="0.4" />
+        </symbol>
         <symbol id="g-gem" viewBox="0 0 24 24">
           <path d="M12 2L21 12L12 22L3 12Z" />
         </symbol>
@@ -898,8 +893,8 @@
         <clipPath id="bottle-clip">
           <circle cx="30" cy="48" r="20.6" />
         </clipPath>
-        <!-- Bulle dorée : bonne potion, bonne place. -->
-        <g id="b-bright">
+        <!-- Pion doré : bonne potion, bonne place. -->
+        <g id="peg-bright">
           <circle r="6.6" fill="rgba(255, 226, 122, 0.3)" />
           <circle
             r="4.8"
@@ -908,15 +903,14 @@
             stroke-width="0.6"
           />
         </g>
-        <!-- Bulle transparente : bonne potion, autre place. -->
-        <g id="b-hollow">
+        <!-- Pion blanc : bonne potion, autre place. -->
+        <g id="peg-hollow">
           <circle
-            r="4.5"
-            fill="rgba(220, 235, 255, 0.16)"
+            r="4.4"
+            fill="rgba(220, 235, 255, 0.22)"
             stroke="#eef5ff"
-            stroke-width="1.3"
+            stroke-width="1.9"
           />
-          <circle cx="-1.5" cy="-1.6" r="1" fill="#fff" />
         </g>
       </defs>
     </svg>
@@ -935,8 +929,7 @@
             stroke-linecap="round"
             aria-hidden="true"
           >
-            <path d="M8.8 9A3.3 3.3 0 1 1 13.6 12C12.6 12.6 12 13.3 12 14.6" />
-            <circle cx="12" cy="18.6" r="0.4" fill="currentColor" />
+            <use href="#g-question" />
           </svg>
         </button>
         <h1>Mastermind</h1>
@@ -973,25 +966,23 @@
           <h2>Comment jouer</h2>
           <ul class="help-list">
             <li>
-              <span class="pic">
-                <span class="seal"><span class="fog"></span></span>
-                <span class="seal"><span class="fog"></span></span>
-                <span class="seal"><span class="fog"></span></span>
-                <span class="seal"><span class="fog"></span></span>
-              </span>
-              <span>Trouve la recette secrète : 4 potions, dans l'ordre.</span>
+              <span class="pic" id="helpSecret"></span>
+              <span>Devine les 4 potions cachées, dans le bon ordre.</span>
             </li>
             <li>
               <span class="pic" id="helpPour"></span>
-              <span>Touche une fiole pour verser sa potion.</span>
+              <span
+                >Touche les fioles pour remplir la rangée, puis « Valider
+                ».</span
+              >
             </li>
             <li>
               <span class="pic" id="helpBright"></span>
-              <span>Bulle dorée : bonne potion, bonne place.</span>
+              <span>Pion doré : bonne potion, bonne place.</span>
             </li>
             <li>
               <span class="pic" id="helpHollow"></span>
-              <span>Bulle transparente : bonne potion, mais ailleurs.</span>
+              <span>Pion blanc : bonne potion, mais pas à sa place.</span>
             </li>
           </ul>
           <p class="help-note">
@@ -1016,21 +1007,19 @@
 
       <div class="controls">
         <div class="shelf" id="shelf"></div>
-        <button class="big-btn" id="brewBtn" disabled>
+        <button class="big-btn" id="validateBtn" disabled>
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2.2"
+            stroke-width="2.8"
             stroke-linecap="round"
             stroke-linejoin="round"
             aria-hidden="true"
           >
-            <path d="M3 13H21A9 7 0 0 1 3 13Z" />
-            <path d="M14 13L18 3" />
-            <path d="M8 8.5V7M11 6V4.5" />
+            <path d="M4.5 12.5L9.5 17.5L19.5 6.5" />
           </svg>
-          Mélanger
+          Valider
         </button>
         <button class="big-btn hidden" id="againBtn">
           <svg
@@ -1045,7 +1034,7 @@
             <path d="M20 12A8 8 0 1 1 17.7 6.3" />
             <path d="M18.5 2.5V6.8H14.2" />
           </svg>
-          Nouvelle recette
+          Nouvelle partie
         </button>
       </div>
     </main>
@@ -1065,18 +1054,11 @@
       ]
       const SLOTS = 4
       const maxAttempts = 10
-      // Emplacements des bulles dans le ballon d'indice (2 × 2).
-      const BUBBLE_SPOTS = [
-        [14.5, 19],
-        [25.5, 19],
-        [14.5, 29.5],
-        [25.5, 29.5],
-      ]
 
       const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)")
       const $ = (id) => document.getElementById(id)
       const board = $("board")
-      const brewBtn = $("brewBtn")
+      const validateBtn = $("validateBtn")
       const fx = $("fx")
       const wait = (ms) =>
         new Promise((r) => setTimeout(r, reducedMotion.matches ? ms / 3 : ms))
@@ -1084,9 +1066,9 @@
       let secretCode = []
       let currentGuess = []
       let target = null
-      let turn = 0 // nombre d'essais déjà mélangés
+      let turn = 0 // nombre d'essais déjà validés
       let rows = []
-      let busy = false // mélange en cours ou partie finie
+      let busy = false // essai en cours de lecture ou partie finie
       let startTime
 
       // ---------- Le son : synthétisé, par le contexte de voix.js ----------
@@ -1156,8 +1138,8 @@
         back: () => tone({ freq: 700, to: 240, dur: 0.14, vol: 0.14 }),
         pick: () => tone({ type: "triangle", freq: 660, dur: 0.06, vol: 0.08 }),
         full: () => tone({ type: "triangle", freq: 170, dur: 0.12, vol: 0.2 }),
-        // Les quatre gouttes glougloutent l'une après l'autre.
-        glug: (k) =>
+        // Les quatre gouttes de l'essai pulsent l'une après l'autre.
+        pulse: (k) =>
           tone({
             type: "triangle",
             delay: k * 0.11,
@@ -1229,14 +1211,6 @@
         return drop
       }
 
-      const FLASK = `<svg viewBox="0 0 40 40" aria-hidden="true">
-        <path class="flask-glass" d="M16 3H24V10.6A14 14 0 1 1 16 10.6Z" />
-        <path class="flask-liquid" d="M7.6 26Q13.8 23.6 20 26T32.4 26A12.6 12.6 0 0 1 7.6 26Z" />
-        <g class="bubbles"></g>
-        <rect class="flask-lip" x="14" y="1.4" width="12" height="2.6" rx="1.3" />
-        <path class="shine" d="M10.5 19A10.5 10.5 0 0 1 14 14.5" />
-      </svg>`
-
       function bottleSvg(i) {
         return `<svg viewBox="0 0 60 72" aria-hidden="true">
           <g clip-path="url(#bottle-clip)">
@@ -1251,28 +1225,14 @@
         </svg>`
       }
 
-      function bubble(kind, k) {
-        const [x, y] = BUBBLE_SPOTS[k]
-        const g = document.createElementNS("http://www.w3.org/2000/svg", "g")
-        g.setAttribute("transform", `translate(${x} ${y})`)
-        g.innerHTML = `<g class="bub"><use href="#b-${kind}" /></g>`
-        return g
+      // Le cadre colle au pion ; son halo déborde.
+      function pegIcon(kind) {
+        return `<svg class="peg-icon" viewBox="-5.4 -5.4 10.8 10.8" aria-hidden="true"><use href="#peg-${kind}" /></svg>`
       }
 
-      function bubbleIcon(kind) {
-        return `<svg class="bub-icon" viewBox="-7 -7 14 14" aria-hidden="true"><use href="#b-${kind}" /></svg>`
-      }
-
-      // La couleur du mélange : la moyenne des quatre gouttes.
-      function blend(guess) {
-        const sum = [0, 0, 0]
-        guess.forEach((i) => {
-          const hex = POTIONS[i].c
-          for (let k = 0; k < 3; k++)
-            sum[k] += parseInt(hex.substr(1 + k * 2, 2), 16)
-        })
-        return `rgb(${sum.map((v) => Math.round(v / guess.length)).join(",")})`
-      }
+      // Une case de la recette : une sphère sous un voile de brume, marqué
+      // d'un « ? » tant qu'elle reste cachée.
+      const SEAL = `<span class="seal"><span class="veil"><span class="fog"></span><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><use href="#g-question" /></svg></span></span>`
 
       function center(el) {
         const r = el.getBoundingClientRect()
@@ -1394,7 +1354,7 @@
         }
       }
 
-      // Rien de bon dans le mélange : le ballon lâche un petit nuage gris.
+      // Rien de bon dans l'essai : les indices lâchent un petit nuage gris.
       function puff(el) {
         const { x, y, size } = center(el)
         for (let k = 0; k < 4; k++) {
@@ -1476,7 +1436,7 @@
           }
           const clue = document.createElement("div")
           clue.className = "clue"
-          clue.innerHTML = FLASK
+          clue.innerHTML = '<span class="peg"></span>'.repeat(SLOTS)
           row.slots = [...slots.children]
           row.append(slots, clue)
           board.append(row)
@@ -1485,8 +1445,7 @@
       }
 
       function buildSecret() {
-        $("secret").innerHTML =
-          '<span class="seal"><span class="fog"></span></span>'.repeat(SLOTS)
+        $("secret").innerHTML = SEAL.repeat(SLOTS)
       }
 
       function buildHelp() {
@@ -1496,11 +1455,12 @@
           `<span class="seal">${i == null ? "" : makeDrop(i).outerHTML}</span>`
         const arrow =
           '<svg class="arrow" viewBox="0 0 14 14"><path d="M2 7H12M8 3L12 7L8 11" /></svg>'
+        $("helpSecret").innerHTML = SEAL.repeat(SLOTS)
         $("helpPour").innerHTML = orb(0) + orb(3) + orb(null) + orb(null)
         $("helpBright").innerHTML =
-          `<span class="stack">${seal(0) + seal(null) + orb(0) + orb(null)}</span>${arrow}${bubbleIcon("bright")}`
+          `<span class="stack">${seal(0) + seal(null) + orb(0) + orb(null)}</span>${arrow}${pegIcon("bright")}`
         $("helpHollow").innerHTML =
-          `<span class="stack">${seal(0) + seal(null) + orb(null) + orb(0)}</span>${arrow}${bubbleIcon("hollow")}`
+          `<span class="stack">${seal(0) + seal(null) + orb(null) + orb(0)}</span>${arrow}${pegIcon("hollow")}`
         const cross =
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6L18 18M18 6L6 18" /></svg>'
         document.querySelectorAll("[data-close]").forEach((btn) => {
@@ -1524,7 +1484,7 @@
         closeSheets()
         $("endSheet").classList.add("hidden")
         $("shelf").classList.remove("off")
-        brewBtn.classList.remove("hidden")
+        validateBtn.classList.remove("hidden")
         $("againBtn").classList.add("hidden")
         startTime = Date.now()
         nextRow()
@@ -1556,8 +1516,7 @@
           slot.classList.toggle("target", p === next),
         )
         const full = !currentGuess.includes(null)
-        rows[turn].classList.toggle("full", full && !busy)
-        brewBtn.disabled = !full || busy
+        validateBtn.disabled = !full || busy
       }
 
       function pour(i, bottle) {
@@ -1567,7 +1526,7 @@
         if (p === -1) {
           SFX.full()
           play(
-            brewBtn,
+            validateBtn,
             [
               { transform: "none" },
               { transform: "scale(1.05)" },
@@ -1661,7 +1620,7 @@
         return feedback
       }
 
-      async function brew() {
+      async function validate() {
         if (busy || currentGuess.includes(null)) return
         audio(6000)
         busy = true
@@ -1673,7 +1632,7 @@
         updateRow()
         turn++
         row.classList.remove("active")
-        await mix(row, currentGuess)
+        await pulseGuess(row)
         await revealClues(row, feedback)
 
         if (feedback.filter((f) => f === "bright").length === SLOTS) {
@@ -1685,15 +1644,12 @@
         nextRow()
       }
 
-      // Les gouttes pulsent l'une après l'autre et le ballon se remplit de
-      // leur mélange.
-      async function mix(row, guess) {
-        const liquid = row.querySelector(".flask-liquid")
-        liquid.style.fill = blend(guess)
-        row.classList.add("done")
-        row.querySelectorAll(".drop").forEach((drop, k) => {
-          SFX.glug(k)
-          play(
+      // Les gouttes de l'essai pulsent l'une après l'autre.
+      async function pulseGuess(row) {
+        const drops = [...row.querySelectorAll(".drop")]
+        const pulses = drops.map((drop, k) => {
+          SFX.pulse(k)
+          return play(
             drop,
             [
               { transform: "none" },
@@ -1706,21 +1662,11 @@
             },
           )
         })
-        await play(
-          liquid,
-          [{ transform: "scaleY(0)" }, { transform: "none" }],
-          {
-            duration: 500,
-            delay: 250,
-            easing: "ease-out",
-          },
-        )
+        await Promise.all(pulses)
       }
 
-      // Les indices remontent dans le ballon : d'abord les bulles dorées,
-      // puis les transparentes.
+      // Les pions s'allument un à un : d'abord les dorés, puis les blancs.
       async function revealClues(row, feedback) {
-        const group = row.querySelector(".bubbles")
         const clue = row.querySelector(".clue")
         if (feedback.length === 0) {
           SFX.puff()
@@ -1730,22 +1676,18 @@
         }
         for (let k = 0; k < feedback.length; k++) {
           const kind = feedback[k]
-          const g = bubble(kind, k)
-          group.append(g)
+          const peg = clue.children[k]
+          peg.innerHTML = pegIcon(kind)
           SFX[kind](k)
           if (kind === "bright") {
-            const { x, y } = center(g)
+            const { x, y } = center(peg)
             burst(x, y, "#ffe27a", 6, 18)
           }
           play(
-            g.firstChild,
+            peg.firstChild,
             [
-              { transform: "translateY(12px) scale(0.2)", opacity: 0 },
-              {
-                transform: "translateY(-2px) scale(1.15)",
-                opacity: 1,
-                offset: 0.7,
-              },
+              { transform: "scale(0.2)", opacity: 0 },
+              { transform: "scale(1.3)", opacity: 1, offset: 0.7 },
               { transform: "none" },
             ],
             { duration: 380, easing: "ease-out" },
@@ -1770,11 +1712,11 @@
           await wait(900)
         }
         showEnd(won, elapsed)
-        brewBtn.classList.add("hidden")
+        validateBtn.classList.add("hidden")
         $("againBtn").classList.remove("hidden")
       }
 
-      // La brume se dissipe sur la recette. Si l'enfant l'a trouvée, ses
+      // Le voile se dissipe sur la recette. Si l'enfant l'a trouvée, ses
       // quatre gouttes s'envolent la rejoindre.
       async function revealSecret(won) {
         const seals = $("secret").querySelectorAll(".seal")
@@ -1786,7 +1728,7 @@
           const i = secretCode[p]
           if (won && !reducedMotion.matches)
             await fly(center(winningSlots[p]), seal, i, 620)
-          const fog = seal.querySelector(".fog")
+          const veil = seal.querySelector(".veil")
           const drop = makeDrop(i)
           seal.append(drop)
           SFX.unseal(p)
@@ -1806,17 +1748,14 @@
             },
           )
           await play(
-            fog,
-            [
-              { opacity: 1 },
-              { transform: "scale(1.8) rotate(90deg)", opacity: 0 },
-            ],
+            veil,
+            [{ opacity: 1 }, { transform: "scale(1.8)", opacity: 0 }],
             {
               duration: 700,
               easing: "ease-out",
             },
           )
-          fog.remove()
+          veil.remove()
         })
         await Promise.all(reveals)
       }
@@ -1878,7 +1817,7 @@
           ? games
               .map(
                 (g) => `<li>
-                  ${bubbleIcon(g.won ? "bright" : "hollow")}
+                  ${pegIcon(g.won ? "bright" : "hollow")}
                   <span>${g.attempts} / ${maxAttempts}</span>
                   <span>${g.time}</span>
                   <span class="date">${g.date}</span>
@@ -1890,7 +1829,7 @@
 
       $("helpBtn").onclick = () => openSheet("helpSheet")
       $("bookBtn").onclick = () => openSheet("bookSheet")
-      brewBtn.onclick = brew
+      validateBtn.onclick = validate
       $("againBtn").onclick = () => {
         audio(500)
         initGame()
