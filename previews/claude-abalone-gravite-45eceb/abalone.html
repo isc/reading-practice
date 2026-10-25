@@ -1215,7 +1215,7 @@
             une rangée pour la prendre d'un coup), puis touche une
             <strong>flèche</strong> : <span class="dot move"></span> tu avances,
             <span class="dot push"></span> tu pousses,
-            <span class="dot eject"></span> tu fais tomber une bille !
+            <span class="dot eject"></span> tu fais tomber une bille&nbsp;!
           </li>
           <li>
             Pour <strong>pousser</strong> les billes adverses, il faut être plus
@@ -1227,8 +1227,8 @@
             trou noir. On ne peut jamais pousser ses propres billes dehors.
           </li>
           <li>
-            Le premier qui fait tomber <strong>6 billes</strong> adverses gagne
-            !
+            Le premier qui fait tomber <strong>6 billes</strong> adverses
+            gagne&nbsp;!
           </li>
           <li>
             Contre l'ordi, tu as les billes <strong>noires</strong> et
@@ -2084,13 +2084,13 @@
       function ejectionText(player) {
         const left = MARBLES_TO_WIN - lost[opponent(player)]
         const rest =
-          left === 1 ? "Encore une à sortir !" : `Encore ${left} à sortir.`
+          left === 1 ? "Encore une à sortir\u00a0!" : `Encore ${left} à sortir.`
         if (mode === "2p") {
-          return `${MODES[mode].names[player]} sort une bille ! ${rest}`
+          return `${MODES[mode].names[player]} sort une bille\u00a0! ${rest}`
         }
         return player === HUMAN
-          ? `Bravo, une bille sortie ! ${rest}`
-          : "L'ordinateur a sorti une de tes billes !"
+          ? `Bravo, une bille sortie\u00a0! ${rest}`
+          : "L'ordinateur a sorti une de tes billes\u00a0!"
       }
 
       // Fin de partie : le trou noir finit d'avaler la dernière bille, puis
@@ -2119,11 +2119,11 @@
         const humanWon = MODES[mode].isHuman(winner)
         $("endMarble").setAttribute("href", `#m-${COLOR_CLASS[winner]}`)
         $("endTitle").textContent = !humanWon
-          ? "L'ordinateur a gagné !"
+          ? "L'ordinateur a gagné\u00a0!"
           : mode === "ia"
-            ? "Bravo, tu as gagné !"
-            : `${MODES[mode].names[winner]} a gagné !`
-        $("endSub").textContent = humanWon ? "" : "Essaie encore !"
+            ? "Bravo, tu as gagné\u00a0!"
+            : `${MODES[mode].names[winner]} a gagné\u00a0!`
+        $("endSub").textContent = humanWon ? "" : "Essaie encore\u00a0!"
         $("endBlack").textContent = lost[WHITE]
         $("endWhite").textContent = lost[BLACK]
         playEnd(humanWon)
@@ -2866,12 +2866,15 @@
           // rien à dire
         } else if (selection.length === 0) {
           const who =
-            mode === "2p" ? `${MODES[mode].names[currentPlayer]}, à toi ! ` : ""
+            mode === "2p"
+              ? `${MODES[mode].names[currentPlayer]}, à toi\u00a0! `
+              : ""
           text = `${who}Touche une de tes billes, ou glisse le doigt sur 2 ou 3.`
         } else if (arrows.length === 0) {
           text = "Ces billes ne peuvent pas bouger. Choisis-en d'autres."
         } else if (arrows.some(({ info }) => info.ejects)) {
-          text = "La flèche rouge fait tomber une bille dans le trou noir !"
+          text =
+            "La flèche rouge fait tomber une bille dans le trou noir\u00a0!"
         } else if (arrows.some(({ info }) => info.pushed.length)) {
           text = "La flèche orange pousse les billes adverses."
         } else if (selection.length < 3) {
