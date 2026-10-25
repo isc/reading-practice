@@ -241,11 +241,15 @@
         transition: border-color 0.3s;
       }
 
-      .slot svg {
+      .slot svg,
+      .flyer svg {
         display: block;
         width: 100%;
         height: 100%;
         overflow: visible;
+      }
+
+      .slot svg {
         opacity: 0;
         transform: scale(0.3);
         transition:
@@ -315,45 +319,7 @@
       .disk-spin {
         width: 100%;
         height: 100%;
-        border-radius: 50%;
-        background: conic-gradient(
-            rgba(255, 248, 230, 0.55),
-            rgba(255, 248, 230, 0) 20deg,
-            rgba(50, 8, 0, 0.5) 55deg,
-            rgba(50, 8, 0, 0) 90deg,
-            rgba(255, 238, 205, 0.45) 125deg,
-            rgba(255, 238, 205, 0) 155deg,
-            rgba(50, 8, 0, 0.4) 200deg,
-            rgba(50, 8, 0, 0) 235deg,
-            rgba(255, 242, 218, 0.5) 280deg,
-            rgba(255, 242, 218, 0) 318deg,
-            rgba(255, 248, 230, 0.55)
-          ),
-          radial-gradient(
-            closest-side,
-            #fffcf4 12%,
-            #ffe6b0 18%,
-            #ffb764 28%,
-            #f27d32 44%,
-            #b23a0e 66%,
-            #3d0d00
-          );
-        -webkit-mask-image: radial-gradient(
-          closest-side,
-          transparent 11%,
-          #000 14%,
-          #000 34%,
-          rgba(0, 0, 0, 0.5) 60%,
-          transparent 100%
-        );
-        mask-image: radial-gradient(
-          closest-side,
-          transparent 11%,
-          #000 14%,
-          #000 34%,
-          rgba(0, 0, 0, 0.5) 60%,
-          transparent 100%
-        );
+        background-size: 100% 100%;
         animation: spin 14s linear infinite;
       }
 
@@ -583,8 +549,9 @@
         transform: translateY(-12px) scale(1.12);
       }
 
+      /* Un aller-retour, puis elles restent en l'air sans rien repeindre. */
       .marble.selected .bob {
-        animation: hover 1.8s ease-in-out infinite alternate;
+        animation: hover 1.2s ease-in-out 2 alternate;
       }
 
       @keyframes hover {
@@ -615,7 +582,7 @@
       }
 
       /* Celle que la flèche rouge ferait tomber : elle penche déjà vers le
-         vide (animation lancée en JS, dans la direction de la chute). */
+         vide (décalage posé en JS, dans la direction de la chute). */
       .marble.falling .marble-ring {
         stroke: var(--red);
         stroke-dasharray: none;
@@ -684,27 +651,12 @@
         pointer-events: none;
       }
 
-      .sparks {
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 9;
-        pointer-events: none;
-      }
-
       .flyer {
         position: absolute;
         top: 0;
         left: 0;
         z-index: 9;
         will-change: transform;
-      }
-
-      .flyer svg {
-        display: block;
-        width: 100%;
-        height: 100%;
-        overflow: visible;
       }
 
       /* La bille chauffe en approchant du disque. */
@@ -726,6 +678,7 @@
         position: absolute;
         top: 0;
         left: 0;
+        z-index: 9;
         width: 12px;
         height: 12px;
         margin: -6px;
@@ -745,7 +698,7 @@
       }
 
       .end-card {
-        width: min(260px, 74%);
+        width: min(232px, 64%);
         text-align: center;
         animation: rise 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
       }
@@ -758,9 +711,9 @@
       }
 
       .end-marble {
-        width: 76px;
-        height: 76px;
-        margin: 0 auto 10px;
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 8px;
         overflow: visible;
         border-radius: 50%;
         background: radial-gradient(
@@ -775,7 +728,7 @@
       .end-title {
         font-family: var(--title);
         font-weight: 800;
-        font-size: 24px;
+        font-size: 22px;
         line-height: 1.15;
         color: #fff1dc;
       }
@@ -791,16 +744,10 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        margin: 12px 0 16px;
+        margin: 8px 0 12px;
         font-family: var(--title);
         font-weight: 700;
-        font-size: 26px;
-      }
-
-      .end-score svg {
-        width: 22px;
-        height: 22px;
-        overflow: visible;
+        font-size: 24px;
       }
 
       .end-score .sep {
@@ -1031,7 +978,7 @@
       <path id="grid" fill="none" stroke="url(#g-grid)" stroke-width="1" />
     </svg>
 
-    <main class="app" id="app">
+    <main class="app">
       <header class="top">
         <h1>Abalone</h1>
         <button
@@ -1221,11 +1168,15 @@
             <p class="end-title" id="endTitle"></p>
             <p class="end-sub" id="endSub"></p>
             <p class="end-score">
-              <svg viewBox="-50 -50 100 100"><use href="#m-black" /></svg>
+              <svg class="token" viewBox="-50 -50 100 100">
+                <use href="#m-black" />
+              </svg>
               <span id="endBlack">0</span>
               <span class="sep">·</span>
               <span id="endWhite">0</span>
-              <svg viewBox="-50 -50 100 100"><use href="#m-white" /></svg>
+              <svg class="token" viewBox="-50 -50 100 100">
+                <use href="#m-white" />
+              </svg>
             </p>
             <button class="btn primary" id="againBtn">
               <svg
@@ -1286,7 +1237,7 @@
         </ul>
       </section>
 
-      <section class="panel scoreboard">
+      <section class="panel">
         <h3 id="scoreTitle">Parties gagnées</h3>
         <div class="score-row">
           <div class="score-cell">
@@ -1312,7 +1263,6 @@
     </main>
 
     <div class="flyers" id="flyers"></div>
-    <div class="sparks" id="sparks"></div>
     <p class="toast" id="toast" role="status" hidden></p>
 
     <script src="confetti.js"></script>
@@ -1804,11 +1754,10 @@
       let arrows = [] // flèches affichées : { move, x, y, info }
       let trail = [] // cases quittées au dernier coup
       let marbleAt = [] // case → élément SVG de la bille
-      let aiTimer = null
       // Billes en route vers le trou noir, par couleur : leur case ne se
       // remplit qu'une fois la bille avalée.
       let pending = [0, 0, 0]
-      let effectTimers = []
+      let timers = [] // minuteurs de la partie, tous annulés par newGame()
       let busyUntil = 0 // fin de la dernière chute en cours
 
       // ----- Réglages et sauvegarde -----
@@ -1928,7 +1877,7 @@
       }
 
       function sound(ms) {
-        return soundOn && window.Voice ? Voice.wake(ms) : null
+        return soundOn ? Voice.wake(ms) : null
       }
 
       function tone(ctx, freq, at, options = {}) {
@@ -2000,17 +1949,17 @@
         lfo.stop(end + 0.05)
       }
 
-      // L'horizon avale la bille : un grondement grave. Les billes avalées
-      // à la fin, elles, font de petits « plop » qui montent.
-      function playSwallow(note) {
+      // L'horizon avale la bille : un grondement grave.
+      function playSwallow() {
         const ctx = sound(1200)
-        if (note === undefined) {
-          tone(ctx, 120, 0, { to: 32, dur: 0.9, vol: 0.32 })
-          tone(ctx, 1760, 0, { to: 3520, dur: 0.25, vol: 0.02 })
-        } else {
-          const freq = 330 * Math.pow(2, (2 * note) / 12)
-          tone(ctx, freq, 0, { to: freq / 3, dur: 0.25, vol: 0.06 })
-        }
+        tone(ctx, 120, 0, { to: 32, dur: 0.9, vol: 0.32 })
+        tone(ctx, 1760, 0, { to: 3520, dur: 0.25, vol: 0.02 })
+      }
+
+      // Les billes avalées à la fin font de petits « plop » qui montent.
+      function playPlop(note) {
+        const freq = 330 * Math.pow(2, (2 * note) / 12)
+        tone(sound(600), freq, 0, { to: freq / 3, dur: 0.25, vol: 0.06 })
       }
 
       function playSlot() {
@@ -2055,7 +2004,6 @@
       }
 
       function newGame() {
-        clearTimeout(aiTimer)
         cancelEffects()
         board = startingBoard()
         lost = [0, 0, 0]
@@ -2149,7 +2097,6 @@
       // toutes celles qui restent au perdant, et la carte du gagnant se pose
       // sur la dalle.
       function endGame(winner) {
-        clearTimeout(aiTimer)
         gameOver = true
         selection = []
         arrows = []
@@ -2186,21 +2133,18 @@
       function scheduleComputerMove() {
         if (!isComputerTurn()) return
         // L'ordinateur attend que la bille qu'on vient de lui prendre soit
-        // avalée. newGame() annule ce minuteur si une partie repart.
+        // avalée.
         const wait = Math.max(
           COMPUTER_DELAY,
           busyUntil - performance.now() + 200,
         )
-        aiTimer = setTimeout(() => {
+        later(() => {
           const move = chooseComputerMove()
           // Ses billes décollent un instant avant de partir.
           selection = describeMove(move).marbles
           renderMarbleStates()
           playLift()
-          aiTimer = setTimeout(() => {
-            aiTimer = null
-            playMove(move)
-          }, COMPUTER_SHOW)
+          later(() => playMove(move), COMPUTER_SHOW)
         }, wait)
       }
 
@@ -2491,9 +2435,7 @@
       // Une bille : son ombre et son halo restent sur la dalle, la bille
       // elle-même (.lift) peut décoller et flotter (.bob).
       function createMarble(color, cell) {
-        const marble = svgElement("g", {
-          class: `marble ${COLOR_CLASS[color]}`,
-        })
+        const marble = svgElement("g", { class: "marble" })
         const lift = svgElement("g", { class: "lift" })
         const bob = svgElement("g", { class: "bob" })
         bob.append(
@@ -2537,9 +2479,18 @@
             marbleAt[to] = elements[i]
             placeMarble(elements[i], CELLS[to].x, CELLS[to].y)
           } else {
-            fall(elements[i], from, opponent(player), screenDirection(dir), {
-              scorer: player,
+            const color = opponent(player)
+            // La case qu'elle remplira, une fois avalée.
+            const rank = lost[color]
+            pending[color]++
+            const ms = fall(elements[i], from, color, {
+              push: screenDirection(dir),
+              onSwallowed: () => {
+                playSwallow()
+                fillSlot(player, color, rank)
+              },
             })
+            if (!reducedMotion.matches) playFall(ms)
           }
         })
       }
@@ -2552,15 +2503,16 @@
 
       // ----- La chute dans le trou noir -----
 
+      // Tous les minuteurs de la partie (effets, coup de l'ordinateur)
+      // passent par ici : une nouvelle partie les annule d'un coup.
       function later(fn, ms) {
-        effectTimers.push(setTimeout(fn, ms))
+        timers.push(setTimeout(fn, ms))
       }
 
       function cancelEffects() {
-        effectTimers.forEach(clearTimeout)
-        effectTimers = []
+        timers.forEach(clearTimeout)
+        timers = []
         $("flyers").textContent = ""
-        $("sparks").textContent = ""
         pending = [0, 0, 0]
         busyUntil = 0
       }
@@ -2581,6 +2533,10 @@
           x: box.left + box.width / 2 + scrollX,
           y: box.top + box.height / 2 + scrollY,
         }
+      }
+
+      function holeCenter() {
+        return centerOf($("holeCore"))
       }
 
       // Trajectoire d'une bille happée, en images clés : elle file d'abord
@@ -2606,7 +2562,8 @@
         const tl = Math.hypot(tx, ty)
         const l1 = Math.min(110, dist * 0.3)
         const l2 = dist * 0.45
-        const p1 = { x: from.x + push.x * l1, y: from.y + push.y * l1 }
+        const start = push || { x: -dx / dist, y: -dy / dist }
+        const p1 = { x: from.x + start.x * l1, y: from.y + start.y * l1 }
         const p2 = { x: e.x - (tx / tl) * l2, y: e.y - (ty / tl) * l2 }
         // Entre un tour et demi et deux tours et demi, pour finir tout en
         // haut du disque, derrière l'ombre.
@@ -2665,21 +2622,23 @@
         })
         // Devant ou derrière l'ombre (z-index 6) : une animation à part, en
         // marches, pour que celle du mouvement reste fluide.
-        const layers = points.map((p) => ({
-          offset: p.time / duration,
-          zIndex: p.near ? 9 : 5,
-          easing: "steps(1, end)",
-        }))
+        const layers = points
+          .filter((p, i) => i === 0 || p.near !== points[i - 1].near)
+          .map((p) => ({
+            offset: p.time / duration,
+            zIndex: p.near ? 9 : 5,
+            easing: "steps(1, end)",
+          }))
+        layers.push({ ...layers[layers.length - 1], offset: 1 })
         return { frames, layers, duration }
       }
 
-      // Envoie la bille `marble` (case `cell`) dans le trou noir. `scorer` :
-      // le joueur qui l'a fait tomber, dont une case se remplira ; `note` :
-      // rang de la bille dans le flot de fin de partie.
-      function fall(marble, cell, color, push, options = {}) {
-        const { scorer = 0, delay = 0, note } = options
+      // Envoie la bille `marble` (case `cell`) dans le trou noir après
+      // `delay` ms, dans le sens `push` (par défaut, droit vers le trou).
+      // Renvoie la durée totale.
+      function fall(marble, cell, color, { push, delay = 0, onSwallowed }) {
         const from = screenPoint(CELLS[cell].x, CELLS[cell].y)
-        const size = 100 * svg.getScreenCTM().a
+        const size = UNIT * svg.getScreenCTM().a
         const quiet = reducedMotion.matches
         const { frames, layers, duration } = quiet
           ? {
@@ -2692,8 +2651,7 @@
               ],
               duration: 300,
             }
-          : fallPath(from, push, centerOf($("holeCore")))
-        if (scorer) pending[color]++
+          : fallPath(from, push, holeCenter())
         busyUntil = Math.max(busyUntil, performance.now() + delay + duration)
         later(() => {
           marble.remove()
@@ -2717,59 +2675,59 @@
               ],
               { duration, fill: "forwards" },
             )
-            if (note === undefined) playFall(duration)
           }
           later(() => {
             flyer.remove()
-            swallowed(color, scorer, note)
+            holeReaction()
+            onSwallowed()
           }, duration)
         }, delay)
         return delay + duration
       }
 
-      // L'horizon avale la bille : l'anneau s'illumine, une onde part dans
-      // le disque. Une étincelle file ensuite remplir la case du joueur qui
-      // l'a fait tomber.
-      function swallowed(color, scorer, note) {
-        playSwallow(note)
+      // L'horizon avale une bille : l'anneau s'illumine, une onde part dans
+      // le disque.
+      function holeReaction() {
         $("holeFlash").animate(
           [{ opacity: 0 }, { opacity: 1, offset: 0.12 }, { opacity: 0 }],
           { duration: 900, easing: "ease-out" },
         )
-        if (!reducedMotion.matches) {
-          $("holeShock").animate(
-            [
-              { transform: "scale(0.4, 0.12)", opacity: 0.9 },
-              { transform: "scale(3, 0.9)", opacity: 0 },
-            ],
-            { duration: 800, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" },
-          )
-          $("holeCore").animate(
-            [
-              { transform: "scale(1)" },
-              { transform: "scale(1.2)", offset: 0.25 },
-              { transform: "scale(1)" },
-            ],
-            { duration: 600, easing: "ease-out" },
-          )
-        }
-        if (!scorer) return
+        if (reducedMotion.matches) return
+        $("holeShock").animate(
+          [
+            { transform: "scale(0.4, 0.12)", opacity: 0.9 },
+            { transform: "scale(3, 0.9)", opacity: 0 },
+          ],
+          { duration: 800, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" },
+        )
+        $("holeCore").animate(
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.2)", offset: 0.25 },
+            { transform: "scale(1)" },
+          ],
+          { duration: 600, easing: "ease-out" },
+        )
+      }
+
+      // Une étincelle file du trou noir à la case `rank` du joueur qui a
+      // fait tomber la bille, et la case se remplit.
+      function fillSlot(scorer, color, rank) {
         const done = () => {
           pending[color]--
           renderCaptures()
           playSlot()
         }
-        const slots = $(`side-${COLOR_CLASS[scorer]}`).querySelectorAll(".slot")
-        const slot = slots[Math.min(lost[color] - pending[color], 5)]
-        if (reducedMotion.matches || !slot) {
+        if (reducedMotion.matches) {
           done()
           return
         }
-        const from = centerOf($("holeCore"))
-        const to = centerOf(slot)
+        const from = holeCenter()
+        const slots = $(`side-${COLOR_CLASS[scorer]}`).querySelectorAll(".slot")
+        const to = centerOf(slots[rank])
         const spark = document.createElement("div")
         spark.className = "spark"
-        $("sparks").appendChild(spark)
+        $("flyers").appendChild(spark)
         spark.animate(
           [
             { transform: `translate(${from.x}px, ${from.y}px) scale(0.5)` },
@@ -2787,21 +2745,15 @@
       // et filent l'une après l'autre dans le trou noir. Renvoie la durée.
       function swallowRest(loser) {
         if (reducedMotion.matches) return 0
-        const hole = centerOf($("holeCore"))
         let end = 0
         let note = 0
         marbleAt.forEach((marble, cell) => {
           if (!marble || board[cell] !== loser) return
           marbleAt[cell] = null
-          const from = screenPoint(CELLS[cell].x, CELLS[cell].y)
-          const dist = Math.hypot(hole.x - from.x, hole.y - from.y)
-          const push = {
-            x: (hole.x - from.x) / dist,
-            y: (hole.y - from.y) / dist,
-          }
-          end = fall(marble, cell, loser, push, {
-            delay: note * STREAM_GAP,
-            note: note++,
+          const plop = note++
+          end = fall(marble, cell, loser, {
+            delay: plop * STREAM_GAP,
+            onSwallowed: () => playPlop(plop),
           })
         })
         return end
@@ -2829,36 +2781,17 @@
         }
         marbleAt.forEach((marble, cell) => {
           if (!marble) return
+          const dir = falling.get(cell)
           marble.classList.toggle("selected", selection.includes(cell))
           marble.classList.toggle("pushed", pushed.has(cell))
-          setFalling(marble, falling.get(cell))
+          marble.classList.toggle("falling", dir !== undefined)
+          // Celle qu'une flèche rouge ferait tomber penche déjà vers le vide,
+          // comme attirée par le trou noir.
+          const lean = dir === undefined ? null : screenDirection(dir)
+          marble.querySelector(".lift").style.transform = lean
+            ? `translate(${lean.x * 10}px, ${lean.y * 10}px)`
+            : ""
         })
-      }
-
-      // Une bille qu'une flèche rouge ferait tomber penche déjà vers le
-      // vide, comme attirée par le trou noir.
-      function setFalling(marble, dir) {
-        marble.classList.toggle("falling", dir !== undefined)
-        if (marble.fallDir === dir) return
-        if (marble.wobble) marble.wobble.cancel()
-        marble.wobble = null
-        marble.fallDir = dir
-        if (dir === undefined || reducedMotion.matches) return
-        const { x, y } = screenDirection(dir)
-        marble.wobble = marble
-          .querySelector(".bob")
-          .animate(
-            [
-              { transform: "translate(0px, 0px)" },
-              { transform: `translate(${x * 10}px, ${y * 10}px)` },
-            ],
-            {
-              duration: 520,
-              direction: "alternate",
-              iterations: Infinity,
-              easing: "ease-in-out",
-            },
-          )
       }
 
       function renderArrows() {
@@ -2930,7 +2863,7 @@
           return
         }
         if (gameOver) {
-          text = ""
+          // rien à dire
         } else if (selection.length === 0) {
           const who =
             mode === "2p" ? `${MODES[mode].names[currentPlayer]}, à toi ! ` : ""
@@ -2979,12 +2912,17 @@
 
       // Une grille régulière dont chaque point est tiré vers le trou noir,
       // surtout à une centaine de pixels de lui : elle semble se creuser en
-      // entonnoir. Le dégradé du trait l'éclaire près du disque.
+      // entonnoir. Le dégradé du trait l'éclaire près du disque et s'éteint
+      // à GLOW pixels : la grille s'arrête là, et au bord de l'écran.
+      let drawnFor = "" // largeur et trou noir de la grille dessinée
+
       function drawSpacetime() {
-        const space = $("spacetime")
         const width = document.documentElement.clientWidth
-        const hole = centerOf($("holeCore"))
-        const height = Math.ceil(hole.y + 760)
+        const hole = holeCenter()
+        const key = `${width} ${hole.x} ${hole.y}`
+        if (key === drawnFor) return
+        drawnFor = key
+        const GLOW = 560
         const STEP = 30
         const REACH = 150
         const PULL = 52
@@ -2995,26 +2933,92 @@
           const pull = PULL * (r / REACH) * Math.exp(1 - r / REACH)
           return `${(x - (dx / r) * pull).toFixed(1)},${(y - (dy / r) * pull).toFixed(1)}`
         }
+        // Un trait de `from` à `to` (en px depuis le trou), point par point.
+        const line = (from, to, at) => {
+          const points = []
+          for (let t = from; t < to; t += 10) points.push(at(t))
+          points.push(at(to))
+          return from < to ? `M${points.join("L")}` : ""
+        }
         const lines = []
-        const x0 = (hole.x % STEP) - STEP
-        const y0 = (hole.y % STEP) - STEP
-        for (let y = y0; y <= height; y += STEP) {
-          const points = []
-          for (let x = -10; x <= width + 10; x += 8) points.push(warp(x, y))
-          lines.push(`M${points.join("L")}`)
+        for (let d = -GLOW; d <= GLOW; d += STEP) {
+          const half = Math.sqrt(GLOW * GLOW - d * d)
+          // La grille est tirée vers le trou : des traits un peu hors de
+          // l'écran peuvent y entrer.
+          const left = Math.max(-half, -hole.x - PULL)
+          const right = Math.min(half, width - hole.x + PULL)
+          lines.push(
+            line(left, right, (t) => warp(hole.x + t, hole.y + d)),
+            d < left || d > right
+              ? ""
+              : line(Math.max(-half, -hole.y), half, (t) =>
+                  warp(hole.x + d, hole.y + t),
+                ),
+          )
         }
-        for (let x = x0; x <= width + STEP; x += STEP) {
-          const points = []
-          for (let y = -10; y <= height; y += 8) points.push(warp(x, y))
-          lines.push(`M${points.join("L")}`)
-        }
+        const space = $("spacetime")
+        const height = Math.ceil(hole.y + GLOW)
         space.setAttribute("viewBox", `0 0 ${width} ${height}`)
         space.style.height = `${height}px`
         $("grid").setAttribute("d", lines.join(""))
         const glow = $("g-grid")
         glow.setAttribute("cx", hole.x)
         glow.setAttribute("cy", hole.y)
-        glow.setAttribute("r", 560)
+        glow.setAttribute("r", GLOW)
+      }
+
+      // Le disque d'accrétion, peint une fois : du blanc au rouge en
+      // s'éloignant du centre, des stries plus claires et plus sombres pour
+      // qu'on le voie tourner, transparent sur l'ombre et vers le bord. Ses
+      // deux moitiés tournent avec cette même image, sans masque à
+      // recalculer à chaque image.
+      function paintDisk() {
+        const size = 380
+        const r = size / 2
+        const canvas = document.createElement("canvas")
+        canvas.width = canvas.height = size
+        const ctx = canvas.getContext("2d")
+        const glow = ctx.createRadialGradient(r, r, 0, r, r, r)
+        ;[
+          [0.12, "#fffcf4"],
+          [0.18, "#ffe6b0"],
+          [0.28, "#ffb764"],
+          [0.44, "#f27d32"],
+          [0.66, "#b23a0e"],
+          [1, "#3d0d00"],
+        ].forEach(([offset, color]) => glow.addColorStop(offset, color))
+        ctx.fillStyle = glow
+        ctx.fillRect(0, 0, size, size)
+        const image = ctx.getImageData(0, 0, size, size)
+        const data = image.data
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const dx = x + 0.5 - r
+            const dy = y + 0.5 - r
+            const d = Math.hypot(dx, dy) / r
+            const angle = Math.atan2(dy, dx)
+            const streak =
+              1 + 0.35 * Math.sin(3 * angle) + 0.2 * Math.sin(7 * angle + 1)
+            const alpha =
+              d < 0.11
+                ? 0
+                : d < 0.14
+                  ? (d - 0.11) / 0.03
+                  : d < 0.34
+                    ? 1
+                    : Math.max(0, 1 - (d - 0.34) / 0.66) ** 1.5
+            const i = (y * size + x) * 4
+            data[i] *= streak
+            data[i + 1] *= streak
+            data[i + 2] *= streak
+            data[i + 3] = 255 * alpha
+          }
+        }
+        ctx.putImageData(image, 0, 0)
+        const url = `url(${canvas.toDataURL()})`
+        document.querySelectorAll(".disk-spin").forEach((disk) => {
+          disk.style.backgroundImage = url
+        })
       }
 
       // ----- Démarrage -----
@@ -3031,6 +3035,7 @@
       })
 
       buildBoard()
+      paintDisk()
       // Six cases par joueur, qui se remplissent des billes qu'il a fait
       // tomber.
       for (const player of [BLACK, WHITE]) {
