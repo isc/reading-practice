@@ -3,10 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f0f2f5" />
+    <meta name="theme-color" content="#0b0806" />
     <title>Abalone</title>
     <script src="exit-guard.js"></script>
     <style>
+      /* Gravité : le plateau est une dalle qui flotte en apesanteur, au bord
+         d'un trou noir. Les billes choisies décollent ; une bille poussée
+         hors du plateau est happée, tombe en spirale dans le disque de
+         lumière du trou noir et disparaît derrière son horizon. La grille de
+         l'espace-temps se creuse autour de lui. */
+
+      @font-face {
+        font-family: "Syne";
+        src: url("Syne-Variable.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Lexend";
+        src: url("Lexend-Variable.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+
+      :root {
+        --void: #0b0806;
+        --text: #f6ead9;
+        --muted: #bfa892;
+        --amber: #ffb35c;
+        --ice: #9be8ff;
+        --red: #ff5a5f;
+        --glass: rgba(18, 12, 9, 0.66);
+        --edge: rgba(255, 196, 140, 0.16);
+        --title: "Syne", "Trebuchet MS", system-ui, sans-serif;
+        --font: "Lexend", system-ui, sans-serif;
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -14,206 +47,456 @@
       }
 
       body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial,
-          sans-serif;
-        background: #f0f2f5;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding: 20px;
+        font-family: var(--font);
+        color: var(--text);
+        background: var(--void);
+        overflow-x: hidden;
         -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
         user-select: none;
+        -webkit-touch-callout: none;
       }
 
-      .container {
-        background: white;
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        max-width: 480px;
+      button {
+        font-family: inherit;
+        color: inherit;
+        border: none;
+        background: none;
+        cursor: pointer;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* ===== L'espace-temps : une grille creusée par le trou noir,
+         éclairée par son disque. Dessinée une fois, elle ne bouge pas. ===== */
+
+      .spacetime {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      .app {
+        position: relative;
+        max-width: 480px;
+        margin: 0 auto;
+        padding: calc(6px + env(safe-area-inset-top)) 12px
+          calc(24px + env(safe-area-inset-bottom));
+      }
+
+      .top {
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        align-items: center;
+        height: 48px;
       }
 
       h1 {
+        grid-column: 2;
         text-align: center;
-        color: #1a1a1a;
-        margin-bottom: 5px;
-        font-size: 1.6em;
-        font-weight: 700;
+        font-family: var(--title);
+        font-weight: 800;
+        font-size: 30px;
+        letter-spacing: 0.01em;
+        line-height: 1;
+        color: #ffe2b8;
+        background: linear-gradient(180deg, #fff4e2 20%, #ffb35c 95%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
       }
 
-      .subtitle {
-        text-align: center;
-        color: #666;
-        margin-bottom: 20px;
-        font-size: 0.85em;
+      .icon-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 220, 180, 0.07);
+        border: 1px solid var(--edge);
+      }
+
+      .icon-btn svg {
+        width: 22px;
+        height: 22px;
       }
 
       /* ===== Mode de jeu ===== */
 
-      .mode-select {
+      .modes {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        margin-bottom: 15px;
+        gap: 6px;
+        margin: 6px 0 4px;
       }
 
-      .segmented {
+      .seg {
         display: flex;
-        background: #f0f2f5;
-        border-radius: 10px;
-        padding: 4px;
-        gap: 4px;
+        gap: 3px;
+        padding: 3px;
+        border-radius: 999px;
+        background: rgba(255, 220, 180, 0.06);
+        border: 1px solid var(--edge);
       }
 
-      .segmented button {
+      .seg button {
         flex: 1;
-        border: none;
-        background: transparent;
-        border-radius: 8px;
-        padding: 10px 6px;
-        font-size: 0.95em;
+        padding: 9px 6px;
+        border-radius: 999px;
+        font-size: 14px;
         font-weight: 600;
-        color: #555;
-        cursor: pointer;
-        font-family: inherit;
+        color: var(--muted);
       }
 
-      .segmented button.active {
-        background: #4a90e2;
-        color: white;
+      .seg button.active {
+        background: #f3e3cc;
+        color: #1c120b;
       }
 
-      .segmented.levels button {
-        padding: 8px 6px;
-        font-size: 0.85em;
+      .seg.levels button {
+        padding: 7px 6px;
+        font-size: 13px;
       }
 
-      /* ===== Tour et billes sorties ===== */
+      /* ===== La barre : le trou noir au milieu, les joueurs de chaque côté.
+         Chaque joueur voit se remplir les six cases des billes qu'il a fait
+         tomber. ===== */
 
-      .turn-indicator {
-        background: #f8f9fa;
-        border-radius: 15px;
-        padding: 12px 15px;
-        margin-bottom: 10px;
+      .bar {
+        display: grid;
+        grid-template-columns: 1fr 112px 1fr;
+        align-items: center;
+        height: 96px;
+      }
+
+      .side {
+        position: relative;
+        z-index: 8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 4px 9px;
+        border-radius: 18px;
+        background: rgba(14, 9, 7, 0.45);
+        border: 1px solid transparent;
+        transition:
+          border-color 0.3s,
+          box-shadow 0.3s;
+      }
+
+      .side.active {
+        border-color: rgba(255, 190, 120, 0.75);
+        box-shadow:
+          0 0 0 1px rgba(255, 190, 120, 0.25),
+          0 0 22px rgba(255, 140, 60, 0.28);
+      }
+
+      .who {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 10px;
+        gap: 7px;
+        font-size: 14px;
         font-weight: 600;
-        color: #555;
+        color: var(--muted);
+        transition: color 0.3s;
       }
 
-      .turn-indicator.thinking #turnLabel::after {
-        content: "";
-        animation: dots 1.2s steps(4) infinite;
+      .side.active .who {
+        color: var(--text);
       }
 
-      @keyframes dots {
-        0% {
-          content: "";
-        }
-        25% {
-          content: ".";
-        }
-        50% {
-          content: "..";
-        }
-        75% {
-          content: "...";
-        }
-      }
-
-      .turn-token {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 2px solid rgba(0, 0, 0, 0.15);
+      .token {
+        width: 22px;
+        height: 22px;
         flex-shrink: 0;
+        overflow: visible;
       }
 
-      .turn-token.black,
-      .slot.black {
-        background: radial-gradient(circle at 35% 30%, #5a5a5a, #111 70%);
+      .side.thinking .token {
+        animation: think 1s ease-in-out infinite alternate;
       }
 
-      .turn-token.white,
-      .slot.white {
-        background: radial-gradient(circle at 35% 30%, #fff, #d4d4d4 70%);
-        border-color: #bbb;
-      }
-
-      .captures-title {
-        text-align: center;
-        font-size: 0.7em;
-        font-weight: 600;
-        color: #999;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 6px;
-      }
-
-      .captures {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-
-      .capture-cell {
-        flex: 1;
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 8px 6px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .capture-name {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.85em;
-        font-weight: 600;
-        color: #1a1a1a;
-      }
-
-      .capture-name .turn-token {
-        width: 18px;
-        height: 18px;
-        border-width: 1px;
+      @keyframes think {
+        to {
+          opacity: 0.35;
+        }
       }
 
       .slots {
         display: flex;
-        gap: 4px;
+        gap: 3px;
       }
 
       .slot {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         border-radius: 50%;
-        border: 2px dashed #cbd5e1;
+        border: 1.5px dashed rgba(255, 200, 150, 0.3);
+        transition: border-color 0.3s;
       }
 
-      .slot.black,
-      .slot.white {
-        border-style: solid;
-        border-width: 1px;
-        animation: pop 0.35s ease-out;
+      .slot svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        opacity: 0;
+        transform: scale(0.3);
+        transition:
+          opacity 0.3s,
+          transform 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
       }
 
-      .slot.black {
-        border-color: rgba(0, 0, 0, 0.3);
+      .slot.full {
+        border-color: transparent;
+      }
+
+      .slot.full svg {
+        opacity: 1;
+        transform: scale(1.15);
+      }
+
+      /* ----- Le trou noir : un disque qui tourne, vu de biais, dont la
+         moitié arrière passe derrière l'ombre et la moitié avant devant ;
+         autour de l'ombre, l'anneau de lumière que la gravité courbe. Une
+         bille qui tombe passe derrière l'ombre (z-index 5) ou devant
+         (z-index 9), selon le côté du disque où elle se trouve. ----- */
+
+      .hole {
+        position: relative;
+        height: 96px;
+      }
+
+      .hole > * {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        pointer-events: none;
+      }
+
+      .disk {
+        width: 380px;
+        height: 26px;
+        margin-left: -190px;
+        overflow: hidden;
+      }
+
+      .disk.back {
+        z-index: 4;
+        margin-top: -26px;
+      }
+
+      .disk.front {
+        z-index: 7;
+      }
+
+      .disk-tilt {
+        position: absolute;
+        left: 0;
+        width: 380px;
+        height: 380px;
+        transform: scaleY(0.13);
+      }
+
+      .back .disk-tilt {
+        top: -164px;
+      }
+
+      .front .disk-tilt {
+        top: -190px;
+      }
+
+      .disk-spin {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(
+            rgba(255, 248, 230, 0.55),
+            rgba(255, 248, 230, 0) 20deg,
+            rgba(50, 8, 0, 0.5) 55deg,
+            rgba(50, 8, 0, 0) 90deg,
+            rgba(255, 238, 205, 0.45) 125deg,
+            rgba(255, 238, 205, 0) 155deg,
+            rgba(50, 8, 0, 0.4) 200deg,
+            rgba(50, 8, 0, 0) 235deg,
+            rgba(255, 242, 218, 0.5) 280deg,
+            rgba(255, 242, 218, 0) 318deg,
+            rgba(255, 248, 230, 0.55)
+          ),
+          radial-gradient(
+            closest-side,
+            #fffcf4 12%,
+            #ffe6b0 18%,
+            #ffb764 28%,
+            #f27d32 44%,
+            #b23a0e 66%,
+            #3d0d00
+          );
+        -webkit-mask-image: radial-gradient(
+          closest-side,
+          transparent 11%,
+          #000 14%,
+          #000 34%,
+          rgba(0, 0, 0, 0.5) 60%,
+          transparent 100%
+        );
+        mask-image: radial-gradient(
+          closest-side,
+          transparent 11%,
+          #000 14%,
+          #000 34%,
+          rgba(0, 0, 0, 0.5) 60%,
+          transparent 100%
+        );
+        animation: spin 14s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .halo {
+        z-index: 4;
+        width: 128px;
+        height: 128px;
+        margin: -64px 0 0 -64px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle closest-side,
+          transparent 31%,
+          rgba(255, 170, 90, 0.6) 35%,
+          rgba(255, 120, 50, 0.22) 55%,
+          transparent
+        );
+      }
+
+      .halo.flash {
+        opacity: 0;
+        background: radial-gradient(
+          circle closest-side,
+          transparent 31%,
+          #fff 35%,
+          rgba(255, 230, 190, 0.85) 48%,
+          rgba(255, 170, 90, 0.3) 72%,
+          transparent
+        );
+      }
+
+      /* L'anneau de lumière que la gravité courbe tout autour de l'ombre :
+         l'arrière du disque, vu par-dessus le trou, le rend plus vif en
+         haut. */
+      .lens {
+        z-index: 4;
+        width: 60px;
+        height: 60px;
+        margin: -30px 0 0 -30px;
+        border-radius: 50%;
+        background: conic-gradient(
+          #fffaf0,
+          #ffc070 70deg,
+          rgba(255, 140, 60, 0.55) 130deg,
+          rgba(255, 140, 60, 0.35) 180deg,
+          rgba(255, 140, 60, 0.55) 230deg,
+          #ffc070 290deg,
+          #fffaf0
+        );
+        -webkit-mask-image: radial-gradient(
+          closest-side,
+          transparent 66%,
+          #000 72%,
+          #000 80%,
+          transparent 100%
+        );
+        mask-image: radial-gradient(
+          closest-side,
+          transparent 66%,
+          #000 72%,
+          #000 80%,
+          transparent 100%
+        );
+      }
+
+      .core {
+        z-index: 6;
+        width: 42px;
+        height: 42px;
+        margin: -21px 0 0 -21px;
+        border-radius: 50%;
+        background: #000;
+      }
+
+      .shock {
+        z-index: 7;
+        width: 60px;
+        height: 60px;
+        margin: -30px 0 0 -30px;
+        border-radius: 50%;
+        border: 3px solid #ffe2b0;
+        opacity: 0;
+      }
+
+      /* Poussières happées : elles tournent en spirale dans le plan du
+         disque avant de disparaître. */
+      .motes {
+        z-index: 4;
+        transform: scaleY(0.3);
+      }
+
+      .motes > div {
+        position: absolute;
+      }
+
+      .mote {
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        margin: -2.5px;
+        border-radius: 50%;
+        background: #ffd9a0;
+        opacity: 0;
+        animation: inspiral linear infinite;
+      }
+
+      @keyframes inspiral {
+        from {
+          transform: rotate(0deg) translateX(118px);
+          opacity: 0;
+        }
+        25% {
+          opacity: 0.9;
+        }
+        85% {
+          opacity: 0.8;
+        }
+        to {
+          transform: rotate(600deg) translateX(24px);
+          opacity: 0;
+        }
       }
 
       /* ===== Plateau ===== */
 
-      .board-wrapper {
-        margin: 4px 0 8px;
+      .board-wrap {
+        position: relative;
+        margin: 2px -6px 0;
+      }
+
+      .board-float {
+        animation: drift 8s ease-in-out infinite;
+      }
+
+      @keyframes drift {
+        50% {
+          transform: translateY(-6px);
+        }
       }
 
       #board {
@@ -223,101 +506,141 @@
         overflow: visible;
         cursor: pointer;
         touch-action: manipulation;
-        -webkit-touch-callout: none;
       }
 
       #board.locked {
         cursor: default;
       }
 
-      .tray {
-        fill: url(#tray-wood);
-        stroke: #8a5a2b;
-        stroke-width: 16;
+      .slab {
+        fill: url(#g-slab);
+      }
+
+      .slab-sheen {
+        fill: url(#g-sheen);
+      }
+
+      .slab-rim {
+        fill: none;
+        stroke: url(#g-slab-rim);
+        stroke-width: 7;
         stroke-linejoin: round;
       }
 
-      .hole {
-        fill: #a3703f;
-        stroke: rgba(0, 0, 0, 0.12);
-        stroke-width: 3;
+      .slab-shade {
+        fill: url(#g-shade);
+      }
+
+      .slab-side {
+        fill: url(#g-slab-side);
+      }
+
+      .hole-cell {
+        fill: url(#g-dimple);
+        stroke: rgba(220, 235, 255, 0.18);
+        stroke-width: 2.5;
       }
 
       .trail-dot {
         fill: none;
-        stroke: rgba(255, 255, 255, 0.85);
-        stroke-width: 6;
-        stroke-dasharray: 10 8;
+        stroke: rgba(255, 222, 185, 0.55);
+        stroke-width: 5;
+        stroke-dasharray: 9 9;
       }
 
       .marble {
-        transition: transform 0.35s ease;
+        transition: transform 0.45s cubic-bezier(0.3, 1.25, 0.5, 1);
       }
 
       .marble-shadow {
-        fill: rgba(0, 0, 0, 0.28);
+        fill: rgba(0, 0, 0, 0.5);
+        transform-box: fill-box;
+        transform-origin: center;
+        transition:
+          transform 0.3s,
+          opacity 0.3s;
       }
 
-      .marble.black .marble-body {
-        fill: url(#marble-black);
+      /* Les billes choisies décollent : elles montent, grossissent un peu,
+         leur ombre rétrécit et un halo glacé les tient en l'air. */
+      .lift {
+        transition: transform 0.3s cubic-bezier(0.3, 1.5, 0.5, 1);
       }
 
-      .marble.white .marble-body {
-        fill: url(#marble-white);
-        stroke: rgba(0, 0, 0, 0.18);
-        stroke-width: 2;
+      .field {
+        fill: url(#g-field);
+        opacity: 0;
+        transition: opacity 0.3s;
       }
 
       .marble-ring {
         fill: none;
-        stroke-width: 9;
+        stroke-width: 6;
         opacity: 0;
       }
 
-      .marble.selected .marble-ring {
-        stroke: #4a90e2;
+      .marble.selected .lift {
+        transform: translateY(-12px) scale(1.12);
+      }
+
+      .marble.selected .bob {
+        animation: hover 1.8s ease-in-out infinite alternate;
+      }
+
+      @keyframes hover {
+        to {
+          transform: translateY(-4px);
+        }
+      }
+
+      .marble.selected .marble-shadow {
+        transform: translate(9px, 16px) scale(0.78);
+        opacity: 0.4;
+      }
+
+      .marble.selected .field {
         opacity: 1;
       }
 
-      /* Billes adverses que la flèche orange pousserait (ou ferait sortir). */
+      .marble.selected .marble-ring {
+        stroke: var(--ice);
+        opacity: 1;
+      }
+
+      /* Billes adverses que la flèche ambre pousserait. */
       .marble.pushed .marble-ring {
-        stroke: #f59e0b;
+        stroke: var(--amber);
         stroke-dasharray: 16 10;
         opacity: 1;
       }
 
+      /* Celle que la flèche rouge ferait tomber : elle penche déjà vers le
+         vide (animation lancée en JS, dans la direction de la chute). */
       .marble.falling .marble-ring {
-        stroke: #e53e3e;
+        stroke: var(--red);
+        stroke-dasharray: none;
       }
 
-      .marble.out {
-        transition:
-          transform 0.6s ease-in,
-          opacity 0.6s ease-in;
-        opacity: 0;
-      }
-
-      .arrow circle {
-        stroke: white;
-        stroke-width: 5;
+      .arrow .glow {
+        opacity: 0.3;
       }
 
       .arrow.move circle {
-        fill: #4a90e2;
+        fill: var(--ice);
       }
 
       .arrow.push circle {
-        fill: #f59e0b;
+        fill: var(--amber);
       }
 
       .arrow.eject circle {
-        fill: #e53e3e;
+        fill: var(--red);
       }
 
       .arrow path {
         fill: none;
-        stroke: white;
-        stroke-width: 9;
+        stroke: #1a0f08;
+        stroke-width: 10;
         stroke-linecap: round;
         stroke-linejoin: round;
       }
@@ -325,7 +648,7 @@
       .arrow-pop {
         transform-box: fill-box;
         transform-origin: center;
-        animation: pop 0.2s ease-out;
+        animation: pop 0.22s ease-out;
       }
 
       @keyframes pop {
@@ -339,73 +662,308 @@
         }
       }
 
-      @media (prefers-reduced-motion: reduce) {
-        .marble,
-        .marble.out {
-          transition: none;
+      .veil {
+        fill: rgba(8, 5, 4, 0.8);
+        opacity: 0;
+        transition: opacity 0.5s;
+        pointer-events: none;
+      }
+
+      #board.ended .veil {
+        opacity: 1;
+      }
+
+      /* ===== Les billes qui tombent, au-dessus de la page ===== */
+
+      /* Sans z-index : chaque bille qui tombe passe, selon le moment,
+         devant ou derrière l'ombre du trou noir. */
+      .flyers {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+      }
+
+      .sparks {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 9;
+        pointer-events: none;
+      }
+
+      .flyer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 9;
+        will-change: transform;
+      }
+
+      .flyer svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      /* La bille chauffe en approchant du disque. */
+      .heat {
+        position: absolute;
+        inset: 6%;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 40% 35%,
+          #fff1d0,
+          #ff9a45 50%,
+          #c8361a 92%,
+          transparent 94%
+        );
+        opacity: 0;
+      }
+
+      .spark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 12px;
+        height: 12px;
+        margin: -6px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #fff 20%, #ffc070 50%, transparent);
+      }
+
+      /* ===== Fin de partie : une carte posée sur la dalle voilée ===== */
+
+      .end {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .end-card {
+        width: min(260px, 74%);
+        text-align: center;
+        animation: rise 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(16px) scale(0.92);
         }
       }
 
-      .hint {
-        text-align: center;
-        color: #555;
-        font-size: 0.9em;
-        line-height: 1.35;
-        min-height: 2.7em;
-        margin-bottom: 12px;
+      .end-marble {
+        width: 76px;
+        height: 76px;
+        margin: 0 auto 10px;
+        overflow: visible;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle closest-side,
+          rgba(255, 190, 120, 0.45),
+          rgba(255, 150, 70, 0.12) 75%,
+          transparent
+        );
+        animation: hover 2.2s ease-in-out infinite alternate;
       }
 
-      /* ===== Boutons, messages, règles, scores ===== */
+      .end-title {
+        font-family: var(--title);
+        font-weight: 800;
+        font-size: 24px;
+        line-height: 1.15;
+        color: #fff1dc;
+      }
+
+      .end-sub {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .end-score {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin: 12px 0 16px;
+        font-family: var(--title);
+        font-weight: 700;
+        font-size: 26px;
+      }
+
+      .end-score svg {
+        width: 22px;
+        height: 22px;
+        overflow: visible;
+      }
+
+      .end-score .sep {
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      /* ===== Texte, boutons, règles, scores ===== */
+
+      .hint {
+        min-height: 2.8em;
+        margin: 6px 4px 8px;
+        text-align: center;
+        font-size: 15px;
+        line-height: 1.4;
+        color: var(--muted);
+      }
+
+      .dots i {
+        font-style: normal;
+        animation: think 0.6s ease-in-out infinite alternate;
+      }
+
+      .dots i:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      .dots i:nth-child(3) {
+        animation-delay: 0.4s;
+      }
 
       .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
         width: 100%;
-        padding: 15px;
-        border: none;
-        border-radius: 10px;
-        font-size: 1.1em;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        margin-bottom: 10px;
-        font-family: inherit;
+        padding: 14px;
+        border-radius: 999px;
+        font-family: var(--title);
+        font-weight: 700;
+        font-size: 17px;
+        letter-spacing: 0.02em;
+        background: rgba(255, 220, 180, 0.07);
+        border: 1.5px solid rgba(255, 200, 150, 0.35);
       }
 
-      .btn-new {
-        background: #1a1a1a;
-        color: white;
+      .btn.primary {
+        background: linear-gradient(180deg, #ffe0a6, #ffa24f);
+        border-color: transparent;
+        color: #1c0f07;
+      }
+
+      .btn svg {
+        width: 20px;
+        height: 20px;
       }
 
       @media (hover: hover) {
-        .btn-new:hover {
-          background: #333;
+        .btn:hover {
+          border-color: rgba(255, 200, 150, 0.7);
+        }
+
+        .seg button:not(.active):hover {
+          color: var(--text);
         }
       }
 
-      .message {
+      .panel {
+        margin-top: 18px;
+        padding: 16px;
+        border-radius: 18px;
+        background: var(--glass);
+        border: 1px solid var(--edge);
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      .panel h3 {
+        margin-bottom: 10px;
+        font-family: var(--title);
+        font-weight: 700;
+        font-size: 17px;
+        color: var(--text);
+      }
+
+      .rules ul {
+        list-style: none;
+      }
+
+      .rules li {
+        position: relative;
+        padding-left: 18px;
+        margin-bottom: 7px;
+      }
+
+      .rules li::before {
+        content: "";
+        position: absolute;
+        left: 2px;
+        top: 0.55em;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--amber);
+      }
+
+      .rules strong {
+        color: var(--text);
+      }
+
+      .dot {
+        display: inline-block;
+        width: 0.85em;
+        height: 0.85em;
+        border-radius: 50%;
+        vertical-align: -0.08em;
+      }
+
+      .dot.move {
+        background: var(--ice);
+      }
+
+      .dot.push {
+        background: var(--amber);
+      }
+
+      .dot.eject {
+        background: var(--red);
+      }
+
+      .score-row {
+        display: flex;
+        justify-content: space-around;
+      }
+
+      .score-cell {
         text-align: center;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        font-weight: 600;
-        animation: slideIn 0.5s ease;
       }
 
-      .message.win-black {
-        background: #e2e8f0;
-        color: #1a1a1a;
+      .score-cell .label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 4px;
+        font-size: 13px;
       }
 
-      .message.win-white {
-        background: #fef9c3;
-        color: #713f12;
+      .score-cell .token {
+        width: 18px;
+        height: 18px;
       }
 
-      .message.lose {
-        background: #fed7d7;
-        color: #742a2a;
+      .score-cell .value {
+        font-family: var(--title);
+        font-weight: 800;
+        font-size: 26px;
+        color: var(--text);
       }
 
-      /* Petite annonce en bas de l'écran : contrairement aux messages, elle
+      /* Petite annonce en bas de l'écran : contrairement à un message, elle
          ne décale pas le plateau sous le doigt en pleine partie. */
       .toast {
         position: fixed;
@@ -417,107 +975,14 @@
         max-width: calc(100% - 2rem);
         padding: 0.75rem 1.1rem;
         border-radius: 999px;
-        background: #1f2933;
-        color: #fff;
+        background: #1d140e;
+        border: 1px solid rgba(255, 190, 120, 0.45);
+        color: var(--text);
         font-size: 0.95rem;
         font-weight: 600;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(16, 24, 40, 0.2);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
         pointer-events: none;
-      }
-
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .rules {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 15px;
-        margin: 10px 0 20px;
-        font-size: 0.85em;
-        color: #666;
-      }
-
-      .rules h3 {
-        color: #1a1a1a;
-        margin-bottom: 10px;
-        font-size: 0.95em;
-      }
-
-      .rules ul {
-        margin-left: 20px;
-      }
-
-      .rules li {
-        margin-bottom: 5px;
-      }
-
-      .dot {
-        display: inline-block;
-        width: 0.8em;
-        height: 0.8em;
-        border-radius: 50%;
-        vertical-align: -0.05em;
-      }
-
-      .dot.move {
-        background: #4a90e2;
-      }
-
-      .dot.push {
-        background: #f59e0b;
-      }
-
-      .dot.eject {
-        background: #e53e3e;
-      }
-
-      .scoreboard h3 {
-        color: #1a1a1a;
-        margin-bottom: 10px;
-        font-size: 0.95em;
-      }
-
-      .score-row {
-        display: flex;
-        justify-content: space-around;
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 15px;
-      }
-
-      .score-cell {
-        text-align: center;
-      }
-
-      .score-cell .label {
-        font-size: 0.8em;
-        color: #999;
-        margin-bottom: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-      }
-
-      .score-cell .label .turn-token {
-        width: 16px;
-        height: 16px;
-        border-width: 1px;
-      }
-
-      .score-cell .value {
-        font-size: 1.4em;
-        font-weight: 700;
-        color: #1a1a1a;
       }
 
       canvas#confetti {
@@ -530,99 +995,261 @@
         z-index: 1000;
       }
 
-      /* Sur téléphone, on rogne les marges pour donner la place au plateau :
-         les billes y sont déjà petites sous le doigt. */
-      @media (max-width: 480px) {
-        body {
-          padding: 10px 8px;
+      @media (prefers-reduced-motion: reduce) {
+        .disk-spin,
+        .mote,
+        .board-float,
+        .marble.selected .bob,
+        .end-marble,
+        .end-card {
+          animation: none;
         }
 
-        .container {
-          padding: 18px 10px;
+        .mote {
+          display: none;
         }
 
-        .subtitle {
-          margin-bottom: 14px;
+        .marble,
+        .lift {
+          transition: none;
         }
       }
     </style>
   </head>
   <body>
     <canvas id="confetti"></canvas>
-    <div class="container">
-      <h1>🎱 Abalone</h1>
-      <p class="subtitle">Pousse 6 billes adverses hors du plateau</p>
+    <svg class="spacetime" id="spacetime" aria-hidden="true">
+      <defs>
+        <radialGradient id="g-grid" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#ffb35c" stop-opacity="0" />
+          <stop offset="0.05" stop-color="#ffc27a" stop-opacity="0.7" />
+          <stop offset="0.2" stop-color="#ff9a4a" stop-opacity="0.32" />
+          <stop offset="0.5" stop-color="#ff9a4a" stop-opacity="0.09" />
+          <stop offset="1" stop-color="#ff9a4a" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <path id="grid" fill="none" stroke="url(#g-grid)" stroke-width="1" />
+    </svg>
 
-      <div class="mode-select">
-        <div class="segmented" id="modeSelect">
-          <button type="button" data-mode="2p">👫 2 joueurs</button>
-          <button type="button" data-mode="ia">🤖 Contre l'ordi</button>
+    <main class="app" id="app">
+      <header class="top">
+        <h1>Abalone</h1>
+        <button
+          class="icon-btn"
+          id="soundBtn"
+          aria-label="Petits sons"
+          aria-pressed="true"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"
+              fill="currentColor"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+            />
+            <g id="soundOn" stroke-width="2" stroke-linecap="round">
+              <path d="M15.5 9a4 4 0 0 1 0 6" />
+              <path d="M18 6.5a7.5 7.5 0 0 1 0 11" />
+            </g>
+            <g
+              id="soundOff"
+              stroke-width="2"
+              stroke-linecap="round"
+              class="hidden"
+            >
+              <path d="M16 9.5l5 5M21 9.5l-5 5" />
+            </g>
+          </svg>
+        </button>
+      </header>
+
+      <div class="modes">
+        <div class="seg" id="modeSelect">
+          <button type="button" data-mode="2p">À deux</button>
+          <button type="button" data-mode="ia">Contre l'ordi</button>
         </div>
-        <div class="segmented levels" id="levelSelect">
-          <button type="button" data-level="facile">😊 Facile</button>
-          <button type="button" data-level="moyen">🙂 Moyen</button>
-          <button type="button" data-level="difficile">😎 Difficile</button>
+        <div class="seg levels" id="levelSelect">
+          <button type="button" data-level="facile">Facile</button>
+          <button type="button" data-level="moyen">Moyen</button>
+          <button type="button" data-level="difficile">Difficile</button>
         </div>
       </div>
 
-      <div id="message"></div>
-
-      <div class="turn-indicator" id="turnIndicator">
-        <span id="turnPrefix">Au tour de</span>
-        <div class="turn-token black" id="turnToken"></div>
-        <span id="turnLabel">Noir</span>
-      </div>
-
-      <p class="captures-title">Billes sorties</p>
-      <div class="captures">
-        <div class="capture-cell">
-          <div class="capture-name">
-            <div class="turn-token black"></div>
-            <span id="captureNameBlack">Noir</span>
+      <div class="bar">
+        <div class="side" id="side-black">
+          <div class="who">
+            <svg class="token" viewBox="-50 -50 100 100">
+              <use href="#m-black" />
+            </svg>
+            <span class="name">Noir</span>
           </div>
-          <div class="slots" id="slotsBlack"></div>
+          <div class="slots"></div>
         </div>
-        <div class="capture-cell">
-          <div class="capture-name">
-            <div class="turn-token white"></div>
-            <span id="captureNameWhite">Blanc</span>
+        <div class="hole" aria-hidden="true">
+          <div class="disk back">
+            <div class="disk-tilt"><div class="disk-spin"></div></div>
           </div>
-          <div class="slots" id="slotsWhite"></div>
+          <div class="halo"></div>
+          <div class="lens"></div>
+          <div class="halo flash" id="holeFlash"></div>
+          <div class="motes" id="motes"></div>
+          <div class="core" id="holeCore"></div>
+          <div class="disk front">
+            <div class="disk-tilt"><div class="disk-spin"></div></div>
+          </div>
+          <div class="shock" id="holeShock"></div>
+        </div>
+        <div class="side" id="side-white">
+          <div class="who">
+            <svg class="token" viewBox="-50 -50 100 100">
+              <use href="#m-white" />
+            </svg>
+            <span class="name">Blanc</span>
+          </div>
+          <div class="slots"></div>
         </div>
       </div>
 
-      <div class="board-wrapper">
-        <svg id="board" aria-label="Plateau d'Abalone">
-          <defs>
-            <radialGradient id="tray-wood" cx="0.5" cy="0.4" r="0.7">
-              <stop offset="0" stop-color="#dcb07a" />
-              <stop offset="1" stop-color="#bf8b52" />
-            </radialGradient>
-            <radialGradient id="marble-black" cx="0.36" cy="0.32" r="0.75">
-              <stop offset="0" stop-color="#777" />
-              <stop offset="0.35" stop-color="#2e2e2e" />
-              <stop offset="1" stop-color="#050505" />
-            </radialGradient>
-            <radialGradient id="marble-white" cx="0.36" cy="0.32" r="0.75">
-              <stop offset="0" stop-color="#fff" />
-              <stop offset="0.5" stop-color="#f1f1f1" />
-              <stop offset="1" stop-color="#bdbdbd" />
-            </radialGradient>
-          </defs>
-          <polygon class="tray" id="tray" />
-          <g id="holes"></g>
-          <g id="trail"></g>
-          <g id="marbles"></g>
-          <g id="arrows"></g>
-        </svg>
+      <div class="board-wrap">
+        <div class="board-float">
+          <svg id="board" aria-label="Plateau d'Abalone">
+            <defs>
+              <radialGradient id="g-obsidian" cx="0.36" cy="0.3" r="0.78">
+                <stop offset="0" stop-color="#9a867a" />
+                <stop offset="0.22" stop-color="#3d302a" />
+                <stop offset="0.7" stop-color="#120d0b" />
+                <stop offset="1" stop-color="#030201" />
+              </radialGradient>
+              <radialGradient id="g-pearl" cx="0.36" cy="0.3" r="0.8">
+                <stop offset="0" stop-color="#ffffff" />
+                <stop offset="0.4" stop-color="#f7efe4" />
+                <stop offset="0.8" stop-color="#cfbda8" />
+                <stop offset="1" stop-color="#9c856d" />
+              </radialGradient>
+              <!-- Le reflet du disque du trou noir, en haut de chaque bille. -->
+              <linearGradient id="g-rimlight" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#ffc47a" stop-opacity="0.95" />
+                <stop offset="0.3" stop-color="#ff9a4a" stop-opacity="0.3" />
+                <stop offset="0.5" stop-color="#ff9a4a" stop-opacity="0" />
+              </linearGradient>
+              <g id="m-black">
+                <circle r="45" fill="url(#g-obsidian)" />
+                <circle
+                  r="42"
+                  fill="none"
+                  stroke="url(#g-rimlight)"
+                  stroke-width="5"
+                />
+                <ellipse
+                  cx="-15"
+                  cy="-20"
+                  rx="11"
+                  ry="6"
+                  transform="rotate(-35 -15 -20)"
+                  fill="#fff"
+                  opacity="0.65"
+                />
+              </g>
+              <g id="m-white">
+                <circle r="45" fill="url(#g-pearl)" />
+                <circle
+                  r="42"
+                  fill="none"
+                  stroke="url(#g-rimlight)"
+                  stroke-width="4"
+                  opacity="0.55"
+                />
+                <ellipse
+                  cx="-15"
+                  cy="-20"
+                  rx="11"
+                  ry="6"
+                  transform="rotate(-35 -15 -20)"
+                  fill="#fff"
+                />
+              </g>
+              <linearGradient id="g-slab" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6c7582" />
+                <stop offset="0.5" stop-color="#515a66" />
+                <stop offset="1" stop-color="#3c434d" />
+              </linearGradient>
+              <radialGradient id="g-sheen" cx="0.5" cy="0" r="0.75">
+                <stop offset="0" stop-color="#ffb066" stop-opacity="0.22" />
+                <stop offset="1" stop-color="#ffb066" stop-opacity="0" />
+              </radialGradient>
+              <linearGradient id="g-slab-rim" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#ffd8a0" />
+                <stop offset="0.3" stop-color="#e08a45" stop-opacity="0.8" />
+                <stop offset="0.65" stop-color="#6d3c1f" stop-opacity="0.5" />
+                <stop offset="1" stop-color="#2a1a10" stop-opacity="0.5" />
+              </linearGradient>
+              <linearGradient id="g-slab-side" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#2b3038" />
+                <stop offset="1" stop-color="#101216" />
+              </linearGradient>
+              <radialGradient id="g-dimple" cx="0.5" cy="0.35" r="0.65">
+                <stop offset="0" stop-color="#1c2026" />
+                <stop offset="0.75" stop-color="#2a3038" />
+                <stop offset="1" stop-color="#7d8898" />
+              </radialGradient>
+              <radialGradient id="g-shade">
+                <stop offset="0.55" stop-color="#000" stop-opacity="0.75" />
+                <stop offset="1" stop-color="#000" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient id="g-field">
+                <stop offset="0.6" stop-color="#9be8ff" stop-opacity="0.55" />
+                <stop offset="1" stop-color="#9be8ff" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <ellipse class="slab-shade" id="slabShade" />
+            <polygon class="slab-side" id="slabSide" />
+            <polygon class="slab" id="slab" />
+            <polygon class="slab-sheen" id="slabSheen" />
+            <polygon class="slab-rim" id="slabRim" />
+            <g id="holes"></g>
+            <g id="trail"></g>
+            <g id="marbles"></g>
+            <g id="arrows"></g>
+            <polygon class="veil" id="veil" />
+          </svg>
+        </div>
+        <div class="end hidden" id="end">
+          <div class="end-card">
+            <svg class="end-marble" viewBox="-50 -50 100 100">
+              <use id="endMarble" href="#m-black" />
+            </svg>
+            <p class="end-title" id="endTitle"></p>
+            <p class="end-sub" id="endSub"></p>
+            <p class="end-score">
+              <svg viewBox="-50 -50 100 100"><use href="#m-black" /></svg>
+              <span id="endBlack">0</span>
+              <span class="sep">·</span>
+              <span id="endWhite">0</span>
+              <svg viewBox="-50 -50 100 100"><use href="#m-white" /></svg>
+            </p>
+            <button class="btn primary" id="againBtn">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M20 12a8 8 0 1 1-2.4-5.7" />
+                <path d="M20 4v5h-5" />
+              </svg>
+              Rejouer
+            </button>
+          </div>
+        </div>
       </div>
 
-      <p class="hint" id="hint"></p>
-      <p class="toast" id="toast" role="status" hidden></p>
+      <p class="hint" id="hint" aria-live="polite"></p>
 
-      <button class="btn btn-new" id="newGameBtn">Nouvelle partie</button>
+      <button class="btn" id="newGameBtn">Nouvelle partie</button>
 
-      <div class="rules">
+      <section class="panel rules">
         <h3>Règles du jeu</h3>
         <ul>
           <li>
@@ -633,11 +1260,11 @@
             d'une case, dans la direction de ton choix.
           </li>
           <li>
-            Touche tes billes pour les choisir (ou glisse le doigt sur une
-            rangée pour la prendre d'un coup), puis touche une
+            Touche tes billes pour les faire décoller (ou glisse le doigt sur
+            une rangée pour la prendre d'un coup), puis touche une
             <strong>flèche</strong> : <span class="dot move"></span> tu avances,
             <span class="dot push"></span> tu pousses,
-            <span class="dot eject"></span> tu sors une bille !
+            <span class="dot eject"></span> tu fais tomber une bille !
           </li>
           <li>
             Pour <strong>pousser</strong> les billes adverses, il faut être plus
@@ -645,41 +1272,51 @@
             contre 1 ou 3 contre 2.
           </li>
           <li>
-            Une bille poussée hors du plateau est <strong>sortie</strong>. On ne
-            peut jamais sortir ses propres billes.
+            Une bille poussée hors du plateau <strong>tombe</strong> dans le
+            trou noir. On ne peut jamais pousser ses propres billes dehors.
           </li>
           <li>
-            Le premier qui sort <strong>6 billes</strong> adverses gagne !
+            Le premier qui fait tomber <strong>6 billes</strong> adverses gagne
+            !
           </li>
           <li>
-            Contre l'ordi, tu as les billes <strong>noires</strong> ⚫ et
-            l'ordinateur les <strong>blanches</strong> ⚪
+            Contre l'ordi, tu as les billes <strong>noires</strong> et
+            l'ordinateur les <strong>blanches</strong>.
           </li>
         </ul>
-      </div>
+      </section>
 
-      <div class="scoreboard">
+      <section class="panel scoreboard">
         <h3 id="scoreTitle">Parties gagnées</h3>
         <div class="score-row">
           <div class="score-cell">
             <div class="label">
-              <div class="turn-token black"></div>
+              <svg class="token" viewBox="-50 -50 100 100">
+                <use href="#m-black" />
+              </svg>
               <span id="scoreLabelBlack">Noir</span>
             </div>
             <div class="value" id="scoreBlack">0</div>
           </div>
           <div class="score-cell">
             <div class="label">
-              <div class="turn-token white"></div>
+              <svg class="token" viewBox="-50 -50 100 100">
+                <use href="#m-white" />
+              </svg>
               <span id="scoreLabelWhite">Blanc</span>
             </div>
             <div class="value" id="scoreWhite">0</div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
+
+    <div class="flyers" id="flyers"></div>
+    <div class="sparks" id="sparks"></div>
+    <p class="toast" id="toast" role="status" hidden></p>
 
     <script src="confetti.js"></script>
+    <script src="voix.js"></script>
     <script>
       // ===== Moteur : plateau et règles =====
       // Tout ce bloc est du calcul pur (aucun accès à la page) : l'affichage
@@ -1113,9 +1750,12 @@
       }
       const SETTINGS_KEY = "abalone-settings"
       const GAME_KEY = "abalone-partie"
+      const SOUND_KEY = "abalone-sound"
       const GAME_VERSION = 1
-      // Pause avant la réponse de l'ordinateur, le temps de voir son coup.
+      // Pause avant la réponse de l'ordinateur, le temps de voir son coup,
+      // puis le temps de voir décoller les billes qu'il va jouer.
       const COMPUTER_DELAY = 600
+      const COMPUTER_SHOW = 450
 
       // Dessin : 100 unités entre deux billes voisines.
       const SVG_NS = "http://www.w3.org/2000/svg"
@@ -1123,9 +1763,11 @@
       const MARBLE_RADIUS = 45
       const HOLE_RADIUS = 30
       const ARROW_RADIUS = 38
-      // Bord de bois autour des billes extérieures, et son liseré.
+      // Bord de la dalle autour des billes extérieures, son liseré, et son
+      // épaisseur vue de biais.
       const TRAY_MARGIN = 62
-      const TRAY_RIM = 16
+      const TRAY_RIM = 8
+      const SLAB_DEPTH = 26
       const TRAY_RADIUS = RADIUS * UNIT + TRAY_MARGIN / Math.cos(Math.PI / 6)
       // Distance (en écarts entre billes) jusqu'où un tap vise une flèche,
       // ou une case.
@@ -1135,10 +1777,20 @@
       // un glissé.
       const TAP_SLOP = 0.35
 
-      const svg = document.getElementById("board")
-      const marblesLayer = document.getElementById("marbles")
-      const arrowsLayer = document.getElementById("arrows")
-      const trailLayer = document.getElementById("trail")
+      // La chute dans le trou noir. Le disque est vu de biais : un cercle
+      // de rayon r y devient une ellipse de r sur r × DISK_TILT.
+      const DISK_TILT = 0.2
+      const ORBIT = 92 // rayon (px) où la bille entre dans le disque
+      const TURNS = 1 // tours de spirale, en plus de ce qu'il faut pour finir en haut
+      const SPIRAL_MS = 1150
+      const STREAM_GAP = 110 // entre deux billes avalées en fin de partie
+
+      const $ = (id) => document.getElementById(id)
+      const svg = $("board")
+      const marblesLayer = $("marbles")
+      const arrowsLayer = $("arrows")
+      const trailLayer = $("trail")
+      const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)")
 
       let board = startingBoard()
       let lost = [0, 0, 0] // billes sorties, par couleur
@@ -1153,6 +1805,11 @@
       let trail = [] // cases quittées au dernier coup
       let marbleAt = [] // case → élément SVG de la bille
       let aiTimer = null
+      // Billes en route vers le trou noir, par couleur : leur case ne se
+      // remplit qu'une fois la bille avalée.
+      let pending = [0, 0, 0]
+      let effectTimers = []
+      let busyUntil = 0 // fin de la dernière chute en cours
 
       // ----- Réglages et sauvegarde -----
 
@@ -1257,8 +1914,134 @@
       }
 
       function updateScoreboard(scores = getScores()) {
-        document.getElementById("scoreBlack").textContent = scores.black
-        document.getElementById("scoreWhite").textContent = scores.white
+        $("scoreBlack").textContent = scores.black
+        $("scoreWhite").textContent = scores.white
+      }
+
+      // ----- Les sons : Web Audio, par le contexte de voix.js -----
+
+      let soundOn = true
+      try {
+        soundOn = localStorage.getItem(SOUND_KEY) !== "off"
+      } catch (e) {
+        // navigation privée : le son reste allumé
+      }
+
+      function sound(ms) {
+        return soundOn && window.Voice ? Voice.wake(ms) : null
+      }
+
+      function tone(ctx, freq, at, options = {}) {
+        if (!ctx) return
+        const { type = "sine", dur = 0.3, vol = 0.08, to = 0 } = options
+        const t = ctx.currentTime + at
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = type
+        osc.frequency.setValueAtTime(freq, t)
+        if (to) osc.frequency.exponentialRampToValueAtTime(to, t + dur)
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(vol, t + 0.012)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + dur + 0.05)
+      }
+
+      // Des billes qui décollent : un petit glissement vers l'aigu.
+      function playLift() {
+        tone(sound(400), 392, 0, { to: 784, dur: 0.16, vol: 0.05 })
+      }
+
+      function playMoveSound(pushes) {
+        const ctx = sound(600)
+        tone(ctx, 240, 0, { type: "triangle", to: 120, dur: 0.22, vol: 0.08 })
+        if (pushes) tone(ctx, 110, 0.05, { to: 55, dur: 0.3, vol: 0.2 })
+      }
+
+      function playBlocked() {
+        const ctx = sound(800)
+        tone(ctx, 196, 0, { dur: 0.22, vol: 0.12 })
+        tone(ctx, 165, 0.12, { dur: 0.3, vol: 0.1 })
+      }
+
+      // La chute : comme une pièce dans un entonnoir, un roulement qui monte
+      // et accélère jusqu'à l'horizon.
+      function playFall(ms) {
+        const ctx = sound(ms + 1500)
+        if (!ctx) return
+        const t = ctx.currentTime
+        const end = t + ms / 1000
+        const osc = ctx.createOscillator()
+        const lfo = ctx.createOscillator()
+        const depth = ctx.createGain()
+        const tremolo = ctx.createGain()
+        const gain = ctx.createGain()
+        osc.type = "triangle"
+        osc.frequency.setValueAtTime(150, t)
+        osc.frequency.exponentialRampToValueAtTime(880, end)
+        lfo.frequency.setValueAtTime(5, t)
+        lfo.frequency.exponentialRampToValueAtTime(40, end)
+        depth.gain.value = 0.5
+        tremolo.gain.value = 0.5
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(0.05, t + 0.3)
+        gain.gain.linearRampToValueAtTime(0.07, end - 0.05)
+        gain.gain.linearRampToValueAtTime(0.0001, end)
+        lfo.connect(depth)
+        depth.connect(tremolo.gain)
+        osc.connect(tremolo)
+        tremolo.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        lfo.start(t)
+        osc.stop(end + 0.05)
+        lfo.stop(end + 0.05)
+      }
+
+      // L'horizon avale la bille : un grondement grave. Les billes avalées
+      // à la fin, elles, font de petits « plop » qui montent.
+      function playSwallow(note) {
+        const ctx = sound(1200)
+        if (note === undefined) {
+          tone(ctx, 120, 0, { to: 32, dur: 0.9, vol: 0.32 })
+          tone(ctx, 1760, 0, { to: 3520, dur: 0.25, vol: 0.02 })
+        } else {
+          const freq = 330 * Math.pow(2, (2 * note) / 12)
+          tone(ctx, freq, 0, { to: freq / 3, dur: 0.25, vol: 0.06 })
+        }
+      }
+
+      function playSlot() {
+        tone(sound(600), 1318.5, 0, { type: "triangle", dur: 0.4, vol: 0.05 })
+      }
+
+      function playEnd(won) {
+        const ctx = sound(2500)
+        const notes = won
+          ? [523.3, 659.3, 784, 1046.5, 1318.5]
+          : [392, 329.6, 261.6]
+        notes.forEach((freq, i) =>
+          tone(ctx, freq, i * 0.12, { type: "triangle", dur: 0.8, vol: 0.07 }),
+        )
+      }
+
+      function renderSoundBtn() {
+        $("soundBtn").setAttribute("aria-pressed", soundOn)
+        $("soundOn").classList.toggle("hidden", !soundOn)
+        $("soundOff").classList.toggle("hidden", soundOn)
+      }
+
+      $("soundBtn").onclick = () => {
+        soundOn = !soundOn
+        try {
+          localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off")
+        } catch (e) {
+          // navigation privée : le réglage n'est pas gardé
+        }
+        renderSoundBtn()
+        playLift()
       }
 
       // ----- Déroulement de la partie -----
@@ -1273,13 +2056,14 @@
 
       function newGame() {
         clearTimeout(aiTimer)
+        cancelEffects()
         board = startingBoard()
         lost = [0, 0, 0]
         currentPlayer = BLACK
         gameOver = false
         engaged = false
         trail = []
-        showMessage("", "")
+        showEnd(null)
         if (window.ExitGuard) ExitGuard.setActive(false)
         clearSavedGame()
         rebuildMarbles()
@@ -1331,7 +2115,8 @@
         const info = describeMove(move)
         const player = currentPlayer
         const foe = opponent(player)
-        animateMove(info)
+        playMoveSound(info.pushed.length > 0)
+        animateMove(info, player)
         applyMove(board, lost, move)
         trail = info.marbles.filter((cell) => !info.targets.includes(cell))
         if (!engaged) {
@@ -1353,42 +2138,70 @@
         const rest =
           left === 1 ? "Encore une à sortir !" : `Encore ${left} à sortir.`
         if (mode === "2p") {
-          return `💥 ${MODES[mode].names[player]} sort une bille ! ${rest}`
+          return `${MODES[mode].names[player]} sort une bille ! ${rest}`
         }
         return player === HUMAN
-          ? `💥 Bravo, une bille sortie ! ${rest}`
-          : "💥 L'ordinateur a sorti une de tes billes !"
+          ? `Bravo, une bille sortie ! ${rest}`
+          : "L'ordinateur a sorti une de tes billes !"
       }
 
+      // Fin de partie : le trou noir finit d'avaler la dernière bille, puis
+      // toutes celles qui restent au perdant, et la carte du gagnant se pose
+      // sur la dalle.
       function endGame(winner) {
         clearTimeout(aiTimer)
         gameOver = true
         selection = []
         arrows = []
-        const names = MODES[mode].names
-        if (!MODES[mode].isHuman(winner)) {
-          showMessage("🤖 L'ordinateur a gagné ! Essaie encore !", "lose")
-        } else {
-          const text =
-            mode === "ia"
-              ? "🎉 Bravo, tu as gagné !"
-              : `🎉 ${names[winner]} a gagné !`
-          showMessage(text, `win-${COLOR_CLASS[winner]}`)
-          showConfetti()
-        }
         saveScore(winner)
         clearSavedGame()
         if (window.ExitGuard) ExitGuard.setActive(false)
         render()
+        const wait = Math.max(0, busyUntil - performance.now() - 300)
+        later(() => {
+          const stream = swallowRest(opponent(winner))
+          later(() => showEnd(winner), stream + 300)
+        }, wait)
+      }
+
+      function showEnd(winner) {
+        $("end").classList.toggle("hidden", !winner)
+        svg.classList.toggle("ended", !!winner)
+        $("newGameBtn").classList.toggle("hidden", !!winner)
+        if (!winner) return
+        const humanWon = MODES[mode].isHuman(winner)
+        $("endMarble").setAttribute("href", `#m-${COLOR_CLASS[winner]}`)
+        $("endTitle").textContent = !humanWon
+          ? "L'ordinateur a gagné !"
+          : mode === "ia"
+            ? "Bravo, tu as gagné !"
+            : `${MODES[mode].names[winner]} a gagné !`
+        $("endSub").textContent = humanWon ? "" : "Essaie encore !"
+        $("endBlack").textContent = lost[WHITE]
+        $("endWhite").textContent = lost[BLACK]
+        playEnd(humanWon)
+        if (humanWon) showConfetti()
       }
 
       function scheduleComputerMove() {
         if (!isComputerTurn()) return
-        // newGame() annule ce minuteur si une partie repart entre-temps.
+        // L'ordinateur attend que la bille qu'on vient de lui prendre soit
+        // avalée. newGame() annule ce minuteur si une partie repart.
+        const wait = Math.max(
+          COMPUTER_DELAY,
+          busyUntil - performance.now() + 200,
+        )
         aiTimer = setTimeout(() => {
-          aiTimer = null
-          playMove(chooseComputerMove())
-        }, COMPUTER_DELAY)
+          const move = chooseComputerMove()
+          // Ses billes décollent un instant avant de partir.
+          selection = describeMove(move).marbles
+          renderMarbleStates()
+          playLift()
+          aiTimer = setTimeout(() => {
+            aiTimer = null
+            playMove(move)
+          }, COMPUTER_SHOW)
+        }, wait)
       }
 
       function chooseComputerMove() {
@@ -1423,6 +2236,7 @@
       // ----- Sélection des billes -----
 
       function tapCell(cell) {
+        const before = selection.length
         if (cell === -1 || board[cell] !== currentPlayer) {
           selection = []
         } else if (selection.includes(cell)) {
@@ -1435,6 +2249,10 @@
           selection = extendSelection(cell) || [cell]
         }
         updateArrows()
+        if (selection.length > before) {
+          if (arrows.length) playLift()
+          else playBlocked()
+        }
         render()
       }
 
@@ -1572,8 +2390,10 @@
         // Hors d'une rangée (case vide, bille adverse…), on garde la dernière.
         const line = lineBetween(from, cellNear(point))
         if (!line || marblesKey(line) === marblesKey(selection)) return
+        const grew = line.length > selection.length
         selection = line
         updateArrows()
+        if (grew) playLift()
         render()
       })
 
@@ -1600,7 +2420,7 @@
         { passive: false },
       )
 
-      // ----- Dessin -----
+      // ----- Dessin du plateau -----
 
       function svgElement(name, attributes = {}) {
         const element = document.createElementNS(SVG_NS, name)
@@ -1610,27 +2430,52 @@
         return element
       }
 
+      // Une bille, telle que dessinée dans les <defs> du plateau, pour un
+      // petit <svg> hors du plateau (cases, bille qui tombe).
+      function marbleIcon(color) {
+        const icon = svgElement("svg", { viewBox: "-50 -50 100 100" })
+        icon.appendChild(
+          svgElement("use", { href: `#m-${COLOR_CLASS[color]}` }),
+        )
+        return icon
+      }
+
       function buildBoard() {
         const halfWidth = TRAY_RADIUS + TRAY_RIM
         const halfHeight = (TRAY_RADIUS * Math.sqrt(3)) / 2 + TRAY_RIM
         svg.setAttribute(
           "viewBox",
-          `${-halfWidth} ${-halfHeight} ${2 * halfWidth} ${2 * halfHeight}`,
+          `${-halfWidth} ${-halfHeight} ${2 * halfWidth} ${2 * halfHeight + SLAB_DEPTH}`,
         )
         const corners = [0, 1, 2, 3, 4, 5].map((k) => {
           const angle = (k * Math.PI) / 3
-          const x = TRAY_RADIUS * Math.cos(angle)
-          const y = TRAY_RADIUS * Math.sin(angle)
-          return `${x.toFixed(1)},${y.toFixed(1)}`
+          return [TRAY_RADIUS * Math.cos(angle), TRAY_RADIUS * Math.sin(angle)]
         })
-        document
-          .getElementById("tray")
-          .setAttribute("points", corners.join(" "))
-        const holes = document.getElementById("holes")
+        const points = (list) =>
+          list.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ")
+        for (const id of ["slab", "slabSheen", "slabRim", "veil"]) {
+          $(id).setAttribute("points", points(corners))
+        }
+        // L'épaisseur de la dalle : ses trois côtés du bas, vus de biais.
+        const lower = corners.slice(0, 4)
+        $("slabSide").setAttribute(
+          "points",
+          points([
+            ...lower,
+            ...lower.map(([x, y]) => [x, y + SLAB_DEPTH]).reverse(),
+          ]),
+        )
+        // Plus bas, l'ombre floue que la dalle jette sur l'espace-temps : elle
+        // flotte au-dessus.
+        const shade = $("slabShade")
+        shade.setAttribute("cy", SLAB_DEPTH + 70)
+        shade.setAttribute("rx", halfWidth * 1.08)
+        shade.setAttribute("ry", halfHeight * 1.08)
+        const holes = $("holes")
         for (const { x, y } of CELLS) {
           holes.appendChild(
             svgElement("circle", {
-              class: "hole",
+              class: "hole-cell",
               cx: x * UNIT,
               cy: y * UNIT,
               r: HOLE_RADIUS,
@@ -1639,23 +2484,32 @@
         }
       }
 
-      function placeMarble(element, x, y, scale = 1) {
-        element.style.transform = `translate(${x * UNIT}px, ${y * UNIT}px) scale(${scale})`
+      function placeMarble(element, x, y) {
+        element.style.transform = `translate(${x * UNIT}px, ${y * UNIT}px)`
       }
 
+      // Une bille : son ombre et son halo restent sur la dalle, la bille
+      // elle-même (.lift) peut décoller et flotter (.bob).
       function createMarble(color, cell) {
         const marble = svgElement("g", {
           class: `marble ${COLOR_CLASS[color]}`,
         })
+        const lift = svgElement("g", { class: "lift" })
+        const bob = svgElement("g", { class: "bob" })
+        bob.append(
+          svgElement("use", { href: `#m-${COLOR_CLASS[color]}` }),
+          svgElement("circle", { class: "marble-ring", r: MARBLE_RADIUS + 5 }),
+        )
+        lift.appendChild(bob)
         marble.append(
+          svgElement("circle", { class: "field", r: 66 }),
           svgElement("circle", {
             class: "marble-shadow",
-            cx: 4,
-            cy: 7,
+            cx: 5,
+            cy: 9,
             r: MARBLE_RADIUS,
           }),
-          svgElement("circle", { class: "marble-body", r: MARBLE_RADIUS }),
-          svgElement("circle", { class: "marble-ring", r: MARBLE_RADIUS + 2 }),
+          lift,
         )
         placeMarble(marble, CELLS[cell].x, CELLS[cell].y)
         return marble
@@ -1672,56 +2526,339 @@
       }
 
       // Fait glisser les billes du coup (avant de le jouer sur le plateau) ;
-      // une bille éjectée file hors du plateau en s'effaçant.
-      function animateMove({ dir, marbles, pushed }) {
+      // une bille éjectée part vers le trou noir.
+      function animateMove({ dir, marbles, pushed }, player) {
         const moving = [...marbles, ...pushed]
         const elements = moving.map((cell) => marbleAt[cell])
         moving.forEach((cell) => (marbleAt[cell] = null))
-        const [dq, dr] = DIRECTIONS[dir]
         moving.forEach((from, i) => {
           const to = NEIGHBOR[from * 6 + dir]
-          const element = elements[i]
           if (to !== -1) {
-            marbleAt[to] = element
-            placeMarble(element, CELLS[to].x, CELLS[to].y)
-            return
+            marbleAt[to] = elements[i]
+            placeMarble(elements[i], CELLS[to].x, CELLS[to].y)
+          } else {
+            fall(elements[i], from, opponent(player), screenDirection(dir), {
+              scorer: player,
+            })
           }
-          const { x, y } = CELLS[from]
-          element.classList.remove("pushed", "falling")
-          element.classList.add("out")
-          placeMarble(
-            element,
-            x + dq + dr / 2,
-            y + (dr * Math.sqrt(3)) / 2,
-            0.5,
-          )
-          setTimeout(() => element.remove(), 700)
         })
       }
+
+      // Direction d (unité) telle qu'on la voit à l'écran.
+      function screenDirection(dir) {
+        const [dq, dr] = DIRECTIONS[dir]
+        return { x: dq + dr / 2, y: (dr * Math.sqrt(3)) / 2 }
+      }
+
+      // ----- La chute dans le trou noir -----
+
+      function later(fn, ms) {
+        effectTimers.push(setTimeout(fn, ms))
+      }
+
+      function cancelEffects() {
+        effectTimers.forEach(clearTimeout)
+        effectTimers = []
+        $("flyers").textContent = ""
+        $("sparks").textContent = ""
+        pending = [0, 0, 0]
+        busyUntil = 0
+      }
+
+      // Positions dans la page (et non dans la fenêtre) : la page peut
+      // défiler pendant une chute.
+      function screenPoint(x, y) {
+        const point = svg.createSVGPoint()
+        point.x = x * UNIT
+        point.y = y * UNIT
+        const screen = point.matrixTransform(svg.getScreenCTM())
+        return { x: screen.x + scrollX, y: screen.y + scrollY }
+      }
+
+      function centerOf(element) {
+        const box = element.getBoundingClientRect()
+        return {
+          x: box.left + box.width / 2 + scrollX,
+          y: box.top + box.height / 2 + scrollY,
+        }
+      }
+
+      // Trajectoire d'une bille happée, en images clés : elle file d'abord
+      // dans le sens de la poussée, s'incurve vers le trou noir, puis tombe
+      // en spirale dans le disque (qui tourne dans le sens des aiguilles
+      // d'une montre), de plus en plus vite, petite et étirée. Sur la moitié
+      // proche du disque, elle passe devant l'ombre ; sur la moitié
+      // lointaine, derrière : c'est là, tout près du centre, qu'elle finit.
+      function fallPath(from, push, hole) {
+        const dx = from.x - hole.x
+        const dy = from.y - hole.y
+        const dist = Math.hypot(dx, dy)
+        const orbit = (angle, radius) => ({
+          x: hole.x + radius * Math.cos(angle),
+          y: hole.y + radius * DISK_TILT * Math.sin(angle),
+          // y croît vers le bas : sin > 0, c'est la moitié proche.
+          near: Math.sin(angle) > 0,
+        })
+        const entry = Math.atan2(dy, dx) + 0.9
+        const e = orbit(entry, ORBIT)
+        const tx = -Math.sin(entry)
+        const ty = DISK_TILT * Math.cos(entry)
+        const tl = Math.hypot(tx, ty)
+        const l1 = Math.min(110, dist * 0.3)
+        const l2 = dist * 0.45
+        const p1 = { x: from.x + push.x * l1, y: from.y + push.y * l1 }
+        const p2 = { x: e.x - (tx / tl) * l2, y: e.y - (ty / tl) * l2 }
+        // Entre un tour et demi et deux tours et demi, pour finir tout en
+        // haut du disque, derrière l'ombre.
+        const finish = -Math.PI / 2
+        const sweep =
+          ((((finish - entry) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) +
+          2 * Math.PI * TURNS
+        const approach = 380 + dist * 0.75
+        const duration = approach + SPIRAL_MS
+        const points = []
+        const bezier = (a, b, c, d, t) =>
+          (1 - t) ** 3 * a +
+          3 * (1 - t) ** 2 * t * b +
+          3 * (1 - t) * t ** 2 * c +
+          t ** 3 * d
+        for (let i = 0; i <= 24; i++) {
+          const s = i / 24
+          const t = s ** 1.2
+          points.push({
+            x: bezier(from.x, p1.x, p2.x, e.x, t),
+            y: bezier(from.y, p1.y, p2.y, e.y, t),
+            near: true,
+            time: s * approach,
+            scale: 1 - 0.3 * s,
+          })
+        }
+        for (let i = 1; i <= 48; i++) {
+          const s = i / 48
+          points.push({
+            ...orbit(entry + sweep * s ** 1.4, ORBIT * (1 - 0.92 * s ** 0.9)),
+            time: approach + s * SPIRAL_MS,
+            scale: 0.7 - 0.4 * s,
+          })
+        }
+        // Étirée dans le sens de sa course, d'autant plus qu'elle va vite :
+        // rotate(a) scale() rotate(-a) étire sans faire tourner le reflet.
+        let previous = 0
+        const frames = points.map((p, i) => {
+          const a = points[Math.max(0, i - 1)]
+          const b = points[Math.min(points.length - 1, i + 1)]
+          const speed = Math.hypot(b.x - a.x, b.y - a.y) / (b.time - a.time)
+          let angle = Math.atan2(b.y - a.y, b.x - a.x)
+          if (i > 0) {
+            while (angle - previous > Math.PI) angle -= 2 * Math.PI
+            while (angle - previous < -Math.PI) angle += 2 * Math.PI
+          }
+          previous = angle
+          const stretch = 1 + Math.min(0.8, Math.max(0, speed - 0.35) * 1.1)
+          return {
+            offset: p.time / duration,
+            transform:
+              `translate(${p.x}px, ${p.y}px) rotate(${angle}rad) ` +
+              `scale(${p.scale * stretch}, ${p.scale / Math.sqrt(stretch)}) ` +
+              `rotate(${-angle}rad)`,
+          }
+        })
+        // Devant ou derrière l'ombre (z-index 6) : une animation à part, en
+        // marches, pour que celle du mouvement reste fluide.
+        const layers = points.map((p) => ({
+          offset: p.time / duration,
+          zIndex: p.near ? 9 : 5,
+          easing: "steps(1, end)",
+        }))
+        return { frames, layers, duration }
+      }
+
+      // Envoie la bille `marble` (case `cell`) dans le trou noir. `scorer` :
+      // le joueur qui l'a fait tomber, dont une case se remplira ; `note` :
+      // rang de la bille dans le flot de fin de partie.
+      function fall(marble, cell, color, push, options = {}) {
+        const { scorer = 0, delay = 0, note } = options
+        const from = screenPoint(CELLS[cell].x, CELLS[cell].y)
+        const size = 100 * svg.getScreenCTM().a
+        const quiet = reducedMotion.matches
+        const { frames, layers, duration } = quiet
+          ? {
+              frames: [
+                { transform: `translate(${from.x}px, ${from.y}px)` },
+                {
+                  transform: `translate(${from.x}px, ${from.y}px)`,
+                  opacity: 0,
+                },
+              ],
+              duration: 300,
+            }
+          : fallPath(from, push, centerOf($("holeCore")))
+        if (scorer) pending[color]++
+        busyUntil = Math.max(busyUntil, performance.now() + delay + duration)
+        later(() => {
+          marble.remove()
+          const flyer = document.createElement("div")
+          flyer.className = "flyer"
+          flyer.style.width = flyer.style.height = `${size}px`
+          flyer.style.margin = `${-size / 2}px`
+          const heat = document.createElement("div")
+          heat.className = "heat"
+          flyer.append(marbleIcon(color), heat)
+          $("flyers").appendChild(flyer)
+          flyer.animate(frames, { duration, fill: "forwards" })
+          if (!quiet) {
+            flyer.animate(layers, { duration, fill: "forwards" })
+            heat.animate(
+              [
+                { opacity: 0 },
+                { opacity: 0, offset: 0.3 },
+                { opacity: 0.9, offset: 0.85 },
+                { opacity: 0.9 },
+              ],
+              { duration, fill: "forwards" },
+            )
+            if (note === undefined) playFall(duration)
+          }
+          later(() => {
+            flyer.remove()
+            swallowed(color, scorer, note)
+          }, duration)
+        }, delay)
+        return delay + duration
+      }
+
+      // L'horizon avale la bille : l'anneau s'illumine, une onde part dans
+      // le disque. Une étincelle file ensuite remplir la case du joueur qui
+      // l'a fait tomber.
+      function swallowed(color, scorer, note) {
+        playSwallow(note)
+        $("holeFlash").animate(
+          [{ opacity: 0 }, { opacity: 1, offset: 0.12 }, { opacity: 0 }],
+          { duration: 900, easing: "ease-out" },
+        )
+        if (!reducedMotion.matches) {
+          $("holeShock").animate(
+            [
+              { transform: "scale(0.4, 0.12)", opacity: 0.9 },
+              { transform: "scale(3, 0.9)", opacity: 0 },
+            ],
+            { duration: 800, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" },
+          )
+          $("holeCore").animate(
+            [
+              { transform: "scale(1)" },
+              { transform: "scale(1.2)", offset: 0.25 },
+              { transform: "scale(1)" },
+            ],
+            { duration: 600, easing: "ease-out" },
+          )
+        }
+        if (!scorer) return
+        const done = () => {
+          pending[color]--
+          renderCaptures()
+          playSlot()
+        }
+        const slots = $(`side-${COLOR_CLASS[scorer]}`).querySelectorAll(".slot")
+        const slot = slots[Math.min(lost[color] - pending[color], 5)]
+        if (reducedMotion.matches || !slot) {
+          done()
+          return
+        }
+        const from = centerOf($("holeCore"))
+        const to = centerOf(slot)
+        const spark = document.createElement("div")
+        spark.className = "spark"
+        $("sparks").appendChild(spark)
+        spark.animate(
+          [
+            { transform: `translate(${from.x}px, ${from.y}px) scale(0.5)` },
+            { transform: `translate(${to.x}px, ${to.y}px) scale(1.4)` },
+          ],
+          { duration: 420, easing: "ease-in", fill: "forwards" },
+        )
+        later(() => {
+          spark.remove()
+          done()
+        }, 420)
+      }
+
+      // Fin de partie : toutes les billes qui restent au perdant décollent
+      // et filent l'une après l'autre dans le trou noir. Renvoie la durée.
+      function swallowRest(loser) {
+        if (reducedMotion.matches) return 0
+        const hole = centerOf($("holeCore"))
+        let end = 0
+        let note = 0
+        marbleAt.forEach((marble, cell) => {
+          if (!marble || board[cell] !== loser) return
+          marbleAt[cell] = null
+          const from = screenPoint(CELLS[cell].x, CELLS[cell].y)
+          const dist = Math.hypot(hole.x - from.x, hole.y - from.y)
+          const push = {
+            x: (hole.x - from.x) / dist,
+            y: (hole.y - from.y) / dist,
+          }
+          end = fall(marble, cell, loser, push, {
+            delay: note * STREAM_GAP,
+            note: note++,
+          })
+        })
+        return end
+      }
+
+      // ----- Affichage -----
 
       function render() {
         renderMarbleStates()
         renderArrows()
         renderTrail()
         renderCaptures()
-        renderTurn()
         renderHint()
         svg.classList.toggle("locked", !acceptsHumanInput())
       }
 
       function renderMarbleStates() {
         const pushed = new Set()
-        const falling = new Set()
+        const falling = new Map() // case → direction de la chute
         for (const { info } of arrows) {
           info.pushed.forEach((cell) => pushed.add(cell))
-          if (info.ejects) falling.add(info.pushed[info.pushed.length - 1])
+          if (info.ejects) {
+            falling.set(info.pushed[info.pushed.length - 1], info.dir)
+          }
         }
         marbleAt.forEach((marble, cell) => {
           if (!marble) return
           marble.classList.toggle("selected", selection.includes(cell))
           marble.classList.toggle("pushed", pushed.has(cell))
-          marble.classList.toggle("falling", falling.has(cell))
+          setFalling(marble, falling.get(cell))
         })
+      }
+
+      // Une bille qu'une flèche rouge ferait tomber penche déjà vers le
+      // vide, comme attirée par le trou noir.
+      function setFalling(marble, dir) {
+        marble.classList.toggle("falling", dir !== undefined)
+        if (marble.fallDir === dir) return
+        if (marble.wobble) marble.wobble.cancel()
+        marble.wobble = null
+        marble.fallDir = dir
+        if (dir === undefined || reducedMotion.matches) return
+        const { x, y } = screenDirection(dir)
+        marble.wobble = marble
+          .querySelector(".bob")
+          .animate(
+            [
+              { transform: "translate(0px, 0px)" },
+              { transform: `translate(${x * 10}px, ${y * 10}px)` },
+            ],
+            {
+              duration: 520,
+              direction: "alternate",
+              iterations: Infinity,
+              easing: "ease-in-out",
+            },
+          )
       }
 
       function renderArrows() {
@@ -1738,6 +2875,7 @@
           })
           const pop = svgElement("g", { class: "arrow-pop" })
           pop.append(
+            svgElement("circle", { class: "glow", r: ARROW_RADIUS + 9 }),
             svgElement("circle", { r: ARROW_RADIUS }),
             svgElement("path", {
               d: "M -15 0 H 14 M 3 -12 L 15 0 L 3 12",
@@ -1763,53 +2901,44 @@
         }
       }
 
-      // Pour chaque joueur, les 6 billes adverses qu'il doit sortir. Seule
-      // une case qui se remplit change de classe : elle seule fait son « pop ».
+      // Pour chaque joueur, les 6 billes adverses qu'il doit faire tomber.
+      // Une bille encore en route vers le trou noir ne compte pas encore.
       function renderCaptures() {
         const names = MODES[mode].names
         for (const player of [BLACK, WHITE]) {
-          const suffix = player === BLACK ? "Black" : "White"
-          document.getElementById(`captureName${suffix}`).textContent =
-            names[player]
-          const slots = document.getElementById(`slots${suffix}`).children
-          const taken = lost[opponent(player)]
-          for (let i = 0; i < slots.length; i++) {
-            slots[i].className =
-              i < taken ? `slot ${COLOR_CLASS[opponent(player)]}` : "slot"
-          }
-        }
-      }
-
-      function renderTurn() {
-        const indicator = document.getElementById("turnIndicator")
-        const prefix = document.getElementById("turnPrefix")
-        const token = document.getElementById("turnToken")
-        const label = document.getElementById("turnLabel")
-        token.className = `turn-token ${COLOR_CLASS[currentPlayer]}`
-        indicator.classList.toggle("thinking", isComputerTurn())
-        prefix.textContent = ""
-        if (gameOver) {
-          label.textContent = "Partie terminée"
-        } else if (isComputerTurn()) {
-          label.textContent = "L'ordinateur réfléchit"
-        } else if (mode === "ia") {
-          label.textContent = "À toi de jouer !"
-        } else {
-          prefix.textContent = "Au tour de"
-          label.textContent = MODES[mode].names[currentPlayer]
+          const side = $(`side-${COLOR_CLASS[player]}`)
+          const foe = opponent(player)
+          const taken = lost[foe] - pending[foe]
+          side.querySelector(".name").textContent = names[player]
+          side.classList.toggle("active", !gameOver && player === currentPlayer)
+          side.classList.toggle(
+            "thinking",
+            isComputerTurn() && player === currentPlayer,
+          )
+          side.querySelectorAll(".slot").forEach((slot, i) => {
+            slot.classList.toggle("full", i < taken)
+          })
         }
       }
 
       function renderHint() {
+        const hint = $("hint")
         let text = ""
-        if (!acceptsHumanInput()) {
+        if (isComputerTurn()) {
+          hint.innerHTML =
+            'L\'ordinateur réfléchit<span class="dots"><i>.</i><i>.</i><i>.</i></span>'
+          return
+        }
+        if (gameOver) {
           text = ""
         } else if (selection.length === 0) {
-          text = "Touche une de tes billes, ou glisse le doigt sur 2 ou 3."
+          const who =
+            mode === "2p" ? `${MODES[mode].names[currentPlayer]}, à toi ! ` : ""
+          text = `${who}Touche une de tes billes, ou glisse le doigt sur 2 ou 3.`
         } else if (arrows.length === 0) {
           text = "Ces billes ne peuvent pas bouger. Choisis-en d'autres."
         } else if (arrows.some(({ info }) => info.ejects)) {
-          text = "La flèche rouge fait sortir une bille adverse !"
+          text = "La flèche rouge fait tomber une bille dans le trou noir !"
         } else if (arrows.some(({ info }) => info.pushed.length)) {
           text = "La flèche orange pousse les billes adverses."
         } else if (selection.length < 3) {
@@ -1817,7 +2946,7 @@
         } else {
           text = "Touche une flèche pour déplacer tes billes."
         }
-        document.getElementById("hint").textContent = text
+        hint.textContent = text
       }
 
       function renderModeSelect() {
@@ -1827,36 +2956,73 @@
         document.querySelectorAll("#levelSelect button").forEach((button) => {
           button.classList.toggle("active", button.dataset.level === level)
         })
-        document.getElementById("levelSelect").style.display =
-          mode === "ia" ? "flex" : "none"
+        $("levelSelect").classList.toggle("hidden", mode !== "ia")
         const { names, scoreTitle } = MODES[mode]
-        document.getElementById("scoreLabelBlack").textContent = names[BLACK]
-        document.getElementById("scoreLabelWhite").textContent = names[WHITE]
-        document.getElementById("scoreTitle").textContent = scoreTitle()
+        $("scoreLabelBlack").textContent = names[BLACK]
+        $("scoreLabelWhite").textContent = names[WHITE]
+        $("scoreTitle").textContent = scoreTitle()
         updateScoreboard()
-      }
-
-      function showMessage(text, type) {
-        const message = document.getElementById("message")
-        message.className = text ? `message ${type}` : ""
-        message.textContent = text
+        drawSpacetime()
       }
 
       let toastTimer = null
 
       function showToast(text) {
-        const toast = document.getElementById("toast")
+        const toast = $("toast")
         toast.textContent = text
         toast.hidden = false
         clearTimeout(toastTimer)
         toastTimer = setTimeout(() => (toast.hidden = true), 2500)
       }
 
+      // ----- L'espace-temps -----
+
+      // Une grille régulière dont chaque point est tiré vers le trou noir,
+      // surtout à une centaine de pixels de lui : elle semble se creuser en
+      // entonnoir. Le dégradé du trait l'éclaire près du disque.
+      function drawSpacetime() {
+        const space = $("spacetime")
+        const width = document.documentElement.clientWidth
+        const hole = centerOf($("holeCore"))
+        const height = Math.ceil(hole.y + 760)
+        const STEP = 30
+        const REACH = 150
+        const PULL = 52
+        const warp = (x, y) => {
+          const dx = x - hole.x
+          const dy = y - hole.y
+          const r = Math.hypot(dx, dy) || 1
+          const pull = PULL * (r / REACH) * Math.exp(1 - r / REACH)
+          return `${(x - (dx / r) * pull).toFixed(1)},${(y - (dy / r) * pull).toFixed(1)}`
+        }
+        const lines = []
+        const x0 = (hole.x % STEP) - STEP
+        const y0 = (hole.y % STEP) - STEP
+        for (let y = y0; y <= height; y += STEP) {
+          const points = []
+          for (let x = -10; x <= width + 10; x += 8) points.push(warp(x, y))
+          lines.push(`M${points.join("L")}`)
+        }
+        for (let x = x0; x <= width + STEP; x += STEP) {
+          const points = []
+          for (let y = -10; y <= height; y += 8) points.push(warp(x, y))
+          lines.push(`M${points.join("L")}`)
+        }
+        space.setAttribute("viewBox", `0 0 ${width} ${height}`)
+        space.style.height = `${height}px`
+        $("grid").setAttribute("d", lines.join(""))
+        const glow = $("g-grid")
+        glow.setAttribute("cx", hole.x)
+        glow.setAttribute("cy", hole.y)
+        glow.setAttribute("r", 560)
+      }
+
       // ----- Démarrage -----
 
-      document.getElementById("newGameBtn").onclick = () => {
+      $("newGameBtn").onclick = () => {
         if (confirmAbandon()) newGame()
       }
+      $("againBtn").onclick = () => newGame()
       document.querySelectorAll("#modeSelect button").forEach((button) => {
         button.onclick = () => changeSettings(button.dataset.mode, level)
       })
@@ -1865,14 +3031,30 @@
       })
 
       buildBoard()
-      // Six cases par joueur, qui se remplissent des billes qu'il a sorties.
-      for (const id of ["slotsBlack", "slotsWhite"]) {
+      // Six cases par joueur, qui se remplissent des billes qu'il a fait
+      // tomber.
+      for (const player of [BLACK, WHITE]) {
+        const slots = $(`side-${COLOR_CLASS[player]}`).querySelector(".slots")
         for (let i = 0; i < MARBLES_TO_WIN; i++) {
-          document
-            .getElementById(id)
-            .appendChild(document.createElement("span"))
+          const slot = document.createElement("span")
+          slot.className = "slot"
+          slot.appendChild(marbleIcon(opponent(player)))
+          slots.appendChild(slot)
         }
       }
+      // Poussières qui tombent en spirale autour du trou noir.
+      for (let i = 0; i < 12; i++) {
+        const turn = document.createElement("div")
+        turn.style.transform = `rotate(${i * 137}deg)`
+        const mote = document.createElement("div")
+        mote.className = "mote"
+        const duration = 3.2 + (i % 5) * 0.7
+        mote.style.animationDuration = `${duration}s`
+        mote.style.animationDelay = `${-((i * 0.83) % duration)}s`
+        turn.appendChild(mote)
+        $("motes").appendChild(turn)
+      }
+      renderSoundBtn()
       loadSettings()
       const savedGame = loadSavedGame()
       if (savedGame) {
@@ -1882,6 +3064,12 @@
       renderModeSelect()
       if (savedGame) restoreGame(savedGame)
       else newGame()
+      let resizeTimer = null
+      addEventListener("resize", () => {
+        clearTimeout(resizeTimer)
+        resizeTimer = setTimeout(drawSpacetime, 150)
+      })
+      if (document.fonts) document.fonts.ready.then(drawSpacetime)
     </script>
     <script src="wake-lock.js"></script>
   </body>
