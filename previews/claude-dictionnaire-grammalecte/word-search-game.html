@@ -1,0 +1,1833 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#59c1d4" />
+    <title>Mots mêlés</title>
+    <!--
+      Mots mêlés, sous l'eau : la grille est une vitre au fond de la mer,
+      traversée de reflets qui ondulent. Le doigt trace un trait de lumière
+      sur les lettres ; un mot trouvé se détache de la grille, ses lettres se
+      rassemblent, un poisson se forme autour et file rejoindre sa place dans
+      le banc. Un trait qui ne fait pas un mot éclate en bulles.
+      Police Baloo 2 (licence SIL OFL), servie en local.
+    -->
+    <style>
+      @font-face {
+        font-family: "Baloo 2";
+        src: url("Baloo2-Variable.woff2") format("woff2");
+        font-weight: 400 800;
+      }
+
+      :root {
+        --ink: #05304d;
+        --foam: #e9fbff;
+        --glow: #9ff3ff;
+        --glow-fill: linear-gradient(180deg, #d5fdff, var(--glow));
+        --glass: rgba(150, 230, 255, 0.1);
+        --edge: rgba(180, 240, 255, 0.3);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        font-family: "Baloo 2", "Arial Rounded MT Bold", Arial, sans-serif;
+        color: var(--foam);
+        background: #08406e;
+        overflow-x: hidden;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* ===== La mer : dégradé, rayons de lumière, bulles, fond ===== */
+
+      .sea {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            ellipse 90% 30% at 50% -6%,
+            rgba(200, 250, 255, 0.45),
+            transparent 70%
+          ),
+          linear-gradient(
+            180deg,
+            #27a9c3 0%,
+            #0f75a0 28%,
+            #0a4c7e 62%,
+            #062d52 100%
+          );
+      }
+
+      .ray {
+        position: absolute;
+        top: -10%;
+        height: 85%;
+        width: var(--w);
+        left: var(--x);
+        background: linear-gradient(
+          180deg,
+          rgba(220, 255, 255, 0.28),
+          rgba(220, 255, 255, 0.08) 55%,
+          transparent
+        );
+        transform-origin: 50% 0;
+        transform: rotate(var(--a));
+        animation: sway var(--d) ease-in-out infinite alternate;
+      }
+
+      @keyframes sway {
+        from {
+          transform: rotate(var(--a)) translateX(-14px);
+          opacity: 0.55;
+        }
+        to {
+          transform: rotate(calc(var(--a) + 6deg)) translateX(14px);
+          opacity: 1;
+        }
+      }
+
+      .bubble {
+        position: absolute;
+        bottom: -30px;
+        left: var(--x);
+        width: var(--s);
+        height: var(--s);
+        animation: rise var(--d) linear var(--delay) infinite;
+      }
+
+      .bubble::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 32% 30%,
+          rgba(255, 255, 255, 0.9) 0 12%,
+          rgba(200, 245, 255, 0.18) 30%,
+          rgba(200, 245, 255, 0.05) 62%,
+          rgba(220, 250, 255, 0.55) 72%,
+          transparent 76%
+        );
+        animation: wobble 1.8s ease-in-out infinite alternate;
+      }
+
+      @keyframes rise {
+        to {
+          transform: translateY(-115vh);
+        }
+      }
+
+      @keyframes wobble {
+        from {
+          transform: translateX(-5px);
+        }
+        to {
+          transform: translateX(5px);
+        }
+      }
+
+      .seabed {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 130px;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .weed {
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        animation: weed var(--d, 4s) ease-in-out infinite alternate;
+      }
+
+      @keyframes weed {
+        from {
+          transform: rotate(-7deg);
+        }
+        to {
+          transform: rotate(7deg);
+        }
+      }
+
+      /* ===== Mise en page ===== */
+
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 520px;
+        min-height: 100%;
+        margin: 0 auto;
+        padding: max(8px, env(safe-area-inset-top)) 12px
+          calc(env(safe-area-inset-bottom) + 16px);
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        height: 56px;
+      }
+
+      .icon-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--glass);
+        border: 1.5px solid var(--edge);
+      }
+
+      .icon-btn svg {
+        width: 24px;
+        height: 24px;
+        display: block;
+      }
+
+      .icon-btn:active {
+        transform: scale(0.92);
+      }
+
+      .sound-btn {
+        justify-self: end;
+      }
+
+      .count {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 24px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+
+      .count svg {
+        width: 34px;
+        height: 22px;
+      }
+
+      .count small {
+        font-size: 18px;
+        opacity: 0.7;
+      }
+
+      /* ===== Accueil ===== */
+
+      .title {
+        display: flex;
+        justify-content: center;
+        gap: 0.3em;
+        margin: 6px 0 22px;
+        font-size: 44px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .title .word {
+        position: relative;
+        display: flex;
+        padding: 0.16em 0.22em 0.06em;
+      }
+
+      .title .word.lit::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: var(--glow-fill);
+        box-shadow:
+          0 0 18px rgba(159, 243, 255, 0.8),
+          0 0 46px rgba(159, 243, 255, 0.35);
+      }
+
+      .title .word.lit span {
+        color: var(--ink);
+      }
+
+      .title span {
+        position: relative;
+        display: block;
+        text-shadow: 0 2px 0 rgba(0, 30, 60, 0.25);
+        animation: bob 3.2s ease-in-out calc(var(--i) * -0.4s) infinite
+          alternate;
+      }
+
+      @keyframes bob {
+        from {
+          transform: translateY(-3px);
+        }
+        to {
+          transform: translateY(3px);
+        }
+      }
+
+      .cards {
+        display: grid;
+        gap: 12px;
+      }
+
+      .card {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 4px 14px;
+        padding: 14px 16px 14px 14px;
+        text-align: left;
+        border-radius: 22px;
+        background: var(--glass);
+        border: 1.5px solid var(--edge);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        animation: appear 0.5s ease-out calc(min(var(--i), 4) * 80ms) backwards;
+      }
+
+      .card:active {
+        transform: scale(0.98);
+      }
+
+      @media (hover: hover) {
+        .card:hover,
+        .icon-btn:hover {
+          border-color: rgba(200, 250, 255, 0.6);
+        }
+      }
+
+      .card .fish {
+        width: 96px;
+        height: 48px;
+        grid-row: span 2;
+      }
+
+      .card .fish .label {
+        font-size: 17px;
+        letter-spacing: 0;
+      }
+
+      .card .sounds,
+      .card .words {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .card .sounds {
+        gap: 6px;
+      }
+
+      .card .sounds span {
+        padding: 0.18em 0.6em 0.04em;
+        border-radius: 999px;
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.2;
+        color: var(--ink);
+        background: var(--glow-fill);
+        box-shadow: 0 0 12px rgba(159, 243, 255, 0.45);
+      }
+
+      .card .words {
+        gap: 0 12px;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.4;
+        letter-spacing: 0.03em;
+        color: rgba(233, 251, 255, 0.85);
+      }
+
+      .card .done {
+        position: absolute;
+        top: 8px;
+        left: 10px;
+        width: 28px;
+        height: 28px;
+      }
+
+      @keyframes appear {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+      }
+
+      /* ===== Le plateau ===== */
+
+      .board {
+        position: relative;
+        margin-top: 6px;
+        padding: 8px 6px;
+        border-radius: 22px;
+        background: linear-gradient(
+          180deg,
+          rgba(160, 235, 255, 0.16),
+          rgba(160, 235, 255, 0.06)
+        );
+        border: 1.5px solid var(--edge);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.25),
+          0 14px 30px rgba(0, 20, 50, 0.35);
+        overflow: hidden;
+      }
+
+      /* Les reflets qui ondulent : deux réseaux de lignes claires, en tuiles,
+         qui glissent l'un contre l'autre. */
+      .caustics {
+        position: absolute;
+        inset: -220px;
+        pointer-events: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M0 40C30 20 50 62 80 40S130 18 160 40M0 120C40 98 62 142 100 116S140 100 160 120M40 0C18 40 62 60 40 100S28 140 40 160M120 0C142 30 98 72 124 100S110 142 120 160'/%3E%3C/svg%3E");
+        background-size: 160px 160px;
+        opacity: 0.09;
+        animation: drift 18s linear infinite;
+      }
+
+      .caustics.two {
+        background-size: 220px 220px;
+        opacity: 0.07;
+        animation: drift2 26s linear infinite;
+      }
+
+      @keyframes drift {
+        to {
+          transform: translate(160px, 160px);
+        }
+      }
+
+      @keyframes drift2 {
+        to {
+          transform: translate(-220px, 220px);
+        }
+      }
+
+      .field {
+        position: relative;
+        margin: 0 auto;
+        width: calc(var(--cols) * var(--cell));
+        --cell-font: calc(var(--cell) * 0.66);
+        touch-action: none;
+      }
+
+      .letters {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(var(--cols), var(--cell));
+        grid-auto-rows: var(--cell);
+      }
+
+      .cell {
+        display: grid;
+        place-items: center;
+        font-size: var(--cell-font);
+        font-weight: 700;
+        line-height: 1;
+        padding-top: 0.12em;
+        text-shadow: 0 1px 0 rgba(0, 30, 60, 0.35);
+        transition: color 0.12s;
+      }
+
+      .cell.sel {
+        color: var(--ink);
+        text-shadow: none;
+      }
+
+      /* Un trait (sélection ou mot trouvé) : une gélule posée sur la case de
+         départ et tournée dans la direction du mot. */
+      .stroke {
+        position: absolute;
+        left: calc((var(--c) + 0.5) * var(--cell) - var(--cell) * 0.42);
+        top: calc((var(--r) + 0.5) * var(--cell) - var(--cell) * 0.42);
+        width: calc((var(--len) + 0.84) * var(--cell));
+        height: calc(var(--cell) * 0.84);
+        border-radius: 999px;
+        transform-origin: calc(var(--cell) * 0.42) 50%;
+        transform: rotate(var(--ang));
+        pointer-events: none;
+      }
+
+      .stroke.sel {
+        background: linear-gradient(180deg, #e2feff, var(--glow));
+        box-shadow:
+          0 0 12px rgba(159, 243, 255, 0.9),
+          0 0 30px rgba(159, 243, 255, 0.4);
+      }
+
+      .stroke.mark {
+        background: var(--c1);
+        opacity: 0.42;
+      }
+
+      .win {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border-radius: inherit;
+        background: radial-gradient(
+          ellipse at 50% 40%,
+          rgba(10, 80, 120, 0.88),
+          rgba(4, 40, 72, 0.95)
+        );
+        animation: fade 0.5s ease-out backwards;
+      }
+
+      .win h2 {
+        font-size: 48px;
+        font-weight: 800;
+        line-height: 1;
+        color: #fff;
+        text-shadow:
+          0 0 14px rgba(159, 243, 255, 0.9),
+          0 0 34px rgba(159, 243, 255, 0.5);
+        animation: pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) 0.15s backwards;
+      }
+
+      @keyframes fade {
+        from {
+          opacity: 0;
+        }
+      }
+
+      @keyframes pop {
+        from {
+          transform: scale(0.3);
+          opacity: 0;
+        }
+      }
+
+      .glow-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 52px;
+        padding: 6px 22px 4px;
+        border-radius: 999px;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--ink);
+        background: linear-gradient(180deg, #e2feff, var(--glow));
+        box-shadow: 0 0 18px rgba(159, 243, 255, 0.55);
+        animation: fade 0.4s ease-out 0.5s backwards;
+      }
+
+      .glow-btn svg {
+        width: 26px;
+        height: 26px;
+        margin-top: -2px;
+      }
+
+      .glow-btn:active {
+        transform: scale(0.95);
+      }
+
+      /* ===== Le banc : un poisson par mot ===== */
+
+      .school {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .fish {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 62px;
+        width: 100%;
+      }
+
+      .fish .shape {
+        position: absolute;
+        inset: 0;
+      }
+
+      .fish .tail {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 26%;
+        max-width: 34px;
+        height: 70%;
+        transform: translateY(-50%);
+        transform-origin: 100% 50%;
+        overflow: visible;
+      }
+
+      .fish .tail path,
+      .fish .fin path {
+        fill: var(--c2);
+      }
+
+      .fish .fin {
+        position: absolute;
+        left: 40%;
+        top: -5%;
+        width: 22%;
+        max-width: 28px;
+        height: 28%;
+        overflow: visible;
+      }
+
+      .fish .body {
+        position: absolute;
+        left: min(18%, 26px);
+        right: 0;
+        top: 6%;
+        bottom: 6%;
+        border-radius: 40% 60% 60% 40% / 50%;
+        background:
+          radial-gradient(
+            ellipse 60% 40% at 64% 26%,
+            rgba(255, 255, 255, 0.5),
+            transparent 70%
+          ),
+          linear-gradient(180deg, var(--c1), var(--c2));
+        box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+      }
+
+      .fish .eye {
+        position: absolute;
+        right: 6%;
+        top: 24%;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 60% 50%, #062a44 0 42%, #fff 46%);
+      }
+
+      .fish .label {
+        position: relative;
+        display: flex;
+        padding: 4px 0 0 min(10%, 16px);
+        font-size: 21px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        color: #fff;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
+        white-space: nowrap;
+      }
+
+      /* Pas encore trouvé : l'ombre d'un poisson, le mot écrit dedans. */
+      .slot:not(.found) .body {
+        background: rgba(180, 240, 255, 0.07);
+        border: 2px dashed rgba(190, 240, 255, 0.4);
+        box-shadow: none;
+      }
+
+      .slot:not(.found) .tail path {
+        fill: none;
+        stroke: rgba(190, 240, 255, 0.4);
+        stroke-width: 2;
+        stroke-dasharray: 4 3;
+      }
+
+      .slot:not(.found) .fin,
+      .slot:not(.found) .eye {
+        display: none;
+      }
+
+      .slot:not(.found) .label {
+        color: rgba(233, 251, 255, 0.92);
+        text-shadow: none;
+      }
+
+      .fish.found .shape,
+      .card .fish .shape {
+        animation: float 2.6s ease-in-out calc(var(--i) * -0.35s) infinite
+          alternate;
+      }
+
+      .fish.found .tail,
+      .card .fish .tail {
+        animation: wag 0.7s ease-in-out calc(var(--i) * -0.2s) infinite
+          alternate;
+      }
+
+      .fish.flying .tail {
+        animation: wag 0.18s ease-in-out infinite alternate;
+      }
+
+      @keyframes wag {
+        from {
+          transform: translateY(-50%) rotate(-16deg);
+        }
+        to {
+          transform: translateY(-50%) rotate(16deg);
+        }
+      }
+
+      @keyframes float {
+        from {
+          transform: translateY(-2px);
+        }
+        to {
+          transform: translateY(2px);
+        }
+      }
+
+      /* ===== Ce qui vole au-dessus de tout : lettres, poissons, bulles ===== */
+
+      .layer {
+        position: fixed;
+        inset: 0;
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      .layer > * {
+        position: fixed;
+        left: 0;
+        top: 0;
+      }
+
+      .drift {
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        line-height: 1;
+        padding-top: 0.12em;
+        color: #fff;
+        text-shadow: 0 0 10px rgba(159, 243, 255, 0.9);
+      }
+
+      .pop {
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 32% 30%,
+          rgba(255, 255, 255, 0.95) 0 14%,
+          rgba(200, 245, 255, 0.2) 34%,
+          rgba(220, 250, 255, 0.7) 70%,
+          transparent 75%
+        );
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ray,
+        .bubble,
+        .bubble::before,
+        .weed,
+        .caustics,
+        .title span,
+        .fish .shape,
+        .fish .tail {
+          animation: none !important;
+        }
+        .bubble {
+          display: none;
+        }
+      }
+    </style>
+    <script src="exit-guard.js"></script>
+    <script src="voix.js"></script>
+  </head>
+  <body>
+    <div class="sea" id="sea" aria-hidden="true"></div>
+    <svg
+      class="seabed"
+      viewBox="0 0 400 130"
+      preserveAspectRatio="xMidYMax slice"
+      aria-hidden="true"
+    >
+      <g fill="none" stroke-linecap="round">
+        <path
+          class="weed"
+          style="--d: 4.2s"
+          d="M28 130C18 104 40 86 26 60C20 48 30 34 24 18"
+          stroke="#0b5e5a"
+          stroke-width="8"
+        />
+        <path
+          class="weed"
+          style="--d: 3.4s"
+          d="M44 130C52 108 34 94 46 72C52 60 44 52 48 40"
+          stroke="#0f7568"
+          stroke-width="6"
+        />
+        <path
+          class="weed"
+          style="--d: 5s"
+          d="M352 130C362 106 342 88 356 64C362 52 352 40 358 26"
+          stroke="#0b5e5a"
+          stroke-width="8"
+        />
+        <path
+          class="weed"
+          style="--d: 3.8s"
+          d="M372 130C366 112 380 100 372 84"
+          stroke="#0f7568"
+          stroke-width="6"
+        />
+        <path
+          class="weed"
+          style="--d: 4.6s"
+          d="M300 130C294 116 306 106 300 94"
+          stroke="#0c6660"
+          stroke-width="5"
+        />
+      </g>
+      <path
+        d="M0 112C60 98 110 108 170 104S290 92 340 102 400 104 400 104V130H0Z"
+        fill="#0a3a5c"
+      />
+      <path
+        d="M0 122C70 112 140 120 210 116S330 110 400 118V130H0Z"
+        fill="#072c49"
+      />
+      <ellipse cx="96" cy="112" rx="18" ry="9" fill="#0c4467" />
+      <ellipse cx="250" cy="110" rx="12" ry="6" fill="#0c4467" />
+    </svg>
+
+    <main>
+      <!-- ===== Accueil ===== -->
+      <section id="home">
+        <div class="topbar">
+          <button
+            class="icon-btn"
+            id="homeBack"
+            aria-label="Retour à l'accueil"
+          ></button>
+          <span></span>
+          <button class="icon-btn sound-btn" aria-label="Petits sons"></button>
+        </div>
+        <h1 class="title" aria-label="Mots mêlés">
+          <span class="word"></span><span class="word lit"></span>
+        </h1>
+        <div class="cards" id="cards"></div>
+      </section>
+
+      <!-- ===== Partie ===== -->
+      <section id="game" class="hidden">
+        <div class="topbar">
+          <button
+            class="icon-btn"
+            id="gameBack"
+            aria-label="Choisir une autre grille"
+          ></button>
+          <div class="count" aria-live="polite">
+            <svg viewBox="0 0 34 22" aria-hidden="true">
+              <path d="M10 11L1 3V19Z" fill="#9ff3ff" />
+              <ellipse cx="21" cy="11" rx="13" ry="9" fill="#9ff3ff" />
+              <circle cx="28" cy="8.5" r="1.8" fill="#05304d" />
+            </svg>
+            <b id="foundCount">0</b><small>/</small
+            ><small id="totalCount">8</small>
+          </div>
+          <button class="icon-btn sound-btn" aria-label="Petits sons"></button>
+        </div>
+        <div class="board" id="board">
+          <div class="caustics"></div>
+          <div class="caustics two"></div>
+          <div class="field" id="field">
+            <div id="marks"></div>
+            <div class="letters" id="letters"></div>
+          </div>
+        </div>
+        <div class="school" id="school"></div>
+      </section>
+    </main>
+
+    <div class="layer" id="layer"></div>
+
+    <script>
+      // Une grille par son. Les quatre premières viennent des dictées de Zoé, les
+      // suivantes de outils/grilles.py. On n'ajoute qu'à la fin : l'étoile d'une
+      // grille finie est rangée sous son numéro.
+      const gameGrids = [
+        {
+          grid: "LELTGORILLEB ÉOTREGARDERA GUDGOURMANDG UGUITAREUNEU MÉRÉGALERRAE ERUEUGÂTEAUU",
+          sounds: ["g", "gu"],
+          words: [
+            { word: "gorille" },
+            { word: "gourmand" },
+            { word: "gâteau" },
+            { word: "regarder" },
+            { word: "légume" },
+            { word: "bague" },
+            { word: "guitare" },
+            { word: "régaler" },
+          ],
+        },
+        {
+          grid: "NDÉCIDERSONC LCERISECEELI ETPARCELUICN ÇESICITRONIQ OPDGARÇONNRI NGDECQCINÉMA",
+          sounds: ["ce", "ci", "ç"],
+          words: [
+            { word: "citron" },
+            { word: "cinéma" },
+            { word: "décider" },
+            { word: "cinq" },
+            { word: "cerise" },
+            { word: "celui" },
+            { word: "garçon" },
+            { word: "leçon" },
+          ],
+        },
+        {
+          grid: "BIENCOINCERI LPNOTHNNIPCH OCLOINEDBLHI PEINTUREERII NIOANVIANDEE INNNNTRAINNR",
+          sounds: ["ien", "oin", "ein", "ain"],
+          words: [
+            { word: "lion" },
+            { word: "loin" },
+            { word: "peinture" },
+            { word: "coincer" },
+            { word: "train" },
+            { word: "viande" },
+            { word: "chien" },
+            { word: "bien" },
+          ],
+        },
+        {
+          grid: "OLOSCLICHANTE RADITAMBOURME AMCIMMNCHESAE NAALUPLANTENE GRANDEISSORGT ERACHANSONSEA",
+          sounds: ["an", "am"],
+          words: [
+            { word: "chanson" },
+            { word: "chante" },
+            { word: "grande" },
+            { word: "lampe" },
+            { word: "mange" },
+            { word: "orange" },
+            { word: "plante" },
+            { word: "tambour" },
+          ],
+        },
+        // <grilles générées>
+        {
+          grid: "CHEMISETCMMC LCECECCHTSOH OHUECHTIMVUE CACHOCOLATCV HTLHVACHEIHA EOHHCHAISEEL",
+          sounds: ["ch"],
+          words: [
+            { word: "chat" },
+            { word: "cheval" },
+            { word: "chaise" },
+            { word: "chemise" },
+            { word: "vache" },
+            { word: "chocolat" },
+            { word: "mouche" },
+            { word: "cloche" },
+          ],
+        },
+        {
+          grid: "PGENOUMMRGOL OUCITROUILLE UKANGOUROUPU LCKONLTHIBOU ESOUPEOMEHEU BOUCHENLKBGO",
+          sounds: ["ou"],
+          words: [
+            { word: "poule" },
+            { word: "mouton" },
+            { word: "soupe" },
+            { word: "bouche" },
+            { word: "genou" },
+            { word: "hibou" },
+            { word: "citrouille" },
+            { word: "kangourou" },
+          ],
+        },
+        {
+          grid: "NYPRCIVOBIMS ACOPOMPIERAA CONCOMBREBIV CBALLONRMMSO PNVICOCHONON CRAYONMRCENC",
+          sounds: ["on", "om"],
+          words: [
+            { word: "ballon" },
+            { word: "maison" },
+            { word: "cochon" },
+            { word: "crayon" },
+            { word: "savon" },
+            { word: "pompier" },
+            { word: "ombre" },
+            { word: "concombre" },
+          ],
+        },
+        {
+          grid: "ÉNROINEMMOIM TUPMTOISEAUI OPOISSONIHSI IOIMOUCHOIRI LORTOARMOIRE EOEVVOITUREI",
+          sounds: ["oi"],
+          words: [
+            { word: "roi" },
+            { word: "poire" },
+            { word: "étoile" },
+            { word: "voiture" },
+            { word: "oiseau" },
+            { word: "poisson" },
+            { word: "armoire" },
+            { word: "mouchoir" },
+          ],
+        },
+        {
+          grid: "GAUCHEUEJBJA AECHAPEAUAAU CAGCADEAUTUU CCHÂTEAUCENU AUTRUCHEUAET UUSAUTERAUEU",
+          sounds: ["au", "eau"],
+          words: [
+            { word: "jaune" },
+            { word: "sauter" },
+            { word: "autruche" },
+            { word: "gauche" },
+            { word: "bateau" },
+            { word: "château" },
+            { word: "chapeau" },
+            { word: "cadeau" },
+          ],
+        },
+        {
+          grid: "RPCIOVÉLOEAC OAFUSÉERCUZO CNRZÉCOLEÉÉH HIECLBÉBÉRON EEUEOVPÉNEZÉ RRCPHIBOÉPÉE",
+          sounds: ["é", "er", "ez"],
+          words: [
+            { word: "bébé" },
+            { word: "école" },
+            { word: "vélo" },
+            { word: "fusée" },
+            { word: "épée" },
+            { word: "panier" },
+            { word: "rocher" },
+            { word: "nez" },
+          ],
+        },
+        {
+          grid: "FFLÈCHEAÈIEN ONFFHFFRAISE REÊLLEÊFRÈRE ÊITAEBALEINE TGEEELAITTLR REAELFIOEFIO",
+          sounds: ["è", "ê", "ai", "ei"],
+          words: [
+            { word: "frère" },
+            { word: "flèche" },
+            { word: "fête" },
+            { word: "forêt" },
+            { word: "fraise" },
+            { word: "lait" },
+            { word: "neige" },
+            { word: "baleine" },
+          ],
+        },
+        {
+          grid: "FMBEJMUEETBB LOEOJEUDIULT ETUBUTUERUEO UERDOCTEURUR RURJUECIUFEU OREURECHEVEU",
+          sounds: ["eu"],
+          words: [
+            { word: "feu" },
+            { word: "bleu" },
+            { word: "jeudi" },
+            { word: "cheveu" },
+            { word: "fleur" },
+            { word: "beurre" },
+            { word: "docteur" },
+            { word: "moteur" },
+          ],
+        },
+        {
+          grid: "TSAJIMOULINI IIIALMATINHI MMIRDAUPHIND BPLDIDATPNSI RLAINALAPINN EENNPIISAPIN",
+          sounds: ["in", "im"],
+          words: [
+            { word: "lapin" },
+            { word: "sapin" },
+            { word: "jardin" },
+            { word: "matin" },
+            { word: "dauphin" },
+            { word: "moulin" },
+            { word: "timbre" },
+            { word: "simple" },
+          ],
+        },
+        {
+          grid: "NSRCDSOENEPI NISTECOUSSIN TCSASRSBISOU POUSSINUVASE NVSSIRSIROSE SOAENCOUSINV",
+          sounds: ["s", "ss"],
+          words: [
+            { word: "rose" },
+            { word: "vase" },
+            { word: "cousin" },
+            { word: "bisou" },
+            { word: "tasse" },
+            { word: "dessin" },
+            { word: "coussin" },
+            { word: "poussin" },
+          ],
+        },
+        {
+          grid: "EBPAPILLONLS LIFILLEELRBO LLOREILLEELL LLEEABEILLEE FEUILLERIEII OGRENOUILLEL",
+          sounds: ["ill", "eil", "ouil", "euil"],
+          words: [
+            { word: "fille" },
+            { word: "bille" },
+            { word: "papillon" },
+            { word: "soleil" },
+            { word: "abeille" },
+            { word: "oreille" },
+            { word: "grenouille" },
+            { word: "feuille" },
+          ],
+        },
+        {
+          grid: "CPCYGNEGNOGM VEELIGNEPNNA IICHAMPIGNON GGEACAGNEAUI NNAGILGAGNER EEARAIGNÉEEN",
+          sounds: ["gn"],
+          words: [
+            { word: "cygne" },
+            { word: "ligne" },
+            { word: "peigne" },
+            { word: "vigne" },
+            { word: "agneau" },
+            { word: "gagner" },
+            { word: "araignée" },
+            { word: "champignon" },
+          ],
+        },
+        {
+          grid: "PELTÉLÉPHONE HALPHABETOEP OÉLÉPHANTPNH QÉPHAREHALTO UGIRAFEPOOTT EOCOFFRELLÉO",
+          sounds: ["f", "ff", "ph"],
+          words: [
+            { word: "phare" },
+            { word: "photo" },
+            { word: "phoque" },
+            { word: "éléphant" },
+            { word: "alphabet" },
+            { word: "téléphone" },
+            { word: "girafe" },
+            { word: "coffre" },
+          ],
+        },
+        // </grilles générées>
+      ]
+
+      // Les couleurs des poissons, un par mot : clair en haut, foncé en bas.
+      const colors = [
+        ["#ff9a76", "#e8553a"],
+        ["#ffd25e", "#f08c1a"],
+        ["#ff8cc0", "#d6457f"],
+        ["#c0a2ff", "#7a4fe0"],
+        ["#5ff0d4", "#14a596"],
+        ["#b6eb6c", "#56a82e"],
+        ["#ff7b86", "#c93b4f"],
+        ["#80cfff", "#2f7fe0"],
+      ]
+
+      const SOUND_KEY = "mots-meles-sons"
+      const DONE_KEY = "mots-meles-grilles"
+      const DIRECTIONS = [
+        [0, 1],
+        [1, 1],
+        [1, 0],
+        [1, -1],
+        [0, -1],
+        [-1, -1],
+        [-1, 0],
+        [-1, 1],
+      ]
+
+      const $ = (id) => document.getElementById(id)
+      const reducedMotion = () =>
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      const upper = (word) => word.toLocaleUpperCase("fr")
+
+      Voice.folder = "audio/word-search-game/"
+
+      let soundOn = readSetting(SOUND_KEY) !== "off"
+      let game = null // { index, rows, words, found, swims }
+      let drag = null // { pointerId, row, col, path }
+
+      function readSetting(key) {
+        try {
+          return localStorage.getItem(key)
+        } catch (e) {
+          return null // navigation privée
+        }
+      }
+
+      function writeSetting(key, value) {
+        try {
+          localStorage.setItem(key, value)
+        } catch (e) {
+          // navigation privée : le réglage ne sera pas gardé
+        }
+      }
+
+      const doneGrids = () =>
+        (readSetting(DONE_KEY) || "").split(",").filter(Boolean)
+
+      // ===== Icônes =====
+
+      const ICONS = {
+        back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5L8 12L15 19"/></svg>',
+        soundOn:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9H7L12 5V19L7 15H3Z" fill="currentColor"/><path d="M15.5 8.5A5 5 0 0 1 15.5 15.5M18 6A8.5 8.5 0 0 1 18 18"/></svg>',
+        soundOff:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9H7L12 5V19L7 15H3Z" fill="currentColor"/><path d="M16 9.5L21 14.5M21 9.5L16 14.5"/></svg>',
+        grids:
+          '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>',
+        star: '<svg viewBox="0 0 24 24"><path d="M12 2.5L14.6 8.6L21.2 9.2L16.2 13.6L17.7 20.1L12 16.7L6.3 20.1L7.8 13.6L2.8 9.2L9.4 8.6Z" fill="#ffd25e" stroke="#f08c1a" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+      }
+
+      // Un poisson : queue, nageoire, corps, œil, et le mot dedans.
+      function fishHTML(text) {
+        const letters = [...text].map((l) => `<span>${l}</span>`).join("")
+        return `
+          <span class="shape" aria-hidden="true">
+            <svg class="tail" viewBox="0 0 30 40"><path d="M30 20C20 10 10 2 1 1C6 12 6 28 1 39C10 38 20 30 30 20Z"/></svg>
+            <svg class="fin" viewBox="0 0 28 14"><path d="M0 14C6 4 16 0 28 2C22 6 20 10 20 14Z"/></svg>
+            <span class="body"><i class="eye"></i></span>
+          </span>
+          <span class="label">${letters}</span>`
+      }
+
+      function paintFish(el, text, color, i) {
+        el.style.setProperty("--c1", color[0])
+        el.style.setProperty("--c2", color[1])
+        el.style.setProperty("--i", i)
+        el.innerHTML = fishHTML(text)
+      }
+
+      // ===== La mer =====
+
+      function fillSea() {
+        const sea = $("sea")
+        const rays = [
+          [8, 70, -18, 9],
+          [30, 46, -10, 12],
+          [56, 90, 4, 10],
+          [80, 52, 14, 14],
+        ]
+        rays.forEach(([x, w, a, d]) => {
+          const ray = document.createElement("div")
+          ray.className = "ray"
+          ray.style.cssText = `--x:${x}%;--w:${w}px;--a:${a}deg;--d:${d}s`
+          sea.append(ray)
+        })
+        for (let i = 0; i < 14; i++) {
+          const b = document.createElement("div")
+          b.className = "bubble"
+          const s = 5 + Math.random() * 14
+          b.style.cssText = `--x:${Math.random() * 100}%;--s:${s}px;--d:${
+            9 + Math.random() * 10
+          }s;--delay:${-Math.random() * 18}s`
+          sea.append(b)
+        }
+      }
+
+      // ===== Sons =====
+
+      // Une note douce : elle part de `freq`, glisse jusqu'à `freq * glide`
+      // et s'éteint en `length` secondes.
+      function tone(type, freq, when, volume, length, glide = 1) {
+        if (!soundOn) return
+        const ctx = Voice.wake(1500 + when * 1000)
+        if (!ctx) return
+        const t = ctx.currentTime + when
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = type
+        osc.frequency.setValueAtTime(freq, t)
+        if (glide !== 1) {
+          osc.frequency.exponentialRampToValueAtTime(
+            freq * glide,
+            t + length / 2,
+          )
+        }
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(volume, t + 0.012)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + length)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + length + 0.05)
+      }
+
+      // Une goutte d'eau : une note qui monte très vite.
+      const drop = (freq, when = 0, volume = 0.13, length = 0.16) =>
+        tone("sine", freq, when, volume, length, 1.9)
+
+      // Une harpe sous l'eau : des notes qui montent l'une après l'autre.
+      const harp = (notes, gap = 0.08) =>
+        notes.forEach((freq, i) => tone("triangle", freq, i * gap, 0.1, 0.9))
+
+      const sounds = {
+        step: (n) => drop(520 + Math.min(n, 12) * 55, 0, 0.07, 0.09),
+        found: () => harp([523, 659, 784, 988, 1175]),
+        miss: () => {
+          drop(240, 0, 0.16, 0.2)
+          drop(300, 0.12, 0.14, 0.2)
+          drop(200, 0.24, 0.12, 0.24)
+        },
+        win: () => harp([523, 659, 784, 1047, 784, 1047, 1319, 1568], 0.11),
+      }
+
+      function renderSound() {
+        document.querySelectorAll(".sound-btn").forEach((btn) => {
+          btn.innerHTML = soundOn ? ICONS.soundOn : ICONS.soundOff
+          btn.setAttribute("aria-pressed", soundOn)
+        })
+      }
+
+      function toggleSound() {
+        soundOn = !soundOn
+        writeSetting(SOUND_KEY, soundOn ? "on" : "off")
+        renderSound()
+        drop(700)
+      }
+
+      // ===== Accueil =====
+
+      const spans = (className, texts) => {
+        const el = document.createElement("span")
+        el.className = className
+        el.innerHTML = texts.map((t) => `<span>${upper(t)}</span>`).join("")
+        return el
+      }
+
+      function renderHome() {
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        $("home").classList.remove("hidden")
+        $("game").classList.add("hidden")
+        const done = doneGrids()
+        const cards = $("cards")
+        cards.innerHTML = ""
+        gameGrids.forEach((g, index) => {
+          const card = document.createElement("button")
+          card.className = "card"
+          card.style.setProperty("--i", index)
+          const fish = document.createElement("span")
+          fish.className = "fish"
+          // 3 et 8 sont premiers entre eux : les huit couleurs passent avant
+          // de revenir, et deux cartes voisines ne se ressemblent pas.
+          paintFish(
+            fish,
+            String(index + 1),
+            colors[(index * 3) % colors.length],
+            index,
+          )
+          // Le son de la grille, en pastilles de lumière, puis ses mots.
+          const words = g.words.map((w) => w.word)
+          card.append(fish, spans("sounds", g.sounds), spans("words", words))
+          if (done.includes(String(index))) {
+            card.insertAdjacentHTML(
+              "beforeend",
+              `<span class="done">${ICONS.star}</span>`,
+            )
+          }
+          card.setAttribute("aria-label", `Grille ${index + 1}`)
+          card.addEventListener("click", () => startGame(index))
+          cards.append(card)
+        })
+      }
+
+      // ===== Partie =====
+
+      function startGame(index) {
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        Voice.wake(300)
+        const g = gameGrids[index]
+        game = {
+          index,
+          rows: g.grid.split(" "),
+          words: g.words.map((w) => w.word),
+          found: new Set(),
+          swims: [],
+        }
+        $("home").classList.add("hidden")
+        $("game").classList.remove("hidden")
+        $("board").querySelector(".win")?.remove()
+        $("marks").innerHTML = ""
+        $("layer").innerHTML = ""
+
+        const letters = $("letters")
+        letters.innerHTML = ""
+        game.rows.forEach((row) =>
+          [...row].forEach((letter) => {
+            const cell = document.createElement("div")
+            cell.className = "cell"
+            cell.textContent = letter
+            letters.append(cell)
+          }),
+        )
+        sizeGrid()
+
+        const school = $("school")
+        school.innerHTML = ""
+        game.words.forEach((word, i) => {
+          const slot = document.createElement("button")
+          slot.className = "fish slot"
+          slot.setAttribute("aria-label", word)
+          paintFish(slot, upper(word), colors[i], i)
+          slot.addEventListener("click", () => tapFish(i))
+          school.append(slot)
+          Voice.load(word)
+        })
+        $("totalCount").textContent = game.words.length
+        $("foundCount").textContent = 0
+        window.scrollTo(0, 0)
+      }
+
+      // La taille des cases suit la largeur de l'écran.
+      function sizeGrid() {
+        if (!game) return
+        const cols = game.rows[0].length
+        const room = $("board").clientWidth - 12
+        const cell = Math.floor(Math.min(46, room / cols))
+        const field = $("field")
+        field.style.setProperty("--cols", cols)
+        field.style.setProperty("--cell", cell + "px")
+        game.cell = cell
+      }
+
+      const inGrid = (r, c) =>
+        r >= 0 && r < game.rows.length && c >= 0 && c < game.rows[0].length
+      const cellEl = (row, col) =>
+        $("letters").children[row * game.rows[0].length + col]
+      const letterAt = (row, col) => game.rows[row][col]
+
+      // Le trait part de la case touchée et suit le doigt dans la plus proche
+      // des huit directions, sans sortir de la grille.
+      function pathTo(clientX, clientY) {
+        const { rect } = drag
+        const dx = (clientX - rect.left) / game.cell - (drag.col + 0.5)
+        const dy = (clientY - rect.top) / game.cell - (drag.row + 0.5)
+        const length = Math.hypot(dx, dy)
+        if (length < 0.5) return { dir: DIRECTIONS[0], steps: 0 }
+        const turn = Math.round(Math.atan2(dy, dx) / (Math.PI / 4))
+        const dir = DIRECTIONS[(turn + 8) % 8]
+        const unit = Math.hypot(dir[0], dir[1])
+        let steps = Math.round((dx * dir[1] + dy * dir[0]) / unit / unit)
+        steps = Math.max(0, steps)
+        while (
+          steps > 0 &&
+          !inGrid(drag.row + dir[0] * steps, drag.col + dir[1] * steps)
+        )
+          steps--
+        return { dir, steps }
+      }
+
+      function cellsOf({ dir, steps }) {
+        const cells = []
+        for (let n = 0; n <= steps; n++) {
+          cells.push([drag.row + dir[0] * n, drag.col + dir[1] * n])
+        }
+        return cells
+      }
+
+      function placeStroke(el, row, col, { dir, steps }) {
+        const angle = (Math.atan2(dir[0], dir[1]) * 180) / Math.PI
+        el.style.setProperty("--r", row)
+        el.style.setProperty("--c", col)
+        el.style.setProperty("--len", steps * Math.hypot(dir[0], dir[1]))
+        el.style.setProperty("--ang", angle + "deg")
+      }
+
+      function showSelection() {
+        let stroke = $("selection")
+        if (!stroke) {
+          stroke = document.createElement("div")
+          stroke.id = "selection"
+          stroke.className = "stroke sel"
+          $("marks").append(stroke)
+        }
+        placeStroke(stroke, drag.row, drag.col, drag.path)
+        $("letters")
+          .querySelectorAll(".sel")
+          .forEach((c) => c.classList.remove("sel"))
+        cellsOf(drag.path).forEach(([r, c]) =>
+          cellEl(r, c).classList.add("sel"),
+        )
+      }
+
+      function onPointerDown(e) {
+        if (!game || game.found.size === game.words.length || drag) return
+        const rect = $("field").getBoundingClientRect()
+        const col = Math.floor((e.clientX - rect.left) / game.cell)
+        const row = Math.floor((e.clientY - rect.top) / game.cell)
+        if (!inGrid(row, col)) return
+        e.preventDefault()
+        $("field").setPointerCapture(e.pointerId)
+        Voice.wake(3000)
+        if (window.ExitGuard) ExitGuard.setActive(true)
+        drag = {
+          pointerId: e.pointerId,
+          rect,
+          row,
+          col,
+          path: { dir: DIRECTIONS[0], steps: 0 },
+        }
+        showSelection()
+        sounds.step(0)
+      }
+
+      function onPointerMove(e) {
+        if (!drag || e.pointerId !== drag.pointerId) return
+        const path = pathTo(e.clientX, e.clientY)
+        const same =
+          path.steps === drag.path.steps &&
+          (path.steps === 0 || path.dir === drag.path.dir)
+        if (same) return
+        drag.path = path
+        showSelection()
+        sounds.step(path.steps)
+      }
+
+      function onPointerUp(e) {
+        if (!drag || e.pointerId !== drag.pointerId) return
+        const cells = cellsOf(drag.path)
+        const word = cells.map(([r, c]) => letterAt(r, c)).join("")
+        const stroke = $("selection")
+        drag = null
+        $("letters")
+          .querySelectorAll(".sel")
+          .forEach((c) => c.classList.remove("sel"))
+        stroke.id = ""
+        Voice.wake(3000)
+
+        const index = game.words.findIndex((w) => upper(w) === word)
+        if (index === -1) {
+          burst(stroke, cells.length > 1)
+        } else if (game.found.has(index)) {
+          stroke.remove()
+          tapFish(index)
+        } else {
+          catchWord(index, stroke, cells)
+        }
+      }
+
+      // ===== Un mot trouvé =====
+
+      function catchWord(index, stroke, cells) {
+        game.found.add(index)
+        stroke.className = "stroke mark"
+        stroke.style.setProperty("--c1", colors[index][0])
+        $("foundCount").textContent = game.found.size
+        sounds.found()
+        const word = game.words[index]
+        setTimeout(() => Voice.say(word), reducedMotion() ? 200 : 650)
+
+        const swim = reducedMotion()
+          ? wait(300).then(() => land(index))
+          : swimToSchool(index, cells)
+        game.swims.push(swim)
+        if (game.found.size === game.words.length) {
+          const current = game
+          Promise.all(game.swims).then(() => game === current && win())
+        }
+      }
+
+      function land(index) {
+        const slot = $("school").children[index]
+        slot.classList.add("found")
+        if (!reducedMotion()) {
+          slot.animate(
+            [
+              { transform: "scale(1)" },
+              { transform: "scale(1.1)" },
+              { transform: "scale(1)" },
+            ],
+            { duration: 350, easing: "ease-out" },
+          )
+        }
+      }
+
+      const centerOf = (rect) => [
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+      ]
+
+      // Les lettres se détachent de la grille et se rangent en ligne, un
+      // poisson se forme autour d'elles, puis il file jusqu'à sa place.
+      async function swimToSchool(index, cells) {
+        const current = game
+        const layer = $("layer")
+        const slot = $("school").children[index]
+        const slotRect = slot.getBoundingClientRect()
+        const size = game.cell
+        const gridFont = parseFloat(getComputedStyle(cellEl(0, 0)).fontSize)
+        const labelFont = parseFloat(
+          getComputedStyle(slot.querySelector(".label")).fontSize,
+        )
+        const scale = gridFont / labelFont
+
+        // Le poisson, d'abord invisible, posé au-dessus du mot.
+        const fish = slot.cloneNode(true)
+        fish.classList.add("found", "flying")
+        fish.style.width = slotRect.width + "px"
+        fish.style.height = slotRect.height + "px"
+        fish.style.opacity = 0
+        const rects = cells.map(([r, c]) =>
+          cellEl(r, c).getBoundingClientRect(),
+        )
+        let [x0, y0] = centerOf({
+          left: rects[0].left,
+          top: rects[0].top,
+          width: rects.at(-1).right - rects[0].left,
+          height: rects.at(-1).bottom - rects[0].top,
+        })
+        const half = (slotRect.width * scale) / 2 + 6
+        x0 = Math.min(Math.max(x0, half), innerWidth - half)
+        y0 -= size * 0.15
+        const [x1, y1] = centerOf(slotRect)
+        const at = (x, y, s) =>
+          `translate(${x - slotRect.width / 2}px, ${y - slotRect.height / 2}px) scale(${s})`
+        fish.style.transform = at(x0, y0, scale)
+        layer.append(fish)
+
+        // Les lettres, copiées sur la grille, rejoignent celles du poisson.
+        const targets = [...fish.querySelectorAll(".label span")].map((s) =>
+          centerOf(s.getBoundingClientRect()),
+        )
+        const flights = rects.map((rect, i) => {
+          const letter = document.createElement("span")
+          letter.className = "drift"
+          letter.textContent = letterAt(...cells[i])
+          const from = `translate(${rect.left}px, ${rect.top}px)`
+          letter.style.cssText = `width:${size}px;height:${size}px;font-size:${gridFont}px;transform:${from}`
+          layer.append(letter)
+          const [tx, ty] = targets[i]
+          const lift = `translate(${rect.left}px, ${rect.top - size * 0.3}px) scale(1.3)`
+          const to = `translate(${tx - size / 2}px, ${ty - size / 2}px)`
+          return letter
+            .animate(
+              [
+                { transform: from },
+                { transform: lift, offset: 0.35 },
+                { transform: to },
+              ],
+              {
+                duration: 700,
+                delay: i * 45,
+                easing: "ease-in-out",
+                fill: "forwards",
+              },
+            )
+            .finished.then(() => letter)
+        })
+        const letters = await Promise.all(flights)
+        if (game !== current) return
+        letters.forEach((l) => l.remove())
+        fish.style.opacity = 1
+
+        // Il se forme, tourné comme le banc : il ne se retourne jamais en
+        // route (le banc est sous la grille, on plonge presque toujours).
+        await fish.querySelector(".shape").animate(
+          [
+            { transform: "scale(0.2)", opacity: 0 },
+            { transform: "scale(1.15, 1.1)", opacity: 1, offset: 0.7 },
+            { transform: "scale(1)", opacity: 1 },
+          ],
+          { duration: 380, easing: "ease-out" },
+        ).finished
+        if (game !== current) return
+
+        // Il file en ondulant, le nez vers le bas tant qu'il plonge, avec un
+        // sillage de bulles.
+        const frames = []
+        const steps = 8
+        const nx = -(y1 - y0)
+        const ny = x1 - x0
+        const norm = Math.hypot(nx, ny) || 1
+        const slope = Math.atan2(y1 - y0, Math.abs(x1 - x0))
+        const dive = Math.min(20, (slope * 180) / Math.PI)
+        for (let k = 0; k <= steps; k++) {
+          const t = k / steps
+          const ease = t * t * (3 - 2 * t)
+          // L'ondulation part et arrive à plat : pas d'à-coup au départ.
+          const sway = Math.sin(t * Math.PI * 2) * (1 - t)
+          const x = x0 + (x1 - x0) * ease + (nx / norm) * sway * 26
+          const y = y0 + (y1 - y0) * ease + (ny / norm) * sway * 26
+          const s = scale + (1 - scale) * ease
+          const tilt = dive * Math.sin(t * Math.PI) + sway * 10
+          frames.push({ transform: `${at(x, y, s)} rotate(${tilt}deg)` })
+        }
+        const trail = setInterval(() => {
+          if (game !== current) return clearInterval(trail)
+          const r = fish.getBoundingClientRect()
+          spawnBubble(
+            r.left + 6,
+            r.top + r.height / 2,
+            4 + Math.random() * 6,
+            40,
+          )
+        }, 70)
+        await fish.animate(frames, {
+          duration: 1100,
+          easing: "ease-in-out",
+          fill: "forwards",
+        }).finished
+        clearInterval(trail)
+        if (game !== current) return
+        fish.remove()
+        land(index)
+      }
+
+      function spawnBubble(x, y, s, rise, duration = 700) {
+        const b = document.createElement("div")
+        b.className = "pop"
+        b.style.width = b.style.height = s + "px"
+        const sway = (Math.random() - 0.5) * 20
+        b.animate(
+          [
+            {
+              transform: `translate(${x - s / 2}px, ${y - s / 2}px) scale(0.4)`,
+              opacity: 1,
+            },
+            {
+              transform: `translate(${x - s / 2 + sway}px, ${y - s / 2 - rise}px) scale(1)`,
+              opacity: 0,
+            },
+          ],
+          { duration, easing: "ease-out", fill: "forwards" },
+        ).onfinish = () => b.remove()
+        $("layer").append(b)
+      }
+
+      // Pas un mot : le trait éclate en bulles qui remontent.
+      function burst(stroke, loud) {
+        if (loud) sounds.miss()
+        if (!loud || reducedMotion()) {
+          stroke.animate([{ opacity: 1 }, { opacity: 0 }], 200).onfinish = () =>
+            stroke.remove()
+          return
+        }
+        const r = stroke.getBoundingClientRect()
+        const n = 6 + Math.round((r.width + r.height) / 40)
+        for (let k = 0; k < n; k++) {
+          const t = Math.random()
+          spawnBubble(
+            r.left + r.width * t,
+            r.top + r.height * Math.random(),
+            7 + Math.random() * 12,
+            50 + Math.random() * 60,
+            700 + Math.random() * 400,
+          )
+        }
+        const transform = getComputedStyle(stroke).transform
+        stroke.animate(
+          [
+            { opacity: 1, transform },
+            { opacity: 0, transform: `${transform} scale(1.04, 0.3)` },
+          ],
+          { duration: 260, easing: "ease-in" },
+        ).onfinish = () => stroke.remove()
+      }
+
+      // Un poisson du banc touché : il dit son mot et frétille.
+      function tapFish(index) {
+        const slot = $("school").children[index]
+        Voice.say(game.words[index])
+        if (reducedMotion()) return
+        slot.animate(
+          [
+            { transform: "rotate(0)" },
+            { transform: "rotate(-6deg) scale(1.06)" },
+            { transform: "rotate(5deg) scale(1.06)" },
+            { transform: "rotate(-3deg)" },
+            { transform: "rotate(0)" },
+          ],
+          { duration: 500, easing: "ease-in-out" },
+        )
+      }
+
+      // ===== Fin de partie =====
+
+      function win() {
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        const done = doneGrids()
+        if (!done.includes(String(game.index))) {
+          writeSetting(DONE_KEY, [...done, game.index].join(","))
+        }
+        sounds.win()
+
+        if (!reducedMotion()) {
+          ;[...$("school").children].forEach((slot, i) =>
+            slot.animate(
+              [
+                { transform: "none" },
+                { transform: "translateY(-18px) rotate(-6deg)" },
+                { transform: "none" },
+              ],
+              {
+                duration: 520,
+                delay: i * 70,
+                easing: "ease-in-out",
+                iterations: 2,
+              },
+            ),
+          )
+          const current = game
+          const r = $("board").getBoundingClientRect()
+          for (let k = 0; k < 40; k++) {
+            setTimeout(
+              () =>
+                game === current &&
+                spawnBubble(
+                  r.left + Math.random() * r.width,
+                  r.bottom - Math.random() * 20,
+                  8 + Math.random() * 18,
+                  140 + Math.random() * 200,
+                  1200 + Math.random() * 800,
+                ),
+              k * 35,
+            )
+          }
+        }
+
+        const panel = document.createElement("div")
+        panel.className = "win"
+        panel.innerHTML = `<h2>Bravo !</h2><button class="glow-btn">${ICONS.grids}Une autre grille</button>`
+        panel.querySelector("button").addEventListener("click", leaveGame)
+        $("board").append(panel)
+      }
+
+      function leaveGame() {
+        game = null
+        drag = null
+        $("layer").innerHTML = ""
+        renderHome()
+      }
+
+      // ===== Branchements =====
+
+      $("homeBack").innerHTML = ICONS.back
+      $("gameBack").innerHTML = ICONS.back
+      $("homeBack").addEventListener("click", () =>
+        window.location.assign("./index.html"),
+      )
+      $("gameBack").addEventListener("click", leaveGame)
+      document
+        .querySelectorAll(".sound-btn")
+        .forEach((btn) => btn.addEventListener("click", toggleSound))
+
+      const field = $("field")
+      field.addEventListener("pointerdown", onPointerDown)
+      field.addEventListener("pointermove", onPointerMove)
+      field.addEventListener("pointerup", onPointerUp)
+      field.addEventListener("pointercancel", onPointerUp)
+      window.addEventListener("resize", sizeGrid)
+
+      document.querySelectorAll(".title .word").forEach((el, w) => {
+        const text = w ? "MÊLÉS" : "MOTS"
+        el.innerHTML = [...text]
+          .map((l, i) => `<span style="--i:${w * 4 + i}">${l}</span>`)
+          .join("")
+      })
+      fillSea()
+      renderSound()
+      renderHome()
+    </script>
+  </body>
+</html>
