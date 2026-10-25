@@ -1339,11 +1339,14 @@
 
       // Les gros mots restent jouables, mais un tirage dont le plus long mot
       // possible en est un est refait : le jeu le montrerait en fin de manche
-      // (il a montré ENCULE, octobre 2026). Chaque motif prend un mot entier, sans accents, avec toutes ses
-      // formes, et épargne ses voisins innocents : SALOPETTE, PISSENLIT,
-      // BRANLANT (une dent), BORDELAIS, DECONNECTER, TAPINOIS, TRINGLE,
-      // BAISER (le nom). Les mots d'enfants (CACA, ZIZI) et le vocabulaire
-      // neutre (SEXE, CHATTE, PEDALE, BATARD) restent.
+      // (il a montré ENCULE, octobre 2026). Chaque motif prend un mot entier,
+      // sans accents, avec toutes ses formes, et épargne ses voisins
+      // innocents : SALOPETTE, PISSENLIT, BRANLANT (une dent), BRANLEBAS,
+      // BORDELAIS, DECONNECTER, TAPINOIS, TRINGLE, TRINGLOT, FOUTOU (un
+      // plat), PINASSE, BAISER (le nom). Les gros mots du dictionnaire ont
+      // été relus un à un, ainsi que ses mots marqués péjoratifs ou
+      // argotiques. Les mots d'enfants (CACA, ZIZI) et le vocabulaire neutre
+      // (SEXE, CHATTE, PEDALE, BATARD) restent.
       // Les formes d'un verbe en -er, hors infinitif, et ses noms en -eur.
       const ER_FORMS =
         "A|AI|AIENT|AIS|AIT|AMES|AS|ASSE|ASSENT|ASSES|ASSIEZ|ASSIONS|AT|ATES" +
@@ -1354,45 +1357,50 @@
           [
             // Grossièretés
             "ENCUL.*",
-            "CONS?|CONNES?|CONN?ARD(E|ES|S)?|CONN?ASSES?|CONNERIES?|DECONN(?!ECT|EX).*",
+            "CONS?|CONNES?|CONN?ARD(E|ES|S)?|CONN?ASSES?|CONNERIES?|CONNEAUX?|CONNEMENT",
+            "DECONN(?!ECT|EX).*",
             "CULS?",
             "COUILL.*",
             "BITES?|BITT.*",
             "PUTES?|PUTAINS?|PUTASS.*",
             "SALOP(?!ETTE).*|SALAUD(E|ES|S)?|SALIGAUD.*",
             "(EM|DE)?MERD.*",
-            `CHI(${ER_FORMS}|ANTE?S?|ER|URES?)|CHIOTTES?`,
+            `(CON)?CHI(${ER_FORMS}|ANTE?S?|ER|ERIES?|URES?)|CHIOTTES?|CHIARDS?|CHIATIQUES?`,
             "NIQU.*",
-            "FOUT.*",
-            "BORDELS?|BORDELIQUES?",
+            "FOUT(?!OUS?$).*",
+            "BORDELS?|BORDELIQUES?|BORDELIS.*|BOXON.*",
             "ENFOIRE.*",
             "PISS(?!ENLIT).*",
             "DEGUEUL.*",
             "FIONS?",
             "GARCES?|CATINS?|PETASSES?|POU?FFIASSES?|GROGNASSES?",
             // Vocabulaire sexuel cru (BAISER, le nom, reste)
-            `BAIS(${ER_FORMS}|ANT)`,
-            "BRANL(?!ANT|EMENT).*",
-            "CHIBRE|ZOB|NICHONS?|GODES?|GODEMICHES?|PARTOUZES?",
-            "TRINGL(?!ES?$).*|TAPIN(?!OIS).*",
+            `BAIS(${ER_FORMS}|ANT)|BAISABLES?|BAISOT.*`,
+            "BRANL(?!ANT|EMENT|EBAS).*",
+            "CHIBRE|ZOB|NICHONS?|NIBARDS?|ROTOPLOTS|GODES?|GODEMICHES?|PARTOU[SZ].*",
+            "BIROUTES?|BURNES?|ROUPETTES?|FOUFOUNES?",
+            `PIN(?!ASSES?$)(${ER_FORMS}|ER)`, // la pinasse est un bateau
+            "TRINGL(?!ES?$|OTS?$).*|TAPIN(?!OIS).*",
             "PORNO.*|SODOM.*|MASTURB.*|FELLATIONS?|CUNNILINGUS|ORGASMES?|EJACUL.*",
             "PEDOPHIL.*|ZOOPHIL.*|NECROPHIL.*|INCEST.*|VIOLEUR.*|VIOLEUSES?",
             // Injures racistes ou homophobes
-            "PEDES?|PEDERA.*|GOUINES?|TANTOUZES?|TRAVELOS?",
+            "PEDES?|PEDERA.*|GOUINES?|GOUINASSES?|GOUDOUS?|FIOTTES?|TAFIOLES?",
+            "TANTOU[SZ]ES?|TARLOU[SZ]ES?|TRAVELOS?|GOGOLS?|SIDAIQUES?",
             "NEGRES?|NEGRESS.*|NEGRILL.*|NEGRO.*|YOUPIN.*|BOUGNOUL.*|BICOTS?|CHINETOQUES?|BAMBOULAS?",
-            "BOCHES?|RITALS?",
+            "BOCHES?|RITALS?|POLACKS?",
           ].join("|") +
           ")$",
       )
 
       async function loadWords() {
-        const res = await fetch("fr_FR.txt")
+        const res = await fetch("dictionnaire.txt")
         const text = await res.text()
         const set = new Set()
         text.split("\n").forEach((line) => {
-          const word = line.split("\t")[0]
-          if (!word) return
-          const norm = normalize(word.trim())
+          // Sans ses accents, un mot ne raccourcit jamais : inutile de
+          // normaliser ceux qui ne tiendraient pas sur le plateau.
+          if (line.length > TILE_COUNT) return
+          const norm = normalize(line)
           if (!/^[A-Z]+$/.test(norm)) return
           if (norm.length < MIN_LENGTH || norm.length > TILE_COUNT) return
           set.add(norm)

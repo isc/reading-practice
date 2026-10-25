@@ -16,12 +16,12 @@
 // stale-while-revalidate, donc tout se met à jour seul (au pire au rechargement
 // suivant). Incrémente-le seulement pour forcer une purge immédiate — correctif
 // critique, ou fichiers supprimés/renommés à évacuer du cache.
-const CACHE_VERSION = "v1"
+const CACHE_VERSION = "v2"
 const CACHE_NAME = `marzouzoute-${CACHE_VERSION}`
 
-// Coquille minimale précachée. Les pages de jeux et les gros dictionnaires
-// (fr_FR.txt, mots-enfants.txt) sont mis en cache à la volée plutôt qu'ici,
-// pour ne pas plomber la première installation.
+// Coquille minimale précachée. Les pages de jeux et les listes de mots
+// (dictionnaire.txt, mots-enfants.txt) sont mis en cache à la volée plutôt
+// qu'ici, pour ne pas plomber la première installation.
 const PRECACHE_URLS = [
   "./",
   "./index.html",
