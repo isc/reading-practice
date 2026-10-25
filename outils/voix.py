@@ -38,6 +38,30 @@ PRONONCIATION = {
     "dinde": "Dinnde.",  # « Dinde. » sort souvent « dine-dé »
     "burger": "Beurgueur.",  # sinon « burgé » ; « beurgeur » est bloqué par la modération de Mistral
     "quille": "Quille !",  # « Quille. » sort « qui », « Gilles »…
+    "train": "Le train.",  # seul, « Train. » sort « R », « fin », « rien »…
+    "hibou": "Hibou !",  # « Hibou. » sort « Ibu »
+    "pont": "Ponts !",  # « Pont. » sort « fond », « bon »
+    "feu": "Le feu.",  # seul, « Feu. » part en phrases inventées (« Je te remercie… »)
+    "tasse": "La tasse.",  # « Tasse. » sort « tas », « l'as »
+    "fraise": "La fraise.",  # « Fraise. » sort « faise », « fries », « treize »
+    "phoque": "Le phoque.",  # seul, Whisper entend « fuck » à chaque prise
+    "bébé": "Le bébé.",  # « Bébé. » part en babil (« Zata, bouboune, bébé ») à chaque prise
+    "gauche": "À gauche.",  # « Gauche. » sort « gouche », ou part en phrases inventées
+    "bottes": "Les bottes.",  # « Bottes. » : Whisper entend « bots »
+    "quai": "Le quai.",  # « Quai. » : Whisper entend « OK »
+    "est": "Ai.",  # « Est. » se lit comme le point cardinal
+    # Lis à voix haute : Whisper entendait autre chose avec « Mot. »
+    "rit": "Ri !",  # « rite »
+    "lit": "Lit !",  # « oui »
+    "sami": "Sami !",  # « amis »
+    "en": "An !",  # « En. » : rien ; Whisper entend encore « un », à écouter
+    "toit": "Le toit.",  # « à droite »
+    "fait": "Fait !",  # « j'aime »
+    "saute": "Saute !",  # « soutes »
+    "papi": "Papy !",  # « tapis », « pathie » : à écouter
+    "fond": "Le fond.",  # « fins »
+    "quand": "Quand ?",  # « temps »
+    "ont": "On !",  # Whisper entend « un » à chaque essai : à écouter
 }
 
 
@@ -49,10 +73,31 @@ def slug(mot: str) -> str:
     return sans.replace(" ", "-")
 
 
-def a_faire(jeu: str) -> list[str]:
+def mots(jeu: str) -> list[str]:
+    """Les mots d'un jeu, lus dans sa page : les `word: "…"` de son tableau, et les mots des
+    `phrase: "…"` de « Lis à voix haute » (sans leurs marques de syllabes et de lettres muettes)."""
     page = (RACINE / f"{jeu}.html").read_text()
+    liste = re.findall(r'word: "([^"]+)"', page)
+    for phrase in re.findall(r'phrase:\s*"([^"]+)"', page):
+        liste += [m.strip(".,!?;:").lower() for m in re.sub(r"[/()]", "", phrase).split()]
+    return list(dict.fromkeys(liste))
+
+
+# Des mots qui ne diffèrent que par l'accent partagent un fichier : bien seulement s'ils se disent
+# pareil.
+HOMOPHONES = {"a", "à"}
+
+
+def a_faire(jeu: str) -> list[str]:
+    liste = mots(jeu)
+    par_slug = {}
+    for m in liste:
+        par_slug.setdefault(slug(m), set()).add(m)
+    collisions = [" / ".join(sorted(v)) for v in par_slug.values() if len(v) > 1 and not v <= HOMOPHONES]
+    if collisions:
+        sys.exit(f"Même fichier pour des mots qui se disent autrement : {', '.join(collisions)}")
     sortie = RACINE / "audio" / jeu
-    return [m for m in re.findall(r'word: "([^"]+)"', page) if not (sortie / f"{slug(m)}.mp3").exists()]
+    return [m for m in liste if not (sortie / f"{slug(m)}.mp3").exists()]
 
 
 def dire(texte: str, f: Path):
@@ -107,8 +152,12 @@ def main(jeu: str):
             entendu = " ".join(s.text.strip() for s in segments)
             attendu, hyp = tuple(words(mot)), tuple(words(entendu))
             prononcer_expressions([attendu, hyp])
-            # Écart en sons entre ce qui est dit et le mot ; à égalité, la prise la plus courte.
-            notes.append((_distance(_phrases[attendu], _phrases[hyp]), sf.info(str(f)).duration, f.name, entendu))
+            # Écart en sons entre ce qui est dit et le mot ; à égalité, la prise la plus courte. Une prise
+            # trop longue pour son texte a bavardé autour du mot (« J'lis, j'lis… bébé »), ce que
+            # Whisper n'entend pas toujours : elle ne compte pas.
+            duree = sf.info(str(f)).duration
+            ecart = _distance(_phrases[attendu], _phrases[hyp]) + (99 if duree > 0.5 + 0.08 * len(texte) else 0)
+            notes.append((ecart, duree, f.name, entendu))
         ecart, _, meilleure, entendu = min(notes)
         try:
             pinson.mp3(dossier / meilleure, sortie / f"{slug(mot)}.mp3")
