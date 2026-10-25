@@ -138,9 +138,15 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   minuscules avec ses accents, sans tiret ni apostrophe, après trois lignes
   de licence qui commencent par `#` : un jeu les ignore. Il se fabrique avec
   `outils/dictionnaire.py`, depuis le lexique libre de Grammalecte : jamais
-  à la main. Un jeu qui montre de lui-même un mot tiré
-  du dictionnaire écarte les gros mots (cf. `SWEAR_WORD` dans le mot le plus
-  long) ; le joueur, lui, peut taper n'importe quel mot qui existe.
+  à la main. Un jeu qui montre de lui-même un mot tiré du dictionnaire
+  écarte les gros mots (cf. `SWEAR_WORD` dans le mot le plus long) ; le
+  joueur, lui, peut taper n'importe quel mot qui existe.
+- **Explications de mots** : `explications/<lettre>.json` dit, pour chaque mot
+  de 3 à 9 lettres, sa forme accentuée, ce qu'il est (« le verbe creuser, au
+  présent, avec « ils » ou « elles » ») et la définition pour enfants des
+  mots peu courants. Fabriqué par `outils/explications.py`, d'après
+  Grammalecte et `outils/definitions.json` (définitions du Wiktionnaire
+  réécrites par Claude, `outils/definitions.py`) : jamais à la main.
 
 ## Brancher le jeu dans l'accueil
 
