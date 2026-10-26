@@ -150,13 +150,43 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
 
 ## Brancher le jeu dans l'accueil
 
-Ajoute une carte dans la grille de `index.html` :
+L'accueil est une vitrine : chaque jeu y a une vignette dans ses propres
+couleurs et sa propre police, avec un petit dessin de ce qui le caractérise
+(pas d'emoji). Pour un nouveau jeu, dans `index.html` :
 
-```html
-<a class="grid-option" href="fracto-dingo.html">
-  <h3>Fracto Dingo</h3>
-</a>
-```
+1. **La vignette**, dans la grille de sa famille (`data-category`) :
+
+   ```html
+   <a
+     class="game"
+     href="fracto-dingo.html"
+     data-game="fracto-dingo"
+     data-tags="calcul maths fractions nombres"
+   >
+     <span class="game-art" aria-hidden="true">
+       <svg viewBox="0 0 160 100"><!-- le dessin --></svg>
+     </span>
+     <span class="game-name">Fracto Dingo</span>
+   </a>
+   ```
+
+   La recherche lit le nom, la famille et les mots-clés de `data-tags`, pas
+   le texte du dessin. Un sous-titre va dans `<span class="game-sub">`
+   (« feuille de score »).
+
+2. **Son style**, un bloc `[data-game="…"]` qui reprend celui du jeu : `--bg`
+   (fond, dégradés permis), `--fg` (couleur du nom), `--font` (la police du
+   titre du jeu, avec son `@font-face` en tête de la page s'il n'y est pas),
+   et au besoin `--size`, `--weight`, `--spacing`, `--case`, `--shadow`,
+   `--accent` (couleur d'un `<b>` dans le nom).
+
+3. **Le dessin**, en SVG en ligne, sans `id` à lui : la vignette est clonée
+   dans « Tes derniers jeux ». Les dégradés, filtres et motifs partagés sont
+   dans le `<defs>` en tête du `<body>`. Le dessin peut déborder sur les côtés
+   (un store, un horizon) : la vignette le coupe.
+
+Le reste suit tout seul : le nombre de jeux, les derniers jeux, et la bannière
+pleine largeur d'une famille au nombre de jeux impair sur téléphone.
 
 ## PWA / cache
 
