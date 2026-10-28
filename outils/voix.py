@@ -73,6 +73,7 @@ PRONONCIATION = {
     "bottes": "Les bottes.",  # « Bottes. » : Whisper entend « bots »
     "quai": "Le quai.",  # « Quai. » : Whisper entend « OK »
     "est": "Ai.",  # « Est. » se lit comme le point cardinal
+    "agneau": "L'agneau.",  # « Agneau. » sort « ag-no », « a-gui-gno » ou « anneau », que Whisper entend « agneau »
     # Lis à voix haute : Whisper entendait autre chose avec « Mot. »
     "rit": "Ri !",  # « rite »
     "lit": "Lit !",  # « oui »
