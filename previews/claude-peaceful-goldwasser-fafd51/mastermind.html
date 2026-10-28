@@ -1,0 +1,1846 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0e1a38" />
+    <title>Mastermind</title>
+    <style>
+      /* Laboratoire de potions : les couleurs sont des gouttes de potion
+         lumineuses, versées depuis des fioles. À côté de chaque essai, les
+         indices du vrai jeu : un pion doré pour une bonne potion à la bonne
+         place, un pion blanc pour une bonne potion ailleurs. La recette
+         secrète attend sous une brume, en haut. */
+
+      @font-face {
+        font-family: "Grandstander";
+        src: url("Grandstander-Variable.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: swap;
+      }
+
+      :root {
+        --bg: #0d0820;
+        --mint: #6ff7d2;
+        --violet: #a77bff;
+        --gold: #ffe27a;
+        --text: #f3eeff;
+        --muted: #b3a8dd;
+        --glass: rgba(255, 255, 255, 0.06);
+        --edge: rgba(255, 255, 255, 0.14);
+        --font: "Grandstander", "Trebuchet MS", system-ui, sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        font-family: var(--font);
+        color: var(--text);
+        background:
+          radial-gradient(120% 60% at 50% 115%, #2a1563 0%, transparent 65%),
+          radial-gradient(90% 45% at 50% -8%, #0f3350 0%, transparent 70%),
+          var(--bg);
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: none;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      canvas#confetti {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1000;
+      }
+
+      .defs {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
+
+      /* Des bulles qui montent doucement dans tout le labo. */
+      .vapor {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .vapor span {
+        position: absolute;
+        bottom: -40px;
+        border-radius: 50%;
+        border: 1px solid rgba(190, 170, 255, 0.22);
+        background: radial-gradient(
+          circle at 35% 30%,
+          rgba(255, 255, 255, 0.18),
+          transparent 55%
+        );
+        animation: rise linear infinite;
+      }
+
+      @keyframes rise {
+        from {
+          transform: translateY(0);
+          opacity: 0;
+        }
+        15% {
+          opacity: 1;
+        }
+        85% {
+          opacity: 0.8;
+        }
+        to {
+          transform: translateY(-110vh);
+          opacity: 0;
+        }
+      }
+
+      .fx {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      .app {
+        position: relative;
+        max-width: 460px;
+        height: 100%;
+        max-height: 900px;
+        margin: 0 auto;
+        padding: max(10px, env(safe-area-inset-top)) 16px
+          calc(12px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      /* ----- En-tête ----- */
+      .bar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+      }
+
+      .bar h1 {
+        font-size: 28px;
+        font-weight: 750;
+        letter-spacing: 0.5px;
+        background: linear-gradient(100deg, var(--mint), #b9f2ff 45%, #cfa8ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .icon-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--glass);
+        border: 1px solid var(--edge);
+        display: grid;
+        place-items: center;
+      }
+
+      .icon-btn svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      #helpBtn {
+        justify-self: start;
+      }
+
+      #bookBtn {
+        justify-self: end;
+      }
+
+      /* ----- La recette secrète ----- */
+      .secret {
+        align-self: center;
+        display: flex;
+        gap: 12px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--edge);
+      }
+
+      .seal {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow:
+          inset 0 0 0 1.5px rgba(207, 168, 255, 0.45),
+          0 0 14px rgba(167, 123, 255, 0.25);
+      }
+
+      .fog {
+        position: absolute;
+        inset: -30%;
+        background:
+          radial-gradient(
+            circle at 30% 35%,
+            rgba(207, 168, 255, 0.85),
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 70% 60%,
+            rgba(111, 247, 210, 0.6),
+            transparent 42%
+          ),
+          radial-gradient(
+            circle at 45% 80%,
+            rgba(255, 255, 255, 0.45),
+            transparent 35%
+          );
+        animation: swirl 7s linear infinite;
+      }
+
+      /* Le voile d'une case cachée : sa brume et son « ? ». */
+      .veil {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+      }
+
+      .mark {
+        position: relative;
+        width: 68%;
+        height: 68%;
+        fill: none;
+        stroke: #fff;
+        stroke-width: 2.8;
+        stroke-linecap: round;
+      }
+
+      .seal:nth-child(2) .fog {
+        animation-duration: 9s;
+        animation-direction: reverse;
+      }
+
+      .seal:nth-child(3) .fog {
+        animation-duration: 8s;
+      }
+
+      .seal:nth-child(4) .fog {
+        animation-duration: 10s;
+        animation-direction: reverse;
+      }
+
+      @keyframes swirl {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .seal .drop {
+        inset: 3px;
+      }
+
+      /* ----- Le plateau : dix rangées, la première en bas ----- */
+      .stage {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .board {
+        height: 100%;
+        display: grid;
+        grid-template-rows: repeat(10, 1fr);
+        gap: 3px;
+        padding: 8px 10px;
+        border-radius: 22px;
+        background: var(--glass);
+        border: 1px solid var(--edge);
+      }
+
+      /* Chaque rangée est un conteneur : ses cases se règlent sur sa hauteur
+         (WebKit ne sait pas déduire une largeur d'une hauteur en %). */
+      .row {
+        container-type: size;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        border-radius: 999px;
+        transition:
+          background-color 0.3s,
+          box-shadow 0.3s;
+      }
+
+      .row.active {
+        background: rgba(111, 247, 210, 0.08);
+        box-shadow:
+          inset 0 0 0 1.5px rgba(111, 247, 210, 0.5),
+          0 0 18px rgba(111, 247, 210, 0.12);
+      }
+
+      .slots {
+        --s: min(44px, 88cqh);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .slot {
+        position: relative;
+        width: var(--s);
+        height: var(--s);
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 50% 65%,
+          rgba(0, 0, 0, 0.4),
+          rgba(255, 255, 255, 0.05)
+        );
+        box-shadow:
+          inset 0 2px 5px rgba(0, 0, 0, 0.45),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+        transition: transform 0.3s;
+      }
+
+      .row.future .slot {
+        transform: scale(0.42);
+        opacity: 0.8;
+      }
+
+      .row:not(.active) .slot {
+        pointer-events: none;
+      }
+
+      .slot.target::after {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border-radius: 50%;
+        border: 2px solid var(--mint);
+        animation: beckon 1.3s ease-in-out infinite;
+      }
+
+      @keyframes beckon {
+        50% {
+          transform: scale(1.1);
+          opacity: 0.35;
+        }
+      }
+
+      /* Une goutte de potion : une sphère de lumière colorée, avec son
+         symbole pour qui confond les couleurs. */
+      .drop {
+        position: absolute;
+        inset: 2px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(
+          circle at 34% 28%,
+          #fff 0 7%,
+          color-mix(in srgb, var(--c), #fff 40%) 20%,
+          var(--c) 52%,
+          var(--d) 100%
+        );
+        box-shadow:
+          0 0 12px -2px var(--c),
+          inset 0 -3px 6px rgba(0, 0, 0, 0.25);
+      }
+
+      .drop svg {
+        width: 46%;
+        height: 46%;
+        fill: rgba(40, 14, 70, 0.34);
+      }
+
+      .ripple {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2px solid var(--c);
+        pointer-events: none;
+      }
+
+      /* Les indices, comme sur le vrai jeu : quatre petits trous en carré
+         où s'allument les pions. */
+      .clue {
+        --p: min(17px, 42cqh);
+        display: grid;
+        grid-template-columns: repeat(2, var(--p));
+        gap: 3px;
+      }
+
+      .peg {
+        width: var(--p);
+        height: var(--p);
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.35);
+        box-shadow:
+          inset 0 1px 3px rgba(0, 0, 0, 0.5),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+      }
+
+      .peg .peg-icon {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .row.future .clue {
+        opacity: 0.35;
+      }
+
+      .row.winner .drop {
+        animation: shimmer 1.4s ease-in-out 3;
+      }
+
+      .row.winner .slot:nth-child(2) .drop {
+        animation-delay: 0.15s;
+      }
+
+      .row.winner .slot:nth-child(3) .drop {
+        animation-delay: 0.3s;
+      }
+
+      .row.winner .slot:nth-child(4) .drop {
+        animation-delay: 0.45s;
+      }
+
+      @keyframes shimmer {
+        50% {
+          transform: scale(1.1);
+        }
+      }
+
+      /* ----- L'étagère des potions ----- */
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .shelf {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+      }
+
+      .shelf.off {
+        opacity: 0.3;
+        pointer-events: none;
+        transition: opacity 0.5s;
+      }
+
+      .shelf.off * {
+        animation: none;
+      }
+
+      .bottle {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        max-width: 62px;
+        aspect-ratio: 60 / 72;
+      }
+
+      .bottle::before {
+        content: "";
+        position: absolute;
+        inset: 25% -10% -8%;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          color-mix(in srgb, var(--c), transparent 55%),
+          transparent 65%
+        );
+      }
+
+      .bottle svg {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      .bottle .glass {
+        fill: rgba(255, 255, 255, 0.07);
+        stroke: rgba(255, 255, 255, 0.6);
+        stroke-width: 1.6;
+      }
+
+      .bottle .liquid {
+        fill: var(--c);
+      }
+
+      .bottle .wave {
+        animation: wave 3.2s linear infinite;
+      }
+
+      .bottle:nth-child(2n) .wave {
+        animation-duration: 2.6s;
+      }
+
+      @keyframes wave {
+        to {
+          transform: translateX(60px);
+        }
+      }
+
+      .shine {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.5);
+        stroke-width: 1.6;
+        stroke-linecap: round;
+      }
+
+      .bottle .glyph {
+        fill: rgba(40, 14, 70, 0.32);
+      }
+
+      .bottle .fizz {
+        fill: rgba(255, 255, 255, 0.7);
+        animation: fizz 2.4s ease-in infinite;
+      }
+
+      .bottle .fizz:nth-of-type(2) {
+        animation-delay: 1.2s;
+      }
+
+      @keyframes fizz {
+        from {
+          transform: translateY(0);
+          opacity: 0;
+        }
+        20% {
+          opacity: 1;
+        }
+        to {
+          transform: translateY(-22px);
+          opacity: 0;
+        }
+      }
+
+      .big-btn {
+        height: 56px;
+        border-radius: 18px;
+        font-size: 22px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: #1a0b3a;
+        background: linear-gradient(100deg, var(--mint), #a8ecff 50%, #c9a2ff);
+        box-shadow: 0 0 22px rgba(111, 247, 210, 0.3);
+        transition:
+          opacity 0.25s,
+          box-shadow 0.25s;
+      }
+
+      .big-btn svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .big-btn:disabled {
+        opacity: 0.28;
+        box-shadow: none;
+        cursor: default;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* ----- Les panneaux, calés sur le plateau ----- */
+      .sheet {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 18px 18px 14px;
+        border-radius: 22px;
+        background: rgba(20, 11, 48, 0.96);
+        border: 1px solid rgba(207, 168, 255, 0.35);
+        box-shadow: 0 0 30px rgba(167, 123, 255, 0.2);
+        overflow-y: auto;
+        animation: appear 0.35s ease-out;
+      }
+
+      @keyframes appear {
+        from {
+          opacity: 0;
+          transform: translateY(12px) scale(0.98);
+        }
+      }
+
+      .sheet h2 {
+        font-size: 26px;
+        font-weight: 750;
+        text-align: center;
+        color: var(--gold);
+      }
+
+      .close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+      }
+
+      .close svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .help-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        font-size: 17px;
+        line-height: 1.3;
+      }
+
+      .help-list li {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .pic {
+        flex: none;
+        width: 104px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+      }
+
+      .pic .seal,
+      .pic .orb {
+        position: relative;
+        width: 22px;
+        height: 22px;
+        flex: none;
+      }
+
+      .pic .seal .fog {
+        animation: none;
+      }
+
+      .pic .orb {
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.35);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+      }
+
+      .pic .orb .drop {
+        inset: 0;
+        box-shadow: none;
+      }
+
+      .pic .stack {
+        display: grid;
+        grid-template-columns: 22px 22px;
+        gap: 4px;
+      }
+
+      .pic .stack .seal {
+        overflow: visible;
+        box-shadow: inset 0 0 0 1.5px rgba(207, 168, 255, 0.6);
+        background: none;
+      }
+
+      .pic .arrow {
+        width: 14px;
+        height: 14px;
+        stroke: var(--muted);
+        fill: none;
+        stroke-width: 2.4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .peg-icon {
+        width: 20px;
+        height: 20px;
+        flex: none;
+        overflow: visible;
+      }
+
+      .help-note {
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      /* Le carnet des parties. */
+      .history {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 17px;
+      }
+
+      .history li {
+        display: grid;
+        grid-template-columns: 30px 1fr 1fr 1.4fr;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .history .peg-icon {
+        width: 18px;
+        height: 18px;
+      }
+
+      .history .date {
+        color: var(--muted);
+        font-size: 14px;
+        text-align: right;
+      }
+
+      .history li.history-empty {
+        display: block;
+        text-align: center;
+        color: var(--muted);
+        padding: 20px 0;
+      }
+
+      .sheet h3 {
+        font-size: 18px;
+        color: var(--muted);
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .result {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 18px;
+        font-size: 20px;
+      }
+
+      .result b {
+        font-size: 42px;
+        line-height: 1;
+        color: var(--mint);
+        margin-right: 4px;
+      }
+
+      .result .time {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+      }
+
+      .result .time svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .look-up {
+        display: flex;
+        justify-content: center;
+      }
+
+      .look-up svg {
+        width: 46px;
+        height: 46px;
+        animation: bob 1.2s ease-in-out infinite;
+      }
+
+      @keyframes bob {
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+
+      .spark {
+        position: absolute;
+        width: 7px;
+        height: 7px;
+        margin: -3.5px 0 0 -3.5px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #fff 0 25%, var(--c) 60%);
+      }
+
+      .puff {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        margin: -7px 0 0 -7px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(200, 190, 230, 0.7),
+          transparent 70%
+        );
+      }
+
+      .flyer {
+        position: absolute;
+      }
+
+      .flyer > span {
+        position: absolute;
+        inset: 0;
+      }
+
+      @media (hover: hover) {
+        .bottle:hover svg {
+          transform: translateY(-3px);
+        }
+        .icon-btn:hover {
+          background: rgba(255, 255, 255, 0.12);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .vapor,
+        .bottle .fizz {
+          display: none;
+        }
+        .fog,
+        .bottle .wave,
+        .slot.target::after,
+        .row.winner .drop,
+        .look-up svg {
+          animation: none;
+        }
+        .sheet {
+          animation-duration: 0.01s;
+        }
+      }
+    </style>
+    <script src="exit-guard.js"></script>
+  </head>
+  <body>
+    <canvas id="confetti"></canvas>
+
+    <!-- Symboles des potions, pions d'indice et dégradés partagés. -->
+    <svg class="defs" aria-hidden="true">
+      <defs>
+        <symbol id="g-heart" viewBox="0 0 24 24">
+          <path
+            d="M12 21C5 15.5 2 12.2 2 8.6A4.6 4.6 0 0 1 12 6.3A4.6 4.6 0 0 1 22 8.6C22 12.2 19 15.5 12 21Z"
+          />
+        </symbol>
+        <symbol id="g-drop" viewBox="0 0 24 24">
+          <path
+            d="M12 2C12 2 5 10.2 5 14.6A7 7 0 0 0 19 14.6C19 10.2 12 2 12 2Z"
+          />
+        </symbol>
+        <symbol id="g-leaf" viewBox="0 0 24 24">
+          <path d="M4 20C4 10 10 4 20 4C20 14 14 20 4 20Z" />
+        </symbol>
+        <symbol id="g-star" viewBox="0 0 24 24">
+          <path
+            d="M12 2L14.9 8.6L22 9.3L16.6 14L18.2 21L12 17.3L5.8 21L7.4 14L2 9.3L9.1 8.6Z"
+          />
+        </symbol>
+        <symbol id="g-moon" viewBox="0 0 24 24">
+          <path d="M14 2.5A9.5 9.5 0 1 0 21.5 15A7.5 7.5 0 1 1 14 2.5Z" />
+        </symbol>
+        <symbol id="g-question" viewBox="0 0 24 24">
+          <path d="M8.8 9A3.3 3.3 0 1 1 13.6 12C12.6 12.6 12 13.3 12 14.6" />
+          <circle cx="12" cy="18.6" r="0.4" />
+        </symbol>
+        <symbol id="g-gem" viewBox="0 0 24 24">
+          <path d="M12 2L21 12L12 22L3 12Z" />
+        </symbol>
+        <radialGradient id="gold" cx="0.35" cy="0.3" r="0.8">
+          <stop offset="0" stop-color="#fff" />
+          <stop offset="0.4" stop-color="#ffe27a" />
+          <stop offset="1" stop-color="#f09a1e" />
+        </radialGradient>
+        <clipPath id="bottle-clip">
+          <circle cx="30" cy="48" r="20.6" />
+        </clipPath>
+        <!-- Pion doré : bonne potion, bonne place. -->
+        <g id="peg-bright">
+          <circle r="6.6" fill="rgba(255, 226, 122, 0.3)" />
+          <circle
+            r="4.8"
+            fill="url(#gold)"
+            stroke="#8a4d00"
+            stroke-width="0.6"
+          />
+        </g>
+        <!-- Pion blanc : bonne potion, autre place. -->
+        <g id="peg-hollow">
+          <circle
+            r="4.4"
+            fill="rgba(220, 235, 255, 0.22)"
+            stroke="#eef5ff"
+            stroke-width="1.9"
+          />
+        </g>
+      </defs>
+    </svg>
+
+    <div class="vapor" aria-hidden="true" id="vapor"></div>
+    <div class="fx" id="fx"></div>
+
+    <main class="app">
+      <header class="bar">
+        <button class="icon-btn" id="helpBtn" aria-label="Comment jouer">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <use href="#g-question" />
+          </svg>
+        </button>
+        <h1>Mastermind</h1>
+        <button class="icon-btn" id="bookBtn" aria-label="Tes parties">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M10 6.5H20M10 12H20M10 17.5H20" />
+            <circle cx="5" cy="6.5" r="1.4" fill="currentColor" stroke="none" />
+            <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+            <circle
+              cx="5"
+              cy="17.5"
+              r="1.4"
+              fill="currentColor"
+              stroke="none"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <div class="secret" id="secret" aria-label="La recette secrète"></div>
+
+      <div class="stage">
+        <div class="board" id="board"></div>
+
+        <section class="sheet hidden" id="helpSheet">
+          <button class="close" data-close aria-label="Fermer"></button>
+          <h2>Comment jouer</h2>
+          <ul class="help-list">
+            <li>
+              <span class="pic" id="helpSecret"></span>
+              <span>Devine les 4 potions cachées, dans le bon ordre.</span>
+            </li>
+            <li>
+              <span class="pic" id="helpPour"></span>
+              <span
+                >Touche les fioles pour remplir la rangée, puis « Valider
+                ».</span
+              >
+            </li>
+            <li>
+              <span class="pic" id="helpBright"></span>
+              <span>Pion doré : bonne potion, bonne place.</span>
+            </li>
+            <li>
+              <span class="pic" id="helpHollow"></span>
+              <span>Pion blanc : bonne potion, mais pas à sa place.</span>
+            </li>
+          </ul>
+          <p class="help-note">
+            Tu as 10 essais. Une goutte touchée retourne dans sa fiole. Une même
+            potion peut servir plusieurs fois.
+          </p>
+        </section>
+
+        <section class="sheet hidden" id="bookSheet">
+          <button class="close" data-close aria-label="Fermer"></button>
+          <h2>Tes parties</h2>
+          <ol class="history" id="bookList"></ol>
+        </section>
+
+        <section class="sheet hidden" id="endSheet">
+          <h2 id="endTitle"></h2>
+          <div id="endBody"></div>
+          <h3>Tes parties</h3>
+          <ol class="history" id="endList"></ol>
+        </section>
+      </div>
+
+      <div class="controls">
+        <div class="shelf" id="shelf"></div>
+        <button class="big-btn" id="validateBtn" disabled>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4.5 12.5L9.5 17.5L19.5 6.5" />
+          </svg>
+          Valider
+        </button>
+        <button class="big-btn hidden" id="againBtn">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 12A8 8 0 1 1 17.7 6.3" />
+            <path d="M18.5 2.5V6.8H14.2" />
+          </svg>
+          Nouvelle partie
+        </button>
+      </div>
+    </main>
+
+    <script src="confetti.js"></script>
+    <script src="voix.js"></script>
+    <script>
+      // Six potions, chacune avec son symbole (cœur, goutte, feuille, étoile,
+      // lune, diamant) pour qui confond les couleurs.
+      const POTIONS = [
+        { c: "#ff4d6d", d: "#a3123a", glyph: "heart" },
+        { c: "#3fb2ff", d: "#0b4f9e", glyph: "drop" },
+        { c: "#47e08a", d: "#0f7a44", glyph: "leaf" },
+        { c: "#ffd23f", d: "#b07a00", glyph: "star" },
+        { c: "#f4f0ff", d: "#9c93c7", glyph: "moon" },
+        { c: "#b26bff", d: "#5420a8", glyph: "gem" },
+      ]
+      const SLOTS = 4
+      const maxAttempts = 10
+
+      const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)")
+      const $ = (id) => document.getElementById(id)
+      const board = $("board")
+      const validateBtn = $("validateBtn")
+      const fx = $("fx")
+      const wait = (ms) =>
+        new Promise((r) => setTimeout(r, reducedMotion.matches ? ms / 3 : ms))
+
+      let secretCode = []
+      let currentGuess = []
+      let target = null
+      let turn = 0 // nombre d'essais déjà validés
+      let rows = []
+      let busy = false // essai en cours de lecture ou partie finie
+      let startTime
+
+      // ---------- Le son : synthétisé, par le contexte de voix.js ----------
+
+      function audio(ms) {
+        return window.Voice ? Voice.wake(ms) : null
+      }
+
+      function ctx() {
+        return window.Voice ? Voice.context() : null
+      }
+
+      // Une note brève : attaque franche, extinction douce. `to` fait
+      // glisser la hauteur, comme une bulle qui éclate.
+      function tone({ type = "sine", freq, to, delay = 0, dur, vol }) {
+        const c = ctx()
+        if (!c) return
+        const at = c.currentTime + 0.01 + delay
+        const osc = c.createOscillator()
+        const gain = c.createGain()
+        osc.type = type
+        osc.frequency.setValueAtTime(freq, at)
+        if (to) osc.frequency.exponentialRampToValueAtTime(to, at + dur)
+        gain.gain.setValueAtTime(0, at)
+        gain.gain.linearRampToValueAtTime(vol, at + 0.008)
+        gain.gain.exponentialRampToValueAtTime(0.0008, at + dur)
+        osc.connect(gain)
+        gain.connect(c.destination)
+        osc.start(at)
+        osc.stop(at + dur + 0.05)
+      }
+
+      let noiseBuffer = null
+      function hiss(delay, dur, vol, cutoff) {
+        const c = ctx()
+        if (!c) return
+        if (!noiseBuffer) {
+          noiseBuffer = c.createBuffer(1, c.sampleRate / 2, c.sampleRate)
+          const data = noiseBuffer.getChannelData(0)
+          for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+        }
+        const at = c.currentTime + 0.01 + delay
+        const src = c.createBufferSource()
+        const filter = c.createBiquadFilter()
+        const gain = c.createGain()
+        src.buffer = noiseBuffer
+        filter.type = "lowpass"
+        filter.frequency.setValueAtTime(cutoff, at)
+        filter.frequency.exponentialRampToValueAtTime(cutoff / 6, at + dur)
+        gain.gain.setValueAtTime(0, at)
+        gain.gain.linearRampToValueAtTime(vol, at + 0.05)
+        gain.gain.exponentialRampToValueAtTime(0.001, at + dur)
+        src.connect(filter)
+        filter.connect(gain)
+        gain.connect(c.destination)
+        src.start(at)
+        src.stop(at + dur)
+      }
+
+      const BRIGHT_NOTES = [880, 1047, 1319, 1760]
+      const HOLLOW_NOTES = [440, 523, 587, 698]
+      const CHIME = [1047, 1319, 1568, 2093, 2637] // do mi sol do mi
+
+      const SFX = {
+        pour: () => tone({ freq: 1100, to: 600, dur: 0.07, vol: 0.12 }),
+        land: () => tone({ freq: 260, to: 720, dur: 0.1, vol: 0.2 }),
+        back: () => tone({ freq: 700, to: 240, dur: 0.14, vol: 0.14 }),
+        pick: () => tone({ type: "triangle", freq: 660, dur: 0.06, vol: 0.08 }),
+        full: () => tone({ type: "triangle", freq: 170, dur: 0.12, vol: 0.2 }),
+        // Les quatre gouttes de l'essai pulsent l'une après l'autre.
+        pulse: (k) =>
+          tone({
+            type: "triangle",
+            delay: k * 0.11,
+            freq: 160 + k * 30,
+            to: 260 + k * 40,
+            dur: 0.12,
+            vol: 0.2,
+          }),
+        bright: (k) => {
+          tone({
+            type: "triangle",
+            freq: BRIGHT_NOTES[k],
+            dur: 0.45,
+            vol: 0.14,
+          })
+          tone({ freq: BRIGHT_NOTES[k] * 2, dur: 0.3, vol: 0.04 })
+        },
+        hollow: (k) =>
+          tone({
+            freq: HOLLOW_NOTES[k],
+            to: HOLLOW_NOTES[k] * 1.6,
+            dur: 0.16,
+            vol: 0.18,
+          }),
+        puff: () => hiss(0, 0.5, 0.18, 1400),
+        unseal: (k) => {
+          tone({
+            type: "triangle",
+            freq: CHIME[k],
+            dur: 0.6,
+            vol: 0.12,
+          })
+          hiss(0, 0.3, 0.05, 8000)
+        },
+        win: () =>
+          CHIME.forEach((f, i) =>
+            tone({
+              type: "triangle",
+              freq: f,
+              delay: i * 0.09,
+              dur: 0.6,
+              vol: 0.1,
+            }),
+          ),
+        lose: () =>
+          [523, 440, 349].forEach((f, i) =>
+            tone({
+              freq: f,
+              to: f * 0.94,
+              delay: i * 0.22,
+              dur: 0.4,
+              vol: 0.14,
+            }),
+          ),
+      }
+
+      // ---------- Les éléments ----------
+
+      function glyph(i) {
+        return `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#g-${POTIONS[i].glyph}"/></svg>`
+      }
+
+      function makeDrop(i) {
+        const drop = document.createElement("span")
+        drop.className = "drop"
+        drop.style.setProperty("--c", POTIONS[i].c)
+        drop.style.setProperty("--d", POTIONS[i].d)
+        drop.innerHTML = glyph(i)
+        return drop
+      }
+
+      function bottleSvg(i) {
+        return `<svg viewBox="0 0 60 72" aria-hidden="true">
+          <g clip-path="url(#bottle-clip)">
+            <path class="liquid wave" d="M-60 36Q-45 32 -30 36T0 36T30 36T60 36T90 36V80H-60Z" />
+            <circle class="fizz" cx="24" cy="60" r="1.7" />
+            <circle class="fizz" cx="36" cy="62" r="1.3" />
+          </g>
+          <use class="glyph" href="#g-${POTIONS[i].glyph}" x="21" y="43" width="18" height="18" />
+          <path class="glass" d="M23 4H37V27.1A22 22 0 1 1 23 27.1Z" />
+          <rect x="20" y="1.5" width="20" height="4.5" rx="2.2" fill="rgba(255,255,255,0.4)" />
+          <path class="shine" d="M14 44A17 17 0 0 1 19.5 32" stroke-width="2.6" />
+        </svg>`
+      }
+
+      // Le cadre colle au pion ; son halo déborde.
+      function pegIcon(kind) {
+        return `<svg class="peg-icon" viewBox="-5.4 -5.4 10.8 10.8" aria-hidden="true"><use href="#peg-${kind}" /></svg>`
+      }
+
+      // Une case de la recette : une sphère sous un voile de brume, marqué
+      // d'un « ? » tant qu'elle reste cachée.
+      const SEAL = `<span class="seal"><span class="veil"><span class="fog"></span><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><use href="#g-question" /></svg></span></span>`
+
+      function center(el) {
+        const r = el.getBoundingClientRect()
+        return {
+          x: r.left + r.width / 2,
+          y: r.top + r.height / 2,
+          size: r.width,
+        }
+      }
+
+      // Avec « réduire les animations », chaque effet saute à sa fin et les
+      // attentes raccourcissent : les étapes du jeu restent les mêmes.
+      function play(el, keyframes, options) {
+        const animation = el.animate(keyframes, options)
+        if (reducedMotion.matches) animation.finish()
+        return animation.finished.catch(() => {})
+      }
+
+      // Une goutte vole en arc de `from` jusqu'à `to` : l'enveloppe glisse en
+      // x à vitesse constante, la goutte monte puis retombe en y.
+      function fly(from, toEl, i, duration = 440) {
+        const to = center(toEl)
+        const size = to.size - 4
+        const flyer = document.createElement("div")
+        flyer.className = "flyer"
+        Object.assign(flyer.style, {
+          left: `${to.x - size / 2}px`,
+          top: `${to.y - size / 2}px`,
+          width: `${size}px`,
+          height: `${size}px`,
+        })
+        const inner = document.createElement("span")
+        inner.append(makeDrop(i))
+        flyer.append(inner)
+        fx.append(flyer)
+        const dy = from.y - to.y
+        const peak = Math.min(dy, 0) - 46
+        play(
+          flyer,
+          [
+            { transform: `translateX(${from.x - to.x}px)` },
+            { transform: "none" },
+          ],
+          {
+            duration,
+          },
+        )
+        return play(
+          inner,
+          [
+            {
+              transform: `translateY(${dy}px) scale(0.45)`,
+              easing: "cubic-bezier(.2,.7,.4,1)",
+            },
+            {
+              transform: `translateY(${peak}px) scale(0.85)`,
+              offset: 0.6,
+              easing: "ease-in",
+            },
+            { transform: "none" },
+          ],
+          { duration },
+        ).then(() => flyer.remove())
+      }
+
+      // Une goutte se pose : elle s'écrase un peu et lance une onde.
+      function splash(drop) {
+        play(
+          drop,
+          [
+            { transform: "scale(1.25, 0.78)" },
+            { transform: "scale(0.92, 1.1)" },
+            { transform: "none" },
+          ],
+          { duration: 300, easing: "ease-out" },
+        )
+        const ripple = document.createElement("span")
+        ripple.className = "ripple"
+        ripple.style.setProperty("--c", drop.style.getPropertyValue("--c"))
+        drop.parentElement.append(ripple)
+        play(
+          ripple,
+          [
+            { transform: "scale(0.9)", opacity: 1 },
+            { transform: "scale(1.6)", opacity: 0 },
+          ],
+          {
+            duration: 450,
+            easing: "ease-out",
+          },
+        ).then(() => ripple.remove())
+      }
+
+      function burst(x, y, color, count = 12, distance = 46) {
+        if (reducedMotion.matches) return
+        for (let k = 0; k < count; k++) {
+          const spark = document.createElement("span")
+          spark.className = "spark"
+          spark.style.setProperty("--c", color)
+          spark.style.left = `${x}px`
+          spark.style.top = `${y}px`
+          fx.append(spark)
+          const angle = (k / count) * Math.PI * 2 + Math.random() * 0.4
+          const d = distance * (0.6 + Math.random() * 0.5)
+          play(
+            spark,
+            [
+              { transform: "scale(1.2)", opacity: 1 },
+              {
+                transform: `translate(${Math.cos(angle) * d}px, ${Math.sin(angle) * d}px) scale(0)`,
+                opacity: 0,
+              },
+            ],
+            {
+              duration: 650 + Math.random() * 250,
+              easing: "cubic-bezier(.1,.7,.3,1)",
+            },
+          ).then(() => spark.remove())
+        }
+      }
+
+      // Rien de bon dans l'essai : les indices lâchent un petit nuage gris.
+      function puff(el) {
+        const { x, y, size } = center(el)
+        for (let k = 0; k < 4; k++) {
+          const cloud = document.createElement("span")
+          cloud.className = "puff"
+          cloud.style.left = `${x + (k - 1.5) * 4}px`
+          cloud.style.top = `${y - size * 0.4}px`
+          fx.append(cloud)
+          const drift = (k - 1.5) * 9
+          play(
+            cloud,
+            [
+              { transform: "scale(0.5)", opacity: 0 },
+              {
+                transform: `translate(${drift * 0.5}px, -10px) scale(1.4)`,
+                opacity: 0.9,
+                offset: 0.3,
+              },
+              {
+                transform: `translate(${drift}px, -34px) scale(2.6)`,
+                opacity: 0,
+              },
+            ],
+            {
+              duration: 1100,
+              delay: k * 70,
+              easing: "ease-out",
+            },
+          ).then(() => cloud.remove())
+        }
+      }
+
+      // ---------- Mise en place ----------
+
+      function buildShelf() {
+        const shelf = $("shelf")
+        POTIONS.forEach((potion, i) => {
+          const bottle = document.createElement("button")
+          bottle.className = "bottle"
+          bottle.style.setProperty("--c", potion.c)
+          bottle.setAttribute("aria-label", `Potion ${i + 1}`)
+          bottle.innerHTML = bottleSvg(i)
+          bottle.onclick = () => pour(i, bottle)
+          shelf.append(bottle)
+        })
+      }
+
+      function buildVapor() {
+        const vapor = $("vapor")
+        for (let k = 0; k < 8; k++) {
+          const b = document.createElement("span")
+          const size = 6 + ((k * 7) % 16)
+          Object.assign(b.style, {
+            left: `${(k * 37 + 5) % 100}%`,
+            width: `${size}px`,
+            height: `${size}px`,
+            animationDuration: `${11 + ((k * 5) % 9)}s`,
+            animationDelay: `${-k * 1.7}s`,
+          })
+          vapor.append(b)
+        }
+      }
+
+      function buildBoard() {
+        board.innerHTML = ""
+        rows = []
+        for (let r = 0; r < maxAttempts; r++) {
+          const row = document.createElement("div")
+          row.className = "row future"
+          row.style.gridRow = String(maxAttempts - r)
+          const slots = document.createElement("div")
+          slots.className = "slots"
+          for (let p = 0; p < SLOTS; p++) {
+            const slot = document.createElement("button")
+            slot.className = "slot"
+            slot.setAttribute("aria-label", `Case ${p + 1}`)
+            slot.onclick = () => tapSlot(p)
+            slots.append(slot)
+          }
+          const clue = document.createElement("div")
+          clue.className = "clue"
+          clue.innerHTML = '<span class="peg"></span>'.repeat(SLOTS)
+          row.slots = [...slots.children]
+          row.append(slots, clue)
+          board.append(row)
+          rows.push(row)
+        }
+      }
+
+      function buildSecret() {
+        $("secret").innerHTML = SEAL.repeat(SLOTS)
+      }
+
+      function buildHelp() {
+        const orb = (i) =>
+          `<span class="orb">${i == null ? "" : makeDrop(i).outerHTML}</span>`
+        const seal = (i) =>
+          `<span class="seal">${i == null ? "" : makeDrop(i).outerHTML}</span>`
+        const arrow =
+          '<svg class="arrow" viewBox="0 0 14 14"><path d="M2 7H12M8 3L12 7L8 11" /></svg>'
+        $("helpSecret").innerHTML = SEAL.repeat(SLOTS)
+        $("helpPour").innerHTML = orb(0) + orb(3) + orb(null) + orb(null)
+        $("helpBright").innerHTML =
+          `<span class="stack">${seal(0) + seal(null) + orb(0) + orb(null)}</span>${arrow}${pegIcon("bright")}`
+        $("helpHollow").innerHTML =
+          `<span class="stack">${seal(0) + seal(null) + orb(null) + orb(0)}</span>${arrow}${pegIcon("hollow")}`
+        const cross =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6L18 18M18 6L6 18" /></svg>'
+        document.querySelectorAll("[data-close]").forEach((btn) => {
+          btn.innerHTML = cross
+          btn.onclick = closeSheets
+        })
+      }
+
+      // ---------- La partie ----------
+
+      function initGame() {
+        // Nouvelle partie : rien n'est encore joué, on ne garde pas la sortie.
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        secretCode = Array.from({ length: SLOTS }, () =>
+          Math.floor(Math.random() * POTIONS.length),
+        )
+        turn = 0
+        busy = false
+        buildBoard()
+        buildSecret()
+        closeSheets()
+        $("endSheet").classList.add("hidden")
+        $("shelf").classList.remove("off")
+        validateBtn.classList.remove("hidden")
+        $("againBtn").classList.add("hidden")
+        startTime = Date.now()
+        nextRow()
+      }
+
+      function nextRow() {
+        currentGuess = Array(SLOTS).fill(null)
+        target = null
+        const row = rows[turn]
+        row.classList.remove("future")
+        row.classList.add("active")
+        updateRow()
+      }
+
+      function activeSlots() {
+        return rows[turn].slots
+      }
+
+      // La case où ira la prochaine goutte : celle qu'on a touchée si elle
+      // est vide, sinon la première vide.
+      function nextSlot() {
+        if (target != null && currentGuess[target] == null) return target
+        return currentGuess.indexOf(null)
+      }
+
+      function updateRow() {
+        const next = busy ? -1 : nextSlot()
+        activeSlots().forEach((slot, p) =>
+          slot.classList.toggle("target", p === next),
+        )
+        const full = !currentGuess.includes(null)
+        validateBtn.disabled = !full || busy
+      }
+
+      function pour(i, bottle) {
+        if (busy) return
+        audio(1500)
+        const p = nextSlot()
+        if (p === -1) {
+          SFX.full()
+          play(
+            validateBtn,
+            [
+              { transform: "none" },
+              { transform: "scale(1.05)" },
+              { transform: "none" },
+            ],
+            { duration: 300 },
+          )
+          return
+        }
+        currentGuess[p] = i
+        target = null
+        const slot = activeSlots()[p]
+        const drop = makeDrop(i)
+        slot.replaceChildren(drop)
+        updateRow()
+        SFX.pour()
+        play(
+          bottle.querySelector("svg"),
+          [
+            { transform: "none" },
+            { transform: "rotate(-16deg)" },
+            { transform: "none" },
+          ],
+          {
+            duration: 320,
+            easing: "ease-out",
+          },
+        )
+        if (reducedMotion.matches) return
+        drop.style.opacity = 0
+        const mouth = center(bottle)
+        mouth.y -= mouth.size * 0.55
+        fly(mouth, slot, i).then(() => {
+          drop.style.opacity = ""
+          if (drop.isConnected) {
+            SFX.land()
+            splash(drop)
+          }
+        })
+      }
+
+      function tapSlot(p) {
+        if (busy) return
+        audio(800)
+        const slot = activeSlots()[p]
+        target = p
+        if (currentGuess[p] != null) {
+          // La goutte retourne dans sa fiole.
+          currentGuess[p] = null
+          const drop = slot.querySelector(".drop")
+          SFX.back()
+          play(
+            drop,
+            [
+              { transform: "none" },
+              { transform: "translateY(-14px) scale(0)", opacity: 0 },
+            ],
+            { duration: 240, easing: "ease-in" },
+          ).then(() => drop.remove())
+        } else {
+          SFX.pick()
+        }
+        updateRow()
+      }
+
+      function calculateFeedback(guess, secret) {
+        const feedback = []
+        const secretCopy = [...secret]
+        const guessCopy = [...guess]
+
+        // Bonne potion, bonne place (anciens pions rouges).
+        for (let i = 0; i < SLOTS; i++) {
+          if (guessCopy[i] === secretCopy[i]) {
+            feedback.push("bright")
+            secretCopy[i] = null
+            guessCopy[i] = null
+          }
+        }
+
+        // Bonne potion, autre place (anciens pions blancs).
+        for (let i = 0; i < SLOTS; i++) {
+          if (guessCopy[i] !== null) {
+            const index = secretCopy.indexOf(guessCopy[i])
+            if (index !== -1) {
+              feedback.push("hollow")
+              secretCopy[index] = null
+            }
+          }
+        }
+
+        return feedback
+      }
+
+      async function validate() {
+        if (busy || currentGuess.includes(null)) return
+        audio(6000)
+        busy = true
+        // Première proposition validée : la partie est engagée.
+        if (window.ExitGuard) ExitGuard.setActive(true)
+
+        const feedback = calculateFeedback(currentGuess, secretCode)
+        const row = rows[turn]
+        updateRow()
+        turn++
+        row.classList.remove("active")
+        await pulseGuess(row)
+        await revealClues(row, feedback)
+
+        if (feedback.filter((f) => f === "bright").length === SLOTS) {
+          row.classList.add("winner")
+          return finish(true)
+        }
+        if (turn >= maxAttempts) return finish(false)
+        busy = false
+        nextRow()
+      }
+
+      // Les gouttes de l'essai pulsent l'une après l'autre.
+      async function pulseGuess(row) {
+        const drops = [...row.querySelectorAll(".drop")]
+        const pulses = drops.map((drop, k) => {
+          SFX.pulse(k)
+          return play(
+            drop,
+            [
+              { transform: "none" },
+              { transform: "scale(1.2)" },
+              { transform: "none" },
+            ],
+            {
+              duration: 280,
+              delay: k * 110,
+            },
+          )
+        })
+        await Promise.all(pulses)
+      }
+
+      // Les pions s'allument un à un : d'abord les dorés, puis les blancs.
+      async function revealClues(row, feedback) {
+        const clue = row.querySelector(".clue")
+        if (feedback.length === 0) {
+          SFX.puff()
+          puff(clue)
+          await wait(700)
+          return
+        }
+        for (let k = 0; k < feedback.length; k++) {
+          const kind = feedback[k]
+          const peg = clue.children[k]
+          peg.innerHTML = pegIcon(kind)
+          SFX[kind](k)
+          if (kind === "bright") {
+            const { x, y } = center(peg)
+            burst(x, y, "#ffe27a", 6, 18)
+          }
+          play(
+            peg.firstChild,
+            [
+              { transform: "scale(0.2)", opacity: 0 },
+              { transform: "scale(1.3)", opacity: 1, offset: 0.7 },
+              { transform: "none" },
+            ],
+            { duration: 380, easing: "ease-out" },
+          )
+          await wait(300)
+        }
+        await wait(200)
+      }
+
+      async function finish(won) {
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        const elapsed = formatTime(Date.now() - startTime)
+        saveGame(won, elapsed)
+        $("shelf").classList.add("off")
+        await revealSecret(won)
+        if (won) {
+          SFX.win()
+          showConfetti()
+          await wait(1300)
+        } else {
+          SFX.lose()
+          await wait(900)
+        }
+        showEnd(won, elapsed)
+        validateBtn.classList.add("hidden")
+        $("againBtn").classList.remove("hidden")
+      }
+
+      // Le voile se dissipe sur la recette. Si l'enfant l'a trouvée, ses
+      // quatre gouttes s'envolent la rejoindre.
+      async function revealSecret(won) {
+        const seals = $("secret").querySelectorAll(".seal")
+        const winningSlots = won
+          ? rows[turn - 1].querySelectorAll(".slot")
+          : null
+        const reveals = [...seals].map(async (seal, p) => {
+          await wait(p * (won ? 160 : 260))
+          const i = secretCode[p]
+          if (won && !reducedMotion.matches)
+            await fly(center(winningSlots[p]), seal, i, 620)
+          const veil = seal.querySelector(".veil")
+          const drop = makeDrop(i)
+          seal.append(drop)
+          SFX.unseal(p)
+          if (won) {
+            const { x, y } = center(seal)
+            burst(x, y, POTIONS[i].c, 14, 52)
+          }
+          play(
+            drop,
+            [
+              { transform: "scale(0.4)", opacity: 0 },
+              { transform: "none", opacity: 1 },
+            ],
+            {
+              duration: 500,
+              easing: "cubic-bezier(.3,1.5,.5,1)",
+            },
+          )
+          await play(
+            veil,
+            [{ opacity: 1 }, { transform: "scale(1.8)", opacity: 0 }],
+            {
+              duration: 700,
+              easing: "ease-out",
+            },
+          )
+          veil.remove()
+        })
+        await Promise.all(reveals)
+      }
+
+      // ---------- Panneaux ----------
+
+      const CLOCK =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7V12L15.5 14" /></svg>'
+
+      function showEnd(won, elapsed) {
+        $("endTitle").textContent = won ? "Bravo !" : "Presque !"
+        const n = turn
+        $("endBody").innerHTML = won
+          ? `<div class="result"><span><b>${n}</b> essai${n > 1 ? "s" : ""}</span><span class="time">${CLOCK}${elapsed}</span></div>`
+          : `<div class="look-up"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-label="La recette est en haut"><path d="M12 20V5M5 11L12 4L19 11" /></svg></div>`
+        renderHistory($("endList"))
+        $("endSheet").classList.remove("hidden")
+      }
+
+      function openSheet(id) {
+        const sheet = $(id)
+        const wasOpen = !sheet.classList.contains("hidden")
+        closeSheets()
+        if (wasOpen) return
+        if (id === "bookSheet") renderHistory($("bookList"))
+        sheet.classList.remove("hidden")
+      }
+
+      function closeSheets() {
+        $("helpSheet").classList.add("hidden")
+        $("bookSheet").classList.add("hidden")
+      }
+
+      function formatTime(ms) {
+        const minutes = Math.floor(ms / 60000)
+        const seconds = Math.floor((ms % 60000) / 1000)
+        return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+      }
+
+      function loadGames() {
+        return JSON.parse(localStorage.getItem("mastermind-scores") || "[]")
+      }
+
+      function saveGame(won, elapsed) {
+        const games = loadGames()
+        games.unshift({
+          date: new Date().toLocaleDateString(),
+          won: won,
+          attempts: turn,
+          time: elapsed,
+        })
+        games.splice(20)
+        localStorage.setItem("mastermind-scores", JSON.stringify(games))
+      }
+
+      function renderHistory(list) {
+        const games = loadGames()
+        list.innerHTML = games.length
+          ? games
+              .map(
+                (g) => `<li>
+                  ${pegIcon(g.won ? "bright" : "hollow")}
+                  <span>${g.attempts} / ${maxAttempts}</span>
+                  <span>${g.time}</span>
+                  <span class="date">${g.date}</span>
+                </li>`,
+              )
+              .join("")
+          : '<li class="history-empty">Pas encore de partie.</li>'
+      }
+
+      $("helpBtn").onclick = () => openSheet("helpSheet")
+      $("bookBtn").onclick = () => openSheet("bookSheet")
+      validateBtn.onclick = validate
+      $("againBtn").onclick = () => {
+        audio(500)
+        initGame()
+      }
+
+      buildVapor()
+      buildShelf()
+      buildHelp()
+      initGame()
+      // Tant qu'aucune partie n'est finie, la règle s'ouvre d'elle-même.
+      if (!loadGames().length) openSheet("helpSheet")
+    </script>
+  </body>
+</html>

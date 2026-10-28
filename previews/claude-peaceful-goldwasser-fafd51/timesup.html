@@ -1,0 +1,2284 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#08070f" />
+    <title>Time's Up</title>
+    <style>
+      /* Sablier magique : le temps s'écoule en grains de lumière, aux
+         couleurs de l'équipe qui joue. À chaque relève, le sablier se
+         retourne et prend la couleur de l'équipe suivante ; un mot trouvé
+         s'envole en étincelles jusqu'au score de l'équipe. */
+
+      @font-face {
+        font-family: "Unbounded";
+        src: url("Unbounded-Variable.woff2") format("woff2");
+        font-weight: 300 800;
+        font-display: swap;
+      }
+
+      :root {
+        --ink: #08070f;
+        --text: #f5f2ff;
+        --muted: #9c96bf;
+        --line: rgba(255, 255, 255, 0.14);
+        --glass: rgba(255, 255, 255, 0.06);
+        --team-1: #ff5c8a;
+        --team-2: #3fe0c5;
+        --team-3: #ffc145;
+        --team-4: #a58bff;
+        --team: var(--team-1);
+        --on-team: #170a1c;
+        --font: "Unbounded", "Trebuchet MS", system-ui, sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        font-family: var(--font);
+        color: var(--text);
+        background: var(--ink);
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      button {
+        font-family: inherit;
+        color: inherit;
+        border: none;
+        background: none;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .icon {
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex: none;
+      }
+
+      /* La lueur de l'équipe qui joue, en fond : quatre calques, un seul
+         visible, qui s'échangent en fondu. */
+      .aura {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .aura i {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 1.2s ease;
+        background:
+          radial-gradient(
+            70% 45% at 50% 42%,
+            color-mix(in srgb, var(--c) 22%, transparent),
+            transparent 70%
+          ),
+          radial-gradient(
+            90% 40% at 50% 110%,
+            color-mix(in srgb, var(--c) 14%, transparent),
+            transparent 70%
+          );
+      }
+
+      .aura i.on {
+        opacity: 1;
+      }
+
+      .app {
+        position: relative;
+        max-width: 480px;
+        height: 100%;
+        margin: 0 auto;
+        padding: calc(10px + env(safe-area-inset-top)) 16px
+          calc(14px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      /* ===== Barre du haut : manches | chrono | nouvelle partie ===== */
+
+      .bar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        min-height: 46px;
+      }
+
+      .rounds {
+        display: flex;
+        gap: 6px;
+      }
+
+      .round-pip {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        border: 1.5px solid var(--line);
+        color: var(--muted);
+        opacity: 0.55;
+        transition:
+          opacity 0.4s,
+          transform 0.4s;
+      }
+
+      .round-pip .icon {
+        width: 18px;
+        height: 18px;
+      }
+
+      .round-pip.done {
+        opacity: 0.35;
+      }
+
+      .round-pip.current {
+        opacity: 1;
+        color: var(--on-team);
+        background: var(--team);
+        border-color: var(--team);
+        box-shadow: 0 0 14px color-mix(in srgb, var(--team) 60%, transparent);
+        transform: scale(1.08);
+      }
+
+      .clock {
+        min-width: 3ch;
+        text-align: center;
+        font-size: 2rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        transition: color 0.3s;
+      }
+
+      .clock.low {
+        color: #ff6b5c;
+        animation: beat 1s ease-in-out infinite;
+      }
+
+      @keyframes beat {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        12% {
+          transform: scale(1.14);
+        }
+      }
+
+      .round-btn {
+        justify-self: end;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        border: 1.5px solid var(--line);
+        color: var(--muted);
+      }
+
+      @media (hover: hover) {
+        .round-btn:hover {
+          color: var(--text);
+          border-color: var(--muted);
+        }
+      }
+
+      /* ===== Les scores : une pastille par équipe, toutes de même taille ===== */
+
+      .scores {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 8px;
+      }
+
+      .chip {
+        display: grid;
+        grid-template-areas: "name name" "count dot";
+        align-items: center;
+        min-width: 0;
+        padding: 7px 10px 6px;
+        border-radius: 14px;
+        border: 1.5px solid var(--line);
+        background: var(--glass);
+        transition:
+          border-color 0.5s,
+          background 0.5s;
+      }
+
+      .chip .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--c);
+        box-shadow: 0 0 8px var(--c);
+        grid-area: dot;
+        justify-self: end;
+      }
+
+      .chip .name {
+        grid-area: name;
+        min-width: 0;
+        letter-spacing: -0.02em;
+        font-size: 0.62rem;
+        font-weight: 400;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .chip .count {
+        grid-area: count;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .chip.current {
+        border-color: var(--c);
+        background: color-mix(in srgb, var(--c) 16%, transparent);
+      }
+
+      .chip.current .name {
+        color: var(--text);
+      }
+
+      .chip.pulse {
+        animation: chip-pulse 0.45s ease-out;
+      }
+
+      @keyframes chip-pulse {
+        40% {
+          transform: scale(1.12);
+        }
+      }
+
+      /* ===== Le sablier ===== */
+
+      .glass-wrap {
+        position: relative;
+        flex: 1;
+        min-height: 150px;
+      }
+
+      #hourglass {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* ===== La scène du bas : relève, mot à faire deviner, bilan ===== */
+
+      .stage {
+        display: grid;
+      }
+
+      .panel {
+        grid-area: 1 / 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        justify-content: flex-end;
+        visibility: hidden;
+        opacity: 0;
+        transform: translateY(10px);
+        transition:
+          opacity 0.35s ease,
+          transform 0.35s ease,
+          visibility 0s 0.35s;
+      }
+
+      .panel.shown {
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+        transition:
+          opacity 0.35s ease 0.1s,
+          transform 0.35s ease 0.1s;
+      }
+
+      .glow-btn {
+        width: 100%;
+        min-height: 64px;
+        border-radius: 20px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--on-team);
+        background: var(--team);
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.25) inset,
+          0 8px 26px color-mix(in srgb, var(--team) 40%, transparent);
+        transition:
+          transform 0.12s,
+          background 0.6s;
+      }
+
+      .glow-btn:active,
+      .ghost-btn:active {
+        transform: scale(0.97);
+      }
+
+      .ghost-btn {
+        min-height: 64px;
+        border-radius: 20px;
+        padding: 0 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        white-space: nowrap;
+        font-weight: 500;
+        border: 1.5px solid var(--line);
+        background: var(--glass);
+        transition: transform 0.12s;
+      }
+
+      .glow-btn:disabled {
+        opacity: 0.5;
+      }
+
+      /* Relève et bilan */
+      .handoff,
+      .recap {
+        text-align: center;
+        align-items: center;
+      }
+
+      /* Le bilan attend que le dernier mot trouvé ait rejoint le score. */
+      .recap.shown {
+        transition-delay: 0.35s;
+      }
+
+      .rule {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: var(--glass);
+        border: 1px solid var(--line);
+        width: 100%;
+      }
+
+      .rule .icon {
+        width: 30px;
+        height: 30px;
+        color: var(--team);
+      }
+
+      .rule strong {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--team);
+        margin-bottom: 3px;
+      }
+
+      .rule span {
+        font-size: 0.74rem;
+        font-weight: 300;
+        line-height: 1.45;
+      }
+
+      .handoff-to {
+        font-size: 0.78rem;
+        font-weight: 300;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .team-name {
+        font-size: 1.7rem;
+        font-weight: 800;
+        color: var(--team);
+        line-height: 1.1;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        transition: color 0.6s;
+      }
+
+      /* Le mot */
+      .word-card {
+        position: relative;
+        height: 150px;
+        border-radius: 24px;
+        border: 1.5px solid color-mix(in srgb, var(--team) 55%, transparent);
+        background:
+          radial-gradient(
+            80% 90% at 50% 0%,
+            color-mix(in srgb, var(--team) 14%, transparent),
+            transparent
+          ),
+          var(--glass);
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        padding: 0 14px;
+      }
+
+      .word {
+        font-size: 40px;
+        font-weight: 700;
+        white-space: nowrap;
+        line-height: 1.2;
+      }
+
+      .turn-found {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        min-width: 34px;
+        padding: 3px 8px;
+        border-radius: 99px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-align: center;
+        color: var(--on-team);
+        background: var(--team);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 2fr 3fr;
+        gap: 10px;
+      }
+
+      .recap h2 {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .recap-gain {
+        font-size: 4.2rem;
+        font-weight: 800;
+        line-height: 1;
+        color: var(--team);
+        text-shadow: 0 0 28px color-mix(in srgb, var(--team) 55%, transparent);
+      }
+
+      .recap-detail {
+        font-size: 0.76rem;
+        font-weight: 300;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      /* ===== Écrans pleins : réglages et fin de partie ===== */
+
+      .screen {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        background: var(--ink);
+        overflow-y: auto;
+        display: none;
+      }
+
+      .screen.visible {
+        display: block;
+      }
+
+      .screen-inner {
+        max-width: 480px;
+        min-height: 100%;
+        margin: 0 auto;
+        padding: calc(16px + env(safe-area-inset-top)) 18px
+          calc(18px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        background: radial-gradient(
+          80% 30% at 50% 0%,
+          rgba(165, 139, 255, 0.16),
+          transparent 70%
+        );
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .logo h1 {
+        font-size: 2.1rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        line-height: 1;
+      }
+
+      .logo h1 span:nth-child(4n + 1) {
+        color: var(--team-1);
+      }
+      .logo h1 span:nth-child(4n + 2) {
+        color: var(--team-2);
+      }
+      .logo h1 span:nth-child(4n + 3) {
+        color: var(--team-3);
+      }
+      .logo h1 span:nth-child(4n + 4) {
+        color: var(--team-4);
+      }
+
+      .mini-glass {
+        width: 34px;
+        height: 50px;
+        overflow: visible;
+      }
+
+      .mini-glass .frame {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.5);
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .mini-glass .grain {
+        fill: #fff;
+        animation: fall 1.4s linear infinite;
+      }
+
+      .mini-glass .grain:nth-of-type(2) {
+        animation-delay: -0.47s;
+        fill: var(--team-3);
+      }
+
+      .mini-glass .grain:nth-of-type(3) {
+        animation-delay: -0.94s;
+        fill: var(--team-2);
+      }
+
+      @keyframes fall {
+        from {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        80% {
+          opacity: 1;
+        }
+        to {
+          transform: translateY(18px);
+          opacity: 0;
+        }
+      }
+
+      .tagline {
+        text-align: center;
+        font-size: 0.78rem;
+        font-weight: 300;
+        color: var(--muted);
+        line-height: 1.5;
+        margin-top: -4px;
+      }
+
+      .field-label {
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .pills {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 8px;
+      }
+
+      .pill {
+        min-height: 48px;
+        border-radius: 14px;
+        border: 1.5px solid var(--line);
+        background: var(--glass);
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition:
+          background 0.25s,
+          border-color 0.25s,
+          color 0.25s;
+      }
+
+      .pill[aria-pressed="true"] {
+        color: var(--ink);
+        background: var(--text);
+        border-color: var(--text);
+      }
+
+      .name-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .name-field {
+        position: relative;
+        display: block;
+      }
+
+      .name-field .dot {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        width: 14px;
+        height: 14px;
+        margin-top: -7px;
+        border-radius: 50%;
+        background: var(--c);
+        box-shadow: 0 0 10px var(--c);
+        pointer-events: none;
+      }
+
+      .name-field input {
+        width: 100%;
+        height: 50px;
+        padding: 0 14px 0 42px;
+        font-family: var(--font);
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text);
+        background: var(--glass);
+        border: 1.5px solid var(--line);
+        border-radius: 14px;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      .name-field input::placeholder {
+        color: var(--muted);
+        opacity: 0.8;
+      }
+
+      .name-field input:focus {
+        outline: none;
+        border-color: var(--c);
+      }
+
+      .start-btn {
+        --team: #f5f2ff;
+        margin-top: 4px;
+        box-shadow: 0 8px 30px rgba(165, 139, 255, 0.35);
+      }
+
+      .how {
+        font-size: 0.74rem;
+        font-weight: 300;
+        line-height: 1.55;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        padding-top: 4px;
+      }
+
+      .how summary {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: var(--text);
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .how summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .how summary::after {
+        content: "+";
+        margin-left: auto;
+        font-size: 1.1rem;
+        color: var(--muted);
+      }
+
+      .how[open] summary::after {
+        content: "−";
+      }
+
+      .how ul {
+        padding-left: 18px;
+      }
+
+      .how li {
+        margin-bottom: 6px;
+      }
+
+      .how strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      /* Fin de partie : une colonne de lumière par équipe */
+      .final-inner {
+        justify-content: center;
+        text-align: center;
+        background: none;
+      }
+
+      .final-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+
+      .final-title em {
+        font-style: normal;
+        color: var(--team);
+      }
+
+      .podium {
+        height: 330px;
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 12px;
+        align-items: end;
+        margin: 8px 0 12px;
+      }
+
+      .column {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .column .score {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--c);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .column .crown {
+        width: 34px;
+        height: 34px;
+        color: var(--c);
+        filter: drop-shadow(0 0 8px var(--c));
+      }
+
+      .tube {
+        width: 100%;
+        max-width: 72px;
+        border-radius: 18px 18px 10px 10px;
+        background:
+          radial-gradient(circle, #fff 0.8px, transparent 1.6px) 0 0 / 9px 9px,
+          linear-gradient(
+            to top,
+            var(--c),
+            color-mix(in srgb, var(--c) 35%, transparent)
+          );
+        box-shadow: 0 0 26px color-mix(in srgb, var(--c) 45%, transparent);
+        transform-origin: bottom;
+        animation: rise 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+      }
+
+      @keyframes rise {
+        from {
+          transform: scaleY(0);
+        }
+      }
+
+      .column .name {
+        font-size: 0.66rem;
+        font-weight: 500;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .column.loser {
+        opacity: 0.72;
+      }
+
+      canvas#confetti,
+      canvas#fx {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      canvas#fx {
+        z-index: 10;
+      }
+
+      canvas#confetti {
+        z-index: 1000;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .clock.low,
+        .chip.pulse,
+        .mini-glass .grain,
+        .tube {
+          animation: none;
+        }
+        .panel,
+        .panel.shown {
+          transform: none;
+        }
+      }
+    </style>
+    <script src="exit-guard.js"></script>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-bubble" viewBox="0 0 24 24">
+          <path
+            d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v7.5a2.5 2.5 0 0 1-2.5 2.5h-7l-5 4v-4H5a2.5 2.5 0 0 1-2.5-2.5V7A2.5 2.5 0 0 1 5 4.5z"
+          />
+        </symbol>
+        <symbol id="i-describe" viewBox="0 0 24 24">
+          <use href="#i-bubble" />
+          <path d="M7.5 9h9M7.5 12.5h6" />
+        </symbol>
+        <symbol id="i-one" viewBox="0 0 24 24">
+          <use href="#i-bubble" />
+          <path d="M10.5 9.2l2-1.4v6.4" />
+        </symbol>
+        <symbol id="i-mime" viewBox="0 0 24 24">
+          <use href="#i-bubble" />
+          <path d="M3 2.5l18 19" />
+        </symbol>
+        <symbol id="i-restart" viewBox="0 0 24 24">
+          <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+          <path d="M19.5 4v4.5H15" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="M4.5 12.5l5 5L19.5 7" />
+        </symbol>
+        <symbol id="i-skip" viewBox="0 0 24 24">
+          <path d="M4 12h14M13 6.5l5.5 5.5-5.5 5.5" />
+        </symbol>
+        <symbol id="i-crown" viewBox="0 0 24 24">
+          <path
+            d="M3.5 8l4.5 4 4-7 4 7 4.5-4-2 10.5h-13z"
+            fill="currentColor"
+          />
+        </symbol>
+      </defs>
+    </svg>
+
+    <canvas id="confetti"></canvas>
+    <canvas id="fx"></canvas>
+    <div class="aura" id="aura" aria-hidden="true">
+      <i style="--c: var(--team-1)"></i><i style="--c: var(--team-2)"></i
+      ><i style="--c: var(--team-3)"></i><i style="--c: var(--team-4)"></i>
+    </div>
+
+    <main class="app">
+      <header class="bar">
+        <div class="rounds" id="rounds"></div>
+        <div class="clock" id="timer" aria-label="Secondes restantes">45</div>
+        <button class="round-btn" id="newGameBtn" aria-label="Nouvelle partie">
+          <svg class="icon"><use href="#i-restart" /></svg>
+        </button>
+      </header>
+
+      <div class="scores" id="liveScore"></div>
+
+      <div class="glass-wrap">
+        <canvas id="hourglass" aria-hidden="true"></canvas>
+      </div>
+
+      <div class="stage">
+        <section class="panel handoff" id="handoffPanel">
+          <div class="rule">
+            <svg class="icon"><use id="ruleIcon" href="#i-describe" /></svg>
+            <div>
+              <strong id="ruleTitle">Manche 1 · Décris le mot</strong>
+              <span id="handoffRule">Décris le mot sans le dire.</span>
+            </div>
+          </div>
+          <p class="handoff-to">Passe le téléphone à</p>
+          <h2 class="team-name" id="handoffName">Équipe 1</h2>
+          <button class="glow-btn" id="startTurnBtn">C'est parti !</button>
+        </section>
+
+        <section class="panel" id="playPanel">
+          <div class="word-card">
+            <span class="word" id="wordDisplay"></span>
+            <span class="turn-found" id="foundCounter" hidden>0</span>
+          </div>
+          <div class="actions">
+            <button class="ghost-btn" id="passBtn">
+              <svg class="icon"><use href="#i-skip" /></svg>
+              Je passe
+            </button>
+            <button class="glow-btn" id="foundBtn">
+              <svg class="icon"><use href="#i-check" /></svg>
+              Trouvé !
+            </button>
+          </div>
+        </section>
+
+        <section class="panel recap" id="recapPanel">
+          <h2 id="recapTitle">Temps écoulé !</h2>
+          <div class="recap-gain" id="recapGain">+0</div>
+          <p class="recap-detail" id="recapDetail"></p>
+          <button class="glow-btn" id="continueBtn">Équipe suivante</button>
+        </section>
+      </div>
+    </main>
+
+    <section class="screen" id="setupOverlay">
+      <div class="screen-inner">
+        <div class="logo">
+          <svg class="mini-glass" viewBox="0 0 34 50" aria-hidden="true">
+            <path
+              class="frame"
+              d="M5 3h24M5 47h24M8 3c0 12 8 15 8 22s-8 10-8 22M26 3c0 12-8 15-8 22s8 10 8 22"
+            />
+            <circle class="grain" cx="17" cy="22" r="1.6" />
+            <circle class="grain" cx="17" cy="22" r="1.6" />
+            <circle class="grain" cx="17" cy="22" r="1.6" />
+          </svg>
+          <h1 aria-label="Time's Up">
+            <span>T</span><span>i</span><span>m</span><span>e</span
+            ><span>’</span><span>s</span> <span>U</span><span>p</span>
+          </h1>
+        </div>
+        <p class="tagline">Fais deviner un maximum de mots à ton équipe</p>
+
+        <div>
+          <p class="field-label">Équipes</p>
+          <div class="pills" id="teamPills">
+            <button class="pill" data-value="2">2</button>
+            <button class="pill" data-value="3">3</button>
+            <button class="pill" data-value="4">4</button>
+          </div>
+        </div>
+        <div class="name-fields" id="nameFields"></div>
+        <div>
+          <p class="field-label">Durée d'un tour</p>
+          <div class="pills" id="durationPills">
+            <button class="pill" data-value="30">30 s</button>
+            <button class="pill" data-value="45">45 s</button>
+            <button class="pill" data-value="60">60 s</button>
+            <button class="pill" data-value="90">90 s</button>
+          </div>
+        </div>
+        <div>
+          <p class="field-label">Nombre de mots</p>
+          <div class="pills" id="wordCountPills">
+            <button class="pill" data-value="15">15</button>
+            <button class="pill" data-value="20">20</button>
+            <button class="pill" data-value="25">25</button>
+            <button class="pill" data-value="30">30</button>
+          </div>
+        </div>
+        <button class="glow-btn start-btn" id="setupBtn">
+          Commencer la partie
+        </button>
+
+        <details class="how">
+          <summary>Comment on joue ?</summary>
+          <ul>
+            <li>
+              Les équipes se relaient, chacune son tour, pour faire deviner un
+              maximum de mots avant que le sablier soit vide.
+            </li>
+            <li>
+              <strong>Manche 1</strong> : décris le mot avec autant de mots que
+              tu veux, sans jamais le dire lui-même.
+            </li>
+            <li>
+              <strong>Manche 2</strong> : un seul mot autorisé pour le faire
+              deviner.
+            </li>
+            <li>
+              <strong>Manche 3</strong> : uniquement du mime, sans un mot ni un
+              son !
+            </li>
+            <li>
+              Les 3 manches utilisent les mêmes mots. Un mot passé revient plus
+              tard dans la pioche.
+            </li>
+            <li>
+              L'équipe avec le plus de mots trouvés en tout gagne la partie.
+            </li>
+          </ul>
+        </details>
+      </div>
+    </section>
+
+    <section class="screen" id="finalOverlay">
+      <div class="screen-inner final-inner">
+        <h2 class="final-title" id="finalTitle">Partie terminée !</h2>
+        <div class="podium" id="finalScores"></div>
+        <button class="glow-btn" id="finalNewGameBtn">Nouvelle partie</button>
+      </div>
+    </section>
+
+    <script src="confetti.js"></script>
+    <script src="voix.js"></script>
+    <script>
+      const TEAMS_KEY = "timesup-teams"
+      const SETTINGS_KEY = "timesup-settings"
+      const MIN_TEAMS = 2
+      const MAX_TEAMS = 4
+      const MAX_NAME_LENGTH = 16
+      const DEFAULT_NAMES = ["Équipe 1", "Équipe 2", "Équipe 3", "Équipe 4"]
+      // Les couleurs des équipes viennent du CSS (--team-1 à --team-4).
+      const TEAM_COLORS = [1, 2, 3, 4].map((i) =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue(`--team-${i}`)
+          .trim(),
+      )
+      const ROUND_INFO = [
+        {
+          title: "Manche 1 · Décris le mot",
+          icon: "#i-describe",
+          rule: "Décris le mot avec autant de mots que tu veux, sans jamais le dire.",
+        },
+        {
+          title: "Manche 2 · Un seul mot",
+          icon: "#i-one",
+          rule: "Un seul mot est autorisé pour faire deviner ce tour-ci !",
+        },
+        {
+          title: "Manche 3 · Mime uniquement",
+          icon: "#i-mime",
+          rule: "Uniquement du mime : pas un mot, pas un son !",
+        },
+      ]
+      const FALLBACK_WORDS = [
+        "chat",
+        "chien",
+        "maison",
+        "soleil",
+        "vélo",
+        "ballon",
+        "arbre",
+        "gâteau",
+        "piscine",
+        "fusée",
+        "pirate",
+        "dragon",
+        "montagne",
+        "voiture",
+        "guitare",
+        "papillon",
+        "château",
+        "robot",
+        "pomme",
+        "étoile",
+        "dinosaure",
+        "cheval",
+        "bateau",
+        "lune",
+        "abeille",
+        "grenouille",
+        "parapluie",
+        "fantôme",
+        "sorcière",
+        "tracteur",
+      ]
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
+
+      let teams = []
+      let teamCount = 2
+      let turnDuration = 45
+      let wordCount = 20
+      let masterDeck = []
+      let remainingDeck = []
+      let round = 1
+      let currentTeamIndex = 0
+      let currentWord = ""
+      let turnFound = 0
+      let timeLeft = 0
+      let turnEndsAt = 0
+      let turnActive = false
+      let timerId = null
+      let gameEngaged = false
+
+      const $ = (id) => document.getElementById(id)
+
+      // La partie est engagée du premier tour lancé jusqu'aux scores : on
+      // demande alors confirmation avant de la quitter.
+      function setEngaged(on) {
+        gameEngaged = on
+        if (window.ExitGuard) ExitGuard.setActive(on)
+      }
+
+      // Un écran plein (réglages, scores) ou aucun : le sablier, caché
+      // dessous, ne se dessine plus.
+      function showScreen(id) {
+        for (const screen of document.querySelectorAll(".screen")) {
+          screen.classList.toggle("visible", screen.id === id)
+        }
+        Hourglass.setPaused(Boolean(id))
+      }
+
+      function hexToRgb(hex) {
+        const n = parseInt(hex.slice(1), 16)
+        return [n >> 16, (n >> 8) & 255, n & 255]
+      }
+
+      // Un grain de lumière, dessiné une fois par couleur : un cœur blanc,
+      // la couleur autour, puis un halo qui s'efface.
+      function makeSprite(rgb) {
+        const c = document.createElement("canvas")
+        c.width = c.height = 32
+        const g = c.getContext("2d")
+        const col = rgb.map(Math.round).join(",")
+        const grd = g.createRadialGradient(16, 16, 0, 16, 16, 16)
+        grd.addColorStop(0, "rgba(255,255,255,1)")
+        grd.addColorStop(0.16, `rgba(${col},1)`)
+        grd.addColorStop(0.42, `rgba(${col},0.32)`)
+        grd.addColorStop(1, `rgba(${col},0)`)
+        g.fillStyle = grd
+        g.fillRect(0, 0, 32, 32)
+        return c
+      }
+
+      // Les grains, gardés par couleur : pendant un retournement la couleur
+      // change à chaque image, on l'arrondit pour réutiliser les mêmes.
+      const sprites = new Map()
+      function spriteFor(rgb) {
+        const q = rgb.map((v) => Math.min(255, Math.round(v / 12) * 12))
+        const key = q.join()
+        if (!sprites.has(key)) sprites.set(key, makeSprite(q))
+        return sprites.get(key)
+      }
+
+      // Taille un canvas à sa place à l'écran, en pixels de l'appareil.
+      function sizeCanvas(canvas, ctx, w, h) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1)
+        canvas.width = Math.round(w * dpr)
+        canvas.height = Math.round(h * dpr)
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      }
+
+      const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2)
+      const clamp01 = (t) => Math.min(1, Math.max(0, t))
+
+      // ===== Le sablier =====
+      //
+      // Deux ampoules de verre et N grains de lumière. Le haut se vide en
+      // entonnoir, le bas monte en dôme ; un filet de grains tombe entre les
+      // deux. Au changement d'équipe, le sablier se retourne en changeant de
+      // couleur, et les grains glissent se poser contre le col.
+
+      const Hourglass = (() => {
+        const canvas = $("hourglass")
+        const ctx = canvas.getContext("2d")
+        let W = 0
+        let H = 0
+        let g = null // géométrie, et le verre tracé une fois pour toutes
+        let topRest = [] // grains du haut, dans l'ordre où ils partent
+        let bottomFill = [] // places du bas, dans l'ordre où elles se remplissent
+        let N = 0
+        let frac = 1 // part du sable encore en haut
+        let mode = "idle" // idle | drain | rush | flip
+        let drainEnd = 0
+        let drainDur = 1
+        let rushFrom = 0
+        let rushStart = 0
+        let flipStart = 0
+        let flipPairs = null
+        let colorFrom = [255, 255, 255]
+        let colorTo = [255, 255, 255]
+        let colorStart = 0
+        let flashAt = -1e9
+        let lowTime = false
+        let paused = false
+        const stream = []
+        let lastSpawn = 0
+        let lastFrame = 0
+        let raf = 0
+
+        const FLIP_TURN = 750
+        const FLIP_SETTLE = 650
+        const RUSH = 1100
+        const FLASH = 900
+
+        function build() {
+          const r = canvas.getBoundingClientRect()
+          if (!r.width || !r.height) return
+          W = r.width
+          H = r.height
+          sizeCanvas(canvas, ctx, W, H)
+
+          const gh = Math.min(H - 16, 330)
+          const neck = 3
+          const bulbH = gh / 2 - neck
+          const maxW = Math.min(W * 0.3, gh * 0.3)
+          const neckW = 3.5
+          const cx = W / 2
+          const cy = H / 2
+          // Demi-largeur d'une ampoule, de son bord (u = 0) à son col (u = 1).
+          const hw = (u) =>
+            neckW +
+            (maxW - neckW) *
+              Math.sqrt(Math.max(0, 1 - u * u)) *
+              (0.8 + 0.2 * Math.sin(Math.min(1, u / 0.22) * (Math.PI / 2)))
+          const s = Math.max(3.6, maxW / 11)
+
+          // Les places possibles, en rangées alternées ; d est la distance de
+          // la rangée à son point de départ, uOf(d) sa position dans l'ampoule.
+          const rowSlots = (d0, uOf) => {
+            const slots = []
+            for (let row = 0; ; row++) {
+              const d = d0 + row * s * 0.87
+              if (d > bulbH - s * 0.5) return slots
+              const w = hw(uOf(d)) - s * 0.8
+              for (let x = row % 2 ? s / 2 : 0; x <= w; x += s) {
+                slots.push({ dx: x, d })
+                if (x > 0) slots.push({ dx: -x, d })
+              }
+            }
+          }
+          const grain = (p) => ({
+            ...p,
+            ph: Math.random() * Math.PI * 2,
+            sp: 1.2 + Math.random() * 2,
+            sz: 0.85 + Math.random() * 0.4,
+          })
+
+          // Le bas se remplit depuis le fond, en dôme : le centre d'abord.
+          const slots = rowSlots(s * 0.7, (d) => d / bulbH)
+          N = Math.round(slots.length * 0.64)
+          const dome = (p) => p.d + Math.abs(p.dx) * 0.55
+          bottomFill = slots
+            .map(grain)
+            .sort((a, b) => dome(a) - dome(b))
+            .slice(0, N)
+            .map((p) => ({ ...p, x: cx + p.dx, y: cy + neck + bulbH - p.d }))
+
+          // Le haut : les N places les plus proches du col (d se compte depuis
+          // le col). Il part d'abord par le dessus, le centre en premier : un
+          // entonnoir.
+          const funnel = (p) => p.d + (maxW - Math.abs(p.dx)) * 0.3
+          topRest = rowSlots(s * 0.9, (d) => 1 - d / bulbH)
+            .map(grain)
+            .sort((a, b) => a.d - b.d)
+            .slice(0, N)
+            .map((p) => ({ ...p, x: cx + p.dx, y: cy - neck - p.d }))
+            .sort((a, b) => funnel(b) - funnel(a))
+          N = Math.min(N, topRest.length)
+
+          // Le haut du tas du bas, pour chaque nombre de grains tombés : là
+          // où le filet s'arrête.
+          const surf = [cy + neck + bulbH]
+          for (let i = 0; i < N; i++) {
+            const p = bottomFill[i]
+            surf.push(Math.abs(p.dx) <= s ? Math.min(surf[i], p.y) : surf[i])
+          }
+
+          // Le verre, ses deux traits de lumière et ses reflets.
+          const pad = s * 0.35 + 2
+          const left = []
+          for (let i = 0; i <= 36; i++) {
+            const u = i / 36
+            left.push([cx - hw(u) - pad, cy - neck - bulbH * (1 - u)])
+          }
+          for (let i = 36; i >= 0; i--) {
+            const u = i / 36
+            left.push([cx - hw(u) - pad, cy + neck + bulbH * (1 - u)])
+          }
+          const outline = new Path2D()
+          left.forEach(([x, y], i) =>
+            i ? outline.lineTo(x, y) : outline.moveTo(x, y),
+          )
+          outline.moveTo(2 * cx - left[0][0], left[0][1])
+          left.forEach(([x, y], i) => i && outline.lineTo(2 * cx - x, y))
+
+          const caps = new Path2D()
+          const capW = maxW + pad + 6
+          for (const y of [cy - neck - bulbH - 5, cy + neck + bulbH + 5]) {
+            caps.moveTo(cx - capW, y)
+            caps.lineTo(cx + capW, y)
+          }
+
+          const shine = new Path2D()
+          for (const dir of [-1, 1]) {
+            for (let i = 0; i <= 10; i++) {
+              const u = 0.15 + (i / 10) * 0.5
+              const x = cx - hw(u) * 0.72
+              const y = cy + dir * (neck + bulbH * (1 - u))
+              i ? shine.lineTo(x, y) : shine.moveTo(x, y)
+            }
+          }
+
+          g = { cx, cy, neck, maxW, s, surf, outline, caps, shine }
+          flipPairs = null
+          draw(performance.now())
+        }
+
+        function currentColor(now) {
+          if (now - colorStart >= FLIP_TURN) return colorTo
+          // D'une couleur à l'autre en passant par le blanc : un mélange
+          // direct virerait au gris.
+          const t = ease(clamp01((now - colorStart) / FLIP_TURN))
+          const [c, k] = t < 0.5 ? [colorFrom, t * 2] : [colorTo, 2 - t * 2]
+          return c.map((v) => v + (255 - v) * k * 0.8)
+        }
+
+        function drawGlass(now, color) {
+          const col = color.map(Math.round).join(",")
+          let pulse = 0
+          if (lowTime && mode === "drain") {
+            pulse = Math.max(0, ((drainEnd - now) % 1000) - 700) / 300
+          }
+          const flash = Math.max(0, 1 - (now - flashAt) / FLASH)
+          ctx.lineJoin = "round"
+          ctx.lineCap = "round"
+          ctx.strokeStyle = `rgba(${col},${0.14 + pulse * 0.3 + flash * 0.6})`
+          ctx.lineWidth = 9
+          ctx.stroke(g.outline)
+          ctx.strokeStyle = `rgba(255,255,255,${0.32 + pulse * 0.4 + flash * 0.6})`
+          ctx.lineWidth = 1.6
+          ctx.stroke(g.outline)
+
+          ctx.strokeStyle = `rgba(${col},${0.35 + flash * 0.5})`
+          ctx.lineWidth = 8
+          ctx.stroke(g.caps)
+          ctx.strokeStyle = "rgba(255,255,255,0.85)"
+          ctx.lineWidth = 2.5
+          ctx.stroke(g.caps)
+
+          ctx.strokeStyle = "rgba(255,255,255,0.13)"
+          ctx.lineWidth = 3
+          ctx.stroke(g.shine)
+        }
+
+        function draw(now) {
+          if (!g) return
+          let angle = 0
+          let settle = -1
+
+          if (mode === "drain") {
+            frac = clamp01((drainEnd - now) / drainDur)
+          } else if (mode === "rush") {
+            const t = clamp01((now - rushStart) / RUSH)
+            frac = rushFrom * (1 - ease(t))
+            if (t === 1) mode = "idle"
+          } else if (mode === "flip") {
+            const t = now - flipStart
+            if (t < FLIP_TURN) angle = Math.PI * ease(t / FLIP_TURN)
+            else if (t < FLIP_TURN + FLIP_SETTLE) {
+              settle = ease((t - FLIP_TURN) / FLIP_SETTLE)
+            } else {
+              mode = "idle"
+              frac = 1
+            }
+          }
+          // Pendant qu'il tourne, tout le sable est encore en bas.
+          const topCount = angle ? 0 : Math.round(frac * N)
+
+          const color = currentColor(now)
+          const sprite = spriteFor(color)
+
+          ctx.setTransform(1, 0, 0, 1, 0, 0)
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          const dpr = canvas.width / W
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+          if (angle) {
+            // Couché, le sablier ne tiendrait pas dans le cadre : il se
+            // fait plus petit le temps de tourner.
+            const k = 1 - 0.38 * Math.sin(angle)
+            ctx.translate(g.cx, g.cy)
+            ctx.rotate(angle)
+            ctx.scale(k, k)
+            ctx.translate(-g.cx, -g.cy)
+          }
+          drawGlass(now, color)
+          ctx.globalCompositeOperation = "lighter"
+
+          const base = lowTime && mode === "drain" ? 0.25 : 0.55
+          const grain = (p, x, y) => {
+            ctx.globalAlpha = reducedMotion
+              ? 0.85
+              : base +
+                (1 - base) * (0.5 + 0.5 * Math.sin(now * 0.001 * p.sp + p.ph))
+            const size = g.s * 2.1 * p.sz
+            ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size)
+          }
+          if (settle >= 0) {
+            // Après le retournement : les grains, retombés tête en bas,
+            // glissent se poser contre le col.
+            for (const [from, to] of flipPairs) {
+              grain(
+                to,
+                from.x + (to.x - from.x) * settle,
+                from.y + (to.y - from.y) * settle,
+              )
+            }
+          } else {
+            for (let i = N - topCount; i < N; i++) {
+              grain(topRest[i], topRest[i].x, topRest[i].y)
+            }
+            for (let i = 0; i < N - topCount; i++) {
+              grain(bottomFill[i], bottomFill[i].x, bottomFill[i].y)
+            }
+          }
+
+          // Le filet de grains qui tombe par le col.
+          const dt = Math.min(50, now - lastFrame) / 1000
+          lastFrame = now
+          const flowing =
+            !reducedMotion &&
+            ((mode === "drain" && frac > 0) || mode === "rush")
+          if (flowing) {
+            const every = mode === "rush" ? 8 : lowTime ? 22 : 34
+            if (now - lastSpawn > 200) lastSpawn = now - every
+            for (; now - lastSpawn > every; lastSpawn += every) {
+              stream.push({
+                x: g.cx + (Math.random() - 0.5) * 2.4,
+                y: g.cy - g.neck,
+                vy: 40 + Math.random() * 30,
+                vx: (Math.random() - 0.5) * 6,
+                size: g.s * (1.1 + Math.random() * 0.7),
+              })
+            }
+          } else {
+            lastSpawn = now
+          }
+          const floor = g.surf[N - topCount] - g.s * 0.4
+          ctx.globalAlpha = 0.9
+          for (let i = stream.length - 1; i >= 0; i--) {
+            const p = stream[i]
+            p.vy += 900 * dt
+            p.y += p.vy * dt
+            p.x += p.vx * dt
+            if (p.y >= floor) {
+              stream[i] = stream[stream.length - 1]
+              stream.pop()
+              continue
+            }
+            ctx.drawImage(
+              sprite,
+              p.x - p.size / 2,
+              p.y - p.size / 2,
+              p.size,
+              p.size,
+            )
+          }
+
+          // Le temps est écoulé : un anneau de lumière part du col.
+          const f = (now - flashAt) / FLASH
+          if (f >= 0 && f < 1 && !reducedMotion) {
+            ctx.globalAlpha = (1 - f) * 0.8
+            const size = g.maxW * (1 + f * 3)
+            ctx.drawImage(sprite, g.cx - size / 2, g.cy - size / 2, size, size)
+          }
+
+          ctx.globalAlpha = 1
+          ctx.globalCompositeOperation = "source-over"
+        }
+
+        function loop(now) {
+          raf = 0
+          if (paused) return
+          const busy = mode !== "idle" || stream.length || now - flashAt < FLASH
+          // Au repos, les grains scintillent lentement : 25 images par
+          // seconde suffisent. Avec le réglage « réduire les animations »,
+          // on ne redessine que s'il le faut.
+          if (busy || now - lastFrame >= 40) draw(now)
+          if (!reducedMotion || busy) raf = requestAnimationFrame(loop)
+        }
+
+        function kick() {
+          if (!raf && !paused) raf = requestAnimationFrame(loop)
+        }
+
+        new ResizeObserver(build).observe(canvas)
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) kick()
+        })
+
+        // Plein, dans la couleur de l'équipe, sans retournement.
+        function fill(hex) {
+          colorTo = colorFrom = hexToRgb(hex)
+          colorStart = -1e9
+          mode = "idle"
+          frac = 1
+          stream.length = 0
+          kick()
+        }
+
+        return {
+          fill,
+          // Se retourne (le bas plein passe en haut) en prenant la couleur
+          // de l'équipe suivante.
+          flip(hex) {
+            if (reducedMotion || !g) return fill(hex)
+            const now = performance.now()
+            colorFrom = currentColor(now)
+            colorTo = hexToRgb(hex)
+            colorStart = now
+            // Chaque grain du bas, une fois retourné, rejoint une place du
+            // haut : on les apparie rangée par rangée.
+            const byRow = (a, b) => b.y - a.y || a.x - b.x
+            const turned = bottomFill
+              .slice(0, N)
+              .map((p) => ({ x: 2 * g.cx - p.x, y: 2 * g.cy - p.y }))
+              .sort(byRow)
+            const rest = topRest.slice().sort(byRow)
+            flipPairs = turned.map((p, i) => [p, rest[i]])
+            mode = "flip"
+            flipStart = now
+            kick()
+          },
+          drain(endsAt, seconds) {
+            drainEnd = endsAt
+            drainDur = seconds * 1000
+            mode = "drain"
+            frac = 1
+            lastSpawn = performance.now()
+            kick()
+          },
+          // Tous les mots sont trouvés : le reste du sable file d'un coup.
+          rush() {
+            rushFrom = frac
+            rushStart = performance.now()
+            mode = "rush"
+            kick()
+          },
+          timeUp() {
+            frac = 0
+            mode = "idle"
+            flashAt = performance.now()
+            kick()
+          },
+          setLow(on) {
+            lowTime = on
+          },
+          // Caché sous un écran plein (réglages, fin de partie) : il ne se
+          // dessine plus.
+          setPaused(on) {
+            paused = on
+            kick()
+          },
+        }
+      })()
+
+      // ===== Étincelles : un mot trouvé s'envole jusqu'au score =====
+
+      const Sparks = (() => {
+        const canvas = $("fx")
+        const ctx = canvas.getContext("2d")
+        const parts = []
+        let raf = 0
+
+        function frame(now) {
+          ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight)
+          ctx.globalCompositeOperation = "lighter"
+          for (let i = parts.length - 1; i >= 0; i--) {
+            const p = parts[i]
+            const t = (now - p.start) / p.dur
+            if (t < 0) continue
+            if (t >= 1) {
+              parts[i] = parts[parts.length - 1]
+              parts.pop()
+              continue
+            }
+            // Trois positions sur la courbe : la tête et sa traînée.
+            for (let k = 0; k < 3; k++) {
+              const e = ease(Math.max(0, t - k * 0.04))
+              const u = 1 - e
+              const x = u * u * p.x0 + 2 * u * e * p.x1 + e * e * p.x2
+              const y = u * u * p.y0 + 2 * u * e * p.y1 + e * e * p.y2
+              const size = p.size * (1 - k * 0.28) * (1 - t * 0.4)
+              ctx.globalAlpha = (1 - k * 0.3) * Math.min(1, t * 8)
+              ctx.drawImage(p.sprite, x - size / 2, y - size / 2, size, size)
+            }
+          }
+          ctx.globalAlpha = 1
+          if (parts.length) raf = requestAnimationFrame(frame)
+          else {
+            // Plus rien ne vole : le canvas rend sa mémoire.
+            raf = 0
+            canvas.width = 0
+          }
+        }
+
+        return {
+          // Renvoie le délai, en millisecondes, avant que la première
+          // étincelle arrive.
+          burst(from, to, hex) {
+            if (!raf)
+              sizeCanvas(canvas, ctx, canvas.clientWidth, canvas.clientHeight)
+            const sprite = spriteFor(hexToRgb(hex))
+            const tx = to.left + to.width / 2
+            const ty = to.top + to.height / 2
+            const now = performance.now()
+            let first = Infinity
+            for (let i = 0; i < 34; i++) {
+              const x0 = from.left + Math.random() * from.width
+              const y0 = from.top + (0.25 + Math.random() * 0.5) * from.height
+              const p = {
+                x0,
+                y0,
+                x1: x0 + (Math.random() - 0.5) * 220,
+                y1: Math.min(y0, ty) + (Math.random() - 0.3) * 160,
+                x2: tx + (Math.random() - 0.5) * 10,
+                y2: ty + (Math.random() - 0.5) * 6,
+                start: now + Math.random() * 160,
+                dur: 650 + Math.random() * 250,
+                size: 9 + Math.random() * 9,
+                sprite,
+              }
+              first = Math.min(first, p.start + p.dur - now)
+              parts.push(p)
+            }
+            if (!raf) raf = requestAnimationFrame(frame)
+            return first
+          },
+        }
+      })()
+
+      // ===== Effets sonores =====
+      //
+      // Générés à la volée (oscillateurs), sans fichier audio : le joueur qui
+      // mime ou décrit ne regarde pas l'écran, le retour sonore lui indique
+      // si son mot a été trouvé, passé, ou si le temps est écoulé. Ils passent
+      // par le contexte de voix.js, débloqué par les gestes des joueurs.
+
+      function playTone(
+        ctx,
+        freq,
+        startTime,
+        duration,
+        type,
+        peakGain,
+        toFreq,
+      ) {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = type
+        osc.frequency.setValueAtTime(freq, startTime)
+        if (toFreq) {
+          osc.frequency.exponentialRampToValueAtTime(
+            toFreq,
+            startTime + duration,
+          )
+        }
+        gain.gain.setValueAtTime(0, startTime)
+        gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.015)
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(startTime)
+        osc.stop(startTime + duration + 0.05)
+      }
+
+      function sound(ms, play) {
+        const ctx = Voice.wake(ms)
+        if (ctx) play(ctx, ctx.currentTime + 0.01)
+      }
+
+      // Trouvé : un carillon qui monte, une cloche par note.
+      function playFoundSound() {
+        sound(1500, (ctx, t) => {
+          ;[784, 1047, 1319].forEach((f, i) => {
+            playTone(ctx, f, t + i * 0.07, 0.5, "sine", 0.16)
+            playTone(ctx, f * 2.01, t + i * 0.07, 0.25, "sine", 0.04)
+          })
+        })
+      }
+
+      // Je passe : un souffle qui descend.
+      function playPassSound() {
+        sound(1500, (ctx, t) => {
+          playTone(ctx, 520, t, 0.22, "triangle", 0.14, 230)
+        })
+      }
+
+      // Les cinq dernières secondes : un tic de verre.
+      function playTick(last) {
+        sound(800, (ctx, t) => {
+          playTone(ctx, last ? 1760 : 1480, t, 0.08, "sine", 0.12)
+        })
+      }
+
+      // Temps écoulé : une cloche grave qui résonne.
+      function playTimeUpSound() {
+        sound(2500, (ctx, t) => {
+          playTone(ctx, 220, t, 1.6, "sine", 0.3)
+          playTone(ctx, 440, t, 1.1, "sine", 0.12)
+          playTone(ctx, 662, t, 0.7, "sine", 0.06)
+          playTone(ctx, 330, t, 0.25, "square", 0.05, 160)
+        })
+      }
+
+      // Tous les mots trouvés : le carillon en entier.
+      function playRoundSound() {
+        sound(2500, (ctx, t) => {
+          ;[523, 659, 784, 1047, 1319].forEach((f, i) =>
+            playTone(ctx, f, t + i * 0.09, 0.8, "sine", 0.13),
+          )
+        })
+      }
+
+      // Le sablier se retourne : une gamme de verre qui monte.
+      function playFlipSound() {
+        sound(2000, (ctx, t) => {
+          ;[392, 523, 659, 784, 988, 1175].forEach((f, i) =>
+            playTone(ctx, f, t + i * 0.06, 0.35, "sine", 0.06),
+          )
+        })
+      }
+
+      function shuffle(arr) {
+        const copy = arr.slice()
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[copy[i], copy[j]] = [copy[j], copy[i]]
+        }
+        return copy
+      }
+
+      // ===== Liste de mots =====
+
+      async function loadWordPool() {
+        try {
+          const res = await fetch("mots-enfants.txt")
+          if (!res.ok) throw new Error("fetch failed")
+          const text = await res.text()
+          const words = text
+            .split("\n")
+            .map((w) => w.trim())
+            .filter(
+              (w) =>
+                w.length >= 3 &&
+                w.length <= 12 &&
+                /^[a-zàâäéèêëîïôöùûüçñ]+$/i.test(w),
+            )
+          return words.length >= wordCount ? words : FALLBACK_WORDS
+        } catch (e) {
+          return FALLBACK_WORDS
+        }
+      }
+
+      // ===== Réglages & noms d'équipes =====
+
+      function sanitizeName(value, index) {
+        const clean =
+          typeof value === "string"
+            ? value.replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH)
+            : ""
+        return clean || DEFAULT_NAMES[index]
+      }
+
+      function loadTeams() {
+        let stored
+        try {
+          stored = JSON.parse(localStorage.getItem(TEAMS_KEY))
+        } catch (e) {
+          stored = null
+        }
+        if (Array.isArray(stored) && stored.length >= MIN_TEAMS) {
+          return stored.slice(0, MAX_TEAMS).map((n, i) => sanitizeName(n, i))
+        }
+        return DEFAULT_NAMES.slice(0, MIN_TEAMS)
+      }
+
+      function saveTeams(names) {
+        try {
+          localStorage.setItem(TEAMS_KEY, JSON.stringify(names))
+        } catch (e) {}
+      }
+
+      function loadSettings() {
+        let stored
+        try {
+          stored = JSON.parse(localStorage.getItem(SETTINGS_KEY))
+        } catch (e) {
+          stored = null
+        }
+        const duration = [30, 45, 60, 90].includes(stored && stored.duration)
+          ? stored.duration
+          : 45
+        const words = [15, 20, 25, 30].includes(stored && stored.words)
+          ? stored.words
+          : 20
+        return { duration, words }
+      }
+
+      function saveSettings(settings) {
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+        } catch (e) {}
+      }
+
+      // ===== Écran de réglages =====
+
+      function selectPill(groupId, value) {
+        $(groupId)
+          .querySelectorAll(".pill")
+          .forEach((pill) =>
+            pill.setAttribute(
+              "aria-pressed",
+              String(pill.dataset.value === String(value)),
+            ),
+          )
+      }
+
+      function onPill(groupId, apply) {
+        $(groupId).addEventListener("click", (e) => {
+          const pill = e.target.closest(".pill")
+          if (!pill) return
+          apply(Number(pill.dataset.value))
+          selectPill(groupId, pill.dataset.value)
+        })
+      }
+
+      function renderNameFields(names) {
+        const wrapper = $("nameFields")
+        wrapper.innerHTML = ""
+        for (let i = 0; i < teamCount; i++) {
+          const label = document.createElement("label")
+          label.className = "name-field"
+          label.style.setProperty("--c", TEAM_COLORS[i])
+          const dot = document.createElement("span")
+          dot.className = "dot"
+          const input = document.createElement("input")
+          input.type = "text"
+          input.id = `teamName${i}`
+          input.maxLength = MAX_NAME_LENGTH
+          input.autocomplete = "off"
+          input.placeholder = DEFAULT_NAMES[i]
+          input.setAttribute("aria-label", `Nom de l'équipe ${i + 1}`)
+          input.value = names[i] || ""
+          label.appendChild(dot)
+          label.appendChild(input)
+          wrapper.appendChild(label)
+        }
+      }
+
+      function showSetup() {
+        const savedNames = loadTeams()
+        teamCount = savedNames.length
+        const settings = loadSettings()
+        turnDuration = settings.duration
+        wordCount = settings.words
+        renderNameFields(
+          savedNames.map((name, i) => (name === DEFAULT_NAMES[i] ? "" : name)),
+        )
+        selectPill("teamPills", teamCount)
+        selectPill("durationPills", turnDuration)
+        selectPill("wordCountPills", wordCount)
+        showScreen("setupOverlay")
+      }
+
+      async function confirmSetup() {
+        Voice.wake(300)
+        const names = []
+        for (let i = 0; i < teamCount; i++) {
+          names.push(sanitizeName($(`teamName${i}`).value, i))
+        }
+        saveTeams(names)
+        saveSettings({ duration: turnDuration, words: wordCount })
+
+        const setupBtn = $("setupBtn")
+        setupBtn.disabled = true
+        setupBtn.textContent = "Préparation…"
+        const pool = await loadWordPool()
+        setupBtn.disabled = false
+        setupBtn.textContent = "Commencer la partie"
+
+        teams = names.map((name) => ({ name, score: 0 }))
+        masterDeck = shuffle(pool).slice(0, wordCount)
+        round = 1
+        currentTeamIndex = 0
+        remainingDeck = shuffle(masterDeck)
+        setEngaged(false)
+        showScreen(null)
+        updateLiveScore()
+        showHandoff(false)
+      }
+
+      // ===== Déroulé d'une partie =====
+
+      // Les panneaux se superposent en fondu : juste après un changement,
+      // le second appui d'un double appui tomberait sur un bouton du
+      // panneau qui s'en va ou de celui qui arrive (un mot sauté, une relève
+      // passée). On l'ignore.
+      let panelLockUntil = 0
+      function showPanel(id) {
+        panelLockUntil = performance.now() + 350
+        for (const panel of document.querySelectorAll(".panel")) {
+          panel.classList.toggle("shown", panel.id === id)
+        }
+      }
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (performance.now() < panelLockUntil && e.target.closest(".panel"))
+            e.stopPropagation()
+        },
+        true,
+      )
+
+      function setTeamColor(index) {
+        const hex = TEAM_COLORS[index]
+        document.documentElement.style.setProperty("--team", hex)
+        $("aura")
+          .querySelectorAll("i")
+          .forEach((layer, i) => layer.classList.toggle("on", i === index))
+        return hex
+      }
+
+      function updateRounds() {
+        $("rounds").innerHTML = ROUND_INFO.map(
+          (info, i) =>
+            `<span class="round-pip${i + 1 === round ? " current" : i + 1 < round ? " done" : ""}" aria-label="Manche ${i + 1}"><svg class="icon"><use href="${info.icon}" /></svg></span>`,
+        ).join("")
+      }
+
+      function updateLiveScore() {
+        const el = $("liveScore")
+        el.innerHTML = ""
+        teams.forEach((team, i) => {
+          const cell = document.createElement("div")
+          cell.className = "chip" + (i === currentTeamIndex ? " current" : "")
+          cell.style.setProperty("--c", TEAM_COLORS[i])
+          const dot = document.createElement("span")
+          dot.className = "dot"
+          const name = document.createElement("span")
+          name.className = "name"
+          name.textContent = team.name
+          const count = document.createElement("span")
+          count.className = "count"
+          count.textContent = team.score
+          cell.append(dot, name, count)
+          el.appendChild(cell)
+        })
+      }
+
+      function showHandoff(flip) {
+        const info = ROUND_INFO[round - 1]
+        const hex = setTeamColor(currentTeamIndex)
+        if (flip) Hourglass.flip(hex)
+        else Hourglass.fill(hex)
+        $("ruleIcon").setAttribute("href", info.icon)
+        $("ruleTitle").textContent = info.title
+        $("handoffRule").textContent = info.rule
+        $("handoffName").textContent = teams[currentTeamIndex].name
+        timeLeft = turnDuration
+        updateTimerDisplay()
+        updateRounds()
+        updateLiveScore()
+        showPanel("handoffPanel")
+      }
+
+      function startTurn() {
+        // Le contexte audio reste éveillé tout le tour : la cloche de fin
+        // sonne sans geste.
+        Voice.wake((turnDuration + 4) * 1000)
+        setEngaged(true)
+        turnFound = 0
+        timeLeft = turnDuration
+        turnActive = true
+        turnEndsAt = performance.now() + turnDuration * 1000
+        Hourglass.drain(turnEndsAt, turnDuration)
+        updateTimerDisplay()
+        updateFoundCounter()
+        showPanel("playPanel")
+        showNextCard()
+        clearInterval(timerId)
+        timerId = setInterval(() => {
+          const left = Math.ceil((turnEndsAt - performance.now()) / 1000)
+          if (left === timeLeft) return
+          timeLeft = left
+          updateTimerDisplay()
+          if (timeLeft <= 0) endTurn(false)
+          else if (timeLeft <= 5) playTick(timeLeft === 1)
+        }, 100)
+      }
+
+      function updateTimerDisplay() {
+        const el = $("timer")
+        el.textContent = Math.max(0, timeLeft)
+        const low = turnActive && timeLeft <= 10
+        el.classList.toggle("low", low)
+        Hourglass.setLow(low)
+      }
+
+      function updateFoundCounter() {
+        const el = $("foundCounter")
+        el.textContent = `+${turnFound}`
+        el.hidden = turnFound === 0
+      }
+
+      // Le mot prend toute la largeur de la carte, sans jamais déborder.
+      function fitWord(el) {
+        el.style.fontSize = ""
+        const card = el.parentElement
+        const pad = parseFloat(getComputedStyle(card).paddingLeft) * 2
+        const room = (card.clientWidth - pad) / el.scrollWidth
+        if (room < 1) {
+          el.style.fontSize = `${Math.floor(parseFloat(getComputedStyle(el).fontSize) * room)}px`
+        }
+      }
+
+      function showNextCard(exit) {
+        if (remainingDeck.length === 0) {
+          endTurn(true)
+          return
+        }
+        currentWord = remainingDeck.shift()
+        const el = $("wordDisplay")
+        el.textContent = currentWord
+        fitWord(el)
+        if (reducedMotion) return
+        const enter =
+          exit === "pass"
+            ? [
+                { transform: "translateX(-70px)", opacity: 0 },
+                { transform: "none", opacity: 1 },
+              ]
+            : [
+                { transform: "translateY(14px) scale(0.9)", opacity: 0 },
+                { transform: "none", opacity: 1 },
+              ]
+        el.animate(enter, {
+          duration: 320,
+          delay: exit ? 120 : 0,
+          easing: "cubic-bezier(.2,.8,.2,1)",
+          fill: "backwards",
+        })
+      }
+
+      // Le mot qui s'en va : un fantôme du mot, par-dessus le suivant.
+      function ghostWord(keyframes) {
+        if (reducedMotion) return
+        const el = $("wordDisplay")
+        const ghost = el.cloneNode(true)
+        ghost.removeAttribute("id")
+        ghost.style.position = "absolute"
+        el.parentElement.appendChild(ghost)
+        ghost
+          .animate(keyframes, { duration: 300, easing: "ease-in" })
+          .finished.then(() => ghost.remove())
+      }
+
+      function markFound() {
+        if (!turnActive) return
+        playFoundSound()
+        const team = teams[currentTeamIndex]
+        team.score++
+        turnFound++
+        updateFoundCounter()
+        // Le score change quand la première étincelle l'atteint.
+        const index = currentTeamIndex
+        const delay = reducedMotion
+          ? 0
+          : Sparks.burst(
+              $("wordDisplay").getBoundingClientRect(),
+              $("liveScore").children[index].getBoundingClientRect(),
+              TEAM_COLORS[index],
+            )
+        setTimeout(() => {
+          const chip = $("liveScore").children[index]
+          if (!chip) return
+          chip.querySelector(".count").textContent = teams[index].score
+          chip.classList.remove("pulse")
+          void chip.offsetWidth
+          chip.classList.add("pulse")
+        }, delay)
+        ghostWord([
+          { transform: "none", opacity: 1 },
+          { transform: "scale(1.25)", opacity: 0 },
+        ])
+        showNextCard("found")
+      }
+
+      function markPass() {
+        if (!turnActive) return
+        playPassSound()
+        remainingDeck.push(currentWord)
+        ghostWord([
+          { transform: "none", opacity: 1 },
+          { transform: "translateX(90px) rotate(6deg)", opacity: 0 },
+        ])
+        showNextCard("pass")
+      }
+
+      function endTurn(roundComplete) {
+        if (!turnActive) return
+        turnActive = false
+        clearInterval(timerId)
+        updateTimerDisplay()
+        if (roundComplete) {
+          playRoundSound()
+          Hourglass.rush()
+        } else {
+          // Le mot qu'on n'a pas eu le temps de faire deviner retourne dans
+          // la pioche.
+          remainingDeck.push(currentWord)
+          playTimeUpSound()
+          Hourglass.timeUp()
+        }
+        const team = teams[currentTeamIndex]
+        $("recapTitle").textContent = roundComplete
+          ? "Tous les mots sont trouvés !"
+          : "Temps écoulé !"
+        $("recapGain").textContent = `+${turnFound}`
+        $("recapDetail").textContent =
+          `${team.name} a trouvé ${turnFound} mot${turnFound > 1 ? "s" : ""} ce tour. Score total : ${team.score}.`
+        $("continueBtn").textContent = {
+          team: "Équipe suivante",
+          round: "Manche suivante",
+          final: "Voir les scores",
+        }[nextStep()]
+        showPanel("recapPanel")
+      }
+
+      // Après un tour : l'équipe suivante dans la même manche, la manche
+      // suivante quand la pioche est vide, ou les scores après la 3e.
+      function nextStep() {
+        if (remainingDeck.length > 0) return "team"
+        return round < 3 ? "round" : "final"
+      }
+
+      function afterTurn() {
+        const step = nextStep()
+        if (step === "final") {
+          finishGame()
+          return
+        }
+        if (step === "round") {
+          round++
+          remainingDeck = shuffle(masterDeck)
+        }
+        currentTeamIndex = (currentTeamIndex + 1) % teams.length
+        playFlipSound()
+        showHandoff(true)
+      }
+
+      function finishGame() {
+        setEngaged(false)
+        const maxScore = Math.max(...teams.map((t) => t.score))
+        const winners = teams.filter((t) => t.score === maxScore)
+        const title = $("finalTitle")
+        title.textContent = ""
+        if (winners.length > 1) title.textContent = "Égalité !"
+        else {
+          const name = document.createElement("em")
+          name.textContent = winners[0].name
+          name.style.setProperty(
+            "--team",
+            TEAM_COLORS[teams.indexOf(winners[0])],
+          )
+          title.append(
+            name,
+            document.createElement("br"),
+            "remporte la partie !",
+          )
+        }
+        const scoresEl = $("finalScores")
+        scoresEl.innerHTML = ""
+        teams.forEach((team, i) => {
+          const col = document.createElement("div")
+          const winner = team.score === maxScore
+          col.className = "column" + (winner ? "" : " loser")
+          col.style.setProperty("--c", TEAM_COLORS[i])
+          if (winner) {
+            col.insertAdjacentHTML(
+              "beforeend",
+              '<svg class="icon crown"><use href="#i-crown" /></svg>',
+            )
+          }
+          const score = document.createElement("span")
+          score.className = "score"
+          score.textContent = team.score
+          const tube = document.createElement("div")
+          tube.className = "tube"
+          tube.style.height = `${Math.max(4, (team.score / Math.max(1, maxScore)) * 200)}px`
+          tube.style.animationDelay = `${0.15 + i * 0.12}s`
+          const name = document.createElement("span")
+          name.className = "name"
+          name.textContent = team.name
+          col.append(score, tube, name)
+          scoresEl.appendChild(col)
+        })
+        showScreen("finalOverlay")
+        if (typeof showConfetti === "function") showConfetti()
+      }
+
+      function startNewGame() {
+        if (
+          gameEngaged &&
+          !confirm(
+            "Abandonner la partie en cours et en commencer une nouvelle ?",
+          )
+        ) {
+          return
+        }
+        clearInterval(timerId)
+        turnActive = false
+        setEngaged(false)
+        showSetup()
+      }
+
+      // ===== Câblage des événements =====
+
+      onPill("teamPills", (n) => {
+        teamCount = n
+        renderNameFields(
+          Array.from($("nameFields").querySelectorAll("input"), (i) => i.value),
+        )
+      })
+      onPill("durationPills", (n) => (turnDuration = n))
+      onPill("wordCountPills", (n) => (wordCount = n))
+      $("setupBtn").onclick = confirmSetup
+      $("startTurnBtn").onclick = startTurn
+      $("foundBtn").onclick = markFound
+      $("passBtn").onclick = markPass
+      $("continueBtn").onclick = afterTurn
+      $("newGameBtn").onclick = startNewGame
+      $("finalNewGameBtn").onclick = startNewGame
+
+      showSetup()
+    </script>
+    <script src="wake-lock.js"></script>
+  </body>
+</html>
