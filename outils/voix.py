@@ -86,6 +86,7 @@ PRONONCIATION = {
     "quand": "Quand ?",  # « temps »
     "ont": "On !",  # Whisper entend « un » à chaque essai : à écouter
     "crêpes": "Crêpe !",  # « Crêpes. » fait siffler le s, que Whisper ne relève pas
+    "tout": "Tout !",  # « Tout. » sortait faux à l'oreille sur 8 prises (le phonémiseur entendait « eu-tou »)
 }
 
 
