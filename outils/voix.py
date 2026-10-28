@@ -2,9 +2,22 @@
 dans audio/<jeu>/.
 
 Préférée à l'oreille à la voix de Pinson (Chatterbox, par-choeur), qui répétait parfois le mot.
-Chaque mot est dit en plusieurs prises ; Whisper relit chacune, on compare par le son (« d'Inde »
-et « dinde » se prononcent pareil) avec l'outil phonétique de par-choeur, et on garde la plus
-fidèle. Puis le rognage des silences et le volume de par-choeur (app/voix.py, fonction mp3).
+Chaque mot est dit en plusieurs prises, et deux oreilles relisent chacune :
+- Whisper dit quel mot il entend ; on compare par le son (« d'Inde » et « dinde » se prononcent
+  pareil) avec l'outil phonétique de par-choeur. Mais son modèle de langue corrige vers le mot
+  réel : il entendait « agneau » dans des prises qui disaient « ag-no » ou « anneau ».
+- Le phonémiseur wav2vec2 de par-choeur écrit des sons, sans orthographe à deviner. Il est
+  instable sur ces mots isolés (la même prise, avec un peu plus de silence autour, passe de
+  « ʃu » à rien), alors il écoute chaque prise sous six variantes (marges, tempo, bruit) et
+  vote : combien d'entre elles donnent exactement les sons attendus.
+On garde la prise la plus fidèle pour Whisper, puis celle qui a le plus de votes, puis la plus
+courte ; on en demande d'autres tant qu'aucune n'est fidèle pour les deux. Puis le rognage des
+silences et le volume de par-choeur (app/voix.py, fonction mp3).
+
+Le phonémiseur seul ne suffit pas à juger : sur les 127 MP3 (de 507) où il votait contre, Ivan en
+a jugé 98 justes à l'écoute (octobre 2026). Mais quand une autre prise était juste sous toutes les
+variantes, elle était la meilleure à l'oreille une fois sur deux, et le MP3 retenu était juste
+l'autre fois. D'où son rôle : départager les prises que Whisper accepte.
 
 La liste des mots est lue dans la page du jeu elle-même (les `word: "…"` de son tableau), pour que
 le son ne diverge jamais de l'écran. Un mot déjà en MP3 n'est pas refait : supprimer le fichier
@@ -32,6 +45,16 @@ PAR_CHOEUR = Path.home() / "Code" / "par-choeur"
 PRISES = Path.home() / ".cache" / "marzouzoute-voix"
 NB_PRISES, NB_MAX = 3, 8  # trois prises, et d'autres tant qu'aucune n'est juste
 MODELE, VOIX = "voxtral-mini-tts-2603", "e0580ce5-e63c-4cbe-88c8-a983b80c5f1f"  # Marie - Curious (fr)
+PHONEMISEUR = "Cnam-LMSSC/wav2vec2-french-phonemizer-v2"  # celui de par-choeur (app/rythme.py)
+SR = 16000  # ce qu'écoute le phonémiseur
+# Les variantes d'une prise que le phonémiseur écoute : (silence autour en s, filtre ffmpeg, bruit ajouté).
+# Une prise est juste pour lui s'il l'entend juste sous toutes. (Sous une hauteur changée par asetrate,
+# il n'entendait plus rien de juste.)
+VARIANTES = [(0.25, "", 0), (0.5, "", 0), (1.0, "", 0), (0.25, "", 3e-3), (0.25, ",atempo=0.8", 0),
+             (0.25, ",atempo=0.65", 0)]
+# Un fondu à l'attaque : une prise qui commence en pleine voix, collée au silence, fait un clic que le
+# phonémiseur entendait « p » (« pagno » pour « agneau »).
+FONDU = "afade=t=in:d=0.01"
 
 # Ce que la voix lit mal : l'écran garde le mot, seule la voix lit ce texte-ci.
 PRONONCIATION = {
@@ -64,6 +87,7 @@ PRONONCIATION = {
     "quand": "Quand ?",  # « temps »
     "ont": "On !",  # Whisper entend « un » à chaque essai : à écouter
     "crêpes": "Crêpe !",  # « Crêpes. » fait siffler le s, que Whisper ne relève pas
+    "tout": "Tout !",  # « Tout. » sortait faux à l'oreille sur 8 prises (le phonémiseur entendait « eu-tou »)
 }
 
 
@@ -122,6 +146,59 @@ def dire(texte: str, f: Path):
     raise RuntimeError(f"Mistral ne répond pas pour « {texte} »")
 
 
+def phonemiseur():
+    from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+
+    return Wav2Vec2Processor.from_pretrained(PHONEMISEUR), Wav2Vec2ForCTC.from_pretrained(PHONEMISEUR).to("cuda").eval()
+
+
+def sons_normalises(api: str) -> str:
+    """Des sons normalisés comme à l'outil phonétique de par-choeur (é/è, o ouvert ou fermé… confondus),
+    et y pour ɥ, que le phonémiseur écrit dans « huit » quand espeak écrit y."""
+    from phonetique import normaliser
+
+    return normaliser(api).replace("ɥ", "y")
+
+
+def ecouter(oreille, f: Path) -> list[str]:
+    """Les sons que le phonémiseur entend dans chacune des VARIANTES d'une prise."""
+    import numpy as np
+    import torch
+
+    proc, modele = oreille
+    hasard = np.random.default_rng(0)
+    filtrees = {}  # la prise passée par chaque filtre
+    for _, filtre, _ in VARIANTES:
+        if filtre not in filtrees:
+            brut = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(f), "-ac", "1", "-af",
+                                   FONDU + filtre, "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True)
+            filtrees[filtre] = np.frombuffer(brut.stdout, dtype=np.float32)
+    ecoutes = []
+    for marge, filtre, bruit in VARIANTES:
+        x = filtrees[filtre] + hasard.normal(0, bruit, len(filtrees[filtre])).astype(np.float32)
+        silence = np.zeros(int(marge * SR), np.float32)
+        entree = proc(np.concatenate([silence, x, silence]), sampling_rate=SR, return_tensors="pt").input_values
+        with torch.inference_mode():
+            ids = modele(entree.to("cuda")).logits[0].argmax(-1)
+        ecoutes.append(sons_normalises(proc.tokenizer.decode(ids.tolist())))
+    return ecoutes
+
+
+def attendus(mot: str, texte: str) -> set[str]:
+    """Les sons attendus d'une prise, normalisés : ceux du vrai mot, derrière les mots que le texte lu
+    ajoute (« Le feu. »), selon espeak et, pour un mot seul, selon le dictionnaire de par-choeur aussi
+    (« cheveu » : « ʃvø » ou « ʃøvø »). Jamais ceux du texte lu, qu'espeak lit mal quand PRONONCIATION
+    change la graphie (« Dinnde. » : « dind »)."""
+    from phonetique import _phrases, prononcer_expressions, sons
+    from texte import words
+
+    lu, vrai = tuple(words(texte)), tuple(words(mot))
+    phrase = lu[:max(len(lu) - len(vrai), 0)] + vrai
+    prononcer_expressions([phrase])
+    resultat = {_phrases[phrase]} | (set(sons(mot)) if len(phrase) == 1 else set())
+    return {sons_normalises(s.replace("ʼ", "")) for s in resultat}  # ʼ : le h aspiré du dictionnaire
+
+
 def main(jeu: str):
     sys.path.insert(0, str(PAR_CHOEUR / "serveur"))
     sys.path.insert(0, str(PAR_CHOEUR / "spike"))
@@ -136,6 +213,7 @@ def main(jeu: str):
     spec.loader.exec_module(pinson)
 
     whisper = WhisperModel("large-v3", device="cuda", compute_type="int8_float16")
+    oreille = phonemiseur()
     dossier, sortie = PRISES / jeu, RACINE / "audio" / jeu
     dossier.mkdir(parents=True, exist_ok=True)
     sortie.mkdir(parents=True, exist_ok=True)
@@ -143,9 +221,12 @@ def main(jeu: str):
     rapport = json.loads(rapport_f.read_text()) if rapport_f.exists() else {}
     for mot in a_faire(jeu):
         texte = PRONONCIATION.get(mot, mot.capitalize() + ".")
-        notes = []
+        sons_attendus = attendus(mot, texte)
+        prises = []
         for n in range(1, NB_MAX + 1):
-            if n > NB_PRISES and min(notes)[0] == 0:
+            # Le phonémiseur conteste à tort trois fois sur quatre : les prises de plus qu'il fait
+            # demander sont souvent inutiles, mais peu chères, et l'autre fois elles trouvent mieux.
+            if n > NB_PRISES and fidele(min(prises, key=rang)):
                 break
             f = dossier / f"{slug(mot)}-{n}.wav"
             if not f.exists():
@@ -154,21 +235,36 @@ def main(jeu: str):
             entendu = " ".join(s.text.strip() for s in segments)
             attendu, hyp = tuple(words(mot)), tuple(words(entendu))
             prononcer_expressions([attendu, hyp])
-            # Écart en sons entre ce qui est dit et le mot ; à égalité, la prise la plus courte. Une prise
-            # trop longue pour son texte a bavardé autour du mot (« J'lis, j'lis… bébé »), ce que
-            # Whisper n'entend pas toujours : elle ne compte pas.
+            # Écart en sons entre ce qui est dit et le mot. Une prise trop longue pour son texte a bavardé
+            # autour du mot (« J'lis, j'lis… bébé »), ce que Whisper n'entend pas toujours : elle ne
+            # compte pas.
             duree = sf.info(str(f)).duration
             ecart = _distance(_phrases[attendu], _phrases[hyp]) + (99 if duree > 0.5 + 0.08 * len(texte) else 0)
-            notes.append((ecart, duree, f.name, entendu))
-        ecart, _, meilleure, entendu = min(notes)
+            sons = ecouter(oreille, f)
+            prises.append({"prise": f.name, "ecart": ecart, "votes": sum(s in sons_attendus for s in sons),
+                           "duree": duree, "entendu": entendu, "sons": sons})
+        meilleure = min(prises, key=rang)
         try:
-            pinson.mp3(dossier / meilleure, sortie / f"{slug(mot)}.mp3")
+            pinson.mp3(dossier / meilleure["prise"], sortie / f"{slug(mot)}.mp3")
         except subprocess.CalledProcessError:
-            court(dossier / meilleure, sortie / f"{slug(mot)}.mp3", pinson.ROGNER)
-        rapport[mot] = {"prise": meilleure, "ecart": ecart, "entendu": entendu}
-        alerte = "  ← à écouter" if ecart else ""
-        print(f"{mot:20} {meilleure:24} {ecart} son(s) d'écart : {entendu}{alerte}", flush=True)
+            court(dossier / meilleure["prise"], sortie / f"{slug(mot)}.mp3", pinson.ROGNER)
+        rapport[mot] = meilleure
+        sons = meilleure["sons"]
+        alerte = "" if fidele(meilleure) else "  ← à écouter"
+        print(f"{mot:20} {meilleure['prise']:24} {meilleure['ecart']} son(s) d'écart : {meilleure['entendu']} ; "
+              f"sons {max(sons, key=sons.count)} ({meilleure['votes']}/{len(VARIANTES)}){alerte}", flush=True)
     rapport_f.write_text(json.dumps(rapport, ensure_ascii=False, indent=1))
+
+
+def rang(prise: dict):
+    """L'ordre des prises : la plus fidèle pour Whisper, puis celle que le phonémiseur entend juste sous le
+    plus de variantes, puis la plus courte."""
+    return prise["ecart"], -prise["votes"], prise["duree"]
+
+
+def fidele(prise: dict) -> bool:
+    """Fidèle pour les deux oreilles."""
+    return prise["ecart"] == 0 and prise["votes"] == len(VARIANTES)
 
 
 def court(src: Path, dst: Path, rogner: str):
