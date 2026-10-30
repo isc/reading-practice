@@ -1,0 +1,2905 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#110d24" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Boîte à jeux éducatifs : lecture, orthographe, logique et jeux de société."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Marzouzoute" />
+    <link rel="icon" type="image/png" href="icon-192x192.png" />
+    <link rel="apple-touch-icon" href="icon-192x192.png" />
+    <!-- Splash screens iOS (Safari ne lit pas le manifest pour ça). Une image
+         par appareil, ciblée via media query. -->
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1170x2532.png"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1179x2556.png"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/iphone-1290x2796.png"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="splash/ipad-1668x2388.png"
+      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+    />
+    <title>Marzouzoute — Boîte à jeux</title>
+    <style>
+      /* L'accueil est une vitrine de nuit : chaque jeu y a sa vignette, dans
+         ses propres couleurs et sa propre police, comme une affiche de son
+         monde. Le cadre reste sobre (une nuit violette, la police Lexend que
+         partagent les jeux) pour laisser briller les vignettes. Les polices
+         sont celles des jeux : les charger ici les met en cache pour eux. */
+      @font-face {
+        font-family: "Lexend";
+        src: url("Lexend-Variable.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Alfa Slab One";
+        src: url("AlfaSlabOne-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Andika";
+        src: url("Andika-Bold.woff2") format("woff2");
+        font-weight: 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Atkinson";
+        src: url("AtkinsonHyperlegibleNext-Variable.woff2") format("woff2");
+        font-weight: 200 800;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Baloo 2";
+        src: url("Baloo2-Variable.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Bangers";
+        src: url("Bangers-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Bungee";
+        src: url("Bungee-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Chakra Petch";
+        src: url("ChakraPetch-Bold.woff2") format("woff2");
+        font-weight: 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Doto";
+        src: url("molkky/Doto-Variable.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Fraunces";
+        src: url("Fraunces-Variable.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Fredoka";
+        src: url("Fredoka-Variable.woff2") format("woff2");
+        font-weight: 300 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Grandstander";
+        src: url("Grandstander-Variable.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Jost";
+        src: url("Jost-Variable.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Luckiest Guy";
+        src: url("LuckiestGuy-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Modak";
+        src: url("Modak-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Monoton";
+        src: url("Monoton-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Patrick Hand";
+        src: url("PatrickHand-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Pixelify Sans";
+        src: url("PixelifySans-Variable.woff2") format("woff2");
+        font-weight: 400 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Quicksand";
+        src: url("Quicksand-Variable.woff2") format("woff2");
+        font-weight: 300 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Ruslan Display";
+        src: url("RuslanDisplay-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Syne";
+        src: url("Syne-Variable.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Tilt Neon";
+        src: url("TiltNeon-Regular.woff2") format("woff2");
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Unbounded";
+        src: url("Unbounded-Variable.woff2") format("woff2");
+        font-weight: 200 900;
+        font-display: block;
+      }
+
+      :root {
+        --night: #110d24;
+        --night-deep: #0b0819;
+        --text: #f5f1ff;
+        --muted: #a9a2cc;
+        --glass: rgba(255, 255, 255, 0.07);
+        --edge: rgba(255, 255, 255, 0.13);
+        --focus: #9fd0ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--night-deep);
+      }
+
+      body {
+        margin: 0;
+        font-family: "Lexend", system-ui, sans-serif;
+        color: var(--text);
+        /* Deux lueurs sous le titre, sur une nuit qui fonce vers le bas. Le
+           haut de la page reste de la couleur du theme-color. */
+        background: radial-gradient(
+            34rem 12rem at 12% 10rem,
+            rgba(140, 92, 255, 0.3),
+            transparent 70%
+          ),
+          radial-gradient(
+            30rem 11rem at 92% 9rem,
+            rgba(63, 220, 192, 0.14),
+            transparent 70%
+          ),
+          linear-gradient(var(--night) 0, var(--night-deep) 60rem);
+        background-repeat: no-repeat;
+        padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      input {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      .container {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding-left: calc(1rem + env(safe-area-inset-left));
+        padding-right: calc(1rem + env(safe-area-inset-right));
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      /* ===== En-tête ===== */
+
+      /* overflow : une lettre qui cligne peut déborder un instant, sans faire
+         défiler la page de côté. */
+      .hero {
+        overflow: hidden;
+        padding-top: calc(0.9rem + env(safe-area-inset-top));
+        padding-bottom: 0.4rem;
+      }
+
+      .hero-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .kicker {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin: 0;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .kicker img {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+      }
+
+      .share-button {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 2.6rem;
+        padding: 0 1rem;
+        border: 1px solid var(--edge);
+        border-radius: 999px;
+        background: var(--glass);
+        font-family: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .share-button svg {
+        width: 1.05rem;
+        height: 1.05rem;
+      }
+
+      .share-button:active {
+        transform: scale(0.96);
+      }
+
+      /* Le nom, en Lexend très gras. De temps en temps, une lettre prend la
+         police et la couleur d'un jeu, puis revient : la boîte à jeux cligne
+         de l'œil. Chaque lettre garde sa largeur pour que le mot ne bouge
+         pas. */
+      /* Hauteur fixe : une police plus haute qui cligne ne pousse pas la
+         page. */
+      .wordmark {
+        height: 1em;
+        margin: 1.4rem 0 0;
+        font-size: clamp(2.6rem, 13.6vw, 5.6rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.035em;
+        white-space: nowrap;
+        color: var(--text);
+      }
+
+      .wordmark .letter {
+        display: inline-block;
+        text-align: center;
+        transform-origin: 50% 70%;
+      }
+
+      .tagline {
+        margin: 0.7rem 0 0;
+        max-width: 22rem;
+        font-size: 1rem;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      /* ===== Recherche ===== */
+
+      .search-bar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        margin-top: 0.5rem;
+        padding: 0.75rem 0;
+        transition: background-color 0.2s ease;
+      }
+
+      /* Fond plein seulement une fois collée en haut : avant, elle flotte sur
+         les lueurs du titre. */
+      .search-bar.stuck {
+        background: rgba(13, 10, 30, 0.94);
+        box-shadow: 0 1px 0 var(--edge);
+      }
+
+      .search-field {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 1rem;
+        width: 1.15rem;
+        height: 1.15rem;
+        color: var(--muted);
+        pointer-events: none;
+      }
+
+      #search {
+        width: 100%;
+        padding: 0.85rem 2.9rem;
+        font-family: inherit;
+        font-size: 1rem;
+        color: inherit;
+        background: var(--glass);
+        border: 1px solid var(--edge);
+        border-radius: 999px;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      #search::placeholder {
+        color: var(--muted);
+      }
+
+      #search:focus {
+        outline: none;
+        border-color: var(--focus);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      /* La croix native de type="search" est minuscule : on met la nôtre. */
+      #search::-webkit-search-cancel-button {
+        display: none;
+      }
+
+      #search-clear {
+        position: absolute;
+        right: 0.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        font-family: inherit;
+        font-size: 1.1rem;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .no-result {
+        margin: 0.75rem 0 0;
+        color: var(--muted);
+      }
+
+      /* ===== Rubriques (une teinte par famille de jeux) ===== */
+
+      .category {
+        margin-top: 1.6rem;
+      }
+
+      .category[data-category="recents"] {
+        --tint: #f5f1ff;
+      }
+      .category[data-category="lecture"] {
+        --tint: #9fd0ff;
+      }
+      .category[data-category="mots"] {
+        --tint: #cdb4ff;
+      }
+      .category[data-category="calcul"] {
+        --tint: #7ee8b0;
+      }
+      .category[data-category="logique"] {
+        --tint: #ffcf7a;
+      }
+      .category[data-category="plateau"] {
+        --tint: #ff9d9d;
+      }
+      .category[data-category="parole"] {
+        --tint: #7fe6f0;
+      }
+
+      .category-title {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin: 0 0 0.8rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--tint);
+      }
+
+      .category-title::before {
+        content: "";
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 50%;
+        background: var(--tint);
+        box-shadow: 0 0 10px var(--tint);
+      }
+
+      .category-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, var(--edge), transparent);
+      }
+
+      .game-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+
+      /* Sur deux colonnes, une famille au nombre de jeux impair laisserait un
+         trou : sa première vignette prend alors toute la largeur (cf.
+         applyFilter). */
+      @media (max-width: 599px) {
+        .game.wide {
+          grid-column: span 2;
+          aspect-ratio: 2 / 0.86;
+        }
+      }
+
+      @media (min-width: 600px) {
+        .game-grid {
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 1rem;
+        }
+      }
+
+      /* ===== Vignettes ===== */
+
+      .game {
+        position: relative;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        aspect-ratio: 1 / 0.88;
+        overflow: hidden;
+        border-radius: 22px;
+        background: var(--bg, #222);
+        color: var(--fg, #fff);
+        text-decoration: none;
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+          0 14px 28px -16px rgba(0, 0, 0, 0.8);
+        transition: transform 0.18s ease;
+      }
+
+      .game-art {
+        min-height: 0;
+      }
+
+      .game-art svg,
+      .recent-art svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      .game-name {
+        padding: 0 0.85rem 0.8rem;
+        font-family: var(--font, "Lexend");
+        font-weight: var(--weight, 700);
+        font-size: var(--size, 1.05rem);
+        line-height: 1.12;
+        letter-spacing: var(--spacing, 0);
+        text-transform: var(--case, none);
+        text-shadow: var(--shadow, none);
+        /* Les polices d'un seul poids ne sont pas épaissies de force. */
+        font-synthesis: none;
+      }
+
+      .game-name b {
+        font-weight: inherit;
+        color: var(--accent, inherit);
+      }
+
+      .game-sub {
+        display: block;
+        margin-top: 0.15rem;
+        font-family: "Lexend", sans-serif;
+        font-size: 0.72rem;
+        font-weight: 500;
+        letter-spacing: 0;
+        text-transform: none;
+        opacity: 0.75;
+      }
+
+      .game:active {
+        transform: scale(0.97);
+      }
+
+      @media (hover: hover) {
+        .game:hover {
+          transform: translateY(-3px);
+        }
+      }
+
+      .game:focus-visible,
+      .recent:focus-visible,
+      .share-button:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 3px;
+      }
+
+      /* Entrée en scène, une fois par visite. */
+      .game.entering {
+        animation: rise 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+        animation-delay: calc(var(--i, 0) * 28ms);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.96);
+        }
+      }
+
+      /* ===== Derniers jeux ===== */
+
+      .recent-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.6rem;
+      }
+
+      @media (min-width: 600px) {
+        .recent-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+
+      .recent {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        min-width: 0;
+        padding: 0.4rem 0.7rem 0.4rem 0.4rem;
+        border-radius: 16px;
+        background: var(--glass);
+        border: 1px solid var(--edge);
+        color: var(--text);
+        text-decoration: none;
+        font-size: 0.88rem;
+        font-weight: 600;
+        line-height: 1.15;
+      }
+
+      .recent:active {
+        transform: scale(0.97);
+      }
+
+      .recent-art {
+        flex-shrink: 0;
+        width: 2.75rem;
+        height: 2.75rem;
+        overflow: hidden;
+        border-radius: 12px;
+        background: var(--bg);
+      }
+
+      .recent-name {
+        min-width: 0;
+      }
+
+      .recent-name b {
+        font-weight: inherit;
+      }
+
+      .recent .game-sub {
+        font-size: 0.7rem;
+      }
+
+      /* ===== Le monde de chaque jeu ===== */
+
+      [data-game="b-ou-d"] {
+        --bg: linear-gradient(160deg, #cfa673, #b98b55);
+        --fg: #3d2a17;
+        --font: "Alfa Slab One";
+      }
+      [data-game="p-ou-q"] {
+        --bg: radial-gradient(circle at 50% 30%, #1f2870, #0b1030 72%);
+        --fg: #eef0ff;
+      }
+      [data-game="ou-ou-on"] {
+        --bg: radial-gradient(circle, #ffc9d8 1.6px, transparent 2.1px) 0 0 /
+            11px 11px,
+          #fff6e6;
+        --fg: #26173f;
+        --font: "Baloo 2";
+        --weight: 800;
+        --size: 1.15rem;
+      }
+      [data-game="c-doux-dur"] {
+        --bg: linear-gradient(170deg, #f7f4fd, #e9e3f7);
+        --fg: #221a3d;
+        --font: "Atkinson";
+        --weight: 800;
+      }
+      [data-game="reading-game"] {
+        --bg: linear-gradient(165deg, #fff7f0, #ffe6dc);
+        --fg: #2d2545;
+        --font: "Andika";
+      }
+      [data-game="word-search-game"] {
+        --bg: linear-gradient(180deg, #6fd3e1, #1d82ac);
+        --fg: #fff;
+        --font: "Baloo 2";
+        --weight: 800;
+        --size: 1.15rem;
+        --shadow: 0 2px 0 #05304d;
+      }
+      [data-game="sutom"] {
+        --bg: #100e2c;
+        --fg: #fff1e8;
+        --font: "Pixelify Sans";
+        --size: 1.2rem;
+        --spacing: 0.06em;
+        --case: uppercase;
+      }
+      [data-game="pendu"] {
+        --bg: linear-gradient(170deg, #dcf1e8, #c2e2d4);
+        --fg: #24473b;
+        --font: "Fredoka";
+        --weight: 600;
+        --size: 1.15rem;
+      }
+      [data-game="anagramme"] {
+        --bg: linear-gradient(165deg, #fff3e9, #fcdcec);
+        --fg: #d6409a;
+        --font: "Baloo 2";
+        --weight: 800;
+        --size: 1.15rem;
+      }
+      [data-game="lettris"] {
+        --bg: linear-gradient(180deg, #0b0221 15%, #1d0640 70%);
+        --fg: #ff7be3;
+        --font: "Monoton";
+        --size: 1.3rem;
+        --spacing: 0.04em;
+        --case: uppercase;
+        --shadow: 0 0 10px rgba(255, 79, 216, 0.8);
+      }
+      [data-game="mot-le-plus-long"] {
+        --bg: radial-gradient(circle at 50% 35%, #431a63, #12051f 75%);
+        --fg: #ffd35a;
+        --font: "Bungee";
+        --size: 0.88rem;
+      }
+      [data-game="complement-10"] {
+        --bg: radial-gradient(circle at 50% 40%, #3d1745, #160a24 75%);
+        --fg: #fbefff;
+        --font: "Quicksand";
+        --size: 1.1rem;
+        --accent: #ffc75a;
+      }
+      [data-game="fracto-dingo"] {
+        --bg: linear-gradient(180deg, #fff7ec, #f9e6d2);
+        --fg: #5a3624;
+        --font: "Fraunces";
+        --weight: 800;
+        --size: 1.15rem;
+      }
+      [data-game="2048"] {
+        --bg: radial-gradient(circle at 50% 40%, #1d1858, #07061a 75%);
+        --fg: #eef0ff;
+        --font: "Unbounded";
+        --weight: 800;
+        --size: 1.2rem;
+      }
+      [data-game="mastermind"] {
+        --bg: radial-gradient(circle at 50% 35%, #1f2d62, #0d0820 75%);
+        --fg: #f3eeff;
+        --font: "Grandstander";
+        --weight: 800;
+        --size: 1.1rem;
+      }
+      [data-game="demineur"] {
+        --bg: #efe8d9;
+        --fg: #1d1d1b;
+        --font: "Jost";
+        --size: 1.15rem;
+        --case: lowercase;
+      }
+      [data-game="sudoku"] {
+        --bg: radial-gradient(circle at 50% 35%, #322d80, #1c1846 75%);
+        --fg: #ffe08a;
+        --font: "Fredoka";
+        --size: 1.2rem;
+      }
+      [data-game="memory"] {
+        --bg: radial-gradient(circle at 50% 40%, #3f1056, #14061f 75%);
+        --fg: #ffc94a;
+        --font: "Unbounded";
+        --weight: 800;
+        --size: 1.1rem;
+      }
+      [data-game="tetris"] {
+        --bg: linear-gradient(180deg, #0b1230, #15224e);
+        --fg: #f2c85b;
+        --font: "Ruslan Display";
+        --size: 1.35rem;
+        --spacing: 0.06em;
+        --case: uppercase;
+        --shadow: 0 2px 0 #c62d1f;
+      }
+      [data-game="puissance4"] {
+        --bg: radial-gradient(circle at 50% 30%, #431c80, #1b0e3a 75%);
+        --fg: #ff5a78;
+        --font: "Modak";
+        --size: 1.45rem;
+        --accent: #ffcf3a;
+      }
+      [data-game="puissance4"] .game-name {
+        line-height: 0.9;
+      }
+      [data-game="othello"] {
+        --bg: linear-gradient(180deg, #4a70a3, #17265c 62%, #0a0e2e);
+        --fg: #f4f3ff;
+        --font: "Unbounded";
+      }
+      [data-game="dames"] {
+        --bg: linear-gradient(rgba(52, 68, 154, 0.1) 1px, transparent 1px) 0 0 /
+            12px 12px,
+          linear-gradient(90deg, rgba(52, 68, 154, 0.1) 1px, transparent 1px) 0
+            0 / 12px 12px,
+          #fdfbf3;
+        --fg: #34449a;
+        --font: "Patrick Hand";
+        --size: 1.45rem;
+      }
+      [data-game="abalone"] {
+        --bg: radial-gradient(circle at 50% 42%, #3d250f, #160d06 46%, #0b0806);
+        --fg: #f6ead9;
+        --font: "Syne";
+        --weight: 800;
+        --size: 1.15rem;
+      }
+      [data-game="bataille-navale"] {
+        --bg: radial-gradient(circle at 50% 42%, #073239, #021217 72%);
+        --fg: #5dffc9;
+        --font: "Chakra Petch";
+        --size: 0.95rem;
+        --spacing: 0.08em;
+        --case: uppercase;
+      }
+      [data-game="qwirkle"] {
+        --bg: #fff3df;
+        --fg: #161616;
+        --font: "Bungee";
+      }
+      [data-game="qwirkle-score"] {
+        --bg: linear-gradient(175deg, #faf6ec, #efe7d6);
+        --fg: #1c1a24;
+        --font: "Unbounded";
+        --size: 1rem;
+      }
+      [data-game="timesup"] {
+        --bg: radial-gradient(circle at 50% 38%, #251a44, #08070f 75%);
+        --fg: #ffb6d9;
+        --font: "Unbounded";
+        --weight: 800;
+        --size: 1.05rem;
+      }
+      [data-game="tabou"] {
+        --bg: radial-gradient(rgba(21, 19, 26, 0.14) 28%, transparent 31%) 0 0 /
+            8px 8px,
+          #fff6e0;
+        --fg: #ff2d3f;
+        --font: "Luckiest Guy";
+        --size: 1.35rem;
+        --spacing: 0.02em;
+        --shadow: 2px 2px 0 #15131a;
+      }
+      [data-game="tabou"] .game-name {
+        -webkit-text-stroke: 1.5px #15131a;
+        paint-order: stroke fill;
+      }
+      [data-game="molkky"] {
+        --bg: radial-gradient(circle, #ffffff10 1.1px, transparent 1.6px) 0 0 /
+            8px 8px,
+          #050607;
+        --fg: #ffb21a;
+        --font: "Doto";
+        --weight: 900;
+        --size: 1.3rem;
+      }
+      [data-game="molkky"] .game-sub {
+        color: #f4f1e8;
+      }
+
+      /* Sur grand écran, les noms grandissent avec les vignettes. */
+      @media (min-width: 600px) {
+        .game-name {
+          font-size: calc(var(--size, 1.05rem) * 1.1);
+        }
+      }
+
+      /* ===== Partage ===== */
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(1.5rem + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: 20;
+        margin: 0;
+        padding: 0.75rem 1.1rem;
+        border-radius: 999px;
+        background: var(--text);
+        color: var(--night);
+        font-size: 0.95rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .game.entering {
+          animation: none;
+        }
+      }
+    </style>
+    <link rel="manifest" href="manifest.json" />
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("service-worker.js")
+            .then((registration) => {
+              console.log(
+                "Service Worker registered with scope:",
+                registration.scope,
+              )
+            })
+            .catch((error) => {
+              console.error("Service Worker registration failed:", error)
+            })
+        })
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Dégradés et filtres partagés par les dessins des vignettes. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+        <radialGradient id="shine" cx="35%" cy="30%" r="65%">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.85" />
+          <stop offset="0.35" stop-color="#fff" stop-opacity="0.15" />
+          <stop offset="1" stop-color="#fff" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id="orb-cyan" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#f2feff" />
+          <stop offset="0.45" stop-color="#8cf0ff" />
+          <stop offset="1" stop-color="#2a8fc0" />
+        </radialGradient>
+        <radialGradient id="orb-gold" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#fff8dc" />
+          <stop offset="0.45" stop-color="#ffd36b" />
+          <stop offset="1" stop-color="#e0801a" />
+        </radialGradient>
+        <radialGradient id="orb-silver" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#ffffff" />
+          <stop offset="0.5" stop-color="#dfe5ff" />
+          <stop offset="1" stop-color="#8b97cc" />
+        </radialGradient>
+        <radialGradient id="marble-white" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#fffdf6" />
+          <stop offset="0.6" stop-color="#eadcc6" />
+          <stop offset="1" stop-color="#9c8467" />
+        </radialGradient>
+        <radialGradient id="marble-black" cx="38%" cy="32%" r="70%">
+          <stop offset="0" stop-color="#6f5e52" />
+          <stop offset="0.5" stop-color="#1c1510" />
+          <stop offset="1" stop-color="#000" />
+        </radialGradient>
+        <radialGradient id="light-gold" cx="40%" cy="35%" r="65%">
+          <stop offset="0" stop-color="#fff4cf" />
+          <stop offset="0.5" stop-color="#ffc75a" />
+          <stop offset="1" stop-color="#ff9a3a" />
+        </radialGradient>
+        <linearGradient id="sun-retro" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffe36a" />
+          <stop offset="1" stop-color="#ff4fd8" />
+        </linearGradient>
+        <linearGradient id="gold-plate" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff0a8" />
+          <stop offset="0.5" stop-color="#ffc93c" />
+          <stop offset="1" stop-color="#ff9f1c" />
+        </linearGradient>
+        <linearGradient id="prism" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff7ac8" />
+          <stop offset="0.5" stop-color="#ffe08a" />
+          <stop offset="1" stop-color="#7cd8ff" />
+        </linearGradient>
+        <linearGradient id="portal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffc94a" />
+          <stop offset="1" stop-color="#ff4fa3" />
+        </linearGradient>
+        <radialGradient id="portal-veil" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#8b5cff" stop-opacity="0.55" />
+          <stop offset="1" stop-color="#8b5cff" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffd66b" />
+          <stop offset="1" stop-color="#ff5fa8" />
+        </linearGradient>
+        <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5dffc9" stop-opacity="0.6" />
+          <stop offset="1" stop-color="#5dffc9" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="jelly" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#6ff3dc" />
+          <stop offset="1" stop-color="#11807c" />
+        </linearGradient>
+        <linearGradient id="read-go" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff5d8f" />
+          <stop offset="1" stop-color="#8c5cff" />
+        </linearGradient>
+        <linearGradient id="fish" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffc067" />
+          <stop offset="1" stop-color="#ff5f6d" />
+        </linearGradient>
+        <pattern
+          id="awning"
+          x="-80"
+          y="-60"
+          width="40"
+          height="86"
+          patternUnits="userSpaceOnUse"
+        >
+          <rect width="20" height="76" fill="#d6456a" />
+          <rect x="20" width="20" height="76" fill="#fffaf3" />
+          <circle cx="10" cy="76" r="10" fill="#d6456a" />
+          <circle cx="30" cy="76" r="10" fill="#fffaf3" />
+        </pattern>
+        <pattern
+          id="hatch"
+          width="5"
+          height="5"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)"
+        >
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="5"
+            stroke="#8a8378"
+            stroke-width="1.3"
+          />
+        </pattern>
+      </defs>
+    </svg>
+
+    <header class="hero container">
+      <div class="hero-bar">
+        <p class="kicker">
+          <img src="icon-192x192.png" alt="" />
+          <span id="game-count">Boîte à jeux</span>
+        </p>
+        <button class="share-button" id="share" type="button">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
+            <line x1="15.4" y1="6.5" x2="8.6" y2="10.5" />
+          </svg>
+          Partager
+        </button>
+      </div>
+      <h1 class="wordmark" id="wordmark">Marzouzoute</h1>
+      <p class="tagline">Une boîte à jeux pour apprendre en s'amusant</p>
+    </header>
+
+    <p class="toast" id="toast" role="status" hidden></p>
+
+    <div class="search-bar" id="search-bar">
+      <div class="container">
+        <div class="search-field">
+          <svg
+            class="search-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <line x1="15.5" y1="15.5" x2="20.5" y2="20.5" />
+          </svg>
+          <label class="visually-hidden" for="search">Chercher un jeu</label>
+          <input
+            type="search"
+            id="search"
+            placeholder="Chercher un jeu…"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <button id="search-clear" type="button" hidden aria-label="Effacer">
+            ✕
+          </button>
+        </div>
+        <p class="no-result" id="no-result" hidden>
+          Aucun jeu ne correspond à « <span id="no-result-query"></span> ».
+        </p>
+      </div>
+    </div>
+
+    <main class="container" id="catalogue">
+      <section class="category" data-category="recents" id="recents" hidden>
+        <h2 class="category-title">Tes derniers jeux</h2>
+        <div class="recent-grid" id="recent-grid"></div>
+      </section>
+
+      <section class="category" data-category="lecture">
+        <h2 class="category-title">Lecture et sons</h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="b-ou-d.html"
+            data-game="b-ou-d"
+            data-tags="lecture lettres confusion orthographe dyslexie"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <rect
+                  x="24"
+                  y="12"
+                  width="112"
+                  height="76"
+                  rx="4"
+                  fill="#f8f2e4"
+                  transform="rotate(-3 80 50)"
+                />
+                <g
+                  font-family="Alfa Slab One"
+                  font-size="54"
+                  text-anchor="middle"
+                >
+                  <text
+                    x="56"
+                    y="70"
+                    fill="#c8372d"
+                    fill-opacity="0.92"
+                    transform="rotate(-8 56 52)"
+                  >
+                    b
+                  </text>
+                  <text
+                    x="106"
+                    y="72"
+                    fill="#2f56a6"
+                    fill-opacity="0.92"
+                    transform="rotate(6 106 52)"
+                  >
+                    d
+                  </text>
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">b ou d ?</span>
+          </a>
+          <a
+            class="game"
+            href="p-ou-q.html"
+            data-game="p-ou-q"
+            data-tags="lecture lettres confusion orthographe dyslexie"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <line
+                  x1="80"
+                  y1="16"
+                  x2="80"
+                  y2="88"
+                  stroke="#a3abdc"
+                  stroke-opacity="0.4"
+                  stroke-width="1.5"
+                  stroke-dasharray="1 6"
+                  stroke-linecap="round"
+                />
+                <g
+                  font-family="Lexend"
+                  font-weight="700"
+                  font-size="58"
+                  text-anchor="middle"
+                >
+                  <text x="54" y="64" fill="#8ff6ff" filter="url(#glow)">
+                    p
+                  </text>
+                  <text x="54" y="64" fill="#e6feff">p</text>
+                  <text x="106" y="64" fill="#ffb46b" filter="url(#glow)">
+                    q
+                  </text>
+                  <text x="106" y="64" fill="#fff0de">q</text>
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">p ou q ?</span>
+          </a>
+          <a
+            class="game"
+            href="ou-ou-on.html"
+            data-game="ou-ou-on"
+            data-tags="lecture sons phonétique orthographe"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g stroke="#26173f" stroke-width="3" stroke-linejoin="round">
+                  <path
+                    fill="#26173f"
+                    transform="translate(3 3)"
+                    d="M34 12 H70 A14 14 0 0 1 84 26 V42 A14 14 0 0 1 70 56 H46 L30 72 L36 56 H34 A14 14 0 0 1 20 42 V26 A14 14 0 0 1 34 12 Z"
+                  />
+                  <path
+                    fill="#fff"
+                    d="M34 12 H70 A14 14 0 0 1 84 26 V42 A14 14 0 0 1 70 56 H46 L30 72 L36 56 H34 A14 14 0 0 1 20 42 V26 A14 14 0 0 1 34 12 Z"
+                  />
+                  <path
+                    fill="#26173f"
+                    transform="translate(3 3)"
+                    d="M92 38 H128 A14 14 0 0 1 142 52 V68 A14 14 0 0 1 128 82 H124 L130 96 L112 82 H92 A14 14 0 0 1 78 68 V52 A14 14 0 0 1 92 38 Z"
+                  />
+                  <path
+                    fill="#fff"
+                    d="M92 38 H128 A14 14 0 0 1 142 52 V68 A14 14 0 0 1 128 82 H124 L130 96 L112 82 H92 A14 14 0 0 1 78 68 V52 A14 14 0 0 1 92 38 Z"
+                  />
+                </g>
+                <g
+                  font-family="Baloo 2"
+                  font-weight="800"
+                  font-size="30"
+                  text-anchor="middle"
+                >
+                  <text x="52" y="45" fill="#3557e0">ou</text>
+                  <text x="110" y="71" fill="#f2620f">on</text>
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">ou ou on ?</span>
+          </a>
+          <a
+            class="game"
+            href="c-doux-dur.html"
+            data-game="c-doux-dur"
+            data-tags="lecture sons phonétique orthographe"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g fill="#fff" stroke="#d9d3ea" stroke-width="1.5">
+                  <rect x="22" y="10" width="54" height="78" rx="12" />
+                  <rect x="84" y="10" width="54" height="78" rx="12" />
+                </g>
+                <g
+                  font-family="Atkinson"
+                  font-weight="800"
+                  font-size="40"
+                  text-anchor="middle"
+                >
+                  <text x="49" y="54" fill="#10a99b">C</text>
+                  <text x="111" y="54" fill="#f0401f">C</text>
+                </g>
+                <g
+                  fill="none"
+                  stroke-width="2.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    stroke="#10a99b"
+                    d="M31 72 q4.5 -7 9 0 t9 0 t9 0 t9 0"
+                  />
+                  <path
+                    stroke="#f0401f"
+                    d="M92 72 H101 L104 62 L107 80 L110 67 L113 72 H130"
+                  />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">C doux ou C dur ?</span>
+          </a>
+          <a
+            class="game"
+            href="reading-game.html"
+            data-game="reading-game"
+            data-tags="lecture mots syllabes voix micro phrases"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g stroke="#ecdcef" stroke-width="1.5">
+                  <rect
+                    x="14"
+                    y="18"
+                    width="34"
+                    height="26"
+                    rx="9"
+                    fill="url(#read-go)"
+                    stroke="none"
+                  />
+                  <rect
+                    x="54"
+                    y="18"
+                    width="32"
+                    height="26"
+                    rx="9"
+                    fill="#ff8db0"
+                    stroke="none"
+                  />
+                  <rect
+                    x="92"
+                    y="18"
+                    width="26"
+                    height="26"
+                    rx="9"
+                    fill="#fff"
+                  />
+                  <rect
+                    x="14"
+                    y="52"
+                    width="44"
+                    height="26"
+                    rx="9"
+                    fill="#fff"
+                  />
+                  <rect
+                    x="62"
+                    y="52"
+                    width="52"
+                    height="26"
+                    rx="9"
+                    fill="#fff"
+                  />
+                </g>
+                <g
+                  font-family="Andika"
+                  font-weight="700"
+                  font-size="15"
+                  text-anchor="middle"
+                >
+                  <text x="31" y="36" fill="#fff">Je</text>
+                  <text x="70" y="36" fill="#fff">lis</text>
+                  <text x="105" y="36" fill="#2d2545">à</text>
+                  <text x="36" y="70" fill="#2d2545">voix</text>
+                  <text x="88" y="70" fill="#2d2545">haute</text>
+                </g>
+                <circle cx="138" cy="62" r="15" fill="url(#read-go)" />
+                <g
+                  fill="none"
+                  stroke="#fff"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                >
+                  <rect
+                    x="134.5"
+                    y="53"
+                    width="7"
+                    height="12"
+                    rx="3.5"
+                    fill="#fff"
+                  />
+                  <path d="M131 62 a7 7 0 0 0 14 0 M138 69 v3" />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Lis à voix haute</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="mots">
+        <h2 class="category-title">Mots et lettres</h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="word-search-game.html"
+            data-game="word-search-game"
+            data-tags="lecture mots lettres grille vocabulaire"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g
+                  fill="none"
+                  stroke="#e9fbff"
+                  stroke-opacity="0.7"
+                  stroke-width="1.2"
+                >
+                  <circle cx="134" cy="70" r="3.5" />
+                  <circle cx="142" cy="58" r="2.2" />
+                  <circle cx="128" cy="84" r="2" />
+                </g>
+                <path d="M46 50 L22 32 L28 50 L22 68 Z" fill="#ff7a5c" />
+                <path d="M72 34 Q78 22 92 26 L84 36 Z" fill="#ff8f60" />
+                <ellipse cx="76" cy="50" rx="34" ry="20" fill="url(#fish)" />
+                <path
+                  d="M70 32 Q60 50 70 68"
+                  fill="none"
+                  stroke="#fff"
+                  stroke-opacity="0.45"
+                  stroke-width="2"
+                />
+                <circle cx="96" cy="45" r="5" fill="#fff" />
+                <circle cx="97.5" cy="45" r="2.6" fill="#05304d" />
+                <g
+                  font-family="Baloo 2"
+                  font-weight="800"
+                  font-size="13"
+                  text-anchor="middle"
+                >
+                  <circle cx="118" cy="20" r="10" fill="#e9fbff" />
+                  <text x="118" y="24.5" fill="#05304d">G</text>
+                  <circle cx="140" cy="30" r="10" fill="#e9fbff" />
+                  <text x="140" y="34.5" fill="#05304d">U</text>
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Mots mêlés</span>
+          </a>
+          <a
+            class="game"
+            href="sutom.html"
+            data-game="sutom"
+            data-tags="mots lettres orthographe devinette wordle"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100" shape-rendering="crispEdges">
+                <g fill="#1c1a48">
+                  <rect x="18" y="58" width="23" height="24" />
+                  <rect x="43" y="58" width="23" height="24" />
+                  <rect x="68" y="58" width="23" height="24" />
+                  <rect x="93" y="58" width="23" height="24" />
+                  <rect x="118" y="58" width="23" height="24" />
+                </g>
+                <rect x="18" y="28" width="23" height="24" fill="#ff004d" />
+                <rect x="18" y="48" width="23" height="4" fill="#a3003a" />
+                <rect x="43" y="28" width="23" height="24" fill="#2b2965" />
+                <circle
+                  cx="55"
+                  cy="39"
+                  r="11"
+                  fill="#ffec27"
+                  shape-rendering="auto"
+                />
+                <g fill="#2b2965">
+                  <rect x="68" y="28" width="23" height="24" />
+                  <rect x="93" y="28" width="23" height="24" />
+                  <rect x="118" y="28" width="23" height="24" />
+                </g>
+                <g fill="#17153c">
+                  <rect x="43" y="48" width="23" height="4" />
+                  <rect x="68" y="48" width="23" height="4" />
+                  <rect x="93" y="48" width="23" height="4" />
+                  <rect x="118" y="48" width="23" height="4" />
+                </g>
+                <g
+                  font-family="Pixelify Sans"
+                  font-weight="700"
+                  font-size="17"
+                  text-anchor="middle"
+                  shape-rendering="auto"
+                >
+                  <text x="30" y="45" fill="#fff1e8">S</text>
+                  <text x="55" y="45" fill="#100e2c">U</text>
+                  <text x="80" y="45" fill="#fff1e8">T</text>
+                  <text x="105" y="45" fill="#fff1e8">O</text>
+                  <text x="130" y="45" fill="#fff1e8">M</text>
+                </g>
+                <g fill="#ffec27">
+                  <rect x="134" y="10" width="3" height="9" />
+                  <rect x="131" y="13" width="9" height="3" />
+                  <rect x="24" y="12" width="3" height="3" />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Sutom</span>
+          </a>
+          <a
+            class="game"
+            href="pendu.html"
+            data-game="pendu"
+            data-tags="mots lettres orthographe devinette"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g
+                  fill="none"
+                  stroke="#2349b5"
+                  stroke-width="4.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M26 86 H74 M42 86 V16 H86 M42 32 L58 16" />
+                  <path d="M86 16 V30" stroke-width="3" />
+                </g>
+                <circle
+                  cx="86"
+                  cy="38"
+                  r="8"
+                  fill="none"
+                  stroke="#2349b5"
+                  stroke-width="3.5"
+                />
+                <g stroke="#24473b" stroke-width="3" stroke-linecap="round">
+                  <path d="M100 82 h12 M118 82 h12 M136 82 h12" />
+                </g>
+                <text
+                  x="106"
+                  y="76"
+                  font-family="Fredoka"
+                  font-weight="700"
+                  font-size="20"
+                  text-anchor="middle"
+                  fill="#d8352f"
+                >
+                  A
+                </text>
+              </svg>
+            </span>
+            <span class="game-name">Pendu</span>
+          </a>
+          <a
+            class="game"
+            href="anagramme.html"
+            data-game="anagramme"
+            data-tags="mots lettres orthographe"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <circle
+                  cx="80"
+                  cy="50"
+                  r="34"
+                  fill="none"
+                  stroke="#d6409a"
+                  stroke-opacity="0.35"
+                  stroke-width="1.5"
+                  stroke-dasharray="3 5"
+                />
+                <circle cx="80" cy="16" r="12" fill="#e8457a" />
+                <circle cx="112.3" cy="39.5" r="12" fill="#ff9a3c" />
+                <circle cx="100" cy="77.5" r="12" fill="#7457ea" />
+                <circle cx="60" cy="77.5" r="12" fill="#2bb38a" />
+                <circle cx="47.7" cy="39.5" r="12" fill="#3d7be0" />
+                <g fill="url(#shine)">
+                  <circle cx="80" cy="16" r="12" />
+                  <circle cx="112.3" cy="39.5" r="12" />
+                  <circle cx="100" cy="77.5" r="12" />
+                  <circle cx="60" cy="77.5" r="12" />
+                  <circle cx="47.7" cy="39.5" r="12" />
+                </g>
+                <g
+                  font-family="Baloo 2"
+                  font-weight="800"
+                  font-size="15"
+                  text-anchor="middle"
+                  fill="#fff"
+                >
+                  <text x="80" y="21">r</text>
+                  <text x="112.3" y="44.5">i</text>
+                  <text x="100" y="82.5">v</text>
+                  <text x="60" y="82.5">e</text>
+                  <text x="47.7" y="44.5">l</text>
+                </g>
+                <path
+                  d="M80 40 l2.5 7.5 7.5 2.5 -7.5 2.5 -2.5 7.5 -2.5 -7.5 -7.5 -2.5 7.5 -2.5 z"
+                  fill="#ffc23d"
+                />
+              </svg>
+            </span>
+            <span class="game-name">Anagramme</span>
+          </a>
+          <a
+            class="game"
+            href="lettris.html"
+            data-game="lettris"
+            data-tags="mots lettres chute rapidité"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <circle cx="80" cy="56" r="30" fill="url(#sun-retro)" />
+                <g fill="#1d0640">
+                  <rect x="40" y="54" width="80" height="2" />
+                  <rect x="40" y="60" width="80" height="3" />
+                  <rect x="40" y="67" width="80" height="4" />
+                  <rect x="-80" y="74" width="320" height="80" />
+                </g>
+                <g stroke="#ff4fd8" stroke-opacity="0.7" stroke-width="1">
+                  <line x1="-80" y1="74" x2="240" y2="74" />
+                  <line x1="-80" y1="79" x2="240" y2="79" />
+                  <line x1="-80" y1="87" x2="240" y2="87" />
+                </g>
+                <g stroke="#5ff7ff" stroke-opacity="0.45" stroke-width="1">
+                  <line x1="80" y1="74" x2="80" y2="96" />
+                  <line x1="68" y1="74" x2="50" y2="96" />
+                  <line x1="92" y1="74" x2="110" y2="96" />
+                  <line x1="56" y1="74" x2="20" y2="96" />
+                  <line x1="104" y1="74" x2="140" y2="96" />
+                </g>
+                <g
+                  filter="url(#glow)"
+                  stroke="#5ff7ff"
+                  stroke-width="2"
+                  fill="none"
+                >
+                  <rect x="16" y="14" width="22" height="22" rx="4" />
+                  <rect x="124" y="26" width="22" height="22" rx="4" />
+                </g>
+                <g
+                  stroke="#5ff7ff"
+                  stroke-width="1.6"
+                  fill="rgba(95,247,255,0.12)"
+                >
+                  <rect x="16" y="14" width="22" height="22" rx="4" />
+                  <rect x="124" y="26" width="22" height="22" rx="4" />
+                </g>
+                <g
+                  font-family="Tilt Neon"
+                  font-size="15"
+                  text-anchor="middle"
+                  fill="#dffeff"
+                >
+                  <text x="27" y="30">L</text>
+                  <text x="135" y="42">A</text>
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Lettris</span>
+          </a>
+          <a
+            class="game"
+            href="mot-le-plus-long.html"
+            data-game="mot-le-plus-long"
+            data-tags="mots lettres vocabulaire"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <rect
+                  x="22"
+                  y="22"
+                  width="116"
+                  height="56"
+                  rx="10"
+                  fill="#1d0b33"
+                  stroke="url(#gold-plate)"
+                  stroke-width="4"
+                />
+                <g fill="#fff6dc">
+                  <circle cx="34" cy="22" r="2.6" />
+                  <circle cx="56" cy="22" r="2.6" />
+                  <circle cx="78" cy="22" r="2.6" />
+                  <circle cx="100" cy="22" r="2.6" />
+                  <circle cx="122" cy="22" r="2.6" />
+                  <circle cx="34" cy="78" r="2.6" />
+                  <circle cx="56" cy="78" r="2.6" />
+                  <circle cx="78" cy="78" r="2.6" />
+                  <circle cx="100" cy="78" r="2.6" />
+                  <circle cx="122" cy="78" r="2.6" />
+                  <circle cx="22" cy="40" r="2.6" />
+                  <circle cx="22" cy="60" r="2.6" />
+                  <circle cx="138" cy="40" r="2.6" />
+                  <circle cx="138" cy="60" r="2.6" />
+                </g>
+                <g fill="#ffc93c">
+                  <circle cx="45" cy="22" r="2.2" />
+                  <circle cx="67" cy="22" r="2.2" />
+                  <circle cx="89" cy="22" r="2.2" />
+                  <circle cx="111" cy="22" r="2.2" />
+                  <circle cx="45" cy="78" r="2.2" />
+                  <circle cx="67" cy="78" r="2.2" />
+                  <circle cx="89" cy="78" r="2.2" />
+                  <circle cx="111" cy="78" r="2.2" />
+                </g>
+                <text
+                  x="80"
+                  y="61"
+                  font-family="Bungee"
+                  font-size="26"
+                  text-anchor="middle"
+                  fill="url(#gold-plate)"
+                >
+                  LONG
+                </text>
+              </svg>
+            </span>
+            <span class="game-name">Le mot le plus long</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="calcul">
+        <h2 class="category-title">Chiffres et calcul</h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="complement-10.html"
+            data-game="complement-10"
+            data-tags="calcul maths nombres addition"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <rect
+                  x="18"
+                  y="24"
+                  width="124"
+                  height="52"
+                  rx="12"
+                  fill="rgba(255,255,255,0.04)"
+                  stroke="rgba(255,225,255,0.3)"
+                  stroke-width="1.5"
+                />
+                <line
+                  x1="18"
+                  y1="50"
+                  x2="142"
+                  y2="50"
+                  stroke="rgba(255,225,255,0.18)"
+                />
+                <g
+                  fill="url(#light-gold)"
+                  stroke="#ffc75a"
+                  stroke-opacity="0.22"
+                  stroke-width="8"
+                  paint-order="stroke"
+                >
+                  <circle cx="32" cy="37" r="8" />
+                  <circle cx="56" cy="37" r="8" />
+                  <circle cx="80" cy="37" r="8" />
+                  <circle cx="104" cy="37" r="8" />
+                  <circle cx="128" cy="37" r="8" />
+                  <circle cx="32" cy="63" r="8" />
+                  <circle cx="56" cy="63" r="8" />
+                </g>
+                <g
+                  fill="none"
+                  stroke="#ff5ec4"
+                  stroke-opacity="0.75"
+                  stroke-width="1.6"
+                  stroke-dasharray="2.5 3"
+                >
+                  <circle cx="80" cy="63" r="8" />
+                  <circle cx="104" cy="63" r="8" />
+                  <circle cx="128" cy="63" r="8" />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Les amis de <b>10</b></span>
+          </a>
+          <a
+            class="game"
+            href="fracto-dingo.html"
+            data-game="fracto-dingo"
+            data-tags="calcul maths fractions nombres"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <rect
+                  x="-80"
+                  y="-60"
+                  width="320"
+                  height="86"
+                  fill="url(#awning)"
+                />
+                <ellipse
+                  cx="80"
+                  cy="90"
+                  rx="34"
+                  ry="5"
+                  fill="#5a3624"
+                  fill-opacity="0.12"
+                />
+                <g stroke="#fbe3e9" stroke-width="1.5">
+                  <path
+                    d="M80 64 L80 38 A26 26 0 1 0 106 64 Z"
+                    fill="#d9933b"
+                  />
+                  <path
+                    d="M80 64 L80 43 A21 21 0 1 0 101 64 Z"
+                    fill="#d6456a"
+                  />
+                  <path d="M80 64 L54 64 M80 64 L80 90" />
+                </g>
+                <g
+                  transform="translate(6 -5)"
+                  stroke="#fbe3e9"
+                  stroke-width="1.5"
+                >
+                  <path
+                    d="M80 64 L80 38 A26 26 0 0 1 106 64 Z"
+                    fill="#d9933b"
+                  />
+                  <path
+                    d="M80 64 L80 43 A21 21 0 0 1 101 64 Z"
+                    fill="#d6456a"
+                  />
+                </g>
+                <g fill="#8fbf74">
+                  <circle cx="66" cy="56" r="2.2" />
+                  <circle cx="70" cy="74" r="2.2" />
+                  <circle cx="90" cy="76" r="2.2" />
+                  <circle cx="95" cy="50" r="2.2" />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Fracto Dingo</span>
+          </a>
+          <a
+            class="game"
+            href="2048.html"
+            data-game="2048"
+            data-tags="chiffres nombres calcul logique"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <line
+                  x1="48"
+                  y1="54"
+                  x2="98"
+                  y2="53"
+                  stroke="#8cf0ff"
+                  stroke-opacity="0.5"
+                  stroke-width="2"
+                  stroke-dasharray="1 5"
+                  stroke-linecap="round"
+                />
+                <g paint-order="stroke" stroke-opacity="0.13">
+                  <g fill="url(#orb-cyan)" stroke="#8cf0ff" stroke-width="12">
+                    <circle cx="32" cy="54" r="15" />
+                    <circle cx="70" cy="54" r="15" />
+                  </g>
+                  <circle
+                    cx="121"
+                    cy="52"
+                    r="21"
+                    fill="url(#orb-gold)"
+                    stroke="#ffd36b"
+                    stroke-width="14"
+                  />
+                </g>
+                <g
+                  font-family="Unbounded"
+                  font-weight="800"
+                  text-anchor="middle"
+                  fill="#0c0a26"
+                >
+                  <text x="32" y="59.5" font-size="15">2</text>
+                  <text x="70" y="59.5" font-size="15">2</text>
+                  <text x="121" y="59.5" font-size="21">4</text>
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">2048</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="logique">
+        <h2 class="category-title">Logique et réflexe</h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="mastermind.html"
+            data-game="mastermind"
+            data-tags="logique couleurs déduction réflexion potions"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g fill-opacity="0.95">
+                  <path d="M28 66 a12 12 0 0 0 24 0 Z" fill="#ff5fa2" />
+                  <path d="M60 62 a12 12 0 1 0 24 0 Z" fill="#ffe27a" />
+                  <path d="M92 64 a12 12 0 0 0 24 0 Z" fill="#6ff7d2" />
+                  <path d="M124 60 a12 12 0 1 0 24 0 Z" fill="#a77bff" />
+                </g>
+                <g
+                  fill="none"
+                  stroke="#fff"
+                  stroke-opacity="0.65"
+                  stroke-width="1.6"
+                >
+                  <path d="M36 42 V53 a14 14 0 1 0 8 0 V42" />
+                  <path d="M68 38 V49 a14 14 0 1 0 8 0 V38" />
+                  <path d="M100 40 V51 a14 14 0 1 0 8 0 V40" />
+                  <path d="M132 36 V47 a14 14 0 1 0 8 0 V36" />
+                </g>
+                <g fill="#c79a6b">
+                  <rect x="35" y="37" width="10" height="6" rx="2" />
+                  <rect x="67" y="33" width="10" height="6" rx="2" />
+                  <rect x="99" y="35" width="10" height="6" rx="2" />
+                  <rect x="131" y="31" width="10" height="6" rx="2" />
+                </g>
+                <g fill="#fff" fill-opacity="0.55">
+                  <circle cx="44" cy="62" r="1.8" />
+                  <circle cx="74" cy="56" r="1.5" />
+                  <circle cx="104" cy="60" r="1.8" />
+                  <circle cx="139" cy="54" r="1.5" />
+                </g>
+                <g fill="#ffe27a">
+                  <path
+                    d="M56 18 l1.6 4.4 4.4 1.6 -4.4 1.6 -1.6 4.4 -1.6 -4.4 -4.4 -1.6 4.4 -1.6 z"
+                  />
+                  <path
+                    d="M118 14 l1.2 3.3 3.3 1.2 -3.3 1.2 -1.2 3.3 -1.2 -3.3 -3.3 -1.2 3.3 -1.2 z"
+                  />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Mastermind</span>
+          </a>
+          <a
+            class="game"
+            href="demineur.html"
+            data-game="demineur"
+            data-tags="logique réflexion chiffres grille mines"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <path d="M16 92 L76 12 L76 92 Z" fill="#f2b91e" />
+                <circle cx="112" cy="54" r="24" fill="#d6402c" />
+                <g fill="#24539f">
+                  <rect x="94" y="86" width="8" height="8" />
+                  <rect x="108" y="86" width="8" height="8" />
+                  <rect x="122" y="86" width="8" height="8" />
+                  <rect x="136" y="86" width="8" height="8" />
+                </g>
+                <g stroke="#1d1d1b" stroke-width="3">
+                  <line x1="-40" y1="24" x2="200" y2="24" />
+                  <line x1="88" y1="-20" x2="88" y2="100" />
+                </g>
+                <g stroke="#1d1d1b" stroke-width="3" stroke-linecap="round">
+                  <path d="M50 54 V82 M36 68 H64 M40 58 L60 78 M60 58 L40 78" />
+                </g>
+                <circle cx="50" cy="68" r="10" fill="#1d1d1b" />
+                <circle cx="46.5" cy="64.5" r="2.6" fill="#efe8d9" />
+              </svg>
+            </span>
+            <span class="game-name">Démineur</span>
+          </a>
+          <a
+            class="game"
+            href="sudoku.html"
+            data-game="sudoku"
+            data-tags="logique chiffres grille déduction réflexion"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g
+                  fill="rgba(255,255,255,0.06)"
+                  stroke="rgba(255,255,255,0.14)"
+                  stroke-width="1"
+                >
+                  <rect x="45" y="13" width="22" height="22" rx="5" />
+                  <rect x="69" y="13" width="22" height="22" rx="5" />
+                  <rect x="93" y="13" width="22" height="22" rx="5" />
+                  <rect x="45" y="37" width="22" height="22" rx="5" />
+                  <rect x="93" y="37" width="22" height="22" rx="5" />
+                  <rect x="45" y="61" width="22" height="22" rx="5" />
+                  <rect x="69" y="61" width="22" height="22" rx="5" />
+                  <rect x="93" y="61" width="22" height="22" rx="5" />
+                </g>
+                <rect
+                  x="69"
+                  y="37"
+                  width="22"
+                  height="22"
+                  rx="5"
+                  fill="url(#prism)"
+                />
+                <g
+                  font-family="Fredoka"
+                  font-weight="700"
+                  font-size="15"
+                  text-anchor="middle"
+                >
+                  <text x="56" y="29.5" fill="#ff8fd0">1</text>
+                  <text x="104" y="29.5" fill="#ffe08a">4</text>
+                  <text x="80" y="53.5" fill="#1c1846">5</text>
+                  <text x="56" y="77.5" fill="#7cd8ff">7</text>
+                  <text x="104" y="77.5" fill="#9ff0c4">9</text>
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Sudoku</span>
+          </a>
+          <a
+            class="game"
+            href="memory.html"
+            data-game="memory"
+            data-tags="mémoire cartes paires concentration"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <ellipse
+                  cx="52"
+                  cy="50"
+                  rx="24"
+                  ry="32"
+                  fill="url(#portal-veil)"
+                />
+                <ellipse
+                  cx="108"
+                  cy="50"
+                  rx="24"
+                  ry="32"
+                  fill="url(#portal-veil)"
+                />
+                <g fill="none" stroke="url(#portal)" stroke-width="3">
+                  <ellipse cx="52" cy="50" rx="22" ry="30" />
+                  <ellipse cx="108" cy="50" rx="22" ry="30" />
+                </g>
+                <g fill="#ffc94a">
+                  <path
+                    d="M52 37 l3.8 8.2 9 1 -6.7 6.1 1.9 8.8 -8 -4.6 -8 4.6 1.9 -8.8 -6.7 -6.1 9 -1 z"
+                  />
+                  <path
+                    d="M108 37 l3.8 8.2 9 1 -6.7 6.1 1.9 8.8 -8 -4.6 -8 4.6 1.9 -8.8 -6.7 -6.1 9 -1 z"
+                  />
+                </g>
+                <g fill="#fff1f8">
+                  <path
+                    d="M80 14 l1.4 3.6 3.6 1.4 -3.6 1.4 -1.4 3.6 -1.4 -3.6 -3.6 -1.4 3.6 -1.4 z"
+                  />
+                  <path
+                    d="M80 76 l1 2.6 2.6 1 -2.6 1 -1 2.6 -1 -2.6 -2.6 -1 2.6 -1 z"
+                  />
+                  <circle cx="140" cy="22" r="1.4" />
+                  <circle cx="20" cy="78" r="1.4" />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Memory</span>
+          </a>
+          <a
+            class="game"
+            href="tetris.html"
+            data-game="tetris"
+            data-tags="briques chute logique espace rapidité"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g stroke="#f2c85b" stroke-width="1.5">
+                  <g fill="#c62d1f">
+                    <rect x="52" y="14" width="16" height="16" rx="2" />
+                    <rect x="68" y="14" width="16" height="16" rx="2" />
+                    <rect x="84" y="14" width="16" height="16" rx="2" />
+                    <rect x="68" y="30" width="16" height="16" rx="2" />
+                  </g>
+                  <g fill="#d9a630">
+                    <rect x="36" y="56" width="16" height="16" rx="2" />
+                    <rect x="36" y="72" width="16" height="16" rx="2" />
+                    <rect x="52" y="72" width="16" height="16" rx="2" />
+                    <rect x="68" y="72" width="16" height="16" rx="2" />
+                  </g>
+                  <g fill="#8e1a12">
+                    <rect x="92" y="56" width="16" height="16" rx="2" />
+                    <rect x="108" y="56" width="16" height="16" rx="2" />
+                    <rect x="92" y="72" width="16" height="16" rx="2" />
+                    <rect x="108" y="72" width="16" height="16" rx="2" />
+                  </g>
+                </g>
+                <g fill="#fff" fill-opacity="0.22">
+                  <rect x="54" y="16" width="12" height="3" rx="1.5" />
+                  <rect x="70" y="16" width="12" height="3" rx="1.5" />
+                  <rect x="86" y="16" width="12" height="3" rx="1.5" />
+                  <rect x="38" y="58" width="12" height="3" rx="1.5" />
+                  <rect x="94" y="58" width="12" height="3" rx="1.5" />
+                  <rect x="110" y="58" width="12" height="3" rx="1.5" />
+                </g>
+                <path
+                  d="M136 22 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z"
+                  fill="#f2c85b"
+                />
+              </svg>
+            </span>
+            <span class="game-name">Tetris</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="plateau">
+        <h2 class="category-title">Jeux de plateau</h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="puissance4.html"
+            data-game="puissance4"
+            data-tags="société deux joueurs stratégie alignement"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <circle cx="91" cy="10" r="8" fill="#ff4d6d" />
+                <circle cx="91" cy="10" r="8" fill="url(#shine)" />
+                <rect
+                  x="32"
+                  y="22"
+                  width="96"
+                  height="72"
+                  rx="16"
+                  fill="url(#jelly)"
+                />
+                <ellipse
+                  cx="58"
+                  cy="30"
+                  rx="20"
+                  ry="4"
+                  fill="#fff"
+                  fill-opacity="0.3"
+                />
+                <g fill="#1b0e3a">
+                  <circle cx="48" cy="42" r="8" />
+                  <circle cx="69" cy="42" r="8" />
+                  <circle cx="91" cy="42" r="8" />
+                  <circle cx="112" cy="42" r="8" />
+                  <circle cx="48" cy="61" r="8" />
+                  <circle cx="69" cy="61" r="8" />
+                  <circle cx="112" cy="61" r="8" />
+                  <circle cx="112" cy="80" r="8" />
+                </g>
+                <g fill="#ff4d6d">
+                  <circle cx="69" cy="80" r="8" />
+                  <circle cx="91" cy="61" r="8" />
+                </g>
+                <g fill="#ffcf3a">
+                  <circle cx="48" cy="80" r="8" />
+                  <circle cx="91" cy="80" r="8" />
+                </g>
+                <g fill="url(#shine)">
+                  <circle cx="69" cy="80" r="8" />
+                  <circle cx="91" cy="61" r="8" />
+                  <circle cx="48" cy="80" r="8" />
+                  <circle cx="91" cy="80" r="8" />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Puissance <b>4</b></span>
+          </a>
+          <a
+            class="game"
+            href="othello.html"
+            data-game="othello"
+            data-tags="société deux joueurs stratégie pions reversi soleil lune"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g stroke="#ffcf4a" stroke-width="2.5" stroke-linecap="round">
+                  <path
+                    d="M66 18 V10 M66 82 V90 M34 50 H26 M43.4 27.4 L37.7 21.7 M43.4 72.6 L37.7 78.3 M88.6 27.4 L94.3 21.7"
+                  />
+                </g>
+                <circle cx="66" cy="50" r="22" fill="url(#orb-gold)" />
+                <circle
+                  cx="98"
+                  cy="50"
+                  r="22"
+                  fill="url(#orb-silver)"
+                  stroke="#17265c"
+                  stroke-width="3"
+                  paint-order="stroke"
+                />
+                <g fill="#8b97cc" fill-opacity="0.5">
+                  <circle cx="104" cy="42" r="4" />
+                  <circle cx="94" cy="60" r="3" />
+                  <circle cx="108" cy="58" r="2" />
+                </g>
+                <g fill="#fff">
+                  <circle cx="134" cy="20" r="1.4" />
+                  <circle cx="146" cy="36" r="1" />
+                  <circle cx="20" cy="84" r="1" />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Othello</span>
+          </a>
+          <a
+            class="game"
+            href="dames.html"
+            data-game="dames"
+            data-tags="société deux joueurs stratégie pions champignons myrtilles"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g stroke="#4b4540" stroke-width="1.6" stroke-linejoin="round">
+                  <g fill="url(#hatch)">
+                    <rect x="32" y="22" width="24" height="24" />
+                    <rect x="80" y="22" width="24" height="24" />
+                    <rect x="56" y="46" width="24" height="24" />
+                    <rect x="104" y="46" width="24" height="24" />
+                  </g>
+                  <rect x="32" y="22" width="96" height="48" fill="none" />
+                </g>
+                <g transform="translate(68 52)">
+                  <rect
+                    x="-5"
+                    y="-2"
+                    width="10"
+                    height="11"
+                    rx="3"
+                    fill="#fdf3df"
+                    stroke="#4b4540"
+                    stroke-width="1.5"
+                  />
+                  <path
+                    d="M-13 0 A13 12 0 0 1 13 0 Z"
+                    fill="#e0483e"
+                    stroke="#4b4540"
+                    stroke-width="1.5"
+                  />
+                  <circle cx="-5" cy="-5" r="2" fill="#fff" />
+                  <circle cx="4" cy="-7" r="1.6" fill="#fff" />
+                </g>
+                <g transform="translate(92 34)">
+                  <circle
+                    r="10"
+                    fill="#4b5fc0"
+                    stroke="#34449a"
+                    stroke-width="1.5"
+                  />
+                  <path
+                    d="M-3 -9 L0 -5 L3 -9"
+                    fill="none"
+                    stroke="#22306e"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                  <circle
+                    cx="-4"
+                    cy="-2"
+                    r="2.2"
+                    fill="#fff"
+                    fill-opacity="0.5"
+                  />
+                </g>
+                <path
+                  d="M30 84 q20 -6 40 0 t40 0"
+                  fill="none"
+                  stroke="#e0483e"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </span>
+            <span class="game-name">Dames</span>
+          </a>
+          <a
+            class="game"
+            href="abalone.html"
+            data-game="abalone"
+            data-tags="société deux joueurs stratégie billes hexagone trou noir"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <polygon
+                  points="57.5,10 102.5,10 125,50 102.5,90 57.5,90 35,50"
+                  fill="none"
+                  stroke="#ffb35c"
+                  stroke-opacity="0.28"
+                  stroke-width="1.5"
+                />
+                <circle
+                  cx="80"
+                  cy="50"
+                  r="13"
+                  fill="#ffb35c"
+                  fill-opacity="0.22"
+                />
+                <circle
+                  cx="80"
+                  cy="50"
+                  r="8"
+                  fill="#000"
+                  stroke="#ffb35c"
+                  stroke-width="2"
+                />
+                <g fill="rgba(255,196,140,0.2)">
+                  <circle cx="102.5" cy="35" r="3" />
+                  <circle cx="50" cy="50" r="3" />
+                  <circle cx="65" cy="50" r="3" />
+                  <circle cx="95" cy="50" r="3" />
+                  <circle cx="110" cy="50" r="3" />
+                  <circle cx="57.5" cy="65" r="3" />
+                </g>
+                <g fill="url(#marble-white)">
+                  <circle cx="65" cy="22" r="7" />
+                  <circle cx="80" cy="22" r="7" />
+                  <circle cx="95" cy="22" r="7" />
+                  <circle cx="57.5" cy="35" r="7" />
+                  <circle cx="72.5" cy="35" r="7" />
+                  <circle cx="87.5" cy="35" r="7" />
+                </g>
+                <g
+                  fill="url(#marble-black)"
+                  stroke="#ffb35c"
+                  stroke-opacity="0.4"
+                  stroke-width="0.8"
+                >
+                  <circle cx="72.5" cy="65" r="7" />
+                  <circle cx="87.5" cy="65" r="7" />
+                  <circle cx="102.5" cy="65" r="7" />
+                  <circle cx="65" cy="78" r="7" />
+                  <circle cx="80" cy="78" r="7" />
+                  <circle cx="95" cy="78" r="7" />
+                </g>
+              </svg>
+            </span>
+            <span class="game-name">Abalone</span>
+          </a>
+          <a
+            class="game"
+            href="bataille-navale.html"
+            data-game="bataille-navale"
+            data-tags="société deux joueurs stratégie grille bateaux sonar"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <path
+                  d="M80 50 L80 8 A42 42 0 0 1 116.4 29 Z"
+                  fill="url(#sweep)"
+                />
+                <g
+                  fill="none"
+                  stroke="#5dffc9"
+                  stroke-opacity="0.35"
+                  stroke-width="1"
+                >
+                  <circle cx="80" cy="50" r="14" />
+                  <circle cx="80" cy="50" r="28" />
+                  <circle cx="80" cy="50" r="42" />
+                  <line x1="38" y1="50" x2="122" y2="50" stroke-opacity="0.2" />
+                  <line x1="80" y1="8" x2="80" y2="92" stroke-opacity="0.2" />
+                </g>
+                <line
+                  x1="80"
+                  y1="50"
+                  x2="116.4"
+                  y2="29"
+                  stroke="#5dffc9"
+                  stroke-width="1.5"
+                />
+                <circle cx="80" cy="50" r="2.5" fill="#5dffc9" />
+                <circle
+                  cx="104"
+                  cy="66"
+                  r="9"
+                  fill="none"
+                  stroke="#ff6a55"
+                  stroke-opacity="0.5"
+                />
+                <circle cx="104" cy="66" r="4" fill="#ff6a55" />
+                <circle
+                  cx="58"
+                  cy="34"
+                  r="2.5"
+                  fill="#5dffc9"
+                  fill-opacity="0.7"
+                />
+              </svg>
+            </span>
+            <span class="game-name">Bataille navale</span>
+          </a>
+          <a
+            class="game"
+            href="qwirkle.html"
+            data-game="qwirkle"
+            data-tags="société formes couleurs tuiles"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <circle cx="110" cy="44" r="26" fill="#b9a4ff" />
+                <g fill="#161616">
+                  <circle cx="126" cy="14" r="1.8" />
+                  <circle cx="134" cy="14" r="1.8" />
+                  <circle cx="142" cy="14" r="1.8" />
+                  <circle cx="126" cy="22" r="1.8" />
+                  <circle cx="134" cy="22" r="1.8" />
+                  <circle cx="142" cy="22" r="1.8" />
+                </g>
+                <path
+                  d="M18 26 q8 -10 16 0 t16 0 t16 0"
+                  fill="none"
+                  stroke="#22c3d6"
+                  stroke-width="4.5"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M26 86 L50 40 L74 86 Z"
+                  fill="#ff5fa2"
+                  stroke="#161616"
+                  stroke-width="2.5"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="98"
+                  y="62"
+                  width="22"
+                  height="22"
+                  fill="#ffe14d"
+                  stroke="#161616"
+                  stroke-width="2.5"
+                  transform="rotate(15 109 73)"
+                />
+                <path
+                  d="M128 70 l6 -8 6 8 6 -8"
+                  fill="none"
+                  stroke="#161616"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="game-name">Qwirkle</span>
+          </a>
+          <a
+            class="game"
+            href="qwirkle-score.html"
+            data-game="qwirkle-score"
+            data-tags="société score points compteur"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g fill="#1c1a24">
+                  <rect x="22" y="20" width="26" height="26" rx="5" />
+                  <rect x="52" y="20" width="26" height="26" rx="5" />
+                  <rect x="82" y="20" width="26" height="26" rx="5" />
+                  <rect x="112" y="20" width="26" height="26" rx="5" />
+                </g>
+                <circle cx="35" cy="33" r="8" fill="#e2412f" />
+                <path d="M65 24 L74 33 L65 42 L56 33 Z" fill="#f5c518" />
+                <g fill="#2f7fd8">
+                  <circle cx="95" cy="28.5" r="4.2" />
+                  <circle cx="95" cy="37.5" r="4.2" />
+                  <circle cx="90.5" cy="33" r="4.2" />
+                  <circle cx="99.5" cy="33" r="4.2" />
+                </g>
+                <path
+                  d="M125 24 L127.5 30.5 L134 33 L127.5 35.5 L125 42 L122.5 35.5 L116 33 L122.5 30.5 Z"
+                  fill="#2e9c57"
+                />
+                <line
+                  x1="22"
+                  y1="82"
+                  x2="138"
+                  y2="82"
+                  stroke="#1c1a24"
+                  stroke-opacity="0.18"
+                  stroke-width="1.5"
+                />
+                <text
+                  x="80"
+                  y="76"
+                  font-family="Unbounded"
+                  font-weight="700"
+                  font-size="20"
+                  text-anchor="middle"
+                  fill="#1c1a24"
+                >
+                  +12
+                </text>
+              </svg>
+            </span>
+            <span class="game-name"
+              >Qwirkle<span class="game-sub">feuille de score</span></span
+            >
+          </a>
+        </div>
+      </section>
+
+      <section class="category" data-category="parole">
+        <h2 class="category-title">À plusieurs</h2>
+        <div class="game-grid">
+          <a
+            class="game"
+            href="timesup.html"
+            data-game="timesup"
+            data-tags="société parole équipes cartes devinette sablier"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <path
+                  d="M64 14 C64 38 77 44 77 50 C77 56 64 62 64 86 H96 C96 62 83 56 83 50 C83 44 96 38 96 14 Z"
+                  fill="rgba(255,255,255,0.05)"
+                  stroke="rgba(255,255,255,0.5)"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M68 26 H92 C90 38 82 42 80 47 C78 42 70 38 68 26 Z"
+                  fill="url(#sand)"
+                />
+                <path d="M66 86 Q80 64 94 86 Z" fill="url(#sand)" />
+                <line
+                  x1="80"
+                  y1="49"
+                  x2="80"
+                  y2="76"
+                  stroke="#ffd66b"
+                  stroke-width="1.6"
+                  stroke-dasharray="1.5 3"
+                  stroke-linecap="round"
+                />
+                <g fill="#f5f2ff" fill-opacity="0.85">
+                  <rect x="58" y="10" width="44" height="5" rx="2.5" />
+                  <rect x="58" y="85" width="44" height="5" rx="2.5" />
+                </g>
+                <circle cx="40" cy="30" r="2.4" fill="#ffd66b" />
+                <circle cx="30" cy="54" r="1.6" fill="#ff8fc6" />
+                <circle cx="46" cy="72" r="2" fill="#b49bff" />
+                <circle cx="120" cy="26" r="1.8" fill="#ff8fc6" />
+                <circle cx="132" cy="48" r="2.4" fill="#ffd66b" />
+                <circle cx="116" cy="74" r="1.6" fill="#b49bff" />
+              </svg>
+            </span>
+            <span class="game-name">Time's Up</span>
+          </a>
+          <a
+            class="game"
+            href="tabou.html"
+            data-game="tabou"
+            data-tags="société parole équipes cartes devinette"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <polygon
+                  points="80.0,6.0 89.2,17.8 103.9,10.4 105.7,24.2 123.0,22.6 117.2,35.7 133.6,40.2 121.2,50.0 133.6,59.8 117.2,64.3 123.0,77.4 105.7,75.8 103.9,89.6 89.2,82.2 80.0,94.0 70.8,82.2 56.1,89.6 54.3,75.8 37.0,77.4 42.8,64.3 26.4,59.8 38.8,50.0 26.4,40.2 42.8,35.7 37.0,22.6 54.3,24.2 56.1,10.4 70.8,17.8"
+                  fill="#ffd60a"
+                  stroke="#15131a"
+                  stroke-width="3"
+                  stroke-linejoin="round"
+                />
+                <text
+                  x="80"
+                  y="60"
+                  font-family="Bangers"
+                  font-size="28"
+                  text-anchor="middle"
+                  fill="#15131a"
+                  letter-spacing="1"
+                >
+                  CHUT !
+                </text>
+              </svg>
+            </span>
+            <span class="game-name">Tabou</span>
+          </a>
+          <a
+            class="game"
+            href="molkky/index.html"
+            data-game="molkky"
+            data-tags="société score points compteur quilles plein air mölkky"
+          >
+            <span class="game-art" aria-hidden="true">
+              <svg viewBox="0 0 160 100">
+                <g
+                  font-family="Doto"
+                  font-weight="900"
+                  font-size="54"
+                  text-anchor="middle"
+                >
+                  <text x="80" y="68" fill="#ffb21a" filter="url(#glow)">
+                    50
+                  </text>
+                  <text x="80" y="68" fill="#ffc44d">50</text>
+                </g>
+                <g
+                  fill="#f4f1e8"
+                  stroke="#f4f1e8"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                >
+                  <path d="M14 76 V50 L26 45 V76 Z" />
+                  <path d="M134 76 V45 L146 50 V76 Z" />
+                </g>
+                <g fill="#c9c2b0">
+                  <rect x="22" y="46.5" width="5" height="30.5" />
+                  <rect x="142" y="49" width="5" height="28" />
+                </g>
+                <g
+                  font-family="Lexend"
+                  font-weight="800"
+                  font-size="10"
+                  text-anchor="middle"
+                  fill="#050607"
+                >
+                  <text x="19" y="68">9</text>
+                  <text x="139" y="68">12</text>
+                </g>
+              </svg>
+            </span>
+            <span class="game-name"
+              >Mölkky<span class="game-sub">feuille de score</span></span
+            >
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const cards = Array.from(document.querySelectorAll(".game"))
+      document.getElementById("game-count").textContent = `${cards.length} jeux`
+
+      // ===== Le nom qui cligne de l'œil =====
+      // Toutes les deux ou trois secondes, une lettre emprunte la police et la
+      // couleur d'un des jeux, puis reprend sa forme.
+      const WINKS = [
+        ["Bungee", 400, "#ffc93c"],
+        ["Pixelify Sans", 700, "#ff4d7d"],
+        ["Alfa Slab One", 400, "#ff8a65"],
+        ["Monoton", 400, "#ff6fe0"],
+        ["Modak", 400, "#3fdcc0"],
+        ["Unbounded", 800, "#8cf0ff"],
+        ["Bangers", 400, "#ffd60a"],
+        ["Fraunces", 900, "#ffa8c0"],
+        ["Grandstander", 900, "#6ff7d2"],
+        ["Ruslan Display", 400, "#f2c85b"],
+        ["Syne", 800, "#ffb35c"],
+        ["Chakra Petch", 700, "#5dffc9"],
+        ["Patrick Hand", 400, "#b3c0ff"],
+        ["Doto", 900, "#ffb21a"],
+        ["Luckiest Guy", 400, "#ff5a6a"],
+        ["Baloo 2", 800, "#ff7cc0"],
+      ]
+      const wordmark = document.getElementById("wordmark")
+      // Tenu à jour par l'observateur de la barre de recherche, plus bas.
+      let heroVisible = true
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
+
+      function setupWordmark() {
+        const word = wordmark.textContent.trim()
+        wordmark.setAttribute("aria-label", word)
+        wordmark.textContent = ""
+        // La lettre garde sa place ; c'est son glyphe qui change de police.
+        const letters = Array.from(word, (char) => {
+          const span = document.createElement("span")
+          span.className = "letter"
+          span.setAttribute("aria-hidden", "true")
+          const glyph = document.createElement("span")
+          glyph.textContent = char
+          span.append(glyph)
+          wordmark.append(span)
+          return span
+        })
+        if (reduceMotion) return
+
+        // Chaque lettre garde la largeur de sa forme de base, pour que le mot
+        // ne bouge pas quand l'une d'elles change de police. En em, pour
+        // suivre la taille du mot quand l'écran tourne.
+        document.fonts.ready.then(() => {
+          const size = parseFloat(getComputedStyle(wordmark).fontSize)
+          const widths = letters.map((span) => span.offsetWidth / size)
+          letters.forEach((span, i) => (span.style.width = widths[i] + "em"))
+          setTimeout(wink, 1200)
+        })
+
+        let last = -1
+        function wink() {
+          setTimeout(wink, 2200 + Math.random() * 1400)
+          // Onglet caché ou titre hors de l'écran : on attend.
+          if (document.hidden || !heroVisible) return
+          let index
+          do index = Math.floor(Math.random() * letters.length)
+          while (index === last)
+          last = index
+          const span = letters[index]
+          const [font, weight, color] =
+            WINKS[Math.floor(Math.random() * WINKS.length)]
+          const glyph = span.firstChild
+          swap(span, () => {
+            glyph.style.fontFamily = `"${font}"`
+            glyph.style.fontWeight = weight
+            glyph.style.color = color
+            // Une lettre trop large pour sa place rapetisse.
+            const fit = span.offsetWidth / glyph.offsetWidth
+            if (fit < 1) glyph.style.fontSize = fit + "em"
+          }).then(() => {
+            setTimeout(() => {
+              swap(span, () => glyph.removeAttribute("style"))
+            }, 1700)
+          })
+        }
+      }
+
+      // Une lettre rapetisse, change, et revient avec un petit rebond.
+      function swap(span, change) {
+        const out = span.animate(
+          [
+            { transform: "none", opacity: 1 },
+            { transform: "scale(0.4) rotate(-10deg)", opacity: 0 },
+          ],
+          { duration: 140, easing: "ease-in" },
+        )
+        return out.finished.then(() => {
+          change()
+          return span.animate(
+            [
+              { transform: "scale(0.4) rotate(10deg)", opacity: 0 },
+              { transform: "scale(1.15)", opacity: 1, offset: 0.7 },
+              { transform: "none", opacity: 1 },
+            ],
+            { duration: 320, easing: "ease-out" },
+          ).finished
+        })
+      }
+
+      setupWordmark()
+
+      // ===== Entrée en scène des vignettes, une fois par visite =====
+      // Seulement celles du premier écran : les autres sont déjà posées quand
+      // on fait défiler.
+      try {
+        if (!sessionStorage.getItem("marzouzoute-vu")) {
+          sessionStorage.setItem("marzouzoute-vu", "1")
+          const first = cards.slice(0, 8)
+          first.forEach((card, i) => {
+            card.style.setProperty("--i", i)
+            card.classList.add("entering")
+          })
+          setTimeout(() => {
+            first.forEach((card) => card.classList.remove("entering"))
+          }, 1000)
+        }
+      } catch (error) {
+        // Stockage indisponible (navigation privée) : pas d'animation.
+      }
+
+      // ===== Derniers jeux =====
+      // On retient les quatre derniers jeux ouverts depuis l'accueil, pour les
+      // retrouver en haut de la page. Zoé et Charlie y voient chacun les leurs.
+      const RECENTS_KEY = "marzouzoute-derniers-jeux"
+      const recentsSection = document.getElementById("recents")
+      const recentGrid = document.getElementById("recent-grid")
+      const cardByHref = new Map(
+        cards.map((card) => [card.getAttribute("href"), card]),
+      )
+
+      function readRecents() {
+        try {
+          const list = JSON.parse(localStorage.getItem(RECENTS_KEY) || "[]")
+          return Array.isArray(list) ? list : []
+        } catch (error) {
+          return []
+        }
+      }
+
+      function rememberGame(href) {
+        const list = [href, ...readRecents().filter((h) => h !== href)]
+        try {
+          localStorage.setItem(RECENTS_KEY, JSON.stringify(list.slice(0, 4)))
+        } catch (error) {
+          // Stockage plein ou interdit : tant pis.
+        }
+      }
+
+      function renderRecents() {
+        const recents = readRecents()
+          .map((href) => cardByHref.get(href))
+          .filter(Boolean)
+        recentGrid.textContent = ""
+        recents.forEach((card) => {
+          const link = document.createElement("a")
+          link.className = "recent"
+          link.href = card.getAttribute("href")
+          link.dataset.game = card.dataset.game
+          const art = document.createElement("span")
+          art.className = "recent-art"
+          art.setAttribute("aria-hidden", "true")
+          const svg = card.querySelector(".game-art svg").cloneNode(true)
+          svg.setAttribute("preserveAspectRatio", "xMidYMid slice")
+          art.append(svg)
+          const name = document.createElement("span")
+          name.className = "recent-name"
+          name.append(
+            ...card.querySelector(".game-name").cloneNode(true).childNodes,
+          )
+          link.append(art, name)
+          recentGrid.append(link)
+        })
+      }
+
+      document.addEventListener("click", (event) => {
+        const link = event.target.closest(".game, .recent")
+        if (link) rememberGame(link.getAttribute("href"))
+      })
+
+      renderRecents()
+
+      // ===== Recherche =====
+      // On filtre sur le nom du jeu, sa famille et les mots-clés de sa carte
+      // (« calcul », « société »…). Accents et casse ignorés, pour qu'un enfant
+      // qui tape « societe » trouve quand même.
+      const searchInput = document.getElementById("search")
+      const clearButton = document.getElementById("search-clear")
+      const noResult = document.getElementById("no-result")
+      const noResultQuery = document.getElementById("no-result-query")
+      const categories = Array.from(
+        document.querySelectorAll(".category:not(#recents)"),
+      )
+
+      function normalize(text) {
+        return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+      }
+
+      // Pas le texte des dessins (les lettres de Sutom, le « LONG » du mot le
+      // plus long…) : seulement le nom, la famille et les mots-clés.
+      const haystacks = new Map(
+        cards.map((card) => {
+          const name = card.querySelector(".game-name").textContent
+          const family = card
+            .closest(".category")
+            .querySelector(".category-title").textContent
+          return [
+            card,
+            normalize(name + " " + family + " " + card.dataset.tags),
+          ]
+        }),
+      )
+
+      function applyFilter() {
+        const query = searchInput.value.trim()
+        // Plusieurs mots : tous doivent correspondre.
+        const terms = normalize(query).split(/\s+/).filter(Boolean)
+        let matches = 0
+
+        cards.forEach((card) => {
+          const haystack = haystacks.get(card)
+          const found = terms.every((term) => haystack.includes(term))
+          card.hidden = !found
+          if (found) matches++
+        })
+
+        // Une famille dont plus rien ne ressort disparaît avec son titre. Sur
+        // deux colonnes, une famille au nombre impair de jeux laisserait un
+        // trou : sa première vignette prend toute la largeur.
+        categories.forEach((category) => {
+          const visible = category.querySelectorAll(".game:not([hidden])")
+          category.hidden = visible.length === 0
+          category.querySelectorAll(".game").forEach((card) => {
+            card.classList.toggle(
+              "wide",
+              card === visible[0] && visible.length % 2 === 1,
+            )
+          })
+        })
+
+        // Pendant une recherche, les derniers jeux s'effacent.
+        recentsSection.hidden = query !== "" || !recentGrid.firstChild
+
+        clearButton.hidden = query === ""
+        noResult.hidden = matches > 0
+        noResultQuery.textContent = query
+      }
+
+      function clearSearch() {
+        searchInput.value = ""
+        applyFilter()
+        searchInput.focus()
+      }
+
+      searchInput.addEventListener("input", applyFilter)
+      searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") clearSearch()
+      })
+      clearButton.addEventListener("click", clearSearch)
+
+      // Le navigateur peut restaurer la saisie au retour d'un jeu.
+      applyFilter()
+      // Au retour d'un jeu par le bouton « retour », la page peut sortir du
+      // cache du navigateur telle quelle : on remet la liste à jour.
+      window.addEventListener("pageshow", (event) => {
+        if (!event.persisted) return
+        renderRecents()
+        applyFilter()
+      })
+
+      // La barre de recherche prend un fond seulement une fois collée en haut,
+      // quand le titre est sorti de l'écran (il arrête alors de cligner).
+      const searchBar = document.getElementById("search-bar")
+      new IntersectionObserver(([entry]) => {
+        heroVisible = entry.isIntersecting
+        searchBar.classList.toggle("stuck", !heroVisible)
+      }).observe(document.querySelector(".hero"))
+
+      // ===== Partage =====
+      // Feuille de partage native sur mobile (SMS, WhatsApp…), sinon on copie
+      // le lien. On partage l'adresse exacte de la page affichée (…/index.html
+      // dans l'appli installée), et non celle du dossier : Chrome illustre le
+      // partage avec l'icône qu'il connaît pour cette adresse, et pour une
+      // adresse jamais visitée il prend une icône du même domaine
+      // isc.github.io, celle de Bémol. Ça marche aussi dans les previews.
+      const shareButton = document.getElementById("share")
+      const toast = document.getElementById("toast")
+      let toastTimer = null
+
+      function showToast(text) {
+        toast.textContent = text
+        toast.hidden = false
+        clearTimeout(toastTimer)
+        toastTimer = setTimeout(() => (toast.hidden = true), 2500)
+      }
+
+      shareButton.addEventListener("click", async () => {
+        const url = location.origin + location.pathname
+        const data = {
+          title: "Marzouzoute",
+          text: "Une boîte à jeux pour apprendre en s'amusant",
+          url,
+        }
+        if (navigator.share) {
+          try {
+            await navigator.share(data)
+            return
+          } catch (error) {
+            // Partage annulé par l'utilisateur : rien à faire.
+            if (error.name === "AbortError") return
+          }
+        }
+        try {
+          await navigator.clipboard.writeText(url)
+          showToast("Lien copié !")
+        } catch (error) {
+          window.prompt("Copie ce lien pour partager Marzouzoute :", url)
+        }
+      })
+    </script>
+  </body>
+</html>

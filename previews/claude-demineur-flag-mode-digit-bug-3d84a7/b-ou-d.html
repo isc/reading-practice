@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#be9662" />
+    <title>b ou d ?</title>
+    <style>
+      /* L'atelier de tampons : du papier kraft sur l'établi, une feuille
+         crème où l'on tamponne la première lettre de chaque mot, deux
+         tampons en bois et un tampon encreur. */
+
+      @font-face {
+        font-family: "OpenDyslexicRegular";
+        src: url("OpenDyslexic-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Alfa Slab One";
+        src: url("AlfaSlabOne-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Patrick Hand";
+        src: url("PatrickHand-Regular.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      :root {
+        --kraft: #c69c66;
+        --paper: #f8f2e4;
+        --ink: #2b2420;
+        --pencil: #6b625a;
+        --red: #c8372d;
+        /* L'encre des tampons : une seule pour toute la partie. */
+        --ink-color: #2f56a6;
+        --brown: #3d2a17;
+        --read: "OpenDyslexicRegular", Arial, sans-serif;
+        --slab: "Alfa Slab One", Georgia, serif;
+        --hand: "Patrick Hand", "Comic Sans MS", cursive;
+        /* Le grain d'un coup de tampon : l'encre manque par endroits. */
+        --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -7 0 0 0 4.6'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      /* La page prend la hauteur de l'écran par les pourcentages, pas par
+         100dvh : dans l'appli installée sur Android, Chrome compte la barre
+         d'état dans 100dvh. La page dépassait alors de cette hauteur : elle
+         défilait, et les tampons passaient sous la barre du bas. */
+      html {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Le kraft de l'établi, avec ses fibres. */
+      body {
+        font-family: var(--read);
+        color: var(--ink);
+        background-color: var(--kraft);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6 0.05' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0 0.08 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23f)'/%3E%3C/svg%3E");
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      .desk {
+        flex: 1;
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+      }
+
+      .screen {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      #game {
+        flex: 1;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      /* Une feuille crème posée un peu de travers. */
+      .sheet {
+        position: relative;
+        background: var(--paper);
+        border-radius: 3px;
+        padding: 18px;
+        box-shadow:
+          0 1px 0 rgba(0, 0, 0, 0.08),
+          0 8px 18px rgba(60, 35, 10, 0.28);
+        transform: rotate(-0.6deg);
+      }
+
+      /* Ce qui sort d'un tampon : couleur d'encre, grain, léger flou. */
+      .inked {
+        -webkit-mask-image: var(--grain);
+        mask-image: var(--grain);
+        -webkit-mask-size: 140px;
+        mask-size: 140px;
+      }
+
+      /* ===== Accueil ===== */
+
+      .welcome-sheet {
+        text-align: center;
+        padding: 26px 18px 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .title {
+        font-family: var(--slab);
+        font-weight: 400;
+        font-size: 4.2rem;
+        line-height: 1;
+        display: flex;
+        align-items: baseline;
+        gap: 0.18em;
+      }
+
+      .title .b {
+        color: var(--red);
+        transform: rotate(-6deg);
+      }
+
+      .title .d {
+        color: #2f56a6;
+        transform: rotate(5deg);
+      }
+
+      .title .b,
+      .title .d {
+        display: inline-block;
+        font-size: 1.2em;
+      }
+
+      .title .ou {
+        font-size: 0.45em;
+      }
+
+      .title .q {
+        font-size: 0.7em;
+      }
+
+      .welcome-sheet p {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        max-width: 22em;
+      }
+
+      .sound-toggle {
+        font-family: var(--hand);
+        font-size: 1.1rem;
+        color: var(--pencil);
+        background: none;
+        border: none;
+        border-bottom: 1.5px dotted currentColor;
+        cursor: pointer;
+      }
+
+      /* Les gros boutons : un coup de tampon rouge, encadré, comme
+         « APPROUVÉ ». */
+      .stamp-btn {
+        font-family: var(--slab);
+        font-size: 1.35rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--red);
+        background: transparent;
+        border: 4px solid var(--red);
+        border-radius: 6px;
+        padding: 10px 22px;
+        cursor: pointer;
+        transform: rotate(-2deg);
+        touch-action: manipulation;
+      }
+
+      .stamp-btn:active {
+        transform: rotate(-2deg) scale(0.96);
+      }
+
+      /* ===== Partie ===== */
+
+      /* Trois colonnes, celle du milieu centrée : les chiffres du chrono, qui
+         n'ont pas tous la même largeur, ne font plus bouger les compteurs. */
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: baseline;
+        gap: 10px;
+        font-family: var(--slab);
+        font-size: 1.05rem;
+        color: var(--brown);
+      }
+
+      .stats b {
+        font-weight: 400;
+        font-size: 1.3em;
+      }
+
+      .tally {
+        display: flex;
+        gap: 12px;
+      }
+
+      .tally .good {
+        color: #2e7d4f;
+      }
+
+      .tally .bad {
+        color: var(--red);
+      }
+
+      #timer {
+        justify-self: end;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Vingt cases, une par mot, qu'on tamponne au fil de la partie. */
+      .track {
+        display: grid;
+        grid-template-columns: repeat(20, 1fr);
+        gap: 3px;
+      }
+
+      .track span {
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 1.5px dashed rgba(61, 42, 23, 0.45);
+      }
+
+      .track span.done {
+        border: none;
+        background: var(--ink-color);
+      }
+
+      .track span.miss {
+        border: none;
+        background: var(--paper);
+        position: relative;
+      }
+
+      .track span.miss::after {
+        content: "✗";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-family: var(--hand);
+        color: var(--red);
+        font-size: 0.8rem;
+        line-height: 1;
+      }
+
+      .word-sheet {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 0;
+      }
+
+      .listen {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        border: 2px solid rgba(61, 42, 23, 0.35);
+        background: transparent;
+        color: var(--brown);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+      }
+
+      .listen svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .picture {
+        font-size: min(9rem, 22vh);
+      }
+
+      .word {
+        font-size: clamp(1.7rem, 9vw, 2.6rem);
+        line-height: 1.5;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+
+      /* La case de la première lettre : pointillés tant qu'elle est vide,
+         puis la lettre tamponnée, posée un peu de travers. */
+      .slot {
+        position: relative;
+        display: inline-block;
+        min-width: 0.75em;
+        text-align: center;
+      }
+
+      .slot::before {
+        content: "";
+        position: absolute;
+        left: -0.06em;
+        right: -0.06em;
+        top: 0.18em;
+        bottom: 0.08em;
+        border: 2px dashed rgba(61, 42, 23, 0.4);
+        border-radius: 4px;
+      }
+
+      .slot.filled::before {
+        display: none;
+      }
+
+      .slot .placeholder {
+        visibility: hidden;
+      }
+
+      .print {
+        position: absolute;
+        left: 0;
+        right: 0;
+      }
+
+      /* Ce qu'imprime un tampon. Une erreur est pâlie, et barrée d'un coup de
+         crayon rouge. */
+      .print,
+      .plate-words .first {
+        color: var(--print-color, var(--ink-color));
+        text-shadow: 0 0 0.5px currentColor;
+      }
+
+      .faded {
+        --print-color: color-mix(in srgb, var(--ink-color) 45%, transparent);
+      }
+
+      .crossed {
+        position: relative;
+      }
+
+      .crossed::after {
+        content: "";
+        position: absolute;
+        left: -0.1em;
+        right: -0.1em;
+        top: 55%;
+        height: max(2px, 0.09em);
+        border-radius: 1em;
+        background: var(--red);
+        transform: rotate(-18deg);
+        transform-origin: left;
+        animation: strike 0.25s ease-out;
+      }
+
+      @keyframes strike {
+        from {
+          transform: rotate(-18deg) scaleX(0);
+        }
+      }
+
+      .note {
+        min-height: 1.6em;
+        font-family: var(--hand);
+        font-size: 1.45rem;
+        line-height: 1.2;
+        text-align: center;
+        color: #2e7d4f;
+      }
+
+      /* La bonne lettre, imprimée par le bon tampon après une erreur, à côté
+         de la lettre barrée. */
+      .slot + .slot {
+        margin-left: 0.08em;
+      }
+
+      /* ===== Les tampons ===== */
+
+      /* L'établi vu de dessus, comme la feuille : deux tampons et le tampon
+         encreur entre eux. En bas, la place de l'ombre d'un tampon levé : elle
+         s'écarte vers le bas (pressStamp) et dépasse alors le tampon de 26 px
+         au plus, que couvrent ces 12 px et le bas du bureau (14 px). Sans
+         elle, la page déborde et défile le temps d'un coup de tampon. */
+      .tray {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 18px;
+        padding: 8px 0 12px;
+      }
+
+      .stamp {
+        position: relative;
+        width: min(25vw, 96px);
+        aspect-ratio: 1;
+        border: none;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      /* L'ombre portée sur la table : plus le tampon est haut, plus elle
+         s'écarte et pâlit. Floue une fois pour toutes ; seuls sa place et son
+         opacité s'animent. */
+      .stamp .shadow {
+        position: absolute;
+        inset: 6%;
+        border-radius: 16%;
+        background: rgba(50, 28, 8, 0.55);
+        filter: blur(4px);
+        transform: translate(4px, 6px);
+      }
+
+      .stamp svg {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .stamp.flying {
+        z-index: 10;
+      }
+
+      /* Le tampon encreur : une boîte en fer et son feutre imbibé. */
+      .pad {
+        width: min(21vw, 80px);
+        height: min(17vw, 64px);
+        border-radius: 10px;
+        padding: 6px;
+        background: linear-gradient(180deg, #b9bec4, #7d848c);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.6),
+          4px 6px 6px rgba(50, 28, 8, 0.4);
+      }
+
+      .felt {
+        width: 100%;
+        height: 100%;
+        border-radius: 4px;
+        background: var(--ink-color);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+      }
+
+      /* ===== Fin de partie : la planche ===== */
+
+      .plate {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding-top: 22px;
+      }
+
+      .plate h2 {
+        font-family: var(--slab);
+        font-weight: 400;
+        font-size: 1.6rem;
+        color: var(--brown);
+      }
+
+      /* Le grand cachet rond du score. */
+      .seal {
+        width: 164px;
+        height: 164px;
+        border-radius: 50%;
+        border: 5px solid var(--seal-color);
+        outline: 2px solid var(--seal-color);
+        outline-offset: -13px;
+        color: var(--seal-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transform: rotate(-12deg);
+        font-family: var(--slab);
+        text-align: center;
+      }
+
+      .seal .score {
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .seal .verdict {
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      .seal .time {
+        font-size: 0.75rem;
+        margin-top: 2px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .plate-words {
+        list-style: none;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 16px;
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      .plate-words li {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .plate-words .first {
+        display: inline-block;
+        font-size: 1.2em;
+      }
+
+      .plate-words .fix {
+        font-family: var(--hand);
+        color: var(--red);
+        font-size: 1.2em;
+        margin-left: 2px;
+      }
+
+      /* ===== Le registre des scores ===== */
+
+      .ledger {
+        padding: 16px 18px 20px;
+        transform: rotate(0.5deg);
+      }
+
+      .ledger h3 {
+        font-family: var(--slab);
+        font-weight: 400;
+        font-size: 1.1rem;
+        color: var(--brown);
+        margin-bottom: 4px;
+      }
+
+      .ledger table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--hand);
+        font-size: 1.2rem;
+        color: #2c3e70;
+      }
+
+      .ledger th {
+        font-family: var(--read);
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--pencil);
+        text-align: left;
+      }
+
+      /* Les lignes bleues d'un cahier de comptes. */
+      .ledger td,
+      .ledger th {
+        height: 34px;
+        padding: 0 4px;
+        border-bottom: 1px solid rgba(47, 86, 166, 0.25);
+      }
+
+      .ledger .current td {
+        color: var(--red);
+      }
+
+      .ledger .empty {
+        color: var(--pencil);
+      }
+
+      #confetti {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 20;
+      }
+
+      @media (hover: hover) {
+        .stamp-btn:hover {
+          background: rgba(200, 55, 45, 0.06);
+        }
+
+        .stamp:hover:not(.flying) {
+          transform: translateY(-3px);
+        }
+      }
+
+      @media (max-height: 640px) {
+        .picture {
+          font-size: 18vh;
+        }
+      }
+      /* L'image du mot, à la taille de l'emoji qu'elle remplace. */
+      .picture img {
+        display: block;
+        width: 1.1em;
+        height: 1.1em;
+        filter: drop-shadow(0 3px 2px rgba(60, 35, 10, 0.18));
+      }
+    </style>
+    <script src="exit-guard.js"></script>
+  </head>
+  <body>
+    <canvas id="confetti"></canvas>
+
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e2b277" />
+          <stop offset="0.5" stop-color="#c88d4e" />
+          <stop offset="1" stop-color="#9c6331" />
+        </linearGradient>
+        <radialGradient id="knob" cx="0.36" cy="0.32" r="0.8">
+          <stop offset="0" stop-color="#e8695a" />
+          <stop offset="0.55" stop-color="#b3301f" />
+          <stop offset="1" stop-color="#701810" />
+        </radialGradient>
+      </defs>
+    </svg>
+
+    <main class="desk">
+      <!-- ===== Accueil ===== -->
+      <section class="screen" id="welcome">
+        <div class="sheet welcome-sheet">
+          <h1 class="title" aria-label="b ou d ?">
+            <span class="b inked">b</span><span class="ou">ou</span
+            ><span class="d inked">d</span><span class="q">?</span>
+          </h1>
+          <p>
+            Regarde l'image, puis prends le bon tampon pour imprimer la première
+            lettre du mot.
+          </p>
+          <button
+            class="stamp-btn inked"
+            onclick="
+              Voice.wake(300)
+              startGame()
+            "
+          >
+            Commencer
+          </button>
+          <button
+            class="sound-toggle"
+            id="soundToggle"
+            onclick="toggleSound()"
+          ></button>
+        </div>
+      </section>
+
+      <!-- ===== Partie ===== -->
+      <section class="screen hidden" id="game">
+        <div class="stats">
+          <span
+            >Mot <b id="wordNumber">1</b> / <span id="wordTotal"></span
+          ></span>
+          <span class="tally">
+            <span class="good">✓ <b id="goodCount">0</b></span>
+            <span class="bad">✗ <b id="badCount">0</b></span>
+          </span>
+          <span id="timer">00:00</span>
+        </div>
+        <div class="track" id="track"></div>
+
+        <div class="sheet word-sheet">
+          <button
+            class="listen"
+            onclick="speakWord()"
+            aria-label="Écouter le mot"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 9H8L13 5V19L8 15H4Z" fill="currentColor" />
+              <path
+                d="M16.5 8.5A5 5 0 0 1 16.5 15.5M19 6A8.5 8.5 0 0 1 19 18"
+              />
+            </svg>
+          </button>
+          <div class="picture"><img id="picture" alt="" /></div>
+          <div class="word" id="word"></div>
+          <div class="note" id="note"></div>
+        </div>
+
+        <div class="tray" id="tray"></div>
+      </section>
+
+      <!-- ===== Fin de partie ===== -->
+      <section class="screen hidden" id="end">
+        <div class="sheet plate">
+          <h2>Ta planche</h2>
+          <div class="seal inked" id="seal"></div>
+          <ol class="plate-words" id="plateWords"></ol>
+          <button class="stamp-btn inked" onclick="startGame()">Rejouer</button>
+        </div>
+      </section>
+
+      <div class="sheet ledger" id="ledger">
+        <h3>Meilleurs scores</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Score</th>
+              <th>Temps</th>
+            </tr>
+          </thead>
+          <tbody id="scoreboardBody"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script src="confetti.js"></script>
+    <script src="voix.js"></script>
+    <script src="images.js"></script>
+    <script>
+      const words = [
+        // D words
+        { word: "dauphin", answer: "d" },
+        { word: "dragon", answer: "d" },
+        { word: "dinde", answer: "d" },
+        { word: "douche", answer: "d" },
+        { word: "dé", answer: "d" },
+        { word: "donut", answer: "d" },
+        { word: "domino", answer: "d" },
+        { word: "doigt", answer: "d" },
+        { word: "dent", answer: "d" },
+        { word: "diamant", answer: "d" },
+        { word: "dinosaure", answer: "d" },
+        { word: "dentifrice", answer: "d" },
+        { word: "doudou", answer: "d" },
+        { word: "dromadaire", answer: "d" },
+        { word: "danseuse", answer: "d" },
+        { word: "drapeau", answer: "d" },
+        { word: "dix", answer: "d" },
+        { word: "dessin", answer: "d" },
+        { word: "doudoune", answer: "d" },
+        { word: "dentiste", answer: "d" },
+        { word: "déguisement", answer: "d" },
+        { word: "drone", answer: "d" },
+        { word: "dessert", answer: "d" },
+        { word: "datte", answer: "d" },
+        { word: "diadème", answer: "d" },
+        // B words
+        { word: "banane", answer: "b" },
+        { word: "ballon", answer: "b" },
+        { word: "bateau", answer: "b" },
+        { word: "bus", answer: "b" },
+        { word: "bougie", answer: "b" },
+        { word: "bague", answer: "b" },
+        { word: "baleine", answer: "b" },
+        { word: "bonhomme de neige", answer: "b" },
+        { word: "bébé", answer: "b" },
+        { word: "bicyclette", answer: "b" },
+        { word: "burger", answer: "b" },
+        { word: "bowling", answer: "b" },
+        { word: "bonnet", answer: "b" },
+        { word: "biberon", answer: "b" },
+        { word: "boussole", answer: "b" },
+        { word: "boîte", answer: "b" },
+        { word: "bouquet", answer: "b" },
+        { word: "balançoire", answer: "b" },
+        { word: "bottes", answer: "b" },
+        { word: "bureau", answer: "b" },
+        { word: "baignoire", answer: "b" },
+        { word: "bouteille", answer: "b" },
+        { word: "bol", answer: "b" },
+        { word: "brouette", answer: "b" },
+        { word: "bracelet", answer: "b" },
+      ]
+
+      const NUMBER_OF_WORDS = 20
+      // Le registre n'en montre pas plus : sur un téléphone, il tient sous la
+      // feuille d'accueil sans faire défiler la page.
+      const MAX_SCORES = 5
+      const PRAISE = ["Bravo !", "Oui !", "Super !", "Bien vu !"]
+      const SOUND_KEY = "b-ou-d-sound"
+
+      let currentIndex = 0
+      // Une réponse par mot joué : { word, answer, choice }.
+      let results = []
+      let busy = false
+      let startTime
+      let timerInterval
+
+      const $ = (id) => document.getElementById(id)
+      const random = (min, max) => min + Math.random() * (max - min)
+      const countRight = () =>
+        results.filter((r) => r.choice === r.answer).length
+
+      function showScreen(id) {
+        for (const screen of ["welcome", "game", "end"]) {
+          $(screen).classList.toggle("hidden", screen !== id)
+        }
+        $("ledger").classList.toggle("hidden", id === "game")
+      }
+
+      // ===== Chrono et scores =====
+
+      function formatTime(ms) {
+        const minutes = Math.floor(ms / 60000)
+        const seconds = Math.floor((ms % 60000) / 1000)
+        return `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`
+      }
+
+      function updateTime() {
+        $("timer").textContent = formatTime(Date.now() - startTime)
+      }
+
+      function startTimer() {
+        startTime = Date.now()
+        clearInterval(timerInterval)
+        timerInterval = setInterval(updateTime, 1000)
+        updateTime()
+      }
+
+      function readScores() {
+        try {
+          return JSON.parse(localStorage.getItem("scores") || "[]")
+        } catch (e) {
+          return []
+        }
+      }
+
+      function saveScore(score, time) {
+        const scores = readScores()
+        // Identifiant unique pour retrouver la partie qu'on vient de jouer
+        // dans le tableau et la mettre en évidence.
+        const id = Date.now()
+        scores.push({
+          id: id,
+          date: new Date().toLocaleDateString("fr-FR"),
+          score: score,
+          time: time,
+        })
+        scores.sort((a, b) => b.score - a.score || a.time.localeCompare(b.time))
+        scores.splice(10) // Keep only top 10 scores
+        try {
+          localStorage.setItem("scores", JSON.stringify(scores))
+        } catch (e) {
+          // navigation privée : le score ne sera pas gardé
+        }
+        updateScoreboard(id)
+      }
+
+      function updateScoreboard(highlightId) {
+        const scores = readScores().slice(0, MAX_SCORES)
+        $("scoreboardBody").innerHTML = scores.length
+          ? scores
+              .map((s) => {
+                const isCurrent = highlightId && s.id === highlightId
+                return `<tr class="${isCurrent ? "current" : ""}">
+                  <td>${isCurrent ? "→ " : ""}${s.date}</td>
+                  <td>${s.score} / ${NUMBER_OF_WORDS}</td>
+                  <td>${s.time}</td>
+                </tr>`
+              })
+              .join("")
+          : `<tr><td class="empty" colspan="3">Pas encore de partie.</td></tr>`
+      }
+
+      // ===== Les tampons =====
+
+      // Un tampon vu de dessus, comme la feuille : un bloc de bois carré, la
+      // poignée laquée au milieu, et sur elle l'étiquette de la lettre. Son
+      // ombre est à part, pour qu'elle reste sur la table quand il se lève.
+      function stampHTML(letter) {
+        return `<button class="stamp" data-letter="${letter}" aria-label="Tampon ${letter}">
+          <span class="shadow" aria-hidden="true"></span>
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="4" y="4" width="92" height="92" rx="13" fill="url(#wood)" />
+            <path d="M10 22 Q40 18 90 24 M8 44 Q46 40 92 46 M10 66 Q50 61 90 68 M12 84 Q44 81 88 86"
+              stroke="rgba(90,50,18,0.2)" stroke-width="1.3" fill="none" />
+            <rect x="5" y="5" width="90" height="90" rx="12" fill="none"
+              stroke="rgba(255,236,205,0.55)" stroke-width="1.5" />
+            <rect x="4" y="4" width="92" height="92" rx="13" fill="none"
+              stroke="rgba(70,35,10,0.6)" stroke-width="1.5" />
+            <circle cx="52.5" cy="53.5" r="27" fill="rgba(60,28,8,0.35)" />
+            <circle cx="50" cy="50" r="26" fill="url(#knob)" />
+            <circle cx="50" cy="50" r="16.5" fill="#f6efdc" stroke="rgba(0,0,0,0.15)" />
+            <text x="50" y="57" text-anchor="middle" font-size="21"
+              font-family="OpenDyslexicRegular, Arial" fill="#2b2420">${letter}</text>
+            <path d="M33 36 A24 24 0 0 1 46 27" stroke="rgba(255,255,255,0.55)"
+              stroke-width="3" stroke-linecap="round" fill="none" />
+          </svg>
+        </button>`
+      }
+
+      function buildTray() {
+        $("tray").innerHTML =
+          stampHTML("b") +
+          `<div class="pad" aria-hidden="true"><div class="felt"></div></div>` +
+          stampHTML("d")
+        $("tray")
+          .querySelectorAll(".stamp")
+          .forEach((stamp) =>
+            stamp.addEventListener("click", () => checkAnswer(stamp)),
+          )
+      }
+
+      // ===== Le son =====
+
+      // Les mots, dits par Marie (voix.js, outils/voix.py).
+      Voice.folder = "audio/b-ou-d/"
+      // Toutes les images d'avance : le jeu marche ensuite hors-ligne.
+      WordImage.preload(words.map((w) => w.word))
+
+      function speakWord() {
+        Voice.say(words[currentIndex].word)
+      }
+
+      // Un petit « toc » de bois sur le papier, qu'on peut couper depuis
+      // l'accueil (la voix, elle, reste : elle fait partie du jeu).
+      let soundOn = true
+      try {
+        soundOn = localStorage.getItem(SOUND_KEY) !== "off"
+      } catch (e) {
+        // navigation privée : le son reste allumé
+      }
+
+      function thump() {
+        if (!soundOn) return
+        const ctx = Voice.wake(300)
+        if (!ctx) return
+        const t = ctx.currentTime
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = "triangle"
+        osc.frequency.setValueAtTime(150, t)
+        osc.frequency.exponentialRampToValueAtTime(60, t + 0.09)
+        gain.gain.setValueAtTime(0.25, t)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + 0.15)
+      }
+
+      function renderSoundToggle() {
+        $("soundToggle").textContent =
+          "Bruit du tampon : " + (soundOn ? "oui" : "non")
+        $("soundToggle").setAttribute("aria-pressed", soundOn)
+      }
+
+      function toggleSound() {
+        soundOn = !soundOn
+        try {
+          localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off")
+        } catch (e) {
+          // navigation privée : le réglage ne sera pas gardé
+        }
+        renderSoundToggle()
+        thump()
+      }
+
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
+
+      // Un vrai coup de tampon, vu de dessus : on le lève, on l'encre sur le
+      // tampon encreur, on vise la case, on appuie, et on le relève : la
+      // lettre apparaît dessous. `onPress` est appelé quand il touche la
+      // feuille ; la lettre, imprimée sous lui, ne se voit qu'une fois levé.
+      const PRESS_MS = 1300
+      const CONTACT = 0.72
+
+      function pressStamp(stamp, slot, onPress) {
+        if (reducedMotion) {
+          onPress()
+          return Promise.resolve()
+        }
+        const center = (el) => {
+          const r = el.getBoundingClientRect()
+          return [r.left + r.width / 2, r.top + r.height / 2]
+        }
+        const [x0, y0] = center(stamp)
+        const [px, py] = center($("tray").querySelector(".pad"))
+        const [sx, sy] = center(slot)
+        // [moment, décalage depuis sa place, hauteur : 0 posé, 1 levé, < 0 appuyé]
+        const steps = [
+          [0, 0, 0, 0],
+          [0.12, 0, 0, 1],
+          [0.28, px - x0, py - y0, 0.6],
+          [0.35, px - x0, py - y0, -0.05],
+          [0.44, px - x0, py - y0, 0.8],
+          [0.62, sx - x0, sy - y0, 0.8],
+          [CONTACT, sx - x0, sy - y0, -0.08],
+          [0.8, sx - x0, sy - y0, -0.08],
+          // Il se relève en s'écartant : la lettre apparaît.
+          [0.88, sx - x0 - 10, sy - y0 - 85, 1],
+          [1, 0, 0, 0],
+        ]
+        // Plus haut, plus près de l'œil : le tampon grandit, son ombre
+        // s'écarte et pâlit (sans grandir avec lui : elle reste sur la table).
+        const lift = (h) => 1 + 0.2 * h
+        const frames = (style) =>
+          steps.map(([offset, x, y, h]) => ({
+            offset,
+            easing: "ease-in-out",
+            ...style(x, y, h),
+          }))
+        const timing = { duration: PRESS_MS }
+
+        stamp.classList.add("flying")
+        const anim = stamp.animate(
+          frames((x, y, h) => ({
+            transform: `translate(${x}px, ${y}px) scale(${lift(h)})`,
+          })),
+          timing,
+        )
+        stamp.querySelector(".shadow").animate(
+          frames((x, y, h) => ({
+            transform: `translate(${4 + 14 * h}px, ${6 + 18 * h}px) scale(${(1 + 0.06 * h) / lift(h)})`,
+            opacity: 1 - 0.5 * h,
+          })),
+          timing,
+        )
+        setTimeout(onPress, PRESS_MS * CONTACT)
+        return anim.finished.then(() => stamp.classList.remove("flying"))
+      }
+
+      // ===== Partie =====
+
+      function shuffleWords() {
+        for (let i = words.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[words[i], words[j]] = [words[j], words[i]]
+        }
+      }
+
+      function updateStats() {
+        const right = countRight()
+        $("goodCount").textContent = right
+        $("badCount").textContent = results.length - right
+      }
+
+      function displayWord() {
+        const { word } = words[currentIndex]
+        $("wordNumber").textContent = currentIndex + 1
+        $("picture").src = WordImage.src(word)
+        $("word").innerHTML = slotHTML(word[0]) + word.slice(1)
+        $("note").textContent = ""
+        // Les tampons changent de côté d'un mot à l'autre : on lit la
+        // lettre, pas sa place.
+        $("tray").style.flexDirection =
+          Math.random() < 0.5 ? "row" : "row-reverse"
+        // Prêt à être dit s'il le faut, sans attente.
+        Voice.load(word)
+      }
+
+      // La case vide d'une lettre : pointillés, à la largeur de la lettre.
+      const slotHTML = (letter) =>
+        `<span class="slot"><span class="placeholder">${letter}</span></span>`
+
+      // La lettre imprimée : un peu de travers, avec le
+      // grain du tampon placé au hasard. Une erreur est pâlie et barrée.
+      function printLetter(slot, letter, wrong) {
+        const print = document.createElement("span")
+        print.className = "print inked" + (wrong ? " faded" : "")
+        print.textContent = letter
+        print.style.transform = `rotate(${random(-6, 6)}deg) translate(${random(-2, 2)}px, ${random(-2, 2)}px)`
+        print.style.webkitMaskPosition =
+          print.style.maskPosition = `${random(0, 140)}px ${random(0, 140)}px`
+        slot.appendChild(print)
+        slot.classList.add("filled")
+        slot.classList.toggle("crossed", wrong)
+        thump()
+      }
+
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+      const stampFor = (letter) =>
+        $("tray").querySelector(`[data-letter="${letter}"]`)
+
+      async function checkAnswer(stamp) {
+        if (busy) return
+        busy = true
+        // La partie est engagée dès la première réponse.
+        if (window.ExitGuard) ExitGuard.setActive(true)
+        const { word, answer } = words[currentIndex]
+        const choice = stamp.dataset.letter
+        const isCorrect = choice === answer
+        results.push({ word, answer, choice })
+        // Le toucher débloque le son ; après une erreur, il reste éveillé
+        // jusqu'à ce que la voix ait dit le mot.
+        Voice.wake(isCorrect ? 300 : 6000)
+        const slot = $("word").querySelector(".slot")
+
+        await pressStamp(stamp, slot, () => {
+          printLetter(slot, choice, !isCorrect)
+          markTrack(currentIndex, isCorrect)
+          updateStats()
+          if (isCorrect) {
+            $("note").textContent =
+              PRAISE[Math.floor(Math.random() * PRAISE.length)]
+          }
+        })
+
+        if (isCorrect) {
+          await wait(250)
+        } else {
+          // Rien à lire : le bon tampon vient imprimer la bonne lettre à côté
+          // de la lettre barrée, et la voix dit le mot.
+          slot.insertAdjacentHTML("afterend", slotHTML(answer))
+          const fix = slot.nextElementSibling
+          await wait(250)
+          let said
+          await pressStamp(stampFor(answer), fix, () => {
+            printLetter(fix, answer, false)
+            said = Voice.say(word)
+          })
+          await said
+          await wait(700)
+        }
+
+        busy = false
+        currentIndex++
+        if (currentIndex >= NUMBER_OF_WORDS) showGameEnd()
+        else displayWord()
+      }
+
+      function markTrack(index, isCorrect) {
+        const cell = $("track").children[index]
+        cell.className = isCorrect ? "done" : "miss"
+      }
+
+      function startGame() {
+        currentIndex = 0
+        results = []
+        busy = false
+        $("wordTotal").textContent = NUMBER_OF_WORDS
+        $("track").innerHTML = "<span></span>".repeat(NUMBER_OF_WORDS)
+        // Une nouvelle partie n'est engagée qu'à la première réponse.
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        showScreen("game")
+        shuffleWords()
+        updateStats()
+        displayWord()
+        startTimer()
+      }
+
+      // ===== Fin de partie =====
+
+      function showGameEnd() {
+        const finalTime = $("timer").textContent
+        const score = countRight()
+        clearInterval(timerInterval)
+        if (window.ExitGuard) ExitGuard.setActive(false)
+        saveScore(score, finalTime)
+
+        const verdict =
+          score === NUMBER_OF_WORDS
+            ? "Parfait !"
+            : score >= NUMBER_OF_WORDS - 3
+              ? "Bravo !"
+              : score >= NUMBER_OF_WORDS / 2
+                ? "Bien joué"
+                : "Continue !"
+        const seal = $("seal")
+        seal.style.setProperty(
+          "--seal-color",
+          score >= NUMBER_OF_WORDS / 2 ? "#c8372d" : "#2f56a6",
+        )
+        seal.innerHTML = `<span class="score">${score}/${NUMBER_OF_WORDS}</span>
+          <span class="verdict">${verdict}</span>
+          <span class="time">en ${finalTime}</span>`
+
+        // Chaque mot, avec sa première lettre tamponnée ; une erreur est
+        // barrée, et la bonne lettre écrite au crayon rouge.
+        $("plateWords").innerHTML = results
+          .map(({ word, answer, choice }) => {
+            const miss = choice !== answer
+            return `<li>
+              <span class="first inked${miss ? " faded crossed" : ""}">${choice}</span>${
+                miss ? `<span class="fix">${answer}</span>` : ""
+              }${word.slice(1)}</li>`
+          })
+          .join("")
+
+        showScreen("end")
+        window.scrollTo(0, 0)
+        if (score === NUMBER_OF_WORDS) showConfetti()
+      }
+
+      buildTray()
+      renderSoundToggle()
+      updateScoreboard()
+      // Écran d'accueil : aucune partie en cours.
+      if (window.ExitGuard) ExitGuard.setActive(false)
+    </script>
+  </body>
+</html>
