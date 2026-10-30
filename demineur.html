@@ -1073,7 +1073,10 @@
         function cellContent(state, value) {
             if (state === 'flag') return FLAG_SVG;
             if (state === 'mine' || state === 'exploded') return MINE_SVG;
-            return value > 0 ? `<span>${value}</span>` : '';
+            // Une case cachée ne montre rien, même redessinée quand on lui
+            // retire son drapeau.
+            if (state === 'covered' || value === 0) return '';
+            return `<span>${value}</span>`;
         }
 
         // Ne touche qu'aux cases qui ont changé. Celles qui viennent d'être
