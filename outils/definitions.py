@@ -1,5 +1,5 @@
-"""Les définitions pour enfants des mots peu courants du mot le plus long : outils/definitions.json,
-{lemme: définition}, que outils/explications.py range ensuite par lettre.
+"""Les définitions pour enfants des mots peu courants des jeux de mots : outils/definitions.json,
+{lemme: définition}, que outils/explications.py range ensuite dans explications/.
 
 Les sens viennent du Wiktionnaire (extraction de kaikki.org, licence CC BY-SA 4.0) ; Claude les
 réécrit pour un enfant de CM1, sans rien inventer, par lots de 40 mots. Il passe par Claude Code en
@@ -30,7 +30,14 @@ import explications
 MODELE = "opus"
 PAR_LOT = 40
 EN_PARALLELE = 4
-POS = {"verbe": "verb", "nom": "noun", "adjectif": "adj", "adverbe": "adv", "interjection": "intj"}
+POS = {
+    "verbe": {"verb"},
+    "nom": {"noun"},
+    "adjectif": {"adj"},
+    "nom ou adjectif": {"noun", "adj"},
+    "adverbe": {"adv"},
+    "interjection": {"intj"},
+}
 
 CONSIGNE = """Tu écris les définitions d'un jeu de lettres pour des enfants de 7 à 11 ans. On te donne \
 des mots du français, avec leur nature et les sens que leur donne le Wiktionnaire.
@@ -91,20 +98,21 @@ def gloses(entree):
 
 
 def sens_du_wiktionnaire(chemin, voulues):
-    """Pour chaque lemme voulu, ses sens : ceux de sa nature d'abord, six au plus. Un sens qui ne fait que
-    renvoyer à un autre mot (« Participe passé du verbe redonder », « Variante de tête-bêche ») est
-    remplacé par les sens de ce mot, lus dans un second passage."""
+    """Pour chaque lemme voulu, ses sens : ceux de sa nature d'abord, six au plus, et le premier sens de
+    chaque entrée (chien le nom, chien l'adjectif ; avocat l'homme de loi, avocat le fruit) avant les
+    seconds. Un sens qui ne fait que renvoyer à un autre mot (« Participe passé du verbe redonder »,
+    « Variante de tête-bêche ») est remplacé par les sens de ce mot, lus dans un second passage."""
     sens, renvois = defaultdict(list), defaultdict(set)
     for entree in entrees_francaises(chemin):
         mot = entree.get("word")
         if mot not in voulues:
             continue
-        autre_nature = entree.get("pos") != POS.get(voulues[mot])
-        for s, texte in gloses(entree):
+        autre_nature = entree.get("pos") not in POS.get(voulues[mot], ())
+        for rang, (s, texte) in enumerate(gloses(entree)):
             if vers := [c["word"] for c in s.get("form_of", []) + s.get("alt_of", []) if c.get("word")]:
                 renvois[mot].update(vers)
             else:
-                sens[mot].append((autre_nature, texte))
+                sens[mot].append((autre_nature, rang, texte))
     if renvois:
         cibles = set().union(*renvois.values())
         sens_des_cibles = defaultdict(list)
@@ -113,8 +121,8 @@ def sens_du_wiktionnaire(chemin, voulues):
                 sens_des_cibles[cible] += [f"« {cible} » : {t}" for _, t in gloses(entree)]
         for mot, vers in renvois.items():
             for cible in sorted(vers):
-                sens[mot] += [(True, t) for t in sens_des_cibles[cible]]
-    return {mot: [t for _, t in sorted(liste, key=lambda x: x[0])][:6] for mot, liste in sens.items() if liste}
+                sens[mot] += [(True, rang, t) for rang, t in enumerate(sens_des_cibles[cible])]
+    return {mot: [t for *_, t in sorted(liste, key=lambda x: x[:2])][:6] for mot, liste in sens.items() if liste}
 
 
 def demander(lot, voulues, sens):

@@ -1,9 +1,10 @@
-"""Les explications du mot le plus long : en fin de manche, sous chaque mot montré, ce qu'il est (« le
-verbe creuser, au présent, avec « ils » ou « elles » ») et, pour un mot peu courant, sa définition.
+"""Les explications des jeux de mots (le mot le plus long, Lettris, Sutom, le pendu, l'anagramme) :
+sous un mot montré, ce qu'il est (« le verbe creuser, au présent, avec « ils » ou « elles » ») et,
+pour un mot peu courant, sa définition. Les jeux les affichent avec explications.js.
 
 La grammaire vient des étiquettes du lexique de Grammalecte (outils/dictionnaire.py), les définitions
-de outils/definitions.json (outils/definitions.py). Un fichier par première lettre, que le jeu charge
-à la fin de la manche, explications/<lettre>.json :
+de outils/definitions.json (outils/definitions.py). Un fichier par première lettre,
+explications/<lettre>.json, et un pour les mots de mots-enfants.txt, explications/enfants.json :
     {"mots": {"CREUSENT": ["creusent", "le verbe creuser, au présent, …", "creuser"], …},
      "definitions": {"creuser": "…", …}}
 Le troisième champ, quand il y est, est le mot dont la définition suit.
@@ -50,8 +51,11 @@ MOTS_DE_GRAMMAIRE = {
     "detdem": "un déterminant",
     "detind": "un déterminant",
     "cjco": "une conjonction",
+    "detneg": "un déterminant",
     "cjsub": "une conjonction",
     "adv": "un adverbe",
+    "advint": "un adverbe",
+    "negadv": "un adverbe",
 }
 
 
@@ -94,13 +98,10 @@ def phrase(forme, lemme, etiquettes, feminins):
     if nature in ("nom", "adj"):
         if forme != lemme and (genre := accord(etiquettes, lemme in feminins)):
             return f"le {genre} de « {lemme} »"
-        if "adj" in etiquettes:
+        if nature == "adj":
             return "un adjectif"
-        if "mas" in etiquettes:
-            return "un nom masculin"
-        if "fem" in etiquettes:
-            return "un nom féminin"
-        return "un nom"
+        nom = "un nom masculin" if "mas" in etiquettes else "un nom féminin" if "fem" in etiquettes else "un nom"
+        return nom + (", ou un adjectif" if "adj" in etiquettes else "")
     if nature == "mg":
         for e in etiquettes:
             if e in MOTS_DE_GRAMMAIRE:
@@ -113,6 +114,8 @@ def nature_lisible(etiquettes):
     """La nature d'un lemme, pour qui écrira sa définition."""
     if etiquettes[0].startswith("v"):
         return "verbe"
+    if etiquettes[0] == "nom" and "adj" in etiquettes:
+        return "nom ou adjectif"
     if "adj" in etiquettes:
         return "adjectif"
     return {"nom": "nom", "adv": "adverbe", "interj": "interjection"}.get(etiquettes[0], "mot")
@@ -135,6 +138,21 @@ def distinctes(forme, analyses, feminins):
             yield texte, e
 
 
+def fusionner(entrees):
+    """Un nom qui sert aussi d'adjectif tient sur une ligne du lexique (chien : nom adj) ou sur deux
+    (chocolat : un nom, et un adjectif invariable). Dans le second cas, une seule analyse aussi : sinon,
+    selon les occurrences, CHOCOLAT se dirait « un adjectif »."""
+    adjectifs = {(e.forme, e.lemme): e.occurrences for e in entrees if e.etiquettes[0] == "adj"}
+    noms = {(e.forme, e.lemme) for e in entrees if e.etiquettes[0] == "nom"}
+    for e in entrees:
+        cle = (e.forme, e.lemme)
+        if e.etiquettes[0] == "adj" and cle in noms:
+            continue
+        if e.etiquettes[0] == "nom" and cle in adjectifs and "adj" not in e.etiquettes:
+            e = e._replace(etiquettes=e.etiquettes + ["adj"], occurrences=max(e.occurrences, adjectifs[cle]))
+        yield e
+
+
 def analyser():
     """{MOT: (forme, phrase, lemme à définir ou None)} et {lemme à définir: sa nature}."""
     entrees = list(lexique())
@@ -150,10 +168,12 @@ def analyser():
     feminins = {e.lemme for e in bases if "fem" in e.etiquettes and "sg" in e.etiquettes}
     feminins -= {e.lemme for e in bases if "mas" in e.etiquettes}
 
-    # De 3 à 9 lettres : MIN_LENGTH et TILE_COUNT du mot le plus long.
+    # De 3 à 9 lettres : MIN_LENGTH et TILE_COUNT du mot le plus long. Et les mots d'enfants, plus longs
+    # parfois (grenouille), que tirent Sutom et le pendu.
+    enfants = mots_enfants()
     par_mot = defaultdict(list)
-    for e in entrees:
-        if 3 <= len(mot := normalise(e.forme)) <= 9:
+    for e in fusionner(entrees):
+        if 3 <= len(mot := normalise(e.forme)) <= 9 or mot in enfants:
             par_mot[mot].append(e)
 
     mots, a_definir = {}, {}
@@ -180,23 +200,38 @@ def lire_definitions():
     return json.loads(DEFINITIONS.read_text(encoding="utf-8")) if DEFINITIONS.exists() else {}
 
 
+def mots_enfants():
+    """Les mots de mots-enfants.txt, sans accents : ceux d'une seule pièce."""
+    lignes = (RACINE / "mots-enfants.txt").read_text(encoding="utf-8").splitlines()
+    return {normalise(m) for m in lignes if m and " " not in m}
+
+
+def ecrire(nom, des_mots, definitions):
+    lemmes = {e[2] for e in des_mots.values() if len(e) > 2}
+    fichier = {"licence": LICENCE, "mots": des_mots, "definitions": {l: definitions[l] for l in sorted(lemmes)}}
+    texte = json.dumps(fichier, ensure_ascii=False, separators=(",", ":"))
+    (RACINE / "explications" / f"{nom}.json").write_text(texte, encoding="utf-8")
+
+
 def main():
     mots, _ = analyser()
     definitions = lire_definitions()
-    par_lettre = defaultdict(dict)
+    explications = {}
     for mot in sorted(mots):
         forme, texte, lemme = mots[mot]
-        par_lettre[mot[0]][mot] = [forme, texte] + ([lemme] if definitions.get(lemme) else [])
-    dossier = RACINE / "explications"
-    dossier.mkdir(exist_ok=True)
-    definis = 0
+        explications[mot] = [forme, texte] + ([lemme] if definitions.get(lemme) else [])
+    par_lettre = defaultdict(dict)
+    for mot, explication in explications.items():
+        par_lettre[mot[0]][mot] = explication
+    (RACINE / "explications").mkdir(exist_ok=True)
     for lettre, des_mots in par_lettre.items():
-        lemmes = {e[2] for e in des_mots.values() if len(e) > 2}
-        definis += sum(len(e) > 2 for e in des_mots.values())
-        fichier = {"licence": LICENCE, "mots": des_mots, "definitions": {l: definitions[l] for l in sorted(lemmes)}}
-        texte = json.dumps(fichier, ensure_ascii=False, separators=(",", ":"))
-        (dossier / f"{lettre}.json").write_text(texte, encoding="utf-8")
+        ecrire(lettre, des_mots, definitions)
+    definis = sum(len(e) > 2 for e in explications.values())
     print(f"explications/ : {len(mots)} mots, {definis} avec définition")
+    # Sutom, le pendu et l'anagramme ne montrent que des mots d'enfants : un petit fichier leur suffit.
+    enfants = {m: explications[m] for m in sorted(mots_enfants()) if m in explications}
+    ecrire("enfants", enfants, definitions)
+    print(f"explications/enfants.json : {len(enfants)} mots, {sum(len(e) > 2 for e in enfants.values())} avec définition")
 
 
 if __name__ == "__main__":

@@ -144,9 +144,14 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
 - **Explications de mots** : `explications/<lettre>.json` dit, pour chaque mot
   de 3 à 9 lettres, sa forme accentuée, ce qu'il est (« le verbe creuser, au
   présent, avec « ils » ou « elles » ») et la définition pour enfants des
-  mots peu courants. Fabriqué par `outils/explications.py`, d'après
-  Grammalecte et `outils/definitions.json` (définitions du Wiktionnaire
-  réécrites par Claude, `outils/definitions.py`) : jamais à la main.
+  mots peu courants ; `explications/enfants.json`, bien plus petit, en fait
+  autant pour les mots de `mots-enfants.txt`. Fabriqué par
+  `outils/explications.py`, d'après Grammalecte et `outils/definitions.json`
+  (définitions du Wiktionnaire réécrites par Claude, `outils/definitions.py`) :
+  jamais à la main. Un jeu les affiche avec
+  `<script src="explications.js"></script>` et
+  `Explications.show(el, mot)` (`{ kid: true }` pour un mot d'enfant) ; il
+  habille lui-même les paragraphes qu'elle met dans `el`.
 
 ## Brancher le jeu dans l'accueil
 

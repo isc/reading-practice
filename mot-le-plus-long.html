@@ -1318,6 +1318,7 @@
     </main>
 
     <script src="voix.js"></script>
+    <script src="explications.js"></script>
     <script src="confetti.js"></script>
     <script>
       const TILE_COUNT = 9
@@ -1442,7 +1443,7 @@
             "NEGRES?|NEGRESS.*|NEGRILL.*|NEGRO.*|YOUPIN.*|BOUGNOUL.*|BICOTS?|CHINETOQUES?|BAMBOULAS?",
             "BOCHES?|RITALS?|POLACKS?|CHLEUHS?|SCHLEUS?|FRIDOLINS?|FRITZ|AMERLOQUES?|ANGLICHES?",
             "BEURETTES?|CROUILL.*|DYKES?|EMPAFFES?|FEMINAZIS?|GITONS?|LOPETTES?|METEQUES?",
-            "MORICAUDS?|MOU(K|QU)ERES?|ROMANOS?|NEGRERIES?|NEGRIF.*",
+            "MORICAUDS?|MOU(K|QU)ERES?|ROMANOS?|NEGRERIES?|NEGRIF.*|BLEDARDS?",
           ].join("|") +
           ")$",
       )
@@ -2029,57 +2030,11 @@
         }
       }
 
-      // ===== Les explications de fin de manche =====
+      // ===== Les explications de fin de manche (explications.js) =====
 
-      // explications/<lettre>.json (outils/explications.py) : pour chaque mot,
-      // sa forme avec ses accents, ce qu'il est (« le verbe creuser, au
-      // présent… ») et, s'il est peu courant, le mot dont il donne la
-      // définition. Un fichier par première lettre ; on ne garde en mémoire
-      // que les derniers (jusqu'à 6 Mo chacun une fois lus).
-      const explanations = new Map()
-
-      function loadExplanations(letter) {
-        if (!explanations.has(letter)) {
-          if (explanations.size >= 2) {
-            explanations.delete(explanations.keys().next().value)
-          }
-          const data = fetch(`explications/${letter}.json`)
-            .then((res) => (res.ok ? res.json() : Promise.reject()))
-            .catch(() => {
-              explanations.delete(letter) // hors ligne : on réessaiera
-              return null
-            })
-          explanations.set(letter, data)
-        }
-        return explanations.get(letter)
-      }
-
-      async function explain(el, word) {
-        el.replaceChildren()
-        el.dataset.word = word
-        // Un gros mot tapé par l'enfant reste accepté, mais sans explication.
-        if (!word || SWEAR_WORD.test(word)) return
-        const data = await loadExplanations(word[0])
-        const entry = data && data.mots[word]
-        // Une nouvelle manche a pu commencer pendant le chargement.
-        if (!entry || el.dataset.word !== word) return
-        const [form, what, lemma] = entry
-        const line = document.createElement("p")
-        const bold = document.createElement("b")
-        bold.textContent = form
-        line.append(bold, ` : ${what}.`)
-        el.append(line)
-        if (lemma) {
-          const definition = document.createElement("p")
-          definition.className = "definition"
-          const credit = document.createElement("small")
-          credit.textContent = " (d'après le Wiktionnaire)"
-          definition.append(
-            `« ${lemma} » : ${data.definitions[lemma]}.`,
-            credit,
-          )
-          el.append(definition)
-        }
+      // Un gros mot tapé par l'enfant reste accepté, mais sans explication.
+      function explain(el, word) {
+        Explications.show(el, word && !SWEAR_WORD.test(word) ? word : "")
       }
 
       // ===== Les scores =====
