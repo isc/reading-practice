@@ -181,6 +181,9 @@
         --glass: rgba(255, 255, 255, 0.07);
         --edge: rgba(255, 255, 255, 0.13);
         --focus: #9fd0ff;
+        --new: #3fdcc0;
+        --warm: linear-gradient(130deg, #ffc93c, #ff8a65);
+        --container: 1040px;
       }
 
       * {
@@ -217,13 +220,14 @@
         -webkit-touch-callout: none;
       }
 
-      input {
+      input,
+      textarea {
         -webkit-user-select: text;
         user-select: text;
       }
 
       .container {
-        max-width: 1040px;
+        max-width: var(--container);
         margin: 0 auto;
         padding-left: calc(1rem + env(safe-area-inset-left));
         padding-right: calc(1rem + env(safe-area-inset-right));
@@ -277,30 +281,46 @@
         border-radius: 9px;
       }
 
-      .share-button {
+      /* Bouton rond en verre : le menu, et la croix des feuilles. */
+      .round-button {
         flex-shrink: 0;
         display: flex;
         align-items: center;
-        gap: 0.45rem;
-        min-height: 2.6rem;
-        padding: 0 1rem;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: 0;
         border: 1px solid var(--edge);
-        border-radius: 999px;
+        border-radius: 50%;
         background: var(--glass);
-        font-family: inherit;
-        font-size: 0.9rem;
-        font-weight: 600;
         color: var(--text);
         cursor: pointer;
       }
 
-      .share-button svg {
-        width: 1.05rem;
-        height: 1.05rem;
+      .round-button svg {
+        width: 1.15rem;
+        height: 1.15rem;
       }
 
-      .share-button:active {
-        transform: scale(0.96);
+      .round-button:active {
+        transform: scale(0.94);
+      }
+
+      .menu-button {
+        position: relative;
+      }
+
+      /* Des nouveautés pas encore vues : une petite étoile turquoise. */
+      .news-dot {
+        position: absolute;
+        top: 0.1rem;
+        right: 0.1rem;
+        width: 0.7rem;
+        height: 0.7rem;
+        border: 2px solid var(--night);
+        border-radius: 50%;
+        background: var(--new);
+        box-shadow: 0 0 10px var(--new);
       }
 
       /* Le nom, en Lexend très gras. De temps en temps, une lettre prend la
@@ -518,7 +538,8 @@
       }
 
       .game-art svg,
-      .recent-art svg {
+      .recent-art svg,
+      .news-art svg {
         display: block;
         width: 100%;
         height: 100%;
@@ -564,9 +585,8 @@
         }
       }
 
-      .game:focus-visible,
-      .recent:focus-visible,
-      .share-button:focus-visible {
+      :where(a, button):focus-visible,
+      .chip input:focus-visible + span {
         outline: 3px solid var(--focus);
         outline-offset: 3px;
       }
@@ -882,8 +902,468 @@
         white-space: nowrap;
       }
 
+      /* ===== Feuilles : menu, nouveautés, avis ===== */
+
+      /* Le <dialog> couvre tout l'écran et sert lui-même de voile : un appui
+         à côté du panneau tombe sur lui et le ferme, et c'est pareil sur un
+         vieil iPad sans <dialog>, qui l'ouvre à la main (cf. openSheet).
+         Sur téléphone le panneau monte du bas ; sur grand écran il est au
+         milieu, et le menu se pose sous son bouton. */
+      .sheet {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        width: auto;
+        height: auto;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        padding: calc(2.5rem + env(safe-area-inset-top)) 0 0;
+        border: none;
+        background: rgba(6, 4, 16, 0.62);
+        color: var(--text);
+        animation: fade-in 0.2s ease both;
+      }
+
+      .sheet:not([open]) {
+        display: none;
+      }
+
+      .sheet::backdrop {
+        background: transparent;
+      }
+
+      .sheet-panel {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        border-radius: 26px 26px 0 0;
+        background: linear-gradient(#221a42, #15102b 18rem);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.14),
+          0 -24px 60px rgba(0, 0, 0, 0.45);
+        animation: sheet-up 0.32s cubic-bezier(0.2, 0.85, 0.3, 1) both;
+      }
+
+      /* À l'ouverture, le panneau prend le focus (autofocus) : pas d'anneau
+         sur son premier bouton. */
+      .sheet-panel:focus {
+        outline: none;
+      }
+
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+        }
+      }
+
+      @keyframes sheet-up {
+        from {
+          transform: translateY(100%);
+        }
+      }
+
+      @media (min-width: 600px) {
+        .sheet {
+          align-items: center;
+          justify-content: center;
+          padding: 2rem 1rem;
+        }
+
+        .sheet-panel {
+          width: 100%;
+          max-width: 34rem;
+          border-radius: 26px;
+          animation-name: rise;
+        }
+
+        .menu-sheet {
+          align-items: flex-end;
+          justify-content: flex-start;
+          /* Sous le bouton, au bord droit du contenu (.container). */
+          padding: calc(4.2rem + env(safe-area-inset-top))
+            calc(
+              max(0px, 50% - var(--container) / 2) + 1rem +
+                env(safe-area-inset-right)
+            )
+            0;
+        }
+
+        .menu-sheet .sheet-panel {
+          max-width: 23rem;
+        }
+      }
+
+      /* La page ne défile pas sous une feuille ouverte. */
+      .sheet-open,
+      .sheet-open body {
+        overflow: hidden;
+      }
+
+      .sheet-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.1rem 1rem 0.6rem 1.35rem;
+      }
+
+      .sheet-head h2 {
+        margin: 0;
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .sheet-body {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.2rem 1.35rem calc(1.5rem + env(safe-area-inset-bottom));
+      }
+
+      /* ===== Menu ===== */
+
+      .menu-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        padding: 0.7rem 0.6rem calc(0.7rem + env(safe-area-inset-bottom));
+      }
+
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.95rem;
+        width: 100%;
+        padding: 0.7rem 0.8rem;
+        border: none;
+        border-radius: 18px;
+        background: none;
+        font-family: inherit;
+        text-align: left;
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .menu-item:active,
+      a.news-item:active {
+        background: var(--glass);
+      }
+
+      @media (hover: hover) {
+        .menu-item:hover,
+        a.news-item:hover {
+          background: var(--glass);
+        }
+      }
+
+      .menu-icon {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 15px;
+        background: var(--tile);
+        color: #fff;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+      }
+
+      .menu-icon svg {
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+
+      .menu-text {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .menu-title {
+        display: block;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+
+      .menu-sub {
+        display: block;
+        margin-top: 0.1rem;
+        font-size: 0.85rem;
+        line-height: 1.3;
+        color: var(--muted);
+      }
+
+      .pill-new {
+        flex-shrink: 0;
+        min-width: 1.6rem;
+        padding: 0.2rem 0.45rem;
+        border-radius: 999px;
+        background: var(--new);
+        box-shadow: 0 0 10px var(--new);
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-align: center;
+        color: #062a24;
+      }
+
+      /* ===== Nouveautés ===== */
+
+      .news-day + .news-day {
+        margin-top: 1.1rem;
+      }
+
+      .news-date {
+        margin: 0.4rem 0 0.5rem;
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .news-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        padding: 0.55rem;
+        margin: 0 -0.55rem;
+        border-radius: 18px;
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .news-art {
+        flex-shrink: 0;
+        display: block;
+        width: 3.4rem;
+        height: 3.4rem;
+        overflow: hidden;
+        border-radius: 14px;
+        background: var(--bg, var(--glass));
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+      }
+
+      .news-text {
+        min-width: 0;
+        padding-top: 0.15rem;
+      }
+
+      .news-title {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .news-new {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--new);
+      }
+
+      .news-desc {
+        display: block;
+        margin-top: 0.2rem;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: #cfc8ec;
+      }
+
+      /* ===== Avis ===== */
+
+      .sheet-intro {
+        margin: 0 0 1.1rem;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0 0 1.1rem;
+        padding: 0;
+        border: none;
+      }
+
+      .chip {
+        position: relative;
+        cursor: pointer;
+      }
+
+      .chip input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .chip span {
+        display: block;
+        padding: 0.6rem 0.95rem;
+        border: 1px solid var(--edge);
+        border-radius: 999px;
+        background: var(--glass);
+        font-size: 0.92rem;
+        font-weight: 600;
+      }
+
+      .chip input:checked + span {
+        border-color: transparent;
+        background: var(--text);
+        color: var(--night);
+      }
+
+      .field {
+        display: block;
+        margin-bottom: 1.1rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .field-help {
+        font-weight: 400;
+        color: var(--muted);
+      }
+
+      .field input,
+      .field select,
+      .field textarea {
+        display: block;
+        width: 100%;
+        margin-top: 0.45rem;
+        padding: 0.8rem 0.95rem;
+        border: 1px solid var(--edge);
+        border-radius: 14px;
+        background: var(--glass);
+        /* 16 px au moins : en dessous, l'iPhone zoome sur le champ. */
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 400;
+        color: inherit;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      .field select {
+        padding-right: 2.6rem;
+        background: var(--glass)
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9a2cc' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+          no-repeat right 0.95rem center / 1.1rem;
+      }
+
+      .field textarea {
+        min-height: 7.5rem;
+        resize: vertical;
+        line-height: 1.45;
+      }
+
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        outline: none;
+        border-color: var(--focus);
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .field ::placeholder {
+        color: var(--muted);
+      }
+
+      .send-button {
+        display: block;
+        width: 100%;
+        min-height: 3.3rem;
+        border: none;
+        border-radius: 999px;
+        background: var(--warm);
+        font-family: inherit;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #2a1530;
+        cursor: pointer;
+      }
+
+      .send-button:active {
+        transform: scale(0.98);
+      }
+
+      .send-button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
+      .form-status {
+        margin: 0.8rem 0 0;
+        text-align: center;
+        color: #ffb3a7;
+      }
+
+      .form-status:empty {
+        display: none;
+      }
+
+      .fine-print {
+        margin: 1rem 0 0;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      /* Assez de marge au-dessus pour que la lueur de la coche ne soit pas
+         coupée par le bord du défilement. */
+      .thanks {
+        padding: 2.5rem 0 0.5rem;
+        text-align: center;
+      }
+
+      .thanks-mark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 5rem;
+        height: 5rem;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        background: var(--warm);
+        box-shadow: 0 0 40px rgba(255, 160, 90, 0.45);
+        color: #2a1530;
+      }
+
+      .thanks-mark svg {
+        width: 2.4rem;
+        height: 2.4rem;
+      }
+
+      .thanks h3 {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 800;
+      }
+
+      .thanks p {
+        margin: 0.4rem 0 1.6rem;
+        color: var(--muted);
+      }
+
       @media (prefers-reduced-motion: reduce) {
-        .game.entering {
+        .game.entering,
+        .sheet,
+        .sheet-panel {
           animation: none;
         }
       }
@@ -1029,23 +1509,27 @@
           <img src="icon-192x192.png" alt="" />
           <span id="game-count">Boîte à jeux</span>
         </p>
-        <button class="share-button" id="share" type="button">
+        <button
+          class="round-button menu-button"
+          id="menu-button"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="menu"
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2.2"
+            stroke-width="2.4"
             stroke-linecap="round"
-            stroke-linejoin="round"
             aria-hidden="true"
           >
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
-            <line x1="15.4" y1="6.5" x2="8.6" y2="10.5" />
+            <line x1="4" y1="7" x2="20" y2="7" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="17" x2="20" y2="17" />
           </svg>
-          Partager
+          <span class="visually-hidden">Menu</span>
+          <span class="news-dot" id="news-dot" hidden></span>
         </button>
       </div>
       <h1 class="wordmark" id="wordmark">Marzouzoute</h1>
@@ -1053,6 +1537,214 @@
     </header>
 
     <p class="toast" id="toast" role="status" hidden></p>
+
+    <dialog class="sheet menu-sheet" id="menu" aria-label="Menu">
+      <div class="sheet-panel" tabindex="-1" autofocus>
+        <div class="menu-list">
+          <button class="menu-item" type="button" data-action="nouveautes">
+            <span
+              class="menu-icon"
+              style="--tile: linear-gradient(140deg, #ff7cc0, #8c5cff)"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M10 2.5c.5 4.6 2.4 6.6 7 7-4.6.5-6.5 2.4-7 7-.5-4.6-2.4-6.5-7-7 4.6-.4 6.5-2.4 7-7z"
+                />
+                <path
+                  d="M18.5 13.5c.3 2.4 1.2 3.4 3.5 3.6-2.3.3-3.2 1.2-3.5 3.6-.3-2.4-1.2-3.3-3.5-3.6 2.3-.2 3.2-1.2 3.5-3.6z"
+                />
+              </svg>
+            </span>
+            <span class="menu-text">
+              <span class="menu-title">Quoi de neuf&nbsp;?</span>
+              <span class="menu-sub">
+                Les nouveaux jeux, et ce qui a changé
+              </span>
+            </span>
+            <span class="pill-new" id="news-count" hidden></span>
+          </button>
+          <button class="menu-item" type="button" data-action="partager">
+            <span
+              class="menu-icon"
+              style="--tile: linear-gradient(140deg, #3fdcc0, #1d82ac)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
+                <line x1="15.4" y1="6.5" x2="8.6" y2="10.5" />
+              </svg>
+            </span>
+            <span class="menu-text">
+              <span class="menu-title">Partager</span>
+              <span class="menu-sub">Envoie Marzouzoute à un ami</span>
+            </span>
+          </button>
+          <button class="menu-item" type="button" data-action="avis">
+            <span
+              class="menu-icon"
+              style="--tile: var(--warm)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z"
+                />
+                <path
+                  d="M12 12.6l-2.6-2.5a1.5 1.5 0 0 1 2.6-1.6 1.5 1.5 0 0 1 2.6 1.6z"
+                  fill="currentColor"
+                  stroke-width="1.2"
+                />
+              </svg>
+            </span>
+            <span class="menu-text">
+              <span class="menu-title">Écris-nous</span>
+              <span class="menu-sub">
+                Une idée, un souci, un jeu qui manque&nbsp;?
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="sheet" id="nouveautes" aria-labelledby="nouveautes-title">
+      <div class="sheet-panel" tabindex="-1" autofocus>
+        <div class="sheet-head">
+          <h2 id="nouveautes-title">Quoi de neuf&nbsp;?</h2>
+          <button class="round-button" type="button" data-close>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.6"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+            <span class="visually-hidden">Fermer</span>
+          </button>
+        </div>
+        <div class="sheet-body" id="news-list"></div>
+      </div>
+    </dialog>
+
+    <dialog class="sheet" id="avis" aria-labelledby="avis-title">
+      <div class="sheet-panel" tabindex="-1" autofocus>
+        <div class="sheet-head">
+          <h2 id="avis-title">Écris-nous</h2>
+          <button class="round-button" type="button" data-close>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.6"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+            <span class="visually-hidden">Fermer</span>
+          </button>
+        </div>
+        <div class="sheet-body">
+          <form id="avis-form">
+            <p class="sheet-intro">
+              Une idée, un souci, un jeu qui manque&nbsp;? On lit tous les
+              messages.
+            </p>
+            <fieldset class="chips">
+              <legend class="visually-hidden">C'est…</legend>
+              <label class="chip">
+                <input type="radio" name="category" value="idee" />
+                <span>Une idée</span>
+              </label>
+              <label class="chip">
+                <input type="radio" name="category" value="souci" />
+                <span>Un souci</span>
+              </label>
+              <label class="chip">
+                <input type="radio" name="category" value="jeu" />
+                <span>Un jeu qui manque</span>
+              </label>
+              <label class="chip">
+                <input type="radio" name="category" value="bravo" />
+                <span>J'adore&nbsp;!</span>
+              </label>
+            </fieldset>
+            <label class="field">
+              Quel jeu&nbsp;?
+              <select name="game" id="avis-game">
+                <option value="">Toute la boîte à jeux</option>
+              </select>
+            </label>
+            <label class="field">
+              Ton message
+              <textarea
+                name="message"
+                id="avis-message"
+                rows="5"
+                maxlength="5000"
+                required
+              ></textarea>
+            </label>
+            <label class="field">
+              Pour qu'on te réponde
+              <span class="field-help">(facultatif)</span>
+              <input
+                type="email"
+                name="email"
+                maxlength="200"
+                autocomplete="email"
+                placeholder="Ton adresse e-mail"
+              />
+            </label>
+            <button class="send-button" type="submit">Envoyer</button>
+            <p class="form-status" id="avis-status" role="status"></p>
+            <p class="fine-print">
+              Avec ton message partent le jeu choisi et le modèle de ton
+              appareil, pour retrouver un souci. Rien d'autre.
+            </p>
+          </form>
+          <div class="thanks" id="avis-thanks" hidden>
+            <span class="thanks-mark">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12.5l4.5 4.5L19 7.5" />
+              </svg>
+            </span>
+            <h3>Merci&nbsp;!</h3>
+            <p>Ton message est bien arrivé.</p>
+            <button class="send-button" type="button" data-close>Fermer</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
 
     <div class="search-bar" id="search-bar">
       <div class="container">
@@ -1140,7 +1832,7 @@
                 </g>
               </svg>
             </span>
-            <span class="game-name">b ou d ?</span>
+            <span class="game-name">b ou d&nbsp;?</span>
           </a>
           <a
             class="game"
@@ -1178,7 +1870,7 @@
                 </g>
               </svg>
             </span>
-            <span class="game-name">p ou q ?</span>
+            <span class="game-name">p ou q&nbsp;?</span>
           </a>
           <a
             class="game"
@@ -1219,7 +1911,7 @@
                 </g>
               </svg>
             </span>
-            <span class="game-name">ou ou on ?</span>
+            <span class="game-name">ou ou on&nbsp;?</span>
           </a>
           <a
             class="game"
@@ -1259,7 +1951,7 @@
                 </g>
               </svg>
             </span>
-            <span class="game-name">C doux ou C dur ?</span>
+            <span class="game-name">C doux ou C dur&nbsp;?</span>
           </a>
           <a
             class="game"
@@ -2572,6 +3264,219 @@
       </section>
     </main>
 
+    <!-- Les nouveautés, la plus récente en tête (cf. CLAUDE.md). « jeu » est
+         le data-game d'une vignette, qui prête son dessin et son nom ; sans
+         jeu, « titre » donne le nom et l'icône de Marzouzoute le dessin. -->
+    <script type="application/json" id="nouveautes-data">
+      [
+        {
+          "date": "2026-10-30",
+          "jeu": "demineur",
+          "texte": "Retirer un drapeau ne dévoile plus le chiffre caché dessous."
+        },
+        {
+          "date": "2026-10-28",
+          "titre": "La voix des jeux",
+          "texte": "29 mots sont mieux prononcés, comme « agneau » dans les mots mêlés."
+        },
+        {
+          "date": "2026-10-26",
+          "titre": "L'accueil",
+          "texte": "Une vitrine de nuit : chaque jeu a sa vignette, dans ses couleurs, et tes derniers jeux t'attendent en haut."
+        },
+        {
+          "date": "2026-10-25",
+          "jeu": "reading-game",
+          "texte": "Une séance du jour en trois parties, une étoile pour chacune, et un bouton pour revenir à l'accueil."
+        },
+        {
+          "date": "2026-10-25",
+          "jeu": "abalone",
+          "texte": "Le plateau flotte au bord d'un trou noir : une bille poussée dehors y tombe en spirale."
+        },
+        {
+          "date": "2026-10-25",
+          "jeu": "mastermind",
+          "texte": "Un laboratoire de potions : devine la recette secrète, goutte après goutte."
+        },
+        {
+          "date": "2026-10-25",
+          "jeu": "mot-le-plus-long",
+          "texte": "À la fin de la manche, chaque mot est expliqué. Et comme Sutom et Lettris, il connaît maintenant un vrai dictionnaire, sans noms propres ni mots inventés."
+        },
+        {
+          "date": "2026-10-23",
+          "jeu": "reading-game",
+          "texte": "Refait pour les lecteurs débutants : des phrases qui suivent les sons du CP, et une image cachée sous du papier bulle que chaque mot lu fait éclater."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "othello",
+          "texte": "Des soleils contre des lunes, et tu peux jouer contre l'ordinateur."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "sudoku",
+          "texte": "Des grilles de lumière, qui grandissent à mesure que tu progresses."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "complement-10",
+          "texte": "Le cadre de dix s'éteint quand tu connais tes amis de 10 par cœur."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "anagramme",
+          "texte": "Les lettres sont des billes de couleur autour d'un tourbillon de lumière."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "sutom",
+          "texte": "En pixel art, comme un jeu vidéo d'autrefois."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "timesup",
+          "texte": "Un sablier magique : le temps file en grains de lumière."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "tabou",
+          "texte": "Pop art : chaque carte est une case de BD."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "bataille-navale",
+          "texte": "Un écran de sonar pour traquer les bateaux."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "molkky",
+          "texte": "Un tableau d'affichage lumineux, comme au stade."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "qwirkle",
+          "texte": "Des tuiles qui dansent, à la mode des années 80."
+        },
+        {
+          "date": "2026-10-22",
+          "jeu": "qwirkle-score",
+          "texte": "Une feuille ivoire, l'encre et les tuiles."
+        },
+        {
+          "date": "2026-10-21",
+          "jeu": "b-ou-d",
+          "texte": "Des images dessinées à la place des emojis, et plus de mots. Pareil dans p ou q, ou ou on et C doux ou C dur."
+        },
+        {
+          "date": "2026-10-20",
+          "jeu": "c-doux-dur",
+          "texte": "Des ondes sonores, et l'aide de l'image se retire à mesure que tu progresses."
+        },
+        {
+          "date": "2026-10-20",
+          "jeu": "word-search-game",
+          "texte": "Plongée dans les fonds marins, et 13 nouvelles grilles, une par son."
+        },
+        {
+          "date": "2026-10-20",
+          "jeu": "lettris",
+          "texte": "Une salle d'arcade aux néons, comme dans les années 80."
+        },
+        {
+          "date": "2026-10-20",
+          "jeu": "puissance4",
+          "texte": "Des pions en gelée qui fusionnent."
+        },
+        {
+          "date": "2026-10-20",
+          "jeu": "memory",
+          "texte": "Des portails de lumière : les paires s'envolent en étincelles."
+        },
+        {
+          "date": "2026-10-20",
+          "jeu": "mot-le-plus-long",
+          "texte": "Un plateau de jeu télé."
+        },
+        {
+          "date": "2026-10-20",
+          "jeu": "ou-ou-on",
+          "texte": "Des bulles de BD qui chantent leur son."
+        },
+        {
+          "date": "2026-10-19",
+          "jeu": "2048",
+          "texte": "Des orbes de plasma qui fusionnent comme des gouttes."
+        },
+        {
+          "date": "2026-10-18",
+          "jeu": "p-ou-q",
+          "texte": "Des lettres de lumière."
+        },
+        {
+          "date": "2026-10-18",
+          "jeu": "b-ou-d",
+          "texte": "L'atelier de tampons."
+        },
+        {
+          "date": "2026-10-17",
+          "jeu": "tetris",
+          "texte": "En art populaire russe, comme sa musique, avec une manette à la Game Boy et un record par vitesse."
+        },
+        {
+          "date": "2026-10-17",
+          "jeu": "fracto-dingo",
+          "texte": "La pâtisserie des fractions."
+        },
+        {
+          "date": "2026-10-17",
+          "jeu": "demineur",
+          "texte": "Une affiche cachée sous les cases, et un record par niveau."
+        },
+        {
+          "date": "2026-10-17",
+          "jeu": "pendu",
+          "texte": "Des lettres aimantées sur la porte du frigo."
+        },
+        {
+          "date": "2026-10-17",
+          "jeu": "dames",
+          "texte": "Les Champignons contre les Myrtilles, griffonnés sur un cahier."
+        },
+        {
+          "date": "2026-10-12",
+          "jeu": "tetris",
+          "texte": "La musique et les bruitages."
+        },
+        {
+          "date": "2026-09-27",
+          "jeu": "abalone",
+          "texte": "Nouveau jeu ! Glisse le doigt pour choisir une rangée de billes."
+        },
+        {
+          "date": "2026-09-23",
+          "jeu": "puissance4",
+          "texte": "Tu peux jouer contre l'ordinateur."
+        },
+        {
+          "date": "2026-09-20",
+          "jeu": "tetris",
+          "texte": "Nouveau jeu ! Les pièces tombent, à toi de les caser."
+        },
+        {
+          "date": "2026-09-20",
+          "jeu": "molkky",
+          "texte": "Nouveau : pour compter les points d'une partie de Mölkky."
+        },
+        {
+          "date": "2026-09-20",
+          "titre": "L'accueil",
+          "texte": "Les jeux sont rangés par familles, et tu peux en chercher un."
+        }
+      ]
+    </script>
+
     <script>
       const cards = Array.from(document.querySelectorAll(".game"))
       document.getElementById("game-count").textContent = `${cards.length} jeux`
@@ -2634,8 +3539,14 @@
         let last = -1
         function wink() {
           setTimeout(wink, 2200 + Math.random() * 1400)
-          // Onglet caché ou titre hors de l'écran : on attend.
-          if (document.hidden || !heroVisible) return
+          // Onglet caché, titre hors de l'écran ou sous une feuille : on
+          // attend.
+          if (
+            document.hidden ||
+            !heroVisible ||
+            document.documentElement.classList.contains("sheet-open")
+          )
+            return
           let index
           do index = Math.floor(Math.random() * letters.length)
           while (index === last)
@@ -2730,6 +3641,18 @@
         }
       }
 
+      // Le dessin d'une vignette, en petit ailleurs (derniers jeux,
+      // nouveautés). Ses textes (les lettres de Sutom…) ne sont pas lus.
+      function gameArt(card, className) {
+        const art = document.createElement("span")
+        art.className = className
+        art.setAttribute("aria-hidden", "true")
+        const svg = card.querySelector(".game-art svg").cloneNode(true)
+        svg.setAttribute("preserveAspectRatio", "xMidYMid slice")
+        art.append(svg)
+        return art
+      }
+
       function renderRecents() {
         const recents = readRecents()
           .map((href) => cardByHref.get(href))
@@ -2740,24 +3663,18 @@
           link.className = "recent"
           link.href = card.getAttribute("href")
           link.dataset.game = card.dataset.game
-          const art = document.createElement("span")
-          art.className = "recent-art"
-          art.setAttribute("aria-hidden", "true")
-          const svg = card.querySelector(".game-art svg").cloneNode(true)
-          svg.setAttribute("preserveAspectRatio", "xMidYMid slice")
-          art.append(svg)
           const name = document.createElement("span")
           name.className = "recent-name"
           name.append(
             ...card.querySelector(".game-name").cloneNode(true).childNodes,
           )
-          link.append(art, name)
+          link.append(gameArt(card, "recent-art"), name)
           recentGrid.append(link)
         })
       }
 
       document.addEventListener("click", (event) => {
-        const link = event.target.closest(".game, .recent")
+        const link = event.target.closest("a[data-game]")
         if (link) rememberGame(link.getAttribute("href"))
       })
 
@@ -2859,6 +3776,46 @@
         searchBar.classList.toggle("stuck", !heroVisible)
       }).observe(document.querySelector(".hero"))
 
+      // ===== Menu =====
+      // Le menu, les nouveautés et « Écris-nous » sont des feuilles : des
+      // <dialog> modaux, que la touche Échap et le geste « retour » d'Android
+      // ferment. Un vieil iPad sans <dialog> (avant iOS 15.4) les ouvre à la
+      // main, en posant l'attribut open.
+      const menu = document.getElementById("menu")
+      const sheets = Array.from(document.querySelectorAll(".sheet"))
+
+      function openSheet(sheet) {
+        sheets.forEach(closeSheet)
+        if (sheet.showModal) sheet.showModal()
+        else sheet.setAttribute("open", "")
+        document.documentElement.classList.add("sheet-open")
+      }
+
+      function closeSheet(sheet) {
+        if (!sheet.hasAttribute("open")) return
+        if (sheet.close) return sheet.close()
+        sheet.removeAttribute("open")
+        sheet.dispatchEvent(new Event("close"))
+      }
+
+      sheets.forEach((sheet) => {
+        sheet.addEventListener("close", () => {
+          if (!sheets.some((other) => other.hasAttribute("open"))) {
+            document.documentElement.classList.remove("sheet-open")
+          }
+        })
+        // Le voile autour du panneau, c'est le <dialog> lui-même.
+        sheet.addEventListener("click", (event) => {
+          if (event.target === sheet || event.target.closest("[data-close]")) {
+            closeSheet(sheet)
+          }
+        })
+      })
+
+      document
+        .getElementById("menu-button")
+        .addEventListener("click", () => openSheet(menu))
+
       // ===== Partage =====
       // Feuille de partage native sur mobile (SMS, WhatsApp…), sinon on copie
       // le lien. On partage l'adresse exacte de la page affichée (…/index.html
@@ -2866,7 +3823,6 @@
       // partage avec l'icône qu'il connaît pour cette adresse, et pour une
       // adresse jamais visitée il prend une icône du même domaine
       // isc.github.io, celle de Bémol. Ça marche aussi dans les previews.
-      const shareButton = document.getElementById("share")
       const toast = document.getElementById("toast")
       let toastTimer = null
 
@@ -2877,7 +3833,7 @@
         toastTimer = setTimeout(() => (toast.hidden = true), 2500)
       }
 
-      shareButton.addEventListener("click", async () => {
+      async function share() {
         const url = location.origin + location.pathname
         const data = {
           title: "Marzouzoute",
@@ -2895,10 +3851,280 @@
         }
         try {
           await navigator.clipboard.writeText(url)
-          showToast("Lien copié !")
+          showToast("Lien copié !")
         } catch (error) {
           window.prompt("Copie ce lien pour partager Marzouzoute :", url)
         }
+      }
+
+      // ===== Nouveautés =====
+      // Les nouveautés s'ajoutent en tête : on retient combien on en a vu, et
+      // celles d'au-dessus sont nouvelles. Un nouveau venu n'a rien de neuf
+      // (pour lui, tout l'est). Quelqu'un qui jouait déjà avant qu'on les
+      // montre voit celles parues depuis une semaine avant leur arrivée.
+      const NEWS = JSON.parse(
+        document.getElementById("nouveautes-data").textContent,
+      )
+      const NEWS_SEEN_KEY = "marzouzoute-nouveautes-vues"
+      const NEWS_ARRIVAL = "2026-10-23"
+      const nouveautes = document.getElementById("nouveautes")
+      const newsList = document.getElementById("news-list")
+      const cardByGame = new Map(cards.map((card) => [card.dataset.game, card]))
+      let newsSeen = NaN
+
+      try {
+        newsSeen = parseInt(localStorage.getItem(NEWS_SEEN_KEY), 10)
+      } catch (error) {
+        // Stockage indisponible : on retombe sur un nouveau venu.
+      }
+      if (Number.isNaN(newsSeen) && readRecents().length) {
+        newsSeen = NEWS.filter((entry) => entry.date < NEWS_ARRIVAL).length
+      } else if (Number.isNaN(newsSeen)) {
+        markNewsSeen()
+      }
+      updateNewsBadges()
+
+      function unseenNews() {
+        return Math.max(0, NEWS.length - newsSeen)
+      }
+
+      function markNewsSeen() {
+        newsSeen = NEWS.length
+        try {
+          localStorage.setItem(NEWS_SEEN_KEY, newsSeen)
+        } catch (error) {
+          // Tant pis : elles resteront nouvelles.
+        }
+      }
+
+      function updateNewsBadges() {
+        const count = unseenNews()
+        const pill = document.getElementById("news-count")
+        pill.textContent = count
+        pill.setAttribute(
+          "aria-label",
+          count === 1 ? "1 nouveauté" : `${count} nouveautés`,
+        )
+        pill.hidden = count === 0
+        document.getElementById("news-dot").hidden = count === 0
+      }
+
+      // Espaces insécables devant ! ? : ; » et après « : la ponctuation ne
+      // part pas seule à la ligne, sans qu'on ait à les taper dans le JSON.
+      function frenchSpaces(text) {
+        return text
+          .replace(/ ([!?:;»])/g, " $1")
+          .replace(/« /g, "« ")
+      }
+
+      function gameName(card) {
+        const name = card.querySelector(".game-name").cloneNode(true)
+        const sub = name.querySelector(".game-sub")
+        if (sub) sub.remove()
+        const text = name.textContent.replace(/\s+/g, " ").trim()
+        return sub ? `${text} · ${sub.textContent}` : text
+      }
+
+      function formatDay(date) {
+        const day = new Date(date + "T12:00:00")
+        const options = { day: "numeric", month: "long" }
+        if (day.getFullYear() !== new Date().getFullYear()) {
+          options.year = "numeric"
+        }
+        return day.toLocaleDateString("fr-FR", options)
+      }
+
+      // Une nouveauté prend le dessin et le nom de la vignette de son jeu, et
+      // y mène.
+      function newsItem(entry, isNew) {
+        const card = entry.jeu && cardByGame.get(entry.jeu)
+        const item = document.createElement(card ? "a" : "div")
+        item.className = "news-item"
+        let art
+        if (card) {
+          item.href = card.getAttribute("href")
+          item.dataset.game = entry.jeu
+          art = gameArt(card, "news-art")
+        } else {
+          art = document.createElement("img")
+          art.className = "news-art"
+          art.src = "icon-192x192.png"
+          art.alt = ""
+        }
+        const title = document.createElement("span")
+        title.className = "news-title"
+        title.textContent = card ? gameName(card) : frenchSpaces(entry.titre)
+        if (isNew) {
+          const mark = document.createElement("span")
+          mark.className = "news-new"
+          mark.textContent = "Nouveau"
+          title.append(mark)
+        }
+        const desc = document.createElement("span")
+        desc.className = "news-desc"
+        desc.textContent = frenchSpaces(entry.texte)
+        const text = document.createElement("span")
+        text.className = "news-text"
+        text.append(title, desc)
+        item.append(art, text)
+        return item
+      }
+
+      // La liste se construit à la première ouverture. Aux suivantes, tout a
+      // déjà été vu : on retire seulement les marques « Nouveau ».
+      function openNews() {
+        if (newsList.firstChild) {
+          newsList.querySelectorAll(".news-new").forEach((mark) => mark.remove())
+        } else {
+          const unseen = unseenNews()
+          let day = null
+          let lastDate = null
+          NEWS.forEach((entry, index) => {
+            if (entry.date !== lastDate) {
+              lastDate = entry.date
+              day = document.createElement("section")
+              day.className = "news-day"
+              const heading = document.createElement("h3")
+              heading.className = "news-date"
+              heading.textContent = formatDay(entry.date)
+              day.append(heading)
+              newsList.append(day)
+            }
+            day.append(newsItem(entry, index < unseen))
+          })
+        }
+        openSheet(nouveautes)
+        newsList.scrollTop = 0
+        markNewsSeen()
+        updateNewsBadges()
+      }
+
+      // ===== Écris-nous =====
+      // Le message va dans une table Supabase du projet d'Arabesque, où l'on ne
+      // peut qu'ajouter, et un email prévient Ivan (outils/retours.sql). La
+      // clé est la clé publique du projet, faite pour être dans la page.
+      const FEEDBACK_URL =
+        "https://mtihhulokbhhvkomlmmk.supabase.co/rest/v1/marzouzoute_feedback"
+      const FEEDBACK_KEY = "sb_publishable_vIltAWqwpRCJ5_b6Wle3bA_dNgnMRz4"
+      const EMAIL_KEY = "marzouzoute-email"
+      const avis = document.getElementById("avis")
+      const avisForm = document.getElementById("avis-form")
+      const avisThanks = document.getElementById("avis-thanks")
+      const avisStatus = document.getElementById("avis-status")
+      const avisGame = document.getElementById("avis-game")
+      const avisMessage = document.getElementById("avis-message")
+      const avisSend = avisForm.querySelector(".send-button")
+      const PLACEHOLDERS = {
+        "": "Écris ici ce que tu veux nous dire…",
+        idee: "Raconte ton idée…",
+        souci: "Qu'est-ce qui ne marche pas ? À quel moment ?",
+        jeu: "Quel jeu aimerais-tu trouver ici ?",
+        bravo: "Qu'est-ce qui te plaît ?",
+      }
+
+      function updateAvisForm() {
+        const category = avisForm.elements.category.value
+        // Un jeu qui manque n'est pas dans la liste : le champ se retire, et
+        // FormData le laisse de côté.
+        avisGame.disabled = category === "jeu"
+        avisGame.parentElement.hidden = avisGame.disabled
+        avisMessage.placeholder = PLACEHOLDERS[category]
+      }
+
+      function openAvis() {
+        // Les jeux, par famille comme sur l'accueil, à la première ouverture.
+        if (avisGame.options.length === 1) {
+          categories.forEach((category) => {
+            const group = document.createElement("optgroup")
+            group.label = category
+              .querySelector(".category-title")
+              .textContent.trim()
+            category.querySelectorAll(".game").forEach((card) => {
+              group.append(new Option(gameName(card), card.dataset.game))
+            })
+            avisGame.append(group)
+          })
+        }
+        avisForm.hidden = false
+        avisThanks.hidden = true
+        avisStatus.textContent = ""
+        if (!avisForm.elements.email.value) {
+          try {
+            avisForm.elements.email.value = localStorage.getItem(EMAIL_KEY) || ""
+          } catch (error) {
+            // Stockage indisponible : le champ reste vide.
+          }
+        }
+        updateAvisForm()
+        openSheet(avis)
+      }
+
+      avisForm.addEventListener("change", updateAvisForm)
+
+      avisForm.addEventListener("submit", async (event) => {
+        event.preventDefault()
+        const fields = Object.fromEntries(new FormData(avisForm))
+        const message = fields.message.trim()
+        const email = fields.email.trim()
+        if (!message) {
+          avisMessage.value = ""
+          avisMessage.focus()
+          return
+        }
+        avisSend.disabled = true
+        avisSend.textContent = "Envoi…"
+        avisStatus.textContent = ""
+        try {
+          const response = await fetch(FEEDBACK_URL, {
+            method: "POST",
+            headers: {
+              apikey: FEEDBACK_KEY,
+              Authorization: `Bearer ${FEEDBACK_KEY}`,
+              "Content-Type": "application/json",
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify({
+              category: fields.category || null,
+              game: fields.game || null,
+              message,
+              email: email || null,
+              context: {
+                page: location.href,
+                standalone:
+                  matchMedia("(display-mode: standalone)").matches ||
+                  navigator.standalone === true,
+                user_agent: navigator.userAgent,
+                viewport: `${innerWidth}×${innerHeight}`,
+                locale: navigator.language,
+                recent_games: readRecents(),
+              },
+            }),
+          })
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          try {
+            localStorage.setItem(EMAIL_KEY, email)
+          } catch (error) {
+            // Tant pis : il faudra la retaper.
+          }
+          avisForm.reset()
+          avisForm.hidden = true
+          avisThanks.hidden = false
+        } catch (error) {
+          avisStatus.textContent =
+            "Le message n'est pas parti. Vérifie la connexion, puis réessaie !"
+        } finally {
+          avisSend.disabled = false
+          avisSend.textContent = "Envoyer"
+        }
+      })
+
+      // Chaque entrée du menu le referme, puis fait son action.
+      const MENU_ACTIONS = { nouveautes: openNews, partager: share, avis: openAvis }
+      menu.querySelectorAll("[data-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          closeSheet(menu)
+          MENU_ACTIONS[button.dataset.action]()
+        })
       })
     </script>
   </body>
