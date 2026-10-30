@@ -1,0 +1,259 @@
+# CLAUDE.md — conventions du projet
+
+**Marzouzoute** est une **boîte à jeux éducatifs en français** pour enfants,
+livrée comme **PWA statique, sans étape de build**. Chaque jeu est une page HTML
+autonome, reliée depuis la grille de `index.html`.
+
+Ce fichier décrit les conventions à respecter **impérativement** quand tu ajoutes
+ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
+(GitHub Pages) comme dans les previews de PR.
+
+## Architecture
+
+- **Un jeu = un fichier HTML autonome** à la racine du dépôt
+  (ex. `fracto-dingo.html`). Tout le CSS et le JS du jeu vivent **en ligne**
+  dans ce fichier (`<style>` et `<script>`), comme les jeux existants
+  (`sutom.html`, `b-ou-d.html`, `2048.html`…).
+- **Pas de framework, pas de bundler, pas de CDN, pas de dépendance externe.**
+  Le HTML/CSS/JS natif suffit. Le site doit fonctionner **hors-ligne**.
+- **Chemins relatifs uniquement.** Jamais de chemin commençant par `/`.
+  C'est critique : le site est servi sous un sous-dossier
+  (`/reading-practice/`, et `/reading-practice/previews/<branche>/` pour les
+  previews). Un chemin absolu casse tout.
+
+## Squelette d'un nouveau jeu
+
+```html
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f0f2f5" />
+    <title>Nom du jeu</title>
+    <style>
+      /* styles du jeu */
+    </style>
+  </head>
+  <body>
+    <!-- interface du jeu -->
+    <script>
+      // logique du jeu
+    </script>
+  </body>
+</html>
+```
+
+## Style & UX
+
+- **Barre d'état** : le `theme-color` de chaque page prend la couleur du haut
+  de son fond. Chrome sur Android colore la barre d'état avec, même dans la
+  PWA installée ; sinon elle garde la couleur du manifeste et jure avec le jeu.
+- **Barre du bas** (navigation Android) : elle, ne suit pas les pages. Chrome
+  la peint d'une seule couleur pour toute l'appli installée, celle du
+  manifeste (`background_color`, et `theme_color` à l'identique, comme l'a
+  établi kine-tracker). Elle est noire : sous un jeu sombre elle se fond, sous
+  un jeu clair elle passe pour la barre normale d'Android, alors qu'une bande
+  claire sous un jeu sombre fait bug. Une appli installée relit son manifeste
+  au plus une fois par jour : réinstaller pour voir un changement tout de suite.
+- **Pas de sélection de texte** : un appui long ne doit rien sélectionner ni
+  ouvrir de bulle. Le `body` prend `-webkit-user-select: none` et
+  `user-select: none` (Safari veut le préfixe), plus
+  `-webkit-touch-callout: none` s'il y a des images ou des liens. Les champs
+  de saisie restent sélectionnables, sans quoi l'iPad peut refuser la
+  saisie : `input, textarea { -webkit-user-select: text; user-select: text }`.
+- **Animations continues** : une animation infinie n'anime que `transform` ou
+  `opacity` (une lueur qui bat : un `::after` dont l'opacité varie), et jamais
+  de `filter: blur` sur un grand calque. Le reste se repeint à chaque image :
+  sur un vieil iPad, le sudoku devenait injouable au fil de la partie
+  (octobre 2026).
+- **Hauteur d'écran** : jamais `100vh` ni `100dvh` pour la hauteur de la page.
+  Dans l'appli installée sur Android, Chrome y compte la barre d'état, que la
+  page n'occupe pas. La page dépassait donc de ~58 px : elle défilait, et son
+  bas passait sous la barre du bas (vécu sur b ou d en octobre 2026, mesuré
+  sur les captures du Pixel). Une page à fond uni n'a besoin de rien : le
+  fond du `body` couvre de toute façon l'écran. Quand la page doit remplir
+  l'écran (fond en dégradé, conteneur plein écran), la hauteur vient des
+  pourcentages, qui suivent la zone vraiment visible :
+
+  ```css
+  html {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  body {
+    flex-grow: 1;
+  }
+  ```
+
+  Pour un conteneur plein écran, `body` passe en colonne
+  (`display: flex; flex-direction: column`) et le conteneur prend `flex: 1`
+  (avec `width: 100%` s'il est centré par `margin: 0 auto`). Si `body` est en
+  ligne, le conteneur prend `align-self: stretch` (tetris). `html` grandit
+  avec le contenu, donc un fond en dégradé couvre toute la page. Un écran de
+  hauteur fixe, qui ne défile jamais, enchaîne `height: 100%` sur `html`,
+  `body` et le conteneur (memory). `svh` n'aide pas : l'appli installée n'a
+  pas de barre de navigateur, donc `svh` y vaut `dvh`. Une taille de plateau
+  tirée de la hauteur se calcule plutôt sur la place qu'a pris le conteneur
+  (`clientHeight` en JS, comme tetris).
+
+- **Langue** : toute l'interface est en **français**.
+- **Couleurs** : accent principal `#4a90e2` (bleu), fond de page `#f0f2f5`.
+- **Mobile-first** : conçu d'abord pour le tactile. Grandes cibles tactiles,
+  pas de dépendance au survol. Restreins les effets de survol avec
+  `@media (hover: hover) { … }` (sinon ils « collent » sur tactile).
+- **Police** : `Arial` convient ; pour les jeux de **lecture / orthographe**,
+  privilégie la police adaptée dyslexie déjà présente :
+  ```css
+  @font-face {
+    font-family: "OpenDyslexicRegular";
+    src: url("OpenDyslexic-Regular.woff2") format("woff2");
+  }
+  ```
+- Public : enfants. Vocabulaire simple, retours visuels clairs, ton bienveillant.
+
+## Ressources partagées réutilisables (toutes en chemin relatif)
+
+- **Confettis de victoire** : ajoute `<canvas id="confetti"></canvas>` (en
+  position fixe, plein écran, `pointer-events: none`), inclus
+  `<script src="confetti.js"></script>` et appelle `showConfetti()` à la victoire.
+- **Garde anti-sortie** : `<script src="exit-guard.js"></script>` (dans le
+  `<head>`, pour être disponible dès l'exécution du script du jeu) demande
+  confirmation avant de quitter une partie en cours (utile pour le geste
+  « retour » sur mobile). À défaut d'indication, le garde s'arme à la première
+  interaction avec la page — trop grossier : **chaque jeu doit délimiter ses
+  parties explicitement** avec `if (window.ExitGuard) ExitGuard.setActive(…)` :
+  - `true` quand la partie est réellement engagée (premier coup joué, première
+    réponse saisie…), pas au simple affichage du plateau ;
+  - `false` au chargement / sur les écrans d'accueil, de choix de niveau et de
+    fin de partie, ainsi qu'à chaque nouvelle partie.
+
+  Sans ça, on demande « Une partie est en cours ? » sur l'écran des scores ou
+  après la victoire, et les enfants finissent par répondre au hasard.
+
+- **Listes de mots** : `fetch('dictionnaire.txt')` (les mots du français
+  qu'accepterait un joueur de Scrabble) ou `fetch('mots-enfants.txt')` (mots
+  adaptés aux enfants). `dictionnaire.txt` donne une forme par ligne, en
+  minuscules avec ses accents, sans tiret ni apostrophe, après trois lignes
+  de licence qui commencent par `#` : un jeu les ignore. Il se fabrique avec
+  `outils/dictionnaire.py`, depuis le lexique libre de Grammalecte : jamais
+  à la main. Un jeu qui montre de lui-même un mot tiré du dictionnaire
+  écarte les gros mots : `SWEAR_WORD`, dans `gros-mots.js` ; le joueur, lui,
+  peut taper n'importe quel mot qui existe.
+- **Explications de mots** : `explications/<lettre>.json` dit, pour chaque mot
+  de 3 à 9 lettres, sa forme accentuée, ce qu'il est (« le verbe creuser, au
+  présent, avec « ils » ou « elles » ») et la définition pour enfants des
+  mots peu courants ; `explications/enfants.json`, bien plus petit, en fait
+  autant pour les mots de `mots-enfants.txt`. Fabriqué par
+  `outils/explications.py`, d'après Grammalecte et `outils/definitions.json`
+  (définitions du Wiktionnaire réécrites par Claude, `outils/definitions.py`) :
+  jamais à la main. Un jeu les affiche avec
+  `<script src="explications.js"></script>` et
+  `Explications.show(el, mot)` (`{ kid: true }` pour un mot d'enfant) ; il
+  habille lui-même les paragraphes qu'elle met dans `el`. Un jeu qui
+  explique un mot tapé par l'enfant charge aussi `gros-mots.js`, avant :
+  un gros mot n'est pas expliqué.
+
+## Brancher le jeu dans l'accueil
+
+L'accueil est une vitrine : chaque jeu y a une vignette dans ses propres
+couleurs et sa propre police, avec un petit dessin de ce qui le caractérise
+(pas d'emoji). Pour un nouveau jeu, dans `index.html` :
+
+1. **La vignette**, dans la grille de sa famille (`data-category`) :
+
+   ```html
+   <a
+     class="game"
+     href="fracto-dingo.html"
+     data-game="fracto-dingo"
+     data-tags="calcul maths fractions nombres"
+   >
+     <span class="game-art" aria-hidden="true">
+       <svg viewBox="0 0 160 100"><!-- le dessin --></svg>
+     </span>
+     <span class="game-name">Fracto Dingo</span>
+   </a>
+   ```
+
+   La recherche lit le nom, la famille et les mots-clés de `data-tags`, pas
+   le texte du dessin. Un sous-titre va dans `<span class="game-sub">`
+   (« feuille de score »).
+
+2. **Son style**, un bloc `[data-game="…"]` qui reprend celui du jeu : `--bg`
+   (fond, dégradés permis), `--fg` (couleur du nom), `--font` (la police du
+   titre du jeu, avec son `@font-face` en tête de la page s'il n'y est pas),
+   et au besoin `--size`, `--weight`, `--spacing`, `--case`, `--shadow`,
+   `--accent` (couleur d'un `<b>` dans le nom).
+
+3. **Le dessin**, en SVG en ligne, sans `id` à lui : la vignette est clonée
+   dans « Tes derniers jeux ». Les dégradés, filtres et motifs partagés sont
+   dans le `<defs>` en tête du `<body>`. Le dessin peut déborder sur les côtés
+   (un store, un horizon) : la vignette le coupe.
+
+Le reste suit tout seul : le nombre de jeux, les derniers jeux, et la bannière
+pleine largeur d'une famille au nombre de jeux impair sur téléphone.
+
+## Nouveautés
+
+Le menu de l'accueil (le bouton rond en haut à droite) ouvre « Quoi de
+neuf ? ». Une pastille turquoise signale ce que le joueur n'a pas encore vu.
+**Toute PR qu'un joueur remarque** (nouveau jeu, nouvelle tenue, nouveau mode,
+souci réparé) ajoute une entrée **en tête** du bloc
+`<script type="application/json" id="nouveautes-data">` de `index.html` :
+
+```json
+{
+  "date": "2026-10-30",
+  "jeu": "demineur",
+  "texte": "Retirer un drapeau ne dévoile plus le chiffre caché dessous."
+}
+```
+
+- `jeu` est le `data-game` d'une vignette : l'entrée prend son dessin et son
+  nom, et y mène. Sans jeu (l'accueil, la voix…), `titre` donne le nom.
+- `texte` : une ou deux phrases pour un enfant ou un parent, en tutoyant. On
+  dit ce qui change pour le joueur, pas comment c'est fait. Les espaces
+  insécables devant « ! ? : » se posent tout seuls.
+- La date est celle du jour où l'on écrit l'entrée. Une même PR peut avoir
+  plusieurs entrées, une par jeu.
+- On n'efface pas d'anciennes entrées : la pastille compte les entrées déjà
+  vues, et celles d'au-dessus sont nouvelles.
+
+## Écris-nous (retours)
+
+Le menu ouvre aussi un formulaire de retours. Le message va dans la table
+`marzouzoute_feedback` du projet Supabase **d'Arabesque** (l'offre gratuite
+n'admet que deux projets), où la clé publique ne peut qu'ajouter des lignes.
+Un email prévient Ivan à chaque message. Le montage est dans
+`outils/retours.sql`. On lit les messages et on les range avec
+`outils/retours.py` (`voir`, `traite`, `rouvre`), qui passe par le jeton de la
+CLI Supabase. Un message traité se range avec `traite` une fois le souci
+vraiment réglé.
+
+## PWA / cache
+
+- Les nouvelles pages de jeu sont mises en cache **automatiquement** par le
+  service worker à la première visite (aucune modif de `service-worker.js`
+  nécessaire).
+- N'incrémente `CACHE_VERSION` dans `service-worker.js` **que** si tu modifies un
+  asset déjà précaché (la coquille) et veux forcer une purge immédiate.
+
+## Style de code
+
+- Prettier est configuré (`.prettierrc` : `tabWidth: 2`, pas de point-virgule).
+  Reste cohérent avec le fichier que tu édites.
+
+## Déploiement (pour info)
+
+- Push sur `main` → publication sur GitHub Pages.
+- Chaque PR → preview isolée déployée automatiquement, avec lien posté en
+  commentaire. C'est cette preview qui sert à tester un nouveau jeu avant merge.
+- **Tout workflow qui écrit sur `gh-pages` rejoint le groupe de concurrence
+  `gh-pages` avec `queue: max`** (donc `cancel-in-progress: false`). Sans la
+  file, GitHub ne garde qu'un run en attente par groupe et annule l'autre en
+  silence : au merge d'une PR, déploiement et suppression de la preview
+  arrivent ensemble, et le déploiement pouvait disparaître. La file ne garantit
+  l'ordre qu'au mieux : le déploiement publie donc la tête de main du moment,
+  et n'est vert qu'une fois le site en train de la servir (`/.deploy-sha`).
