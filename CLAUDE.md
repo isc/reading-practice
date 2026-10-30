@@ -188,6 +188,43 @@ couleurs et sa propre police, avec un petit dessin de ce qui le caractérise
 Le reste suit tout seul : le nombre de jeux, les derniers jeux, et la bannière
 pleine largeur d'une famille au nombre de jeux impair sur téléphone.
 
+## Nouveautés
+
+Le menu de l'accueil (le bouton rond en haut à droite) ouvre « Quoi de
+neuf ? ». Une pastille turquoise signale ce que le joueur n'a pas encore vu.
+**Toute PR qu'un joueur remarque** (nouveau jeu, nouvelle tenue, nouveau mode,
+souci réparé) ajoute une entrée **en tête** du bloc
+`<script type="application/json" id="nouveautes-data">` de `index.html` :
+
+```json
+{
+  "date": "2026-10-30",
+  "jeu": "demineur",
+  "texte": "Retirer un drapeau ne dévoile plus le chiffre caché dessous."
+}
+```
+
+- `jeu` est le `data-game` d'une vignette : l'entrée prend son dessin et son
+  nom, et y mène. Sans jeu (l'accueil, la voix…), `titre` donne le nom.
+- `texte` : une ou deux phrases pour un enfant ou un parent, en tutoyant. On
+  dit ce qui change pour le joueur, pas comment c'est fait. Les espaces
+  insécables devant « ! ? : » se posent tout seuls.
+- La date est celle du jour où l'on écrit l'entrée. Une même PR peut avoir
+  plusieurs entrées, une par jeu.
+- On n'efface pas d'anciennes entrées : la pastille compte les entrées déjà
+  vues, et celles d'au-dessus sont nouvelles.
+
+## Écris-nous (retours)
+
+Le menu ouvre aussi un formulaire de retours. Le message va dans la table
+`marzouzoute_feedback` du projet Supabase **d'Arabesque** (l'offre gratuite
+n'admet que deux projets), où la clé publique ne peut qu'ajouter des lignes.
+Un email prévient Ivan à chaque message. Le montage est dans
+`outils/retours.sql`. On lit les messages et on les range avec
+`outils/retours.py` (`voir`, `traite`, `rouvre`), qui passe par le jeton de la
+CLI Supabase. Un message traité se range avec `traite` une fois le souci
+vraiment réglé.
+
 ## PWA / cache
 
 - Les nouvelles pages de jeu sont mises en cache **automatiquement** par le
