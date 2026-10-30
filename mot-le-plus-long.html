@@ -1318,6 +1318,7 @@
     </main>
 
     <script src="voix.js"></script>
+    <script src="gros-mots.js"></script>
     <script src="explications.js"></script>
     <script src="confetti.js"></script>
     <script>
@@ -1383,70 +1384,6 @@
           .replace(/Œ/g, "OE")
           .replace(/Æ/g, "AE")
       }
-
-      // Les gros mots restent jouables, mais un tirage dont le plus long mot
-      // possible en est un est refait : le jeu le montrerait en fin de manche
-      // (il a montré ENCULE, octobre 2026). Chaque motif prend un mot entier,
-      // sans accents, avec toutes ses formes, et épargne ses voisins
-      // innocents : SALOPETTE, PISSENLIT, BRANLANT (une dent), BRANLEBAS,
-      // BORDELAIS, DECONNECTER, TAPINOIS, TRINGLE, TRINGLOT, FOUTOU (un
-      // plat), PINASSE, BAISER (le nom). Les gros mots du dictionnaire ont
-      // été relus un à un, ainsi que ses mots marqués péjoratifs ou
-      // argotiques. Les mots d'enfants (CACA, ZIZI) et le vocabulaire neutre
-      // (SEXE, CHATTE, PEDALE, BATARD) restent.
-      // Les formes d'un verbe en -er, hors infinitif, et ses noms en -eur.
-      const ER_FORMS =
-        "A|AI|AIENT|AIS|AIT|AMES|AS|ASSE|ASSENT|ASSES|ASSIEZ|ASSIONS|AT|ATES" +
-        "|E|EE|EES|ENT|ERA|ERAI|ERAIENT|ERAIS|ERAIT|ERAS|ERENT|EREZ|ERIEZ|ERIONS" +
-        "|ERONS|ERONT|ES|EUR|EURS|EUSE|EUSES|EZ|IEZ|IONS|ONS"
-      const SWEAR_WORD = new RegExp(
-        "^(?:" +
-          [
-            // Grossièretés
-            "ENCUL.*",
-            "CONS?|CONNES?|CONN?ARD(E|ES|S)?|CONN?ASSES?|CONNERIES?|CONNEAUX?|CONNEMENT",
-            "DECONN(?!ECT|EX).*",
-            "CULS?",
-            "COUILL.*",
-            "BITES?|BITT.*",
-            "PUTES?|PUTAINS?|PUTASS.*",
-            "SALOP(?!ETTE).*|SALAUD(E|ES|S)?|SALIGAUD.*",
-            "(EM|DE)?MERD.*",
-            `(CON)?CHI(${ER_FORMS}|ANTE?S?|ER|ERIES?|URES?)|CHIOTTES?|CHIARDS?|CHIATIQUES?`,
-            "NIQU.*",
-            "FOUT(?!OUS?$).*",
-            "BORDELS?|BORDELIQUES?|BORDELIS.*|BOXON.*",
-            "ENFOIRE.*",
-            "PISS(?!ENLIT).*",
-            "DEGUEUL.*|DEGUEUS?",
-            "INFOUT.*|COMPISS.*|IMBITABLES?|PUTACLICS?|QUEUTARDS?|CHTOUILLES?|CAGU.*",
-            `BIT(${ER_FORMS}|ER)`,
-            "FIONS?",
-            "GARCES?|CATINS?|PETASSES?|POU?FFIASSES?|GROGNASSES?",
-            // Vocabulaire sexuel cru (BAISER, le nom, reste)
-            `BAIS(${ER_FORMS}|ANT)|BAISABLES?|BAISOT.*`,
-            "BRANL(?!ANT|EMENT|EBAS).*",
-            "CHIBRE|ZOB|NICHONS?|NIBARDS?|ROTOPLOTS|GODES?|GODEMICHES?|PARTOU[SZ].*",
-            "BIROUTES?|BURNES?|ROUPETTES?|FOUFOUNES?",
-            `PIN(?!ASSES?$)(${ER_FORMS}|ER)`, // la pinasse est un bateau
-            "TRINGL(?!ES?$|OTS?$).*|TAPIN(?!OIS).*",
-            "PORNO.*|SODOM.*|MASTURB.*|FELLATIONS?|CUNNILINGUS|ORGASMES?|EJACUL.*",
-            "COIT(?!ES?$).*", // coite : « rester coi »
-            "ANULINGUS|BANDAISONS?|CYPRINES?|CLITOS?|CHAUDASSES?|COUCHERIES?|DOIGTAGES?|NYMPHOS?",
-            "DECALOTT.*|DEPUCEL.*|DEVIRGIN.*|ENCLOQU.*|ENGROSS.*|ENTUB.*|ENVIAND.*|FORNIQU.*",
-            "GOUGNOT.*|PIGNOL.*|HARDEU(R|RS|SE|SES)|MICHETONS?|RADEUSES?|ROULURES?|ROUSTONS",
-            "PALUCH(?!ES?$).*", // la paluche, c'est la main
-            "PEDOPHIL.*|ZOOPHIL.*|NECROPHIL.*|INCEST.*|VIOLEUR.*|VIOLEUSES?",
-            // Injures racistes ou homophobes
-            "PEDES?|PEDERA.*|GOUINES?|GOUINASSES?|GOUDOUS?|FIOTTES?|TAFIOLES?",
-            "TANTOU[SZ]ES?|TARLOU[SZ]ES?|TRAVELOS?|GOGOLS?|SIDAIQUES?",
-            "NEGRES?|NEGRESS.*|NEGRILL.*|NEGRO.*|YOUPIN.*|BOUGNOUL.*|BICOTS?|CHINETOQUES?|BAMBOULAS?",
-            "BOCHES?|RITALS?|POLACKS?|CHLEUHS?|SCHLEUS?|FRIDOLINS?|FRITZ|AMERLOQUES?|ANGLICHES?",
-            "BEURETTES?|CROUILL.*|DYKES?|EMPAFFES?|FEMINAZIS?|GITONS?|LOPETTES?|METEQUES?",
-            "MORICAUDS?|MOU(K|QU)ERES?|ROMANOS?|NEGRERIES?|NEGRIF.*|BLEDARDS?",
-          ].join("|") +
-          ")$",
-      )
 
       async function loadWords() {
         const res = await fetch("dictionnaire.txt")
@@ -1967,11 +1904,13 @@
         if (window.ExitGuard) ExitGuard.setActive(false)
         // L'audio reste éveillé le temps de la manche, pour le tic-tac.
         Voice.wake((ROUND_SECONDS + 4) * 1000)
+        // Le plus long mot possible sera montré en fin de manche : jamais un
+        // gros mot (gros-mots.js).
         do {
           drawnLetters = drawLetters()
           longestPossible = findLongestPossible() || ""
         } while (SWEAR_WORD.test(longestPossible))
-        if (longestPossible) loadExplanations(longestPossible[0])
+        Explications.preload(longestPossible)
         placedTiles = []
         foundWords = []
         bestFound = null
@@ -2013,8 +1952,10 @@
         showOnBoard($("theirsBoard"), longest)
         $("theirsLen").textContent = longest.length
         $("theirs").classList.toggle("hidden", !longest || champion)
-        explain($("mineExplain"), bestFound ? bestFound.word : "")
-        explain($("theirsExplain"), champion ? "" : longest)
+        // Ce qu'ils sont (explications.js) ; un gros mot tapé par l'enfant
+        // reste accepté, mais sans explication.
+        Explications.show($("mineExplain"), bestFound ? bestFound.word : "")
+        Explications.show($("theirsExplain"), champion ? "" : longest)
         $("verdict").classList.toggle("hidden", !champion)
         renderFound($("endFound"))
         $("endFound").classList.toggle("hidden", foundWords.length === 0)
@@ -2028,13 +1969,6 @@
             reducedMotion() ? 0 : 600,
           )
         }
-      }
-
-      // ===== Les explications de fin de manche (explications.js) =====
-
-      // Un gros mot tapé par l'enfant reste accepté, mais sans explication.
-      function explain(el, word) {
-        Explications.show(el, word && !SWEAR_WORD.test(word) ? word : "")
       }
 
       // ===== Les scores =====

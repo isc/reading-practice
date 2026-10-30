@@ -1127,6 +1127,7 @@
     </style>
     <script src="exit-guard.js"></script>
     <script src="voix.js"></script>
+    <script src="gros-mots.js"></script>
     <script src="explications.js"></script>
   </head>
   <body>
@@ -2165,6 +2166,10 @@
           t.style.setProperty("--d", `${Math.random() * 0.4}s`)
           t.classList.add("off")
         })
+        // L'écran de fin expliquera d'abord le plus long mot trouvé.
+        Explications.preload(
+          [...foundWords].reduce((a, w) => (w.length > a.length ? w : a), ""),
+        )
         setTimeout(
           () => showEnd(isNewBest && score > 0),
           reducedMotion ? 300 : 1100,

@@ -1,13 +1,14 @@
 """Les définitions pour enfants des mots peu courants des jeux de mots : outils/definitions.json,
-{lemme: définition}, que outils/explications.py range ensuite dans explications/.
+{lemme: [nature, définition]}, que outils/explications.py range ensuite dans explications/.
 
 Les sens viennent du Wiktionnaire (extraction de kaikki.org, licence CC BY-SA 4.0) ; Claude les
 réécrit pour un enfant de CM1, sans rien inventer, par lots de 40 mots. Il passe par Claude Code en
 ligne de commande (claude -p), donc par l'abonnement d'Ivan, pas par une clé d'API payante. Un mot que
 Claude juge déplacé pour un enfant (grossier, sexuel, injurieux) reste sans définition : null dans le
 fichier. Un mot pour lequel Claude n'a rien rendu vaut "" et sera redemandé au passage suivant, comme
-les mots nouveaux ; les autres sont gardés. Le fichier est réécrit après chaque lot : un arrêt en route
-ne perd rien.
+les mots nouveaux et ceux dont outils/explications.py donne une autre nature que celle de leur
+définition (pirate, défini comme adjectif avant d'être « nom ou adjectif ») ; les autres sont gardés.
+Le fichier est réécrit après chaque lot : un arrêt en route ne perd rien.
 
 Sur charras :
     curl -LO https://kaikki.org/frwiktionary/raw-wiktextract-data.jsonl.gz
@@ -149,8 +150,9 @@ def demander(lot, voulues, sens):
 def ecrire(definitions):
     """Réécrit definitions.json d'un coup : un arrêt pendant l'écriture ne le tronque pas."""
     provisoire = explications.DEFINITIONS.with_suffix(".tmp")
-    texte = json.dumps(dict(sorted(definitions.items())), ensure_ascii=False, indent=0)
-    provisoire.write_text(texte + "\n", encoding="utf-8")
+    # Une ligne par mot : "pirate": ["nom ou adjectif", "un bandit des mers…"]
+    lignes = (json.dumps({l: v}, ensure_ascii=False)[1:-1] for l, v in sorted(definitions.items()))
+    provisoire.write_text("{\n" + ",\n".join(lignes) + "\n}\n", encoding="utf-8")
     os.replace(provisoire, explications.DEFINITIONS)
 
 
@@ -160,10 +162,15 @@ def main():
     arguments.add_argument("--essai", type=int, default=0, help="définir N mots au hasard, sans rien écrire")
     options = arguments.parse_args()
 
-    _, voulues = explications.analyser()
+    _, _, voulues = explications.analyser()
     connues = explications.lire_definitions()
-    # Les mots jamais demandés, et ceux pour lesquels Claude n'a rien rendu ; pas ceux qu'il a écartés.
-    manquants = {m: n for m, n in voulues.items() if connues.get(m, "") == ""}
+    # Les mots jamais demandés, ceux pour lesquels Claude n'a rien rendu et ceux qui ont changé de nature ;
+    # pas ceux qu'il a écartés.
+    manquants = {}
+    for mot, nature in voulues.items():
+        ancienne, definition = connues.get(mot, (None, ""))
+        if definition == "" or (definition is not None and ancienne != nature):
+            manquants[mot] = nature
     sens = sens_du_wiktionnaire(options.wiktionnaire, manquants) if manquants else {}
     a_faire = sorted(sens)
     if options.essai:
@@ -179,17 +186,17 @@ def main():
         futurs = [pool.submit(demander, lot, voulues, sens) for lot in lots]
         for n, futur in enumerate(as_completed(futurs), 1):
             nouvelles = futur.result()
-            connues.update(nouvelles)
+            connues.update({m: [voulues[m], d] for m, d in nouvelles.items()})
             ecartes += [m for m, d in nouvelles.items() if d is None]
             ecrire(connues)
             print(f"lot {n}/{len(lots)}", flush=True)
     finally:
         # Sur Ctrl-C, les lots pas encore partis ne partent pas.
         pool.shutdown(cancel_futures=True)
-    valeurs = list(connues.values())
+    valeurs = [d for _, d in connues.values()]
     vides, ecartees = valeurs.count(""), valeurs.count(None)
     print(f"definitions.json : {len(valeurs) - vides - ecartees} définitions, {vides} vides, {ecartees} écartées")
-    # Un mot que Claude juge déplacé peut être un gros mot que SWEAR_WORD ne connaît pas encore.
+    # Un mot que Claude juge déplacé peut être un gros mot que SWEAR_WORD (gros-mots.js) ne connaît pas encore.
     print("Écartés, à comparer avec SWEAR_WORD :", " ".join(sorted(ecartes)))
 
 

@@ -139,8 +139,8 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   de licence qui commencent par `#` : un jeu les ignore. Il se fabrique avec
   `outils/dictionnaire.py`, depuis le lexique libre de Grammalecte : jamais
   à la main. Un jeu qui montre de lui-même un mot tiré du dictionnaire
-  écarte les gros mots (cf. `SWEAR_WORD` dans le mot le plus long) ; le
-  joueur, lui, peut taper n'importe quel mot qui existe.
+  écarte les gros mots : `SWEAR_WORD`, dans `gros-mots.js` ; le joueur, lui,
+  peut taper n'importe quel mot qui existe.
 - **Explications de mots** : `explications/<lettre>.json` dit, pour chaque mot
   de 3 à 9 lettres, sa forme accentuée, ce qu'il est (« le verbe creuser, au
   présent, avec « ils » ou « elles » ») et la définition pour enfants des
@@ -151,7 +151,9 @@ ou modifies un jeu, pour que tout reste cohérent et fonctionne en production
   jamais à la main. Un jeu les affiche avec
   `<script src="explications.js"></script>` et
   `Explications.show(el, mot)` (`{ kid: true }` pour un mot d'enfant) ; il
-  habille lui-même les paragraphes qu'elle met dans `el`.
+  habille lui-même les paragraphes qu'elle met dans `el`. Un jeu qui
+  explique un mot tapé par l'enfant charge aussi `gros-mots.js`, avant :
+  un gros mot n'est pas expliqué.
 
 ## Brancher le jeu dans l'accueil
 

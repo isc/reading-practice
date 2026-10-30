@@ -50,8 +50,8 @@ MOTS_DE_GRAMMAIRE = {
     "detpos": "un déterminant",
     "detdem": "un déterminant",
     "detind": "un déterminant",
-    "cjco": "une conjonction",
     "detneg": "un déterminant",
+    "cjco": "une conjonction",
     "cjsub": "une conjonction",
     "adv": "un adverbe",
     "advint": "un adverbe",
@@ -110,15 +110,22 @@ def phrase(forme, lemme, etiquettes, feminins):
     return {"adv": "un adverbe", "interj": "une interjection", "nb": "un nombre"}.get(nature)
 
 
-def nature_lisible(etiquettes):
-    """La nature d'un lemme, pour qui écrira sa définition."""
-    if etiquettes[0].startswith("v"):
+def natures_de(etiquettes):
+    """Les natures d'une ligne du lexique : {"v"}, {"nom", "adj"}, {"adv"}…"""
+    return {"v" if etiquettes[0].startswith("v") else etiquettes[0]} | ({"adj"} & set(etiquettes))
+
+
+def nature_lisible(natures):
+    """La nature d'un lemme, d'après toutes ses lignes du lexique, pour qui écrira sa définition : chagrin
+    est un nom et un adjectif, même si chacune de ses formes ne le dit pas."""
+    if "v" in natures:
         return "verbe"
-    if etiquettes[0] == "nom" and "adj" in etiquettes:
+    if {"nom", "adj"} <= natures:
         return "nom ou adjectif"
-    if "adj" in etiquettes:
-        return "adjectif"
-    return {"nom": "nom", "adv": "adverbe", "interj": "interjection"}.get(etiquettes[0], "mot")
+    for etiquette, nature in (("adj", "adjectif"), ("nom", "nom"), ("adv", "adverbe"), ("interj", "interjection")):
+        if etiquette in natures:
+            return nature
+    return "mot"
 
 
 def rang(etiquettes):
@@ -154,13 +161,19 @@ def fusionner(entrees):
 
 
 def analyser():
-    """{MOT: (forme, phrase, lemme à définir ou None)} et {lemme à définir: sa nature}."""
-    entrees = list(lexique())
+    """{MOT: (forme, phrase, lemme à définir ou None)} pour le dictionnaire, de même pour les mots d'enfants,
+    et {lemme à définir: sa nature}."""
+    entrees = list(fusionner(list(lexique())))
     # Grammalecte répartit les occurrences d'une forme entre ses analyses : « portes » compte 2,8 millions
     # comme pluriel de porte, 1,5 million comme verbe porter. Une analyse répétée (présent, impératif)
-    # porte le même nombre : on ne le compte qu'une fois par lemme.
+    # porte le même nombre : on ne le compte qu'une fois par forme et par lemme.
+    par_paire = defaultdict(int)
+    natures_du_lemme = defaultdict(set)
+    for e in entrees:
+        par_paire[e.forme, e.lemme] = max(par_paire[e.forme, e.lemme], e.occurrences)
+        natures_du_lemme[e.lemme] |= natures_de(e.etiquettes)
     par_lemme, par_forme = defaultdict(int), defaultdict(int)
-    for (forme, lemme), n in {(e.forme, e.lemme): e.occurrences for e in entrees}.items():
+    for (forme, lemme), n in par_paire.items():
         par_lemme[lemme] += n
         par_forme[forme] += n
     # Les noms et adjectifs féminins par nature (« auge ») : leur pluriel n'est pas « le féminin de ».
@@ -170,30 +183,41 @@ def analyser():
 
     # De 3 à 9 lettres : MIN_LENGTH et TILE_COUNT du mot le plus long. Et les mots d'enfants, plus longs
     # parfois (grenouille), que tirent Sutom et le pendu.
-    enfants = mots_enfants()
+    orthographes = mots_enfants()
     par_mot = defaultdict(list)
-    for e in fusionner(entrees):
-        if 3 <= len(mot := normalise(e.forme)) <= 9 or mot in enfants:
+    for e in entrees:
+        if 3 <= len(mot := normalise(e.forme)) <= 9 or mot in orthographes:
             par_mot[mot].append(e)
 
-    mots, a_definir = {}, {}
-    for mot, analyses in par_mot.items():
-        # La forme la plus courante, PECHE se lit pêche ; à égalité, celle du lemme le plus courant
-        # (brûlasses plutôt que brulasses), puis la première du lexique.
-        forme = max(analyses, key=lambda e: (par_forme[e.forme], par_lemme[e.lemme])).forme
+    a_definir = {}
+
+    def expliquer(analyses, forme):
         analyses = sorted((e for e in analyses if e.forme == forme), key=lambda e: (-e.occurrences, rang(e.etiquettes)))
         retenues = list(islice(distinctes(forme, analyses, feminins), 2))
         # Une seconde analyse seulement si elle n'est pas anecdotique (« portes » : porte, porter).
         if len(retenues) == 2 and retenues[1][1].occurrences < retenues[0][1].occurrences / 5:
             del retenues[1:]
         if not retenues:
-            continue
+            return None
         premiere = retenues[0][1]
         lemme = premiere.lemme if par_lemme[premiere.lemme] < COURANT else None
         if lemme:
-            a_definir[lemme] = nature_lisible(premiere.etiquettes)
-        mots[mot] = (forme, ", ou ".join(t for t, _ in retenues), lemme)
-    return mots, a_definir
+            a_definir[lemme] = nature_lisible(natures_du_lemme[lemme])
+        return forme, ", ou ".join(t for t, _ in retenues), lemme
+
+    mots = {}
+    for mot, analyses in par_mot.items():
+        # La forme la plus courante, PECHE se lit pêche ; à égalité, celle du lemme le plus courant
+        # (brûlasses plutôt que brulasses), puis la première du lexique.
+        forme = max(analyses, key=lambda e: (par_forme[e.forme], par_lemme[e.lemme])).forme
+        if explication := expliquer(analyses, forme):
+            mots[mot] = explication
+    # Un mot d'enfant garde son orthographe : le pendu fait deviner « embrouille », pas « embrouillé ».
+    enfants = {}
+    for mot, orthographe in orthographes.items():
+        if explication := expliquer(par_mot[mot], orthographe) or mots.get(mot):
+            enfants[mot] = explication
+    return mots, enfants, a_definir
 
 
 def lire_definitions():
@@ -201,37 +225,40 @@ def lire_definitions():
 
 
 def mots_enfants():
-    """Les mots de mots-enfants.txt, sans accents : ceux d'une seule pièce."""
+    """{MOT: orthographe} pour les mots de mots-enfants.txt d'une seule pièce."""
     lignes = (RACINE / "mots-enfants.txt").read_text(encoding="utf-8").splitlines()
-    return {normalise(m) for m in lignes if m and " " not in m}
+    return {normalise(m): m for m in lignes if m and " " not in m}
 
 
 def ecrire(nom, des_mots, definitions):
-    lemmes = {e[2] for e in des_mots.values() if len(e) > 2}
-    fichier = {"licence": LICENCE, "mots": des_mots, "definitions": {l: definitions[l] for l in sorted(lemmes)}}
+    """Écrit explications/<nom>.json ; rend le nombre de ses mots qui ont une définition."""
+    lemmes = [e[2] for e in des_mots.values() if len(e) > 2]
+    fichier = {"licence": LICENCE, "mots": des_mots, "definitions": {l: definitions[l] for l in sorted(set(lemmes))}}
     texte = json.dumps(fichier, ensure_ascii=False, separators=(",", ":"))
     (RACINE / "explications" / f"{nom}.json").write_text(texte, encoding="utf-8")
+    return len(lemmes)
 
 
 def main():
-    mots, _ = analyser()
-    definitions = lire_definitions()
-    explications = {}
-    for mot in sorted(mots):
-        forme, texte, lemme = mots[mot]
-        explications[mot] = [forme, texte] + ([lemme] if definitions.get(lemme) else [])
+    mots, enfants, _ = analyser()
+    # Sans leur nature, et sans les mots vides ou écartés.
+    definitions = {lemme: d for lemme, (_, d) in lire_definitions().items() if d}
+
+    def expliques(des_mots):
+        return {
+            mot: [forme, texte] + ([lemme] if lemme in definitions else [])
+            for mot, (forme, texte, lemme) in sorted(des_mots.items())
+        }
+
     par_lettre = defaultdict(dict)
-    for mot, explication in explications.items():
+    for mot, explication in expliques(mots).items():
         par_lettre[mot[0]][mot] = explication
     (RACINE / "explications").mkdir(exist_ok=True)
-    for lettre, des_mots in par_lettre.items():
-        ecrire(lettre, des_mots, definitions)
-    definis = sum(len(e) > 2 for e in explications.values())
+    definis = sum(ecrire(lettre, des_mots, definitions) for lettre, des_mots in par_lettre.items())
     print(f"explications/ : {len(mots)} mots, {definis} avec définition")
     # Sutom, le pendu et l'anagramme ne montrent que des mots d'enfants : un petit fichier leur suffit.
-    enfants = {m: explications[m] for m in sorted(mots_enfants()) if m in explications}
-    ecrire("enfants", enfants, definitions)
-    print(f"explications/enfants.json : {len(enfants)} mots, {sum(len(e) > 2 for e in enfants.values())} avec définition")
+    enfants = expliques(enfants)
+    print(f"explications/enfants.json : {len(enfants)} mots, {ecrire('enfants', enfants, definitions)} avec définition")
 
 
 if __name__ == "__main__":
