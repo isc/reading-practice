@@ -582,7 +582,7 @@
 
       /* ===== Le clavier, ou la fin de partie à sa place ===== */
       .dock {
-        height: var(--dock);
+        min-height: var(--dock);
         display: grid;
       }
 
@@ -719,6 +719,32 @@
         --lo: var(--blue-lo);
       }
 
+      /* Sous le mot, ce qu'il est, et sa définition s'il est peu courant. */
+      .end .explain {
+        max-width: 360px;
+        display: grid;
+        gap: 4px;
+        font-size: 15px;
+        line-height: 1.3;
+        animation: drop-in 0.4s steps(4) 0.4s backwards;
+      }
+
+      .end .explain:empty {
+        display: none;
+      }
+
+      .end .explain b {
+        color: var(--yellow);
+      }
+
+      .end .explain .definition {
+        color: var(--lavender);
+      }
+
+      .end .explain small {
+        font-size: 12px;
+      }
+
       .end .error {
         font-size: 18px;
         color: var(--lavender);
@@ -808,6 +834,7 @@
         .stat.up,
         .end .title,
         .end .word .cell,
+        .end .explain,
         .panel {
           animation: none;
         }
@@ -815,6 +842,7 @@
     </style>
     <script src="exit-guard.js"></script>
     <script src="voix.js"></script>
+    <script src="explications.js"></script>
   </head>
   <body>
     <div class="sky" id="sky" aria-hidden="true"></div>
@@ -1507,6 +1535,10 @@
           })
           end.appendChild(word)
         }
+        const explain = document.createElement("div")
+        explain.className = "explain"
+        end.appendChild(explain)
+        Explications.show(explain, secretWord, { kid: true })
         const again = document.createElement("button")
         again.className = "btn bevel notch"
         again.textContent = "Rejouer"

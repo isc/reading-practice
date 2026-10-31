@@ -8,7 +8,7 @@ latine.
 
 Pour passer à une nouvelle version du lexique, changer VERSION puis :
     python3 outils/dictionnaire.py
-Puis relire les nouveaux mots grossiers : SWEAR_WORD, dans le mot le plus long, ne connaît que ceux
+Puis relire les nouveaux mots grossiers : SWEAR_WORD, dans gros-mots.js, ne connaît que ceux
 de cette version (le lexique n'a pas d'étiquette « vulgaire » ; ses notes « péj » et « arg » aident).
 """
 
