@@ -1,13 +1,14 @@
-"""Les définitions pour enfants des mots peu courants du mot le plus long : outils/definitions.json,
-{lemme: définition}, que outils/explications.py range ensuite par lettre.
+"""Les définitions pour enfants des mots peu courants des jeux de mots : outils/definitions.json,
+{lemme: [nature, définition]}, que outils/explications.py range ensuite dans explications/.
 
 Les sens viennent du Wiktionnaire (extraction de kaikki.org, licence CC BY-SA 4.0) ; Claude les
 réécrit pour un enfant de CM1, sans rien inventer, par lots de 40 mots. Il passe par Claude Code en
 ligne de commande (claude -p), donc par l'abonnement d'Ivan, pas par une clé d'API payante. Un mot que
 Claude juge déplacé pour un enfant (grossier, sexuel, injurieux) reste sans définition : null dans le
 fichier. Un mot pour lequel Claude n'a rien rendu vaut "" et sera redemandé au passage suivant, comme
-les mots nouveaux ; les autres sont gardés. Le fichier est réécrit après chaque lot : un arrêt en route
-ne perd rien.
+les mots nouveaux et ceux dont outils/explications.py donne une autre nature que celle de leur
+définition (pirate, défini comme adjectif avant d'être « nom ou adjectif ») ; les autres sont gardés.
+Le fichier est réécrit après chaque lot : un arrêt en route ne perd rien.
 
 Sur charras :
     curl -LO https://kaikki.org/frwiktionary/raw-wiktextract-data.jsonl.gz
@@ -30,7 +31,14 @@ import explications
 MODELE = "opus"
 PAR_LOT = 40
 EN_PARALLELE = 4
-POS = {"verbe": "verb", "nom": "noun", "adjectif": "adj", "adverbe": "adv", "interjection": "intj"}
+POS = {
+    "verbe": {"verb"},
+    "nom": {"noun"},
+    "adjectif": {"adj"},
+    "nom ou adjectif": {"noun", "adj"},
+    "adverbe": {"adv"},
+    "interjection": {"intj"},
+}
 
 CONSIGNE = """Tu écris les définitions d'un jeu de lettres pour des enfants de 7 à 11 ans. On te donne \
 des mots du français, avec leur nature et les sens que leur donne le Wiktionnaire.
@@ -91,20 +99,21 @@ def gloses(entree):
 
 
 def sens_du_wiktionnaire(chemin, voulues):
-    """Pour chaque lemme voulu, ses sens : ceux de sa nature d'abord, six au plus. Un sens qui ne fait que
-    renvoyer à un autre mot (« Participe passé du verbe redonder », « Variante de tête-bêche ») est
-    remplacé par les sens de ce mot, lus dans un second passage."""
+    """Pour chaque lemme voulu, ses sens : ceux de sa nature d'abord, six au plus, et le premier sens de
+    chaque entrée (chien le nom, chien l'adjectif ; avocat l'homme de loi, avocat le fruit) avant les
+    seconds. Un sens qui ne fait que renvoyer à un autre mot (« Participe passé du verbe redonder »,
+    « Variante de tête-bêche ») est remplacé par les sens de ce mot, lus dans un second passage."""
     sens, renvois = defaultdict(list), defaultdict(set)
     for entree in entrees_francaises(chemin):
         mot = entree.get("word")
         if mot not in voulues:
             continue
-        autre_nature = entree.get("pos") != POS.get(voulues[mot])
-        for s, texte in gloses(entree):
+        autre_nature = entree.get("pos") not in POS.get(voulues[mot], ())
+        for rang, (s, texte) in enumerate(gloses(entree)):
             if vers := [c["word"] for c in s.get("form_of", []) + s.get("alt_of", []) if c.get("word")]:
                 renvois[mot].update(vers)
             else:
-                sens[mot].append((autre_nature, texte))
+                sens[mot].append((autre_nature, rang, texte))
     if renvois:
         cibles = set().union(*renvois.values())
         sens_des_cibles = defaultdict(list)
@@ -113,8 +122,8 @@ def sens_du_wiktionnaire(chemin, voulues):
                 sens_des_cibles[cible] += [f"« {cible} » : {t}" for _, t in gloses(entree)]
         for mot, vers in renvois.items():
             for cible in sorted(vers):
-                sens[mot] += [(True, t) for t in sens_des_cibles[cible]]
-    return {mot: [t for _, t in sorted(liste, key=lambda x: x[0])][:6] for mot, liste in sens.items() if liste}
+                sens[mot] += [(True, rang, t) for rang, t in enumerate(sens_des_cibles[cible])]
+    return {mot: [t for *_, t in sorted(liste, key=lambda x: x[:2])][:6] for mot, liste in sens.items() if liste}
 
 
 def demander(lot, voulues, sens):
@@ -141,8 +150,9 @@ def demander(lot, voulues, sens):
 def ecrire(definitions):
     """Réécrit definitions.json d'un coup : un arrêt pendant l'écriture ne le tronque pas."""
     provisoire = explications.DEFINITIONS.with_suffix(".tmp")
-    texte = json.dumps(dict(sorted(definitions.items())), ensure_ascii=False, indent=0)
-    provisoire.write_text(texte + "\n", encoding="utf-8")
+    # Une ligne par mot : "pirate": ["nom ou adjectif", "un bandit des mers…"]
+    lignes = (json.dumps({l: v}, ensure_ascii=False)[1:-1] for l, v in sorted(definitions.items()))
+    provisoire.write_text("{\n" + ",\n".join(lignes) + "\n}\n", encoding="utf-8")
     os.replace(provisoire, explications.DEFINITIONS)
 
 
@@ -152,10 +162,15 @@ def main():
     arguments.add_argument("--essai", type=int, default=0, help="définir N mots au hasard, sans rien écrire")
     options = arguments.parse_args()
 
-    _, voulues = explications.analyser()
+    _, _, voulues = explications.analyser()
     connues = explications.lire_definitions()
-    # Les mots jamais demandés, et ceux pour lesquels Claude n'a rien rendu ; pas ceux qu'il a écartés.
-    manquants = {m: n for m, n in voulues.items() if connues.get(m, "") == ""}
+    # Les mots jamais demandés, ceux pour lesquels Claude n'a rien rendu et ceux qui ont changé de nature ;
+    # pas ceux qu'il a écartés.
+    manquants = {}
+    for mot, nature in voulues.items():
+        ancienne, definition = connues.get(mot, (None, ""))
+        if definition == "" or (definition is not None and ancienne != nature):
+            manquants[mot] = nature
     sens = sens_du_wiktionnaire(options.wiktionnaire, manquants) if manquants else {}
     a_faire = sorted(sens)
     if options.essai:
@@ -171,17 +186,17 @@ def main():
         futurs = [pool.submit(demander, lot, voulues, sens) for lot in lots]
         for n, futur in enumerate(as_completed(futurs), 1):
             nouvelles = futur.result()
-            connues.update(nouvelles)
+            connues.update({m: [voulues[m], d] for m, d in nouvelles.items()})
             ecartes += [m for m, d in nouvelles.items() if d is None]
             ecrire(connues)
             print(f"lot {n}/{len(lots)}", flush=True)
     finally:
         # Sur Ctrl-C, les lots pas encore partis ne partent pas.
         pool.shutdown(cancel_futures=True)
-    valeurs = list(connues.values())
+    valeurs = [d for _, d in connues.values()]
     vides, ecartees = valeurs.count(""), valeurs.count(None)
     print(f"definitions.json : {len(valeurs) - vides - ecartees} définitions, {vides} vides, {ecartees} écartées")
-    # Un mot que Claude juge déplacé peut être un gros mot que SWEAR_WORD ne connaît pas encore.
+    # Un mot que Claude juge déplacé peut être un gros mot que SWEAR_WORD (gros-mots.js) ne connaît pas encore.
     print("Écartés, à comparer avec SWEAR_WORD :", " ".join(sorted(ecartes)))
 
 

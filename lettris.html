@@ -1009,6 +1009,50 @@
         padding: 10px;
       }
 
+      /* Touché, un mot dit ce qu'il est, et sa définition s'il est peu courant. */
+      #end .found .pill {
+        cursor: pointer;
+      }
+
+      #end .found .pill.picked {
+        background: var(--pc, var(--cyan));
+        color: var(--night);
+        text-shadow: none;
+      }
+
+      #end .found .pill.picked small {
+        color: var(--night);
+      }
+
+      .explain {
+        flex-shrink: 0; /* c'est la liste des mots qui défile */
+        width: 100%;
+        display: grid;
+        gap: 4px;
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: rgba(15, 0, 35, 0.75);
+        font-size: 15px;
+        line-height: 1.35;
+      }
+
+      .explain:empty {
+        display: none;
+      }
+
+      .explain b {
+        font-weight: normal;
+        color: var(--cyan);
+      }
+
+      .explain .definition {
+        color: var(--muted);
+      }
+
+      .explain small {
+        font-size: 12px;
+      }
+
       #end .found:empty {
         display: none;
       }
@@ -1083,6 +1127,8 @@
     </style>
     <script src="exit-guard.js"></script>
     <script src="voix.js"></script>
+    <script src="gros-mots.js"></script>
+    <script src="explications.js"></script>
   </head>
   <body>
     <canvas id="scene" aria-hidden="true"></canvas>
@@ -1228,6 +1274,7 @@
         </div>
         <p class="record hidden" id="recordBadge">Nouveau record !</p>
         <div class="found" id="endList"></div>
+        <div class="explain" id="endExplain"></div>
         <div class="stat-row">
           <div class="stat-box">
             <span class="label">Record</span>
@@ -2119,6 +2166,10 @@
           t.style.setProperty("--d", `${Math.random() * 0.4}s`)
           t.classList.add("off")
         })
+        // L'écran de fin expliquera d'abord le plus long mot trouvé.
+        Explications.preload(
+          [...foundWords].reduce((a, w) => (w.length > a.length ? w : a), ""),
+        )
         setTimeout(
           () => showEnd(isNewBest && score > 0),
           reducedMotion ? 300 : 1100,
@@ -2133,6 +2184,7 @@
         ;[...foundWords]
           .sort((a, b) => b.length - a.length)
           .forEach((w) => list.appendChild(pill(w)))
+        pickEndWord(list.firstChild) // le plus long, pour commencer
         showScreen("end")
 
         // Le score compte jusqu'au total, comme sur une borne d'arcade.
@@ -2151,6 +2203,13 @@
           setTimeout(step, 400)
         }
         if (isRecord && typeof showConfetti === "function") showConfetti()
+      }
+
+      // Touché sur l'écran de fin, un mot dit ce qu'il est (explications.js).
+      function pickEndWord(el) {
+        for (const p of $("endList").children)
+          p.classList.toggle("picked", p === el)
+        Explications.show($("endExplain"), el ? el.dataset.word : "")
       }
 
       // ===== Écrans =====
@@ -2317,6 +2376,10 @@
         initGame()
       }
       $("homeBtn").onclick = () => showScreen("welcome")
+      $("endList").onclick = (e) => {
+        const el = e.target.closest(".pill")
+        if (el) pickEndWord(el)
+      }
       $("soundToggle").onclick = () => {
         Sound.toggle()
         renderSoundToggle()

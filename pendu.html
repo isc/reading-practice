@@ -267,6 +267,28 @@
             animation: stick 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
         }
 
+        /* Sous le mot, ce qu'il est, et sa définition s'il est peu courant. */
+        .message .explain {
+            margin-top: 8px;
+            font-size: 0.8em;
+            font-weight: 400;
+            line-height: 1.35;
+        }
+
+        .message .explain p + p {
+            margin-top: 4px;
+        }
+
+        .message .explain b {
+            font-weight: 600;
+            color: var(--marker);
+        }
+
+        .message .explain small {
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+
         .message.win .pin { --c: #2fae5b; }
         .message.lose .pin { --c: #e8423f; }
 
@@ -532,6 +554,7 @@
         </div>
     </div>
 
+    <script src="explications.js"></script>
     <script src="confetti.js"></script>
     <script>
         const MAX_ERRORS = 6;
@@ -832,6 +855,10 @@
                 SFX.lose();
             }
             showMessage(`${won ? 'Bravo' : 'Perdu'} ! Le mot était « ${secretWord} »`, won ? 'win' : 'lose');
+            const explain = document.createElement('div');
+            explain.className = 'explain';
+            document.getElementById('message').append(explain);
+            Explications.show(explain, secretWord, { kid: true });
             saveScore(won ? 'wins' : 'losses');
             document.getElementById('newGameBtn').style.display = 'block';
         }
